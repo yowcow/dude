@@ -1,0 +1,19 @@
+{
+  "name": "dude",
+  "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
+  "version": "0.1.0",
+  "author": {
+    "name": "Yoko OYAMA",
+    "email": "yowcow@gmail.com"
+  },
+  "homepage": "https://github.com/yowcow/dude",
+  "repository": "https://github.com/yowcow/dude",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflow",
+    "planning",
+    "code-review",
+    "investigation"
+  ]
+}
