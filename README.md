@@ -16,7 +16,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `implement-work` | A pushed branch of verified commits, for one PR-sized task |
 | `pr-to-ready` | A PR whose CI passes and whose review is clean |
 | `review-plan` | Findings on a TODO list or an implementation plan |
-| `review-code` | A diff, branch, or working tree reviewed and its findings fixed |
+| `review-code` | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
 | `simplify-code` | Recently changed code simplified, behavior preserved |
 | `investigate-performance` | An evidence-backed explanation of a performance shortfall |
 | `investigate-anomaly` | A blameless findings report on a failure, incident, or drifting metric |
