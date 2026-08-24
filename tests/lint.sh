@@ -65,8 +65,8 @@ trap 'rm -f "$LISTING"' EXIT
 # forgetting a name here selects too much and fails loudly, which is why the
 # list is by name rather than by anything cleverer.
 if ! find "$REPO_ROOT" \
-  \( -type d \( -name .git -o -name .worktrees \) -prune \) -o \
-  \( -type f -print0 \) | sort -z >"$LISTING"; then
+  -type d \( -name .git -o -name .worktrees \) -prune -o \
+  -type f -print0 | sort -z >"$LISTING"; then
   echo "listing ${REPO_ROOT} failed — the tree was not fully read" >&2
   exit 1
 fi

@@ -24,8 +24,8 @@
 # way this suite's other table tests do. Guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
-# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Seven were
-# removed; the one that is only partly observable is recorded as such below,
+# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Seven
+# were removed; the one that is only partly observable is recorded as such below,
 # rather than counted as covered. What each mutant actually produced,
 # measured:
 #
