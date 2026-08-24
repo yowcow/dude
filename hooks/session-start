@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# SessionStart hook: put using-dude in context for the whole session.
+#
+# Claude Code reads a JSON object on stdout and injects
+# hookSpecificOutput.additionalContext. The JSON string is escaped with bash
+# parameter substitution rather than jq, because the hook has to run wherever
+# the plugin is installed and jq is not guaranteed there.
+
+set -euo pipefail
+
+hook_dir="$(cd "$(dirname "$0")" && pwd)"
+skill_file="${hook_dir}/../skills/using-dude/SKILL.md"
+
+# On a read failure this says so in the injected context: a session that
+# silently lost its workflow rules improvises every gate and looks normal.
+skill_content=$(cat "$skill_file" 2>&1) \
+  || skill_content="Error reading the using-dude skill at ${skill_file}. dude's workflow rules are NOT in context; read the file yourself before starting any task."
+
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+escaped=$(escape_for_json "$skill_content")
+
+context="<EXTREMELY_IMPORTANT>\ndude's workflow rules are below in full — the \`dude:using-dude\` skill. They bind every task this session. For every other dude skill, use your runtime's skill mechanism.\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
+
+# printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
+
+exit 0
