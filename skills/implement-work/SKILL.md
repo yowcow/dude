@@ -35,7 +35,7 @@ Work larger than one PR, or a design not yet agreed, goes back to `plan-work`. D
 
 **A name from rung 1 or 2 is already the answer: don't search, use it verbatim.** `plan-work`'s discard convention gives a **new** name to an item whose old branch is to be abandoned; searching by issue number there would turn up that abandoned branch and hand it to the ladder, which reuses whatever it finds — resuming on top of the very commits the invalidated design produced, which is the failure that convention exists to prevent.
 
-A rung-3 name with no issue behind it isn't searched at all — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search, by that issue number, before it is used: run `<skill-dir>/scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue — local and remote, deduplicated across both — one name per line. `<skill-dir>` here and below is wherever your runtime installed this skill (e.g. `~/.claude/skills/implement-work`, `~/.agents/skills/implement-work`).
+A rung-3 name with no issue behind it isn't searched at all — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search, by that issue number, before it is used: run `<skill-dir>/scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue — local and remote, deduplicated across both — one name per line. `<skill-dir>` here and below is this skill's own directory inside the installed plugin, `skills/implement-work/`.
 
 Count the lines it printed: none — `<branch>` is the name just derived; exactly one — `<branch>` becomes that branch, and this is a resumed session that the ladder below attaches to; two or more — stop and ask, since which line of work to carry on is a human call.
 
@@ -118,7 +118,7 @@ Add only what the execution method left undone. A round is one pass of steps 1-5
    | 4 | **Any step of this round changed something** — code, or a base absorbed by step 5 | Back to step 1 — verification and simplification have to run against the tree as it now stands |
    | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per **Loop convergence** |
 
-   The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward. The rows differ in kind, not degree — a design-invalidating finding, a stopped review, this gate's own stall, more work to do, and done — so per `ai/AUTHORING.md`'s rule 3 the table stays whole rather than compressed to an invariant.
+   The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward. The rows differ in kind, not degree — a design-invalidating finding, a stopped review, this gate's own stall, more work to do, and done — so per `AUTHORING.md`'s rule 3 the table stays whole rather than compressed to an invariant.
 
 ## Hand off
 

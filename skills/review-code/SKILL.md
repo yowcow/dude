@@ -9,7 +9,7 @@ Use on code in any state — a diff just written, a branch, or an uncommitted wo
 
 One invocation runs the loop to completion: review, judge, fix, verify, review again, until no blocking finding remains. What it does not own is re-entry — reviewing again after something else changes the code belongs to the caller; in the Change workflow, `implement-work`'s completion gate owns that.
 
-`<skill-dir>` below is wherever your runtime installed this skill (e.g. `~/.claude/skills/review-code`, `~/.agents/skills/review-code`).
+`<skill-dir>` below is this skill's own directory inside the installed plugin, `skills/review-code/`.
 
 ## Orchestration model
 
