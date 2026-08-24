@@ -2,10 +2,11 @@
 
 Yet another AI workflow.
 
-dude packages the skills that carry a change from an issue to a merged pull
-request, and the skills that root-cause a problem before any change is
-proposed. They are written to wire into one another: each names the next
-flow rather than absorbing it, and each has its own gate.
+dude packages the skills that carry a change from an issue to a pull request
+whose CI passes and whose review is clean, and the skills that root-cause a
+problem before any change is proposed. Merging is left to a person, and so is
+everything that depends on it. They are written to wire into one another: each
+names the next flow rather than absorbing it, and each has its own gate.
 
 ## Skills
 
