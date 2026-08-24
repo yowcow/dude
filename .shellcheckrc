@@ -1,0 +1,14 @@
+# ShellCheck configuration for this repository. It applies to every shell file
+# checked from here down, including the extensionless PATH stub
+# tests/lib/bin/gh.
+
+# SC2016 "Expressions don't expand in single quotes, use double quotes for
+# that." Every occurrence in this tree is the body of a GraphQL query handed to
+# `gh api graphql -f query='...'`, where $owner, $repo, $pr, $endCursor and
+# $threadId are GraphQL variable syntax that has to reach the server
+# unexpanded. Letting the shell expand them is precisely the bug, so the
+# finding is a false positive here.
+#
+# Only SC2016 is disabled. Raising the floor with --severity=warning would also
+# silence every other info-level finding, which is not the intent.
+disable=SC2016

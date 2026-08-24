@@ -1,0 +1,7 @@
+{
+  "total_count": 2,
+  "check_runs": [
+    { "name": "build", "status": "completed", "conclusion": "success" },
+    { "name": "lint", "status": "completed", "conclusion": "skipped" }
+  ]
+}

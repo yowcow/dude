@@ -1,0 +1,8 @@
+# Scripts under skills/*/scripts/ that have no test file yet. One line per
+# script, repo-root-relative. Blank lines and comment lines are not entries.
+#
+# This file is an exemption list, not a checklist: an entry naming a script that
+# no longer exists is an error, and an entry for a script that has since gained a
+# test is merely unnecessary. Zero entries — including "only these comments
+# remain" — and an absent file both mean "no exemptions", which is the gate's
+# success state. The gate is permanent; nothing here asks for its removal.

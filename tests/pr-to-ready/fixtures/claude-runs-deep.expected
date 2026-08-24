@@ -1,0 +1,12 @@
+[
+  {
+    "conclusion": "success",
+    "createdAt": "2026-08-20T09:00:00Z",
+    "databaseId": 5999,
+    "displayTitle": "tests: watch-claude-review.sh のテストを書く",
+    "event": "issue_comment",
+    "headBranch": "trunk",
+    "headSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "status": "completed"
+  }
+]

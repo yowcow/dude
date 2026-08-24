@@ -1,0 +1,13 @@
+[
+  {
+    "event": "review_requested",
+    "requested_reviewer": { "login": "yowcow", "type": "User" }
+  },
+  {
+    "event": "review_requested",
+    "requested_reviewer": { "login": "Copilot", "type": "Bot" }
+  },
+  {
+    "event": "labeled"
+  }
+]
