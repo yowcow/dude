@@ -50,21 +50,33 @@ REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 LISTING="$(mktemp)"
 trap 'rm -f "$LISTING"' EXIT
 
-# .git and .worktrees are pruned. Neither exclusion was needed while this
-# scanned a subdirectory of the repository; the tree now starts at the
-# repository root, and both hold files that are not this repository's code. A
-# plain checkout — CI's and the main working tree alike — carries .git as a real
-# directory whose hooks/*.sample are shebanged `#!/bin/sh`, so 13 of them would
-# be selected and checked. .worktrees holds working copies of these same files.
+# Three directories are pruned, none of which was an exclusion this needed while
+# it scanned a subdirectory of the repository. The tree now starts at the
+# repository root, and all three hold files that are not this repository's code:
 #
-# Note that inside a linked worktree .git is a file rather than a directory and
-# .worktrees does not exist at all, so neither name matches there and this
-# prunes nothing: a run from a worktree cannot demonstrate that the expression
-# is right. What it can never do is drop a file it should have checked —
-# forgetting a name here selects too much and fails loudly, which is why the
-# list is by name rather than by anything cleverer.
+#   .git               a plain checkout — CI's and the main working tree alike —
+#                      carries it as a real directory, and its hooks/*.sample
+#                      are shebanged `#!/bin/sh`, so 13 would be selected.
+#   .worktrees         git worktrees made by hand, per .gitignore.
+#   .claude/worktrees  git worktrees made by Claude Code's own worktree tool.
+#                      Matched by path, not by name: `worktrees` alone would
+#                      also prune a directory that happened to be called that,
+#                      and over-pruning is the one direction this must not fail
+#                      in. Note that .claude is *not* gitignored, so nothing
+#                      else keeps this content out of the walk.
+#
+# Both worktree directories hold working copies of these same files, on other
+# branches. Inside a linked worktree, meanwhile, .git is a file rather than a
+# directory and neither worktree directory exists, so nothing matches and this
+# prunes nothing — a run from a worktree cannot demonstrate the expression is
+# right, and `tests/README.md` records how to exercise it where it bites.
+#
+# What forgetting a name here can never do is drop a file that should have been
+# checked: it selects too much and fails loudly. That asymmetry is why the list
+# is spelled out rather than derived from something cleverer such as
+# `git check-ignore`, which would silently skip whatever is ignored.
 if ! find "$REPO_ROOT" \
-  -type d \( -name .git -o -name .worktrees \) -prune -o \
+  -type d \( -name .git -o -name .worktrees -o -path '*/.claude/worktrees' \) -prune -o \
   -type f -print0 | sort -z >"$LISTING"; then
   echo "listing ${REPO_ROOT} failed — the tree was not fully read" >&2
   exit 1

@@ -176,6 +176,34 @@ written expecting real waits. Unlike the fake `gh`, it accepts any argv: the
 `gh` rule exists because an unstubbed call would be answered by the network,
 and `sleep` hands the caller nothing it reads.
 
+## The lint selection: `lint.sh`
+
+`lint.sh` selects by shebang, not by a `*.sh` glob, so the extensionless PATH
+stub `tests/lib/bin/gh` is checked like anything else. It walks from the
+repository root, and prunes three directories that hold checkouts rather than
+this repository's own code: `.git`, `.worktrees`, and `.claude/worktrees`.
+
+**A run from inside a linked worktree cannot verify that prune.** There `.git`
+is a file rather than a directory and neither worktree directory exists, so
+nothing matches and the expression prunes nothing — a wrong expression still
+looks green. To exercise it where it bites, build a checkout that has the real
+shapes and run the script there:
+
+```bash
+probe="$(mktemp -d)"
+git clone --quiet --no-hardlinks . "$probe/dude"   # a real .git directory
+cp -a tests Makefile .shellcheckrc "$probe/dude/"  # plus anything uncommitted
+mkdir -p "$probe/dude/.worktrees/x" "$probe/dude/.claude/worktrees/y"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.worktrees/x/leak.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.claude/worktrees/y/leak.sh"
+"$probe/dude/tests/lint.sh"
+```
+
+The selected count must match a run from the working tree, and no path under
+any of the three pruned directories may appear in the listing. Dropping any one
+name from the prune raises the count, which is what makes the check meaningful;
+`.claude` in particular is not gitignored, so nothing else keeps it out.
+
 ## The coverage gate: `scripts-have-tests.sh`
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
