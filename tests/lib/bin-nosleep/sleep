@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Instant `sleep` for the offline suite: records the call and returns at once.
+#
+# Opted into per test file via the harness's stub_sleep_instant, not placed in
+# lib/bin/ beside the fake `gh`, so that adding it cannot silently change the
+# meaning of a test file that was written expecting real waits.
+#
+# Unlike the fake `gh`, an argv nobody stubbed is fine here. That rule exists
+# for `gh` because an unstubbed call would otherwise be answered by the
+# network, and a wrong answer that came from the network reads as a passing
+# test. `sleep` hands the caller nothing it reads; the only thing it
+# contributes is wall clock, which an offline suite must not spend. The
+# durations asked for are logged all the same, so a test that cares can assert
+# them.
+set -euo pipefail
+
+if [ -n "${GH_STUB_DIR:-}" ]; then
+  printf '%s\n' "$*" >>"${GH_STUB_DIR}/sleeps"
+fi
+exit 0

@@ -1,0 +1,6 @@
+{
+  "total_count": 1,
+  "check_runs": [
+    { "name": "build", "status": "in_progress", "conclusion": null }
+  ]
+}

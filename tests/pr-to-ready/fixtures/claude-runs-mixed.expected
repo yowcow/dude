@@ -1,0 +1,42 @@
+[
+  {
+    "conclusion": "success",
+    "createdAt": "2026-08-20T09:00:00Z",
+    "databaseId": 4001,
+    "displayTitle": "tests: watch-claude-review.sh のテストを書く",
+    "event": "pull_request_review_comment",
+    "headBranch": "188-watch-claude-review-tests",
+    "headSha": "1111111111111111111111111111111111111111",
+    "status": "completed"
+  },
+  {
+    "conclusion": null,
+    "createdAt": "2026-08-20T08:30:00Z",
+    "databaseId": 4002,
+    "displayTitle": "tests: watch-claude-review.sh のテストを書く",
+    "event": "issue_comment",
+    "headBranch": "trunk",
+    "headSha": "2222222222222222222222222222222222222222",
+    "status": "in_progress"
+  },
+  {
+    "conclusion": "skipped",
+    "createdAt": "2026-08-20T08:00:00Z",
+    "databaseId": 4003,
+    "displayTitle": "tests: watch-claude-review.sh のテストを書く",
+    "event": "issue_comment",
+    "headBranch": "trunk",
+    "headSha": "3333333333333333333333333333333333333333",
+    "status": "completed"
+  },
+  {
+    "conclusion": "success",
+    "createdAt": "2026-08-20T07:00:00Z",
+    "databaseId": 4004,
+    "displayTitle": "another PR entirely",
+    "event": "issue_comment",
+    "headBranch": "trunk",
+    "headSha": "4444444444444444444444444444444444444444",
+    "status": "completed"
+  }
+]

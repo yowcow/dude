@@ -1,0 +1,1 @@
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpK0czE="},"nodes":[{"id":"PRRT_a","comments":{"nodes":[{"databaseId":4001},{"databaseId":4011}]}},{"id":"PRRT_b","comments":{"nodes":[{"databaseId":4002}]}},{"id":"PRRT_c","comments":{"nodes":[{"databaseId":4003}]}}]}}}}}

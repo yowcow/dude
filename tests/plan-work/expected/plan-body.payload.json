@@ -1,0 +1,3 @@
+{
+  "body": "# Plan\n\nRun `make test` before pushing.\n\n```bash\ngh api --method POST \"repos/acme/widgets/issues/7/comments\"\n```\n\nSee https://github.com/acme/widgets/issues/1#issuecomment-99 for the decision.\n\nCanary: `touch \"$PLAN_CANARY\"` and $(touch \"$PLAN_CANARY\").\n"
+}

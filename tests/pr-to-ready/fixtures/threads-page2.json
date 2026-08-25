@@ -1,0 +1,1 @@
+{"data":{"repository":{"pullRequest":{"reviewThreads":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpK0cDI="},"nodes":[{"id":"PRRT_page2","isResolved":false,"comments":{"nodes":[{"databaseId":3002,"author":{"login":"yowcow"},"path":"tests/lib/bin/gh","line":80,"body":"page two thread"}]}}]}}}}}
