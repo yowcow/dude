@@ -86,9 +86,17 @@ EMPTY_GRACE=3
 # The default branch rather than the PR's base, because the error direction is
 # the safe one: a stacked PR's base can carry no checks while the default branch
 # does, and reading the base would declare a repository with CI to have none.
+#
+# Both requests are tested for having SUCCEEDED, rather than being wrapped in
+# `|| true` and judged by their body alone. The body cannot carry that: a call
+# that fails while printing something the predicate below accepts would be read
+# as proof the repository runs no checks, and the invariant this function
+# documents — everything it cannot read answers non-zero — would then hold only
+# by accident of what a failing `gh` happens to print. The `|| return 1` form is
+# what keeps a non-zero status from killing the script under `set -e`.
 default_branch_runs_no_checks() {
   local repo_raw branch listing
-  repo_raw="$(gh api "repos/${OWNER}/${REPO}" 2>/dev/null || true)"
+  repo_raw="$(gh api "repos/${OWNER}/${REPO}" 2>/dev/null)" || return 1
   # `// empty` rather than a bare `.default_branch`: on an error body the field
   # is absent, `jq -r` renders that as the four characters `null`, and the
   # listing read below would then ask about a ref named "null" and treat its
@@ -97,7 +105,7 @@ default_branch_runs_no_checks() {
   # that is not JSON at all from killing the script under `set -e`.
   branch="$(printf '%s' "$repo_raw" | jq -r '.default_branch // empty' 2>/dev/null || true)"
   [ -n "$branch" ] || return 1
-  listing="$(gh api "repos/${OWNER}/${REPO}/commits/${branch}/check-runs" 2>/dev/null || true)"
+  listing="$(gh api "repos/${OWNER}/${REPO}/commits/${branch}/check-runs" 2>/dev/null)" || return 1
   # `.check_runs` is tested for being an array before its length is read,
   # because `length` in jq answers 0 for null rather than erroring. Measured:
   # `printf '{"total_count":1}' | jq -e 'has("total_count") and (.check_runs |

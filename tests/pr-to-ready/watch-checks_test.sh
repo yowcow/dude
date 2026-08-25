@@ -125,7 +125,7 @@ name-that-looks-unsettled-still-settles|*=check-runs-name-looks-unsettled|-|-|ac
 unsettled-then-settled|1=check-runs-in-progress;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 partial-registration-is-not-settled|1=check-runs-partial;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 same-size-different-checks-is-not-settled|1=check-runs-name-looks-unsettled;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
-duplicate-names-need-ids-to-tell-apart|1=check-runs-dup-name-one;*=check-runs-dup-name-both|-|-|acme widgets deadbeef 3 1|0|3|test\tcompleted\tsuccess\ntest\tcompleted\tsuccess\n
+duplicate-names-need-ids-to-tell-apart|1=check-runs-dup-name-a;*=check-runs-dup-name-b|-|-|acme widgets deadbeef 3 1|0|3|test\tcompleted\tsuccess\ntest\tcompleted\tsuccess\n
 still-unsettled-at-cap|*=check-runs-in-progress|-|-|acme widgets deadbeef 2 1|1|2|build\tin_progress\t-\n
 empty-listing-below-the-grace-prints-nothing|*=check-runs-empty|-|-|acme widgets deadbeef 1 1|1|1|
 no-checks-here-and-none-on-the-default-branch|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty|acme widgets deadbeef 5 1|5|5|
@@ -135,6 +135,7 @@ repo-read-fails-so-there-is-no-verdict|*=check-runs-empty|4=not-found:1|-|acme w
 default-branch-listing-is-an-error-body|*=check-runs-empty|4=repo-default-branch|5=not-found|acme widgets deadbeef 3 1|1|5|
 default-branch-listing-has-no-run-array|*=check-runs-empty|4=repo-default-branch|5=check-runs-no-array|acme widgets deadbeef 3 1|1|5|
 default-branch-empty-list-contradicts-total-count|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty-inconsistent|acme widgets deadbeef 3 1|1|5|
+default-branch-request-fails-with-an-empty-looking-body|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty:1|acme widgets deadbeef 3 1|1|5|
 missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
