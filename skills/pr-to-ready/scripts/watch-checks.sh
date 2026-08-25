@@ -101,9 +101,17 @@ default_branch_runs_no_checks() {
   # is absent, `jq -r` renders that as the four characters `null`, and the
   # listing read below would then ask about a ref named "null" and treat its
   # 422 as "unreadable" — the right answer reached by accident, and only until
-  # someone creates a branch by that name. The `|| true` is what keeps a body
-  # that is not JSON at all from killing the script under `set -e`.
-  branch="$(printf '%s' "$repo_raw" | jq -r '.default_branch // empty' 2>/dev/null || true)"
+  # someone creates a branch by that name.
+  #
+  # jq's own status is kept rather than discarded, for the same reason the two
+  # `gh` calls keep theirs: jq streams, so a body that is valid JSON followed by
+  # trailing bytes prints the field and *then* fails. Measured: `printf
+  # '{"default_branch":"trunk"} garbage' | jq -r '.default_branch // empty'`
+  # prints `trunk` and exits 5. Under `|| true` that partial value survives, the
+  # probe goes on to read a branch named by a response it could not parse, and
+  # an empty listing there produces exit 5 — "this repository runs no checks" —
+  # off a repository response that was never wholly read.
+  branch="$(printf '%s' "$repo_raw" | jq -r '.default_branch // empty' 2>/dev/null)" || return 1
   [ -n "$branch" ] || return 1
   listing="$(gh api "repos/${OWNER}/${REPO}/commits/${branch}/check-runs" 2>/dev/null)" || return 1
   # `.check_runs` is tested for being an array before its length is read,
