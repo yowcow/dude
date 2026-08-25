@@ -82,7 +82,7 @@ Every loop that checks work and fixes what came back stops on the same condition
 
 **Each loop defines two things for itself**: what one of its rounds is, and what makes two findings the same one. Nothing else about stopping is a skill's to set. A skill may add a **stricter** condition on top of *clean* where its own inputs warrant it; it may not loosen one.
 
-**A bounded inner pass does not bound the loop around it** — these conditions are counted per loop. A wait bounded by clock time — polling for an answer that has not arrived yet — is a timeout owned by the skill that waits, not one of these loops.
+**A bounded inner pass does not bound the loop around it** — these conditions are counted per loop, and "the skill I call is bounded" is never evidence that this loop terminates. A wait bounded by clock time — polling for an answer that has not arrived yet — is a timeout owned by the skill that waits, not one of these loops.
 
 ### Escalation
 
