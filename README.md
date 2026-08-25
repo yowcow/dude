@@ -48,8 +48,10 @@ Grok CLI:
 grok plugin install yowcow/dude
 ```
 
-Grok asks to trust the plugin before installing it; `--trust` answers that up
-front.
+Grok asks you to trust the plugin before installing it. Answer that prompt
+yourself on a first install — trust is what lets a plugin run hooks. `--trust`
+skips it, which is why the Development section below uses it on a clone you
+already own.
 
 ## Use
 
