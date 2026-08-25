@@ -1,0 +1,37 @@
+{
+  "name": "dude",
+  "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
+  "version": "0.1.0",
+  "author": {
+    "name": "Yoko OYAMA",
+    "email": "yowcow@gmail.com"
+  },
+  "homepage": "https://github.com/yowcow/dude",
+  "repository": "https://github.com/yowcow/dude",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflow",
+    "planning",
+    "code-review",
+    "investigation"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "dude",
+    "shortDescription": "Planning, implementation, PR delivery, review, and investigation workflows",
+    "longDescription": "dude carries a change from an issue to a pull request whose CI passes and whose review is clean, and root-causes a problem before any change is proposed. Each skill names the next flow rather than absorbing it, and each has its own gate.",
+    "developerName": "Yoko OYAMA",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Plan this issue into PR-sized tasks.",
+      "Take this task to a branch of verified commits."
+    ],
+    "websiteURL": "https://github.com/yowcow/dude"
+  }
+}
