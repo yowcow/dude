@@ -1,0 +1,6 @@
+{
+  "name": "dude",
+  "version": "0.1.0",
+  "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
+  "contextFileName": "GEMINI.md"
+}
