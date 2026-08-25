@@ -13,7 +13,7 @@ skill_file="${hook_dir}/../skills/using-dude/SKILL.md"
 
 # On a read failure this says so in the injected context: a session that
 # silently lost its workflow rules improvises every gate and looks normal.
-skill_content=$(cat "$skill_file" 2>&1) \
+skill_content=$(sed -n '/^# /,$p' "$skill_file" 2>&1) \
   || skill_content="Error reading the using-dude skill at ${skill_file}. dude's workflow rules are NOT in context; read the file yourself before starting any task."
 
 escape_for_json() {
@@ -28,7 +28,7 @@ escape_for_json() {
 
 escaped=$(escape_for_json "$skill_content")
 
-context="<EXTREMELY_IMPORTANT>\ndude's workflow rules are below in full — the \`dude:using-dude\` skill. They bind every task this session. For every other dude skill, use your runtime's skill mechanism.\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
+context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — the \`dude:using-dude\` skill, in full:\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
 
 # printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
