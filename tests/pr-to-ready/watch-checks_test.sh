@@ -136,6 +136,7 @@ default-branch-listing-has-no-run-array|*=check-runs-empty|4=repo-default-branch
 missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
+a-later-unreadable-poll-keeps-the-last-listing|1=check-runs-settled;*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|1|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 gh-fails-every-poll|*=-:1|-|-|acme widgets deadbeef 1 1|4|1|
 too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|

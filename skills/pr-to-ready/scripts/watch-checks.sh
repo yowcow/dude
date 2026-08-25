@@ -139,9 +139,20 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # assignment hands that status straight to the caller, who reads a malformed
   # body as a verdict about the repository and marks a PR ready having never
   # seen a check. Guarded, such a body is no listing at all, which is exit 4.
+  #
+  # The results land in temporaries and are committed to rows/fp only once the
+  # whole chain has succeeded, because bash performs an assignment inside a
+  # `&&` chain even when the command substitution fails and the chain
+  # short-circuits. Measured: `rows=KEEPME; if true && rows="$(printf
+  # '{"total_count":1}' | jq -r '.check_runs[]')"; then :; fi` leaves rows
+  # empty. Assigned directly, a malformed body arriving after a good poll would
+  # erase the listing the exit 1 path prints, and the person that timeout is
+  # handed to would see an empty listing instead of the last one really read.
   if printf '%s' "$raw" | jq -e 'has("total_count")' >/dev/null 2>&1 &&
-    rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
-    fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
+    new_rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
+    new_fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
+    rows="$new_rows"
+    fp="$new_fp"
     saw_listing=yes
 
     if [ -n "$rows" ]; then
