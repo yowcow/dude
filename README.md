@@ -101,11 +101,14 @@ field:
 ```
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 grok plugin validate .
+python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
-The Codex validator walks every `SKILL.md` too, so it catches malformed
-frontmatter at the same time. `make lint test` does not check these files:
-it covers shell and the test suite only.
+The first two read the plugin manifests, and the Codex one walks every
+`SKILL.md` as well, so it catches malformed frontmatter at the same time.
+Neither looks at `.agents/plugins/marketplace.json` — both still pass with that
+file deliberately corrupted — so the third line is what covers it, syntax only.
+`make lint test` checks none of them: it covers shell and the test suite.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
