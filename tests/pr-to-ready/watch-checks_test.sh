@@ -143,6 +143,7 @@ run-list-as-an-object-is-not-a-listing|*=check-runs-object-runs|-|-|acme widgets
 empty-list-contradicting-total-count-is-not-a-listing|*=check-runs-empty-inconsistent|-|-|acme widgets deadbeef 3 1|4|3|
 a-later-unreadable-poll-keeps-the-last-listing|1=check-runs-settled;*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|1|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 gh-fails-every-poll|*=-:1|-|-|acme widgets deadbeef 1 1|4|1|
+poll-request-fails-with-an-empty-looking-body|*=check-runs-empty:1|4=repo-default-branch|5=check-runs-empty|acme widgets deadbeef 3 1|4|3|
 too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|
 non-numeric-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef abc 1|2|0|

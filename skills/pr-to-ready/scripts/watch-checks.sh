@@ -137,8 +137,23 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # failure worth ending on is a SHA the remote does not have, because no amount
   # of waiting fixes it and every later iteration would ask the same wrong
   # question.
-  raw="$(gh api "repos/${OWNER}/${REPO}/commits/${SHA}/check-runs" 2>/dev/null || true)"
+  # The status is kept, not discarded, because a failing call must not be able
+  # to count as an OBSERVATION of anything. Only a call that succeeded can be
+  # read as a listing below: without that, a poll that fails while printing
+  # something shaped like an empty listing is counted toward the empty-listing
+  # grace, and three of those plus an empty default branch produce exit 5 —
+  # "this repository runs no checks" — for a commit whose check-runs were never
+  # once read. The body alone cannot carry that distinction, since a listing
+  # that is genuinely empty and a failure that merely looks empty are the same
+  # bytes.
+  poll_ok=yes
+  raw="$(gh api "repos/${OWNER}/${REPO}/commits/${SHA}/check-runs" 2>/dev/null)" || poll_ok=""
 
+  # This test stays OUTSIDE the status gate above: a SHA the remote does not
+  # have is a 422, so `gh` exits non-zero and the body that names it arrives
+  # only on a failed call. Gated, the one failure worth ending the watch on
+  # would be read as an ordinary blip and every later iteration would ask the
+  # same wrong question until the cap ran out.
   if printf '%s' "$raw" | grep -q 'No commit found for SHA'; then
     printf '%s\n' "$raw" >&2
     exit 3
@@ -174,7 +189,8 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # contradicts. A non-empty array is accepted whatever total_count says, since
   # this call is not paginated and a truncated first page is still a real
   # listing — only an EMPTY array has to agree with total_count.
-  if printf '%s' "$raw" | jq -e 'has("total_count") and (.check_runs | type) == "array"
+  if [ -n "$poll_ok" ] &&
+    printf '%s' "$raw" | jq -e 'has("total_count") and (.check_runs | type) == "array"
        and ((.check_runs | length) > 0 or .total_count == 0)' >/dev/null 2>&1 &&
     new_rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
     new_fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
