@@ -116,7 +116,16 @@ default_branch_runs_no_checks() {
   # probe goes on to read a branch named by a response it could not parse, and
   # an empty listing there produces exit 5 — "this repository runs no checks" —
   # off a repository response that was never wholly read.
-  branch="$(printf '%s' "$repo_raw" | jq -r '.default_branch // empty' 2>/dev/null)" || return 1
+  #
+  # `-s` and `length == 1` because jq reads a STREAM of top-level values, not
+  # one document. Measured: `printf '{"default_branch":"trunk"} {}' | jq -r
+  # '.default_branch // empty'` prints `trunk` and exits 0. Unslurped, a body
+  # that is two documents is accepted and the probe goes on to read a branch
+  # named by a response that was never one object — and then decides exit 5 off
+  # it. Checking jq's status does not catch this: a stream of valid values is
+  # not an error.
+  branch="$(printf '%s' "$repo_raw" |
+    jq -r -s 'select(length == 1) | .[0].default_branch // empty' 2>/dev/null)" || return 1
   [ -n "$branch" ] || return 1
   listing="$(gh api "repos/${OWNER}/${REPO}/commits/${branch}/check-runs" 2>/dev/null)" || return 1
   # `.check_runs` is tested for being an array before its length is read,
@@ -133,9 +142,15 @@ default_branch_runs_no_checks() {
   # 0` a body that says a check-run exists is read as proof that none does, and
   # exit 5 tells the caller to mark a PR ready off a response that claimed the
   # opposite.
+  # Slurped for the same reason the branch extraction above is, and here the
+  # consequence is the verdict itself. `jq -e` takes its status from the LAST
+  # value it emitted, so on a stream it answers about the last document alone.
+  # Measured: a non-empty listing followed by `{"total_count":0,"check_runs":[]}`
+  # makes this predicate print `false` then `true` and exit 0 — exit 5, "this
+  # repository runs no checks", off a response that carried a check-run.
   printf '%s' "$listing" |
-    jq -e 'has("total_count") and .total_count == 0
-           and (.check_runs | type) == "array" and (.check_runs | length) == 0' >/dev/null 2>&1
+    jq -e -s 'length == 1 and (.[0] | .total_count == 0
+              and (.check_runs | type) == "array" and (.check_runs | length) == 0)' >/dev/null 2>&1
 }
 
 rows=""
@@ -203,18 +218,33 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # empty. Assigned directly, a malformed body arriving after a good poll would
   # erase the listing the exit 1 path prints, and the person that timeout is
   # handed to would see an empty listing instead of the last one really read.
-  # The same two agreements the default-branch probe demands are demanded here,
-  # because this is the other way into the no-checks verdict. `has("total_count")`
-  # alone proves neither: jq's `.check_runs[]` iterates an OBJECT's values too,
+  # The same agreements the default-branch probe demands are demanded here,
+  # because this is the other way into the no-checks verdict. Merely finding a
+  # total_count field — which is all this validator once asked for — proves
+  # none of them: jq's `.check_runs[]` iterates an OBJECT's values too,
   # so `{"total_count":1,"check_runs":{}}` renders no rows and fingerprints as
   # `[]`, which walks into the empty-listing grace below and can reach exit 5;
   # and `{"total_count":1,"check_runs":[]}` is an empty array the body itself
-  # contradicts. A non-empty array is accepted whatever total_count says, since
-  # this call is not paginated and a truncated first page is still a real
-  # listing — only an EMPTY array has to agree with total_count.
+  # contradicts.
+  #
+  # total_count has to be a number and at least as large as the array, which is
+  # the pagination-safe form of "the body agrees with itself": a first page may
+  # be shorter than total_count, but total_count can never be SMALLER than the
+  # runs it arrived with. Without that, `{"total_count":0,"check_runs":[{...}]}`
+  # — a body stating there are no runs while carrying one — is read as a
+  # listing, sets saw_runs, and can settle. An empty array has to agree exactly,
+  # since page one of a non-empty list is never empty.
+  #
+  # Slurped, because jq reads a STREAM of top-level values: unslurped, `jq -e`
+  # takes its status from the last document alone, so a valid listing followed
+  # by a second document passes and is then rendered across BOTH — the rows and
+  # the fingerprint stop describing any single response.
   if [ -n "$poll_ok" ] &&
-    printf '%s' "$raw" | jq -e 'has("total_count") and (.check_runs | type) == "array"
-       and ((.check_runs | length) > 0 or .total_count == 0)' >/dev/null 2>&1 &&
+    printf '%s' "$raw" | jq -e -s 'length == 1 and (.[0]
+       | (.total_count | type) == "number"
+       and (.check_runs | type) == "array"
+       and .total_count >= (.check_runs | length)
+       and ((.check_runs | length) > 0 or .total_count == 0))' >/dev/null 2>&1 &&
     new_rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
     new_fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
     rows="$new_rows"
