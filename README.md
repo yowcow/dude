@@ -28,10 +28,28 @@ where the cause is unknown, and hands its findings to `plan-work`.
 
 ## Install
 
+Claude Code:
+
 ```
 /plugin marketplace add yowcow/dude
 /plugin install dude@dude
 ```
+
+Codex CLI:
+
+```
+codex plugin marketplace add yowcow/dude
+codex plugin add dude@dude
+```
+
+Grok CLI:
+
+```
+grok plugin install yowcow/dude
+```
+
+Grok asks to trust the plugin before installing it; `--trust` answers that up
+front.
 
 ## Use
 
@@ -44,12 +62,19 @@ In Claude Code the skills are namespaced by the plugin:
 ```
 
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
-context at the start of every session. Where that hook doesn't run, invoke
-`/dude:using-dude` and read it directly.
+context at the start of every session. Codex and Grok both install all nine
+skills, and both read `hooks/hooks.json`, but neither was observed to run the
+hook — so `using-dude` is not in context there. Invoke it by name and read it
+directly: Codex namespaces it `dude:using-dude`, and Grok exposes it as the
+slash command `/using-dude` (or `/dude:using-dude` to disambiguate).
+
+This is why `using-dude` is a skill rather than plain Markdown: an agent with no
+injection route still reaches it by name.
 
 The skill bodies themselves use bare names (`plan-work`), because the `dude:`
-prefix is Claude Code's plugin namespace and other agents install these as
-plain skills with no prefix.
+prefix is a plugin namespace the host adds — Claude Code and Codex both do,
+Grok exposes the bare name — and a body that hard-coded one host's prefix would
+read wrongly on the others.
 
 ## Development
 
@@ -58,7 +83,25 @@ Point a marketplace at a local clone instead of the remote:
 ```
 /plugin marketplace add ~/repos/dude
 /plugin install dude@dude
+
+codex plugin marketplace add ~/repos/dude
+codex plugin add dude@dude
+
+grok plugin install ~/repos/dude --trust
 ```
+
+Check the manifests before installing. A rejected manifest shows up in
+`codex plugin list` only as a silent absence, where the validators name the
+offending field:
+
+```
+python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
+grok plugin validate .
+```
+
+The Codex validator walks every `SKILL.md` too, so it catches malformed
+frontmatter at the same time. `make lint test` does not check these files:
+it covers shell and the test suite only.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
