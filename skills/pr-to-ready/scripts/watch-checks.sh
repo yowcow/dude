@@ -59,10 +59,12 @@ for n in "$MAX_ITER" "$INTERVAL"; do
 done
 
 # Consecutive empty listings before the default branch is read. The window it
-# buys is EMPTY_GRACE × interval — 60 s on the defaults — and it is there for
-# the PR that is itself introducing CI: read too early, a repository whose first
-# check has not registered yet answers exactly like one that runs none, and the
-# verdict below would be "no checks" for a PR that has them.
+# buys is (EMPTY_GRACE - 1) × interval — 40 s on the defaults, since the first
+# poll happens before any sleep and only the gaps between polls cost time — and
+# it is there for the PR that is itself introducing CI: read too early, a
+# repository whose first check has not registered yet answers exactly like one
+# that runs none, and the verdict below would be "no checks" for a PR that has
+# them.
 EMPTY_GRACE=3
 
 # Answers 0 only when the default branch's head demonstrably carries no
@@ -104,8 +106,15 @@ default_branch_runs_no_checks() {
   # check-runs-no-array.json models for the poll — reads as "demonstrably no
   # checks" and this function returns success, which is the one direction it
   # documents that it must never guess.
+  # total_count is required to agree with the array, and not merely to be
+  # present. `{"total_count":1,"check_runs":[]}` satisfies every other clause
+  # here — the array is an array and it is empty — so without `.total_count ==
+  # 0` a body that says a check-run exists is read as proof that none does, and
+  # exit 5 tells the caller to mark a PR ready off a response that claimed the
+  # opposite.
   printf '%s' "$listing" |
-    jq -e 'has("total_count") and (.check_runs | type) == "array" and (.check_runs | length) == 0' >/dev/null 2>&1
+    jq -e 'has("total_count") and .total_count == 0
+           and (.check_runs | type) == "array" and (.check_runs | length) == 0' >/dev/null 2>&1
 }
 
 rows=""
@@ -148,7 +157,17 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # empty. Assigned directly, a malformed body arriving after a good poll would
   # erase the listing the exit 1 path prints, and the person that timeout is
   # handed to would see an empty listing instead of the last one really read.
-  if printf '%s' "$raw" | jq -e 'has("total_count")' >/dev/null 2>&1 &&
+  # The same two agreements the default-branch probe demands are demanded here,
+  # because this is the other way into the no-checks verdict. `has("total_count")`
+  # alone proves neither: jq's `.check_runs[]` iterates an OBJECT's values too,
+  # so `{"total_count":1,"check_runs":{}}` renders no rows and fingerprints as
+  # `[]`, which walks into the empty-listing grace below and can reach exit 5;
+  # and `{"total_count":1,"check_runs":[]}` is an empty array the body itself
+  # contradicts. A non-empty array is accepted whatever total_count says, since
+  # this call is not paginated and a truncated first page is still a real
+  # listing — only an EMPTY array has to agree with total_count.
+  if printf '%s' "$raw" | jq -e 'has("total_count") and (.check_runs | type) == "array"
+       and ((.check_runs | length) > 0 or .total_count == 0)' >/dev/null 2>&1 &&
     new_rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
     new_fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
     rows="$new_rows"

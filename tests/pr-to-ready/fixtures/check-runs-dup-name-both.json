@@ -1,0 +1,7 @@
+{
+  "total_count": 2,
+  "check_runs": [
+    { "id": 301, "name": "test", "status": "completed", "conclusion": "success" },
+    { "id": 302, "name": "test", "status": "completed", "conclusion": "success" }
+  ]
+}
