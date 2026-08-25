@@ -63,10 +63,13 @@ In Claude Code the skills are namespaced by the plugin:
 
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
 context at the start of every session. Codex and Grok both install all nine
-skills, and both read `hooks/hooks.json`, but neither was observed to run the
-hook — so `using-dude` is not in context there. Invoke it by name and read it
-directly: Codex namespaces it `dude:using-dude`, and Grok exposes it as the
-slash command `/using-dude` (or `/dude:using-dude` to disambiguate).
+skills and both place `hooks/hooks.json` in the install — Grok's own `inspect
+--json` lists it as a recognized hook — but neither was observed to run it, so
+`using-dude` is not in context there. Grok's interactive mode is untested.
+
+Invoke it by name instead: Codex namespaces it `dude:using-dude`, and Grok marks
+it user-invocable, exposing each skill as a slash command named after it
+(`/using-dude`).
 
 This is why `using-dude` is a skill rather than plain Markdown: an agent with no
 injection route still reaches it by name.
@@ -90,9 +93,8 @@ codex plugin add dude@dude
 grok plugin install ~/repos/dude --trust
 ```
 
-Check the manifests before installing. A rejected manifest shows up in
-`codex plugin list` only as a silent absence, where the validators name the
-offending field:
+Check the manifests before installing — the validators name the offending
+field:
 
 ```
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
