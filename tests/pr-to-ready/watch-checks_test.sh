@@ -20,8 +20,21 @@
 # RED verification (each row that covers a fix must fail against the pre-fix
 # script) — see tests/README.md:
 #   tmp="$(mktemp -d)"
-#   git show 9600d30^:skills/pr-to-ready/scripts/watch-checks.sh >"$tmp/old.sh"
+#   git show 6ef604b:skills/pr-to-ready/scripts/watch-checks.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/watch-checks_test.sh
+#
+# No caret on that hash, and that is deliberate: it is the commit that reworked
+# this file's row format without touching the script, so the script *at* it is
+# the pre-fix one. tests/README.md's `f2b1e41` entry is the same spelling for
+# the same reason.
+#
+# Three rows are the measured RED for this fix. `partial-registration-is-not-settled`
+# is exit 0 on the pre-fix script after a single call, printing only the light
+# check's row — the caller's "settled, nothing failed" over a subset it cannot
+# tell from the whole. `no-checks-here-and-none-on-the-default-branch` reaches
+# exit 1 there, never reading the repository at all. And
+# `default-branch-has-checks-so-the-watch-runs-out` stops at three calls, since
+# the pre-fix script has no probe to make the other two.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -106,13 +119,23 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   fi
 done <<'ROWS'
 # name|checks|repo|default-checks|args|exit|calls|stdout
-settled-prints-rows|*=check-runs-settled|-|-|acme widgets deadbeef 1 1|0|1|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
-name-that-looks-unsettled-still-settles|*=check-runs-name-looks-unsettled|-|-|acme widgets deadbeef 1 1|0|1|e2e (in_progress shard)\tcompleted\tsuccess\nqueued-jobs monitor\tcompleted\tsuccess\n
-unsettled-then-settled|1=check-runs-in-progress;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
+settled-prints-rows|*=check-runs-settled|-|-|acme widgets deadbeef 2 1|0|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
+one-poll-cannot-settle|*=check-runs-settled|-|-|acme widgets deadbeef 1 1|1|1|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
+name-that-looks-unsettled-still-settles|*=check-runs-name-looks-unsettled|-|-|acme widgets deadbeef 2 1|0|2|e2e (in_progress shard)\tcompleted\tsuccess\nqueued-jobs monitor\tcompleted\tsuccess\n
+unsettled-then-settled|1=check-runs-in-progress;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
+partial-registration-is-not-settled|1=check-runs-partial;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
+same-size-different-checks-is-not-settled|1=check-runs-name-looks-unsettled;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 still-unsettled-at-cap|*=check-runs-in-progress|-|-|acme widgets deadbeef 2 1|1|2|build\tin_progress\t-\n
-empty-listing-prints-nothing|*=check-runs-empty|-|-|acme widgets deadbeef 1 1|1|1|
+empty-listing-below-the-grace-prints-nothing|*=check-runs-empty|-|-|acme widgets deadbeef 1 1|1|1|
+no-checks-here-and-none-on-the-default-branch|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty|acme widgets deadbeef 5 1|5|5|
+default-branch-has-checks-so-the-watch-runs-out|*=check-runs-empty|4=repo-default-branch|5=check-runs-settled|acme widgets deadbeef 3 1|1|5|
+the-default-branch-is-read-once|*=check-runs-empty|4=repo-default-branch|5=check-runs-settled|acme widgets deadbeef 6 1|1|8|
+repo-read-fails-so-there-is-no-verdict|*=check-runs-empty|4=not-found:1|-|acme widgets deadbeef 3 1|1|4|
+default-branch-listing-is-an-error-body|*=check-runs-empty|4=repo-default-branch|5=not-found|acme widgets deadbeef 3 1|1|5|
+default-branch-listing-has-no-run-array|*=check-runs-empty|4=repo-default-branch|5=check-runs-no-array|acme widgets deadbeef 3 1|1|5|
 missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
+listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
 gh-fails-every-poll|*=-:1|-|-|acme widgets deadbeef 1 1|4|1|
 too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|
