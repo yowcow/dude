@@ -65,8 +65,8 @@ In Claude Code the skills are namespaced by the plugin:
 
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
 context at the start of every session. Codex and Grok both install all nine
-skills and both place `hooks/hooks.json` in the install — Grok's own `inspect
---json` lists it as a recognized hook — but neither was observed to run it, so
+skills and both place `hooks/hooks.json` in the install — `grok inspect --json`
+lists it as a recognized hook — but neither was observed to run it, so
 `using-dude` is not in context there. Grok's interactive mode is untested.
 
 Invoke it by name instead: Codex namespaces it `dude:using-dude`, and Grok marks
