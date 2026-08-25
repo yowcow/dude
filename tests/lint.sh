@@ -9,12 +9,11 @@
 # ground truth the whole offline suite rests on. ShellCheck reads the shebang
 # when handed a path, so an extensionless file is checked normally.
 #
-# This script is in its own selection: it lives in the repository and carries a
-# shebang.
-# That is the point of it being a script rather than an inline CI step — the
-# gate has to cover the code the suite trusts as ground truth, and a workflow's
-# `run:` block or a Makefile recipe carries no shebang and so is checked by
-# nothing.
+# This script is in its own selection: it lives in the repository and carries
+# a shebang. That is the point of it being a script rather than an inline CI
+# step — the gate has to cover the code the suite trusts as ground truth, and
+# a workflow's `run:` block or a Makefile recipe carries no shebang and so is
+# checked by nothing.
 #
 # The tree is anchored at this script's own location, never the cwd: `make lint`
 # runs with cwd at the repository root, `tests/lint.sh` from tests/ runs with
