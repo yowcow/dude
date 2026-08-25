@@ -66,10 +66,8 @@ trap 'rm -f "$LISTING"' EXIT
 #                      else keeps this content out of the walk.
 #
 # Both worktree directories hold working copies of these same files, on other
-# branches. Inside a linked worktree, meanwhile, .git is a file rather than a
-# directory and neither worktree directory exists, so nothing matches and this
-# prunes nothing — a run from a worktree cannot demonstrate the expression is
-# right, and `tests/README.md` records how to exercise it where it bites.
+# branches. A run from inside a linked worktree cannot verify this prune at all;
+# `tests/README.md` says why, and how to exercise it where it bites.
 #
 # What forgetting a name here can never do is drop a file that should have been
 # checked: it selects too much and fails loudly. That asymmetry is why the list
