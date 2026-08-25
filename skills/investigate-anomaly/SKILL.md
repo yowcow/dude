@@ -7,6 +7,14 @@ description: Use when root-causing an observed anomaly — production errors, an
 
 Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core loop; this skill layers the anomaly-specific work on top of it: framing, evidence preservation, timeline reconstruction, change correlation, and blameless reporting.
 
+## Investigation rules
+
+These bind every investigation, this one included.
+
+- Preserve volatile evidence before anything else. Investigation workers are read-only: they collect evidence and report findings; the orchestrator owns hypothesis selection, conclusions, and the report. Delegate only independent evidence-gathering — how it splits across workers belongs to the domain skill.
+- Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
+- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors. Report findings with evidence and confidence; the domain skill, when one applies, defines the concrete report format, and proposed fixes are options in the report, not work to start.
+
 ## Rules
 
 - Blameless: name systems and conditions, never people.
@@ -64,7 +72,7 @@ Sweep every change class across the last-good → first-bad window:
 
 ### Exit criteria
 
-- The explanation meets the guidelines' **Investigation workflow** exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
+- The explanation meets **Investigation rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
 ### Report format (blameless)

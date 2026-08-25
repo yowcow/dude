@@ -12,6 +12,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 | Skill | What it produces |
 | --- | --- |
+| `using-dude` | The workflow rules the other skills are wired by, in context every session |
 | `plan-work` | An agreed design plus a numbered TODO list at PR granularity |
 | `implement-work` | A pushed branch of verified commits, for one PR-sized task |
 | `pr-to-ready` | A PR whose CI passes and whose review is clean |
@@ -41,6 +42,10 @@ In Claude Code the skills are namespaced by the plugin:
 /dude:implement-work
 /dude:pr-to-ready
 ```
+
+`using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
+context at the start of every session. Where that hook doesn't run, invoke
+`/dude:using-dude` and read it directly.
 
 The skill bodies themselves use bare names (`plan-work`), because the `dude:`
 prefix is Claude Code's plugin namespace and other agents install these as
