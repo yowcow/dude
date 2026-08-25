@@ -59,10 +59,6 @@ Where a tracking issue backs the work, `plan-work` splits it into one sub-issue 
 
 The deliverable is an evidence-backed explanation of an observed problem. `superpowers:systematic-debugging` is the core loop; local skills layer domain specifics on top — `investigate-performance` for performance shortfalls, `investigate-anomaly` for failures, incidents, and unexplained metric or cost changes; for a plain unknown-cause bug, the core loop alone usually suffices. Keep evidence and hypotheses strictly separated per the guidelines' **Epistemic honesty**: never promote a hypothesis to a conclusion without a confirming measurement or reproduction.
 
-- Preserve volatile evidence before anything else. Investigation workers are read-only: they collect evidence and report findings; the orchestrator owns hypothesis selection, conclusions, and the report. Delegate only independent evidence-gathering — how it splits across workers belongs to the domain skill.
-- Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
-- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors. Report findings with evidence and confidence; the domain skill, when one applies, defines the concrete report format, and proposed fixes are options in the report, not work to start.
-
 #### Investigation → Change transition
 
 - An investigation never starts editing. When a fix is wanted, enter `plan-work` with the findings as input — the fix still needs design approval, even when the investigation proposed it. This hop is a handoff between flows like any other, so where the findings report belongs is **Stage boundaries**' canonical record rather than a rule of this section's own.
