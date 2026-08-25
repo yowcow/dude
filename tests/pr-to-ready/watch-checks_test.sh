@@ -137,6 +137,7 @@ default-branch-listing-has-no-run-array|*=check-runs-empty|4=repo-default-branch
 default-branch-empty-list-contradicts-total-count|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty-inconsistent|acme widgets deadbeef 3 1|1|5|
 default-branch-request-fails-with-an-empty-looking-body|*=check-runs-empty|4=repo-default-branch|5=check-runs-empty:1|acme widgets deadbeef 3 1|1|5|
 repo-body-is-unparseable-past-the-branch-name|*=check-runs-empty|4=repo-trailing-garbage|5=check-runs-empty|acme widgets deadbeef 3 1|1|4|
+a-non-empty-listing-rules-out-the-no-checks-verdict|1=check-runs-settled;*=check-runs-empty|5=repo-default-branch|6=check-runs-empty|acme widgets deadbeef 5 1|1|5|
 missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|

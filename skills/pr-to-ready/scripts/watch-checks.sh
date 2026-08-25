@@ -23,7 +23,12 @@
 #        defaults: max-iterations 60, interval-seconds 20 (= 20 minutes)
 #
 # Exit: 0 = every check on the commit has settled, and the set of checks was
-#           unchanged from the previous poll — the listing printed
+#           unchanged from the previous successfully read listing — the listing
+#           printed. "Successfully read" rather than "previous poll" because a
+#           poll that failed or answered something that is not a run list is
+#           skipped rather than counted, so the two listings compared may sit
+#           more than one interval apart; a caller must not read this as a
+#           guarantee about two adjacent polls.
 #       1 = still unsettled when the iteration cap ran out (the last listing printed)
 #       2 = usage error
 #       3 = no such commit on the remote — the SHA is wrong, or was never pushed
@@ -138,6 +143,16 @@ saw_listing=""
 prev_fp=""
 empty_polls=0
 probed_default=""
+# Whether a non-empty run list was EVER read on this commit. It is never reset,
+# unlike empty_polls, and that is the point: exit 5 asserts that neither this
+# commit nor the default branch's head carries a single check-run, so one
+# observation of a check-run on this commit falsifies it for the rest of the
+# watch. Without this, a commit whose checks were read once and whose listing
+# later went empty — a transient answer, or a run deleted behind a re-run —
+# reaches the grace with empty_polls reset to 0, probes, and is reported as a
+# repository that runs no checks, contradicting a listing this script printed
+# nothing about but did read.
+saw_runs=""
 
 for _ in $(seq 1 "$MAX_ITER"); do
   # A failing gh call is transient far more often than fatal (rate limit, a blip),
@@ -208,6 +223,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
 
     if [ -n "$rows" ]; then
       empty_polls=0
+      saw_runs=yes
       # "Every check completed" means nothing until the *set* of checks stops
       # changing. On a just-pushed commit the checks register a few at a time,
       # and a poll landing in that window sees a complete-looking listing —
@@ -245,7 +261,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
       # the remaining polls. A probe that could not be read is not retried
       # either, because its failure already answers in the safe direction.
       empty_polls=$((empty_polls + 1))
-      if [ "$empty_polls" -ge "$EMPTY_GRACE" ] && [ -z "$probed_default" ]; then
+      if [ -z "$saw_runs" ] && [ "$empty_polls" -ge "$EMPTY_GRACE" ] && [ -z "$probed_default" ]; then
         probed_default=yes
         if default_branch_runs_no_checks; then
           echo "no check-runs on ${SHA}, and none on the default branch's head: this repository does not run checks" >&2
