@@ -239,12 +239,29 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # takes its status from the last document alone, so a valid listing followed
   # by a second document passes and is then rendered across BOTH — the rows and
   # the fingerprint stop describing any single response.
+  #
+  # Every ELEMENT is checked too, not just the top-level shape, because each of
+  # the three decisions below reads a field off it. Measured:
+  # `{"total_count":1,"check_runs":[{}]}` clears every top-level rule, renders
+  # the row `null<TAB>null<TAB>-`, fingerprints as `[null]`, and makes
+  # `any(...; .status == ...)` answer "nothing running" — so two such responses
+  # settle and the caller is handed exit 0 off a listing carrying no usable
+  # field at all. It is also what makes the stability window survive a renamed
+  # `id`: unvalidated, every poll fingerprints as `[null, ...]`, those compare
+  # equal, and the window settles immediately on garbage. Validated, the same
+  # rename is exit 4 — loud, which is the direction this script has to fail in.
+  # `conclusion` is deliberately unconstrained: it is legitimately null on a
+  # check that has not finished.
   if [ -n "$poll_ok" ] &&
     printf '%s' "$raw" | jq -e -s 'length == 1 and (.[0]
        | (.total_count | type) == "number"
        and (.check_runs | type) == "array"
        and .total_count >= (.check_runs | length)
-       and ((.check_runs | length) > 0 or .total_count == 0))' >/dev/null 2>&1 &&
+       and ((.check_runs | length) > 0 or .total_count == 0)
+       and all(.check_runs[]; type == "object"
+               and (.id | type) == "number"
+               and (.name | type) == "string"
+               and (.status | type) == "string"))' >/dev/null 2>&1 &&
     new_rows="$(printf '%s' "$raw" | jq -r '.check_runs[] | "\(.name)\t\(.status)\t\(.conclusion // "-")"')" &&
     new_fp="$(printf '%s' "$raw" | jq -c '[.check_runs[].id] | sort')"; then
     rows="$new_rows"

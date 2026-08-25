@@ -28,7 +28,9 @@
 # the pre-fix one. tests/README.md's `f2b1e41` entry is the same spelling for
 # the same reason.
 #
-# Three rows are the measured RED for this fix. `partial-registration-is-not-settled`
+# Most rows below go RED against that commit; three of them are the ones the
+# sub-issue's completion criteria name, and they are the ones to read first if
+# this recipe is ever re-run. `partial-registration-is-not-settled`
 # is exit 0 on the pre-fix script after a single call, printing only the light
 # check's row — the caller's "settled, nothing failed" over a subset it cannot
 # tell from the whole. `no-checks-here-and-none-on-the-default-branch` reaches
@@ -142,6 +144,7 @@ repo-body-is-two-documents|*=check-runs-empty|4=repo-two-documents|5=check-runs-
 default-branch-listing-is-two-documents|*=check-runs-empty|4=repo-default-branch|5=check-runs-two-documents|acme widgets deadbeef 3 1|1|5|
 total-count-below-the-run-count-is-not-a-listing|*=check-runs-count-below-runs|-|-|acme widgets deadbeef 2 1|4|2|
 poll-body-is-two-documents-is-not-a-listing|*=check-runs-two-documents|-|-|acme widgets deadbeef 2 1|4|2|
+runs-without-the-fields-the-decision-reads|*=check-runs-degenerate-runs|-|-|acme widgets deadbeef 2 1|4|2|
 missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
