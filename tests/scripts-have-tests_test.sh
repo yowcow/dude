@@ -167,8 +167,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 6: allowlist entry for a script that now has a test ----------------
 # Not an error, only unnecessary. Making it an error would force a PR that lands
-# a test to also delete a line it does not own — TODO items 2-10 each delete only
-# their own group's lines, and #184/#186/#187/#188 delete none at all.
+# a test to also delete a line it does not own.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
@@ -184,17 +183,17 @@ if ! check_bytes 'unnecessary entry: stdout' \
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 7: comment and blank lines are not entries (covered tree) ----------
-# The group separators survive the last deletion, so reading one as a name would
-# make the gate fail on its own allowlist via case 5's rule.
+# A comment outlives the entries it was written for, so reading one as a name
+# would make the gate fail on its own allowlist via case 5's rule.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
 mk_script "$root" alpha 'a.sh'
 mk_test "$root" alpha 'a_test.sh'
 mk_allowlist "$root" <<'AL'
-# item 2: alpha
+# a comment, not an entry
 
-#   item 3: beta
+#   an indented comment, not an entry
 
 AL
 run_sut bash "$SUT" "$root"

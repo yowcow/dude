@@ -157,9 +157,10 @@ if [ -e "$ALLOWLIST" ]; then
     if [ -z "$line" ]; then
       continue
     fi
-    # Comment lines are not entries. The group separators between TODO items
-    # outlive every entry, so reading one as a name would fail the gate on its
-    # own allowlist through the stale-entry rule below.
+    # Comment lines are not entries. A comment outlives the entries it was
+    # written for — the header explaining what the file is stays after the last
+    # entry goes — so reading one as a name would fail the gate on its own
+    # allowlist through the stale-entry rule below.
     case "$line" in
       '#'*) continue ;;
     esac

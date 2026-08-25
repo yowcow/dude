@@ -199,7 +199,7 @@ tree rather than stating as prose:
   unnecessary. Making it one would force a PR that lands a test to also delete a
   line it does not own.
 - Comment and blank lines are not entries — neither exemptions nor names to
-  check. The group separators outlive every entry.
+  check. A comment outlives the entries it was written for.
 - An empty enumeration is an **error**. A broken selection and a fully covered
   tree are otherwise the same green.
 - An empty test file is **not** coverage. `run.sh` collects it and
@@ -225,11 +225,6 @@ tree rather than stating as prose:
   exempted` and exit 0, naming the symlink nowhere. The target is never resolved
   or read — only visibility is at stake — so a dangling link is reported rather
   than fatal.
-
-Entries are grouped per TODO item of the plan filling the coverage in, with an
-untouched comment line between groups: two branches deleting adjacent line
-blocks from one file were measured to conflict, and a line neither of them
-touches is what makes them merge cleanly.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so
@@ -306,6 +301,19 @@ pre-fix version of the script under test:
 git show <fix>^:<path> >"$tmp/old.sh"
 SUT="$tmp/old.sh" tests/run.sh <one-test-file>
 ```
+
+The specific commits named below, and in the `RED verification` headers of the
+test files under `tests/pr-to-ready/`, are from this suite's original home in
+`yowcow/dotfiles`. They do not resolve here — this repository started fresh
+rather than importing that history — so they record which fix each test was
+measured against, not a `git show` runnable in this repository. The recipe
+itself works as written against any commit that is in this history.
+
+The same goes for every bare issue number and TODO-item reference anywhere
+under `tests/`, wherever it appears: all of them point at that same tracker,
+and none at this repository's issues. They read as provenance for a
+measurement — which report or item established the behaviour the comment
+records — and a reader chasing one wants `yowcow/dotfiles`, not `yowcow/dude`.
 
 A script that shells out to a sibling needs that sibling beside the copy:
 `watch-copilot-review.sh` finds `list-copilot-reviews.sh` through
