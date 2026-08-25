@@ -1,0 +1,40 @@
+name: ci
+
+# push and pull_request both. A same-repository pull request therefore produces
+# two runs of each job; both have to pass, so the duplication costs runner time
+# and nothing else.
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+# Both jobs go through the Makefile rather than carrying their own commands, so
+# `make lint test` by hand runs exactly what the gate runs. The two are separate
+# jobs so a lint failure and a test failure are distinguishable at a glance
+# instead of one masking the other.
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a full commit SHA by `pinact run .github/workflows/ci.yml`;
+      # the trailing comment is the tag it resolved, and re-running pinact is
+      # how to bump it. A mutable tag like @v7 would let the action's content
+      # change under us without the workflow changing at all.
+      #
+      # v7 rather than v4: v4 runs on Node 20, which the runners now force onto
+      # Node 24 while emitting a deprecation annotation on every single run.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # ShellCheck is preinstalled on the runner image (0.9.0 on ubuntu-24.04,
+      # the same version this was developed against). lint.sh prints the version
+      # it used, so a future image bump is diagnosable from the log.
+      - name: make lint
+        run: make lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: make test
+        run: make test

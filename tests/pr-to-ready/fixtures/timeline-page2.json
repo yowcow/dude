@@ -1,0 +1,6 @@
+[
+  {
+    "event": "review_requested",
+    "requested_reviewer": { "login": "Copilot", "type": "Bot" }
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "reviews": [
+    {
+      "id": "PRR_kwDOAZjEl88AAAABKAAAAA",
+      "author": { "login": "yowcow" },
+      "state": "APPROVED",
+      "submittedAt": "2026-08-20T07:00:00Z"
+    },
+    {
+      "id": "PRR_kwDOAZjEl88AAAABKBBBBB",
+      "author": null,
+      "state": "COMMENTED",
+      "submittedAt": "2026-08-20T07:10:00Z"
+    },
+    {
+      "id": "PRR_kwDOAZjEl88AAAABKNbcig",
+      "author": { "login": "copilot-pull-request-reviewer[bot]" },
+      "state": "CHANGES_REQUESTED",
+      "submittedAt": "2026-08-20T07:29:15Z"
+    }
+  ]
+}

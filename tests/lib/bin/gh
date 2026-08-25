@@ -1,0 +1,243 @@
+#!/usr/bin/env bash
+# Fake `gh` for the offline test suite. It answers from files a test case wrote
+# into $GH_STUB_DIR and never opens a socket.
+#
+# Two design points carry the suite's trustworthiness.
+#
+# An argv that no case stubbed is a *failure*, not a pass-through: letting it
+# fall through to the real `gh` would put the suite on the network, where a
+# missing stub reads as "the test passed" — the exact class of defect (an
+# unasked question answered as an absent one) this suite exists to catch. So an
+# unmatched argv is appended to $GH_STUB_DIR/violations, which the harness
+# checks after the case, and exits 99. The exit status alone is not enough:
+# every caller under test wraps `gh` in `|| true`, so it would be swallowed.
+#
+# Matching is on the *exact* argv, joined with \x1f, rather than on a
+# filename-safe digest of it. A digest has to fold characters that are illegal
+# in a filename, and two different argvs folding to one key would silently
+# serve the wrong fixture.
+#
+# The joined argv is compared as a file rather than as a manifest field, so an
+# argument that spans lines — a --jq filter, a GraphQL query — is matchable.
+set -euo pipefail
+
+if [ -z "${GH_STUB_DIR:-}" ]; then
+  echo "gh stub: GH_STUB_DIR is unset — a test must call stub_dir_new first" >&2
+  exit 99
+fi
+
+joined=""
+for arg in "$@"; do
+  joined="${joined}${arg}"$'\x1f'
+done
+
+# Written out so the comparison in lookup() is `cmp` on two files. A command
+# substitution would strip trailing newlines from the manifest's copy, and an
+# argv whose last element ends in a newline would then match one that does not.
+# Written once here rather than per page: the argv is fixed for the whole
+# invocation, so a paginated call compares the same bytes on every page.
+printf '%s' "$joined" >"${GH_STUB_DIR}/argv.actual"
+
+# gh's own flags have to be read off the argv, because the stub stands in for
+# gh's behaviour and not just for its output: --jq is applied by gh, so a stub
+# that ignored it would leave the filter in the script under test unexecuted.
+JQ_EXPR=""
+HAVE_JQ=0
+PAGINATE=0
+STDIN_WANTED=0
+args=("$@")
+i=0
+while [ "$i" -lt "${#args[@]}" ]; do
+  case "${args[$i]}" in
+    --jq)
+      i=$((i + 1))
+      if [ "$i" -lt "${#args[@]}" ]; then
+        JQ_EXPR="${args[$i]}"
+        HAVE_JQ=1
+      fi
+      ;;
+    --jq=*)
+      JQ_EXPR="${args[$i]#--jq=}"
+      HAVE_JQ=1
+      ;;
+    --paginate) PAGINATE=1 ;;
+    --input)
+      i=$((i + 1))
+      if [ "$i" -lt "${#args[@]}" ] && [ "${args[$i]}" = '-' ]; then
+        STDIN_WANTED=1
+      fi
+      ;;
+    --input=-) STDIN_WANTED=1 ;;
+  esac
+  i=$((i + 1))
+done
+
+# serve <status> <body> <mode>: what gh would write to stdout for that response.
+#
+# `<mode>` is the entry's own, from whichever helper the test called. `filtered`
+# means the body is already gh's stdout, so it is handed back verbatim; `raw`
+# means it is the response gh received, so the call's own --jq is applied to it.
+# The stub cannot tell these apart by looking, and guessing either way fails
+# silently in one direction and loudly in the other — a filter applied to an
+# already-filtered body errors out, and a filter skipped on a raw body hands the
+# caller the whole document as though it had been selected from.
+#
+# `jq -r -c -S` reproduces gh's --jq byte for byte. The `-S` is load-bearing and
+# not tidiness: gh filters with gojq, which sorts object keys, while jq preserves
+# input order. Measured against a real page body whose fields were requested in
+# deliberately non-alphabetical order — gh emitted
+# `{"comments":…,"id":…,"isResolved":…}` where plain `jq -c` emitted
+# `{"isResolved":…,"id":…,"comments":…}`, and `jq -c -S` matched gh exactly,
+# nested objects included. An earlier measurement missed this because the node it
+# used happened to have alphabetical keys already (id before isResolved), so both
+# spellings agreed by accident. Without `-S` every golden file in this suite
+# would freeze bytes real gh never produces.
+#
+# A non-zero status means gh failed, and a failing gh prints the raw body —
+# filtering it would erase the error the caller has to see.
+#
+# A jq failure here is a broken fixture or a broken filter, not a modelled gh
+# behaviour, so it is recorded as a violation and exits 99 rather than being
+# handed back as gh's ordinary exit 1. "gh received garbage" is modelled by
+# stubbing a non-zero status with a raw body instead.
+serve() {
+  local status="$1" body="$2" mode="$3"
+  if [ "$mode" = raw ] && [ "$status" -eq 0 ] && [ "$HAVE_JQ" -eq 1 ]; then
+    if ! jq -r -c -S "$JQ_EXPR" <"$body"; then
+      printf 'call %s: --jq %s failed on the stubbed body %s\n' \
+        "$n" "$JQ_EXPR" "$body" >>"${GH_STUB_DIR}/violations"
+      echo "gh stub: --jq failed on the stubbed body for call ${n}" >&2
+      exit 99
+    fi
+  else
+    cat "$body"
+  fi
+}
+
+# The counter is global over the stub dir rather than per-argv: a poll loop that
+# calls two endpoints per iteration is then addressable by "the Nth call", which
+# a per-endpoint counter cannot express.
+#
+# It lives in its own file holding nothing but the integer, and is deliberately
+# NOT derived by counting lines in the argv log below. An argument may carry a
+# newline of its own — the GraphQL query list-unresolved-threads.sh passes as
+# `-f query='...'` spans 23 lines — and counting lines would then advance the
+# index by 23 for one call, so every later exact-index entry would answer a
+# different call than the one it was written for.
+#
+# It counts *responses served*: invocations for an ordinary call, pages for a
+# paginated one. gh pages inside a single invocation, so there is no other way
+# to address "the second page" — and addressing it is the whole point, since a
+# failure there is what leaves stdout non-empty and the listing incomplete.
+count=0
+if [ -f "${GH_STUB_DIR}/count" ]; then
+  count="$(cat "${GH_STUB_DIR}/count")"
+fi
+
+# `--input -` は実 gh が stdin を読む唯一の argv 形であり、この suite で stdin を
+# 読むのもその条件に限る。無条件に読むと、--input を持たない呼び出しの stdin を
+# 空読みしてしまい、実 gh が触らないものを stub が触ることになる。
+#
+# 記録する理由は 2 つある。ひとつ、本文は argv に現れない — 現れないこと自体が
+# plan-work の投稿系 3 本のヘッダが名指しする guard である — ので、payload を見
+# られないテストは `jq -Rs` と `jq -R` を区別できない。後者は本文を 1 行 1 JSON
+# 文書に壊すが argv は 1 バイトも変わらない。ふたつ、pipe buffer を超える本文で
+# は、読まれないパイプの向こう側で `jq` が SIGPIPE を受け、`pipefail` を持つ
+# 被試験スクリプトが投稿成功を exit 141 に化けさせる。
+#
+# 索引は「この invocation が答える最初の呼び出し番号」。lookup より前に書くのは、
+# argv が未 stub だった場合でも payload を残すため（violation の診断に効く）。
+if [ "$STDIN_WANTED" -eq 1 ]; then
+  cat >"${GH_STUB_DIR}/stdin.$((count + 1))"
+fi
+
+# lookup <index>: sets FOUND / FOUND_STATUS / FOUND_BODY / FOUND_WILDCARD from
+# the manifest entry answering call <index> for this argv. An exact index wins
+# over `*`, so a case can say "the 2nd call differs" while leaving every other
+# call on a default.
+FOUND=0
+FOUND_STATUS=""
+FOUND_BODY=""
+FOUND_WILDCARD=0
+FOUND_MODE=filtered
+lookup() {
+  local want="$1" idx status body argv_file mode w_status="" w_body="" w_mode=""
+  FOUND=0
+  FOUND_STATUS=""
+  FOUND_BODY=""
+  FOUND_WILDCARD=0
+  FOUND_MODE=filtered
+  [ -f "${GH_STUB_DIR}/manifest" ] || return 0
+  while IFS=$'\t' read -r idx status body argv_file mode; do
+    # The joined argv lives in its own file because an element may carry a tab
+    # or a newline — the GraphQL query list-unresolved-threads.sh passes as
+    # `-f query='...'` spans 23 lines — which a TSV field cannot hold. The
+    # comparison is still on the exact bytes, not on a digest of them: a digest
+    # would have to fold characters, and two argvs folding to one key would
+    # silently serve the wrong fixture.
+    #
+    # A manifest entry whose argv file is gone would otherwise be skipped as
+    # "does not match", which is this suite's own defect class 1: an entry
+    # nobody could read, reported as an entry that did not apply.
+    if [ ! -f "$argv_file" ]; then
+      echo "gh stub: manifest entry names a missing argv file: ${argv_file}" >&2
+      exit 99
+    fi
+    cmp -s "$argv_file" "${GH_STUB_DIR}/argv.actual" || continue
+    if [ "$idx" = "$want" ]; then
+      FOUND=1
+      FOUND_STATUS="$status"
+      FOUND_BODY="$body"
+      FOUND_WILDCARD=0
+      FOUND_MODE="$mode"
+      return 0
+    fi
+    if [ "$idx" = '*' ] && [ -z "$w_status" ]; then
+      w_status="$status"
+      w_body="$body"
+      w_mode="$mode"
+    fi
+  done <"${GH_STUB_DIR}/manifest"
+  if [ -n "$w_status" ]; then
+    FOUND=1
+    FOUND_STATUS="$w_status"
+    FOUND_BODY="$w_body"
+    FOUND_WILDCARD=1
+    FOUND_MODE="$w_mode"
+  fi
+}
+
+served=0
+while :; do
+  n=$((count + 1))
+  lookup "$n"
+  if [ "$FOUND" -eq 0 ] && [ "$served" -ne 0 ]; then
+    # The argv is fixed for the whole invocation, so "no entry for the next
+    # index" cannot mean "the test mistyped an argv" — it means the scripted
+    # pages ran out, which is how a real --paginate run ends. This is the one
+    # exit that must not record anything: it leaves the counter at the number of
+    # pages actually served, so the probe for a page that turned out not to
+    # exist stays invisible to gh_call_count.
+    exit 0
+  fi
+  # Every other outcome — a served page, or an unstubbed first call — is a
+  # response the stub answered for, so the counter and the log are written once
+  # here rather than in each branch below.
+  count="$n"
+  printf '%s' "$count" >"${GH_STUB_DIR}/count"
+  # The log is for diagnostics only — what a violation message quotes back.
+  printf '%s\n' "$joined" >>"${GH_STUB_DIR}/calls"
+  if [ "$FOUND" -eq 0 ]; then
+    printf 'call %s: %s\n' "$count" "$*" >>"${GH_STUB_DIR}/violations"
+    echo "gh stub: no stubbed response for call ${count}: gh $*" >&2
+    exit 99
+  fi
+  serve "$FOUND_STATUS" "$FOUND_BODY" "$FOUND_MODE"
+  served=$((served + 1))
+  if [ "$FOUND_STATUS" -ne 0 ]; then
+    exit "$FOUND_STATUS"
+  fi
+  if [ "$PAGINATE" -eq 0 ] || [ "$FOUND_WILDCARD" -eq 1 ]; then
+    exit 0
+  fi
+done

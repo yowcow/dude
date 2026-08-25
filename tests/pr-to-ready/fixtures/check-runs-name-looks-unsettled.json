@@ -1,0 +1,7 @@
+{
+  "total_count": 2,
+  "check_runs": [
+    { "name": "e2e (in_progress shard)", "status": "completed", "conclusion": "success" },
+    { "name": "queued-jobs monitor", "status": "completed", "conclusion": "success" }
+  ]
+}

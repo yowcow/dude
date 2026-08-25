@@ -1,0 +1,10 @@
+[
+  {
+    "event": "review_requested",
+    "requested_team": { "name": "reviewers", "slug": "reviewers" }
+  },
+  {
+    "event": "review_requested",
+    "requested_reviewer": { "login": "Copilot", "type": "Bot" }
+  }
+]
