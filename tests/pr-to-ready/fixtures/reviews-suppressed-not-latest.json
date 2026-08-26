@@ -1,0 +1,22 @@
+{
+  "reviews": [
+    {
+      "id": "PRR_kwDOTtThvc8AAAABK715Ww",
+      "author": {
+        "login": "copilot-pull-request-reviewer[bot]"
+      },
+      "state": "COMMENTED",
+      "submittedAt": "2026-08-26T09:29:55Z",
+      "body": "### 🟢 Approval recommended\n\nChanges are low-risk manifest/documentation updates with only a minor README wording/syntax consistency nit identified.\n\n<details>\n<summary>Review details</summary>\n\n### Suppressed comments (1)\n\n**Previously missed (1)** — in code that hasn't changed since the last review.\n\n**README.md:179**\n* The README cites the marketplace entry field as `source: \"./\"`, but in `.claude-plugin/marketplace.json` the key is JSON (`\"source\": \"./\"`). Using the JSON form here avoids suggesting a YAML-like syntax.\n```\n`plugin.json` through the entry's `source: \"./\"`, which is where its `No version\n```\n\n- **Files reviewed:** 3/3 changed files\n- **Comments generated:** 0 new\n- **Review effort level:** Lite\n</details>\n"
+    },
+    {
+      "id": "PRR_kwDOTtThvc8AAAABK8Ag-A",
+      "author": {
+        "login": "copilot-pull-request-reviewer[bot]"
+      },
+      "state": "COMMENTED",
+      "submittedAt": "2026-08-26T09:48:58Z",
+      "body": "### 🟢 Approval recommended\n\nThe changes are narrow, internally consistent with the stated behavior, and verified by repository search to leave `version` only in the Codex and Gemini manifests.\n\n<details>\n<summary>Review details</summary>\n\n- **Files reviewed:** 3/3 changed files\n- **Comments generated:** 0 new\n- **Review effort level:** Lite\n</details>\n"
+    }
+  ]
+}
