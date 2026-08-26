@@ -58,7 +58,8 @@ fi
 # redirection's own failure instead.
 CHANGED="$(mktemp)"
 BLOB="$(mktemp)"
-trap 'rm -f "$CHANGED" "$BLOB"' EXIT
+PARENT="$(mktemp)"
+trap 'rm -f "$CHANGED" "$BLOB" "$PARENT"' EXIT
 git diff --cached --name-only -z --diff-filter=d HEAD >"$CHANGED"
 
 # The blob is written to a file and grepped there rather than piped into
@@ -87,13 +88,30 @@ holds_markers() {
   grep -q -e '^<<<<<<<' -e '^|||||||' -e '^=======$' -e '^>>>>>>>' -- "$BLOB"
 }
 
-# A path whose blob already held a marker line on one side of the merge did
-# not get it from this resolution. Confining the scan is what reading
-# MERGE_MSG used to buy: this repository's own fixtures hold literal marker
-# lines, so scanning every changed path would refuse each merge that carries
-# such a file in, with no way past the guard. Asking the two parents keeps
-# that property without depending on the block.
+# A path is exempt only when the index blob is byte-identical to one parent's
+# blob there -- when the resolution took one side untouched, or the merge
+# brought the file in cleanly. Confining the scan is what reading MERGE_MSG
+# used to buy: this repository's own fixtures hold literal marker lines, so
+# scanning every changed path would refuse each merge that carries such a file
+# in, with no way past the guard.
 #
+# Keyed on "a parent held a marker line anywhere" instead, the exemption is far
+# too wide: a file that carries marker text as its own content *and* genuinely
+# conflicts is exempted whole, and the markers git wrote into it are committed.
+# Measured -- COMMITTED where the pre-change script refused it, so that rule was
+# a regression, not merely a blind spot. A path someone actually resolved is
+# never byte-identical to either parent, so byte-identity cannot exempt it.
+took_a_side_untouched() {
+  local side
+  git cat-file blob ":$1" >"$BLOB" 2>/dev/null || return 1
+  for side in HEAD MERGE_HEAD; do
+    if git cat-file blob "${side}:$1" >"$PARENT" 2>/dev/null && cmp -s "$BLOB" "$PARENT"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # The index blob is what is scanned, not the working-tree file: the index is
 # what gets committed. A resolution staged with markers and then tidied in
 # the working tree without a second `git add` commits the marker-laden blob,
@@ -101,7 +119,7 @@ holds_markers() {
 MARKED=""
 while IFS= read -r -d '' path; do
   [ -n "$path" ] || continue
-  if holds_markers "HEAD:${path}" || holds_markers "MERGE_HEAD:${path}"; then
+  if took_a_side_untouched "$path"; then
     continue
   fi
   if holds_markers ":${path}"; then
