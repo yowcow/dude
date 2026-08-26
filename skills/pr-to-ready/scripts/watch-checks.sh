@@ -211,10 +211,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # LAST value it emitted, so on a stream it answers about the last document
   # alone. Measured: a listing followed by this error object makes the unslurped
   # predicate print `false` then `true` and exit 0 — exit 3 for a commit whose
-  # check-runs this script had just read. `.message` is tested for BEING a
-  # string before `startswith` is asked anything, so the predicate answers by
-  # test rather than by a jq runtime error, whose status is the 5 this script
-  # uses for a verdict of its own.
+  # check-runs this script had just read.
   if printf '%s' "$raw" |
     jq -e -s 'length == 1 and (.[0]
        | (has("total_count") | not)
