@@ -37,6 +37,19 @@
 # exit 1 there, never reading the repository at all. And
 # `default-branch-has-checks-so-the-watch-runs-out` stops at three calls, since
 # the pre-fix script has no probe to make the other two.
+#
+# `name-that-looks-like-a-missing-commit-still-settles` is RED against ba30e8f,
+# where the exit 3 test still grepped the raw body: there it is exit 3 after a
+# single call, a listing whose check *name* carries the phrase read as a commit
+# the remote does not have. Recorded because a later change to that predicate
+# has no other way to tell a row that would have caught the regression from one
+# that passes against both versions.
+#
+# `missing-commit` stubs a FAILING call, because that is the only kind real gh
+# makes here: measured, `gh api .../commits/deadbeef/check-runs` exits 1. Stubbed
+# as a success — which is how that row read until then — it holds the exit 3 test
+# to a response gh never produces, and moving that test inside the poll's success
+# gate would leave the row green while the watch stopped answering exit 3 at all.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -124,6 +137,7 @@ done <<'ROWS'
 settled-prints-rows|*=check-runs-settled|-|-|acme widgets deadbeef 2 1|0|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 one-poll-cannot-settle|*=check-runs-settled|-|-|acme widgets deadbeef 1 1|1|1|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 name-that-looks-unsettled-still-settles|*=check-runs-name-looks-unsettled|-|-|acme widgets deadbeef 2 1|0|2|e2e (in_progress shard)\tcompleted\tsuccess\nqueued-jobs monitor\tcompleted\tsuccess\n
+name-that-looks-like-a-missing-commit-still-settles|*=check-runs-name-looks-like-missing-commit|-|-|acme widgets deadbeef 2 1|0|2|No commit found for SHA: weirdcheck\tcompleted\tsuccess\n
 unsettled-then-settled|1=check-runs-in-progress;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 partial-registration-is-not-settled|1=check-runs-partial;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 same-size-different-checks-is-not-settled|1=check-runs-name-looks-unsettled;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
@@ -147,7 +161,7 @@ default-branch-listing-is-two-documents|*=check-runs-empty|4=repo-default-branch
 total-count-below-the-run-count-is-not-a-listing|*=check-runs-count-below-runs|-|-|acme widgets deadbeef 2 1|4|2|
 poll-body-is-two-documents-is-not-a-listing|*=check-runs-two-documents|-|-|acme widgets deadbeef 2 1|4|2|
 runs-without-the-fields-the-decision-reads|*=check-runs-degenerate-runs|-|-|acme widgets deadbeef 2 1|4|2|
-missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
+missing-commit|*=no-commit-for-sha:1|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
 run-list-as-an-object-is-not-a-listing|*=check-runs-object-runs|-|-|acme widgets deadbeef 2 1|4|2|

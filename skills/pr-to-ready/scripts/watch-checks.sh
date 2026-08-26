@@ -193,10 +193,30 @@ for _ in $(seq 1 "$MAX_ITER"); do
 
   # This test stays OUTSIDE the status gate above: a SHA the remote does not
   # have is a 422, so `gh` exits non-zero and the body that names it arrives
-  # only on a failed call. Gated, the one failure worth ending the watch on
-  # would be read as an ordinary blip and every later iteration would ask the
-  # same wrong question until the cap ran out.
-  if printf '%s' "$raw" | grep -q 'No commit found for SHA'; then
+  # only on a failed call. Measured: `gh api
+  # repos/{owner}/{repo}/commits/deadbeef/check-runs` exits 1 with that body on
+  # stdout. Gated, the one failure worth ending the watch on would be read as an
+  # ordinary blip and every later iteration would ask the same wrong question
+  # until the cap ran out.
+  #
+  # The verdict is read off the JSON rather than by grepping the body, for the
+  # same reason the status test below is: a check whose *name* carries that
+  # phrase makes a body-wide match report a commit that HAS checks as one the
+  # remote does not have, and exit 3 then sends the caller to hand a person back
+  # a PR whose CI it never read. `has("total_count")` is what separates the two
+  # — the field every listing carries and no error body does, which is the
+  # agreement the validator below and the default-branch probe already rest on.
+  #
+  # Slurped, for the reason those two are: `jq -e` takes its status from the
+  # LAST value it emitted, so on a stream it answers about the last document
+  # alone. Measured: a listing followed by this error object makes the unslurped
+  # predicate print `false` then `true` and exit 0 — exit 3 for a commit whose
+  # check-runs this script had just read.
+  if printf '%s' "$raw" |
+    jq -e -s 'length == 1 and (.[0]
+       | (has("total_count") | not)
+       and (.message | type) == "string"
+       and (.message | startswith("No commit found for SHA")))' >/dev/null 2>&1; then
     printf '%s\n' "$raw" >&2
     exit 3
   fi
