@@ -137,11 +137,18 @@ REMOTE_DEP="$(build_remote dep - dep)"
 REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
 
 # ---- the default-branch ladder, with no trailer to find ------------------
+#
+# The symref names `feature`, a branch that exists on the remote and is the
+# wrong answer, while the API answers `main`. That pairing is the hazard the
+# rung was removed for: a symref left over from before a rename keeps naming a
+# branch that is still there, so it resolves and nothing reports the mistake. A
+# symref pointed at an absent branch would fail loudly on the fetch instead, and
+# would leave that case untested.
 
 total=$((total + 1))
 stub_dir_new
 printf 'main\n' | stub_default_branch 0
-W="$(work_repo dflt-stale-symref "$REMOTE_PLAIN" stale)"
+W="$(work_repo dflt-stale-symref "$REMOTE_PLAIN" feature)"
 run_in "$W" feature
 assert_row 'stale-symref-is-ignored' 0 'BASE main\n' 1
 
