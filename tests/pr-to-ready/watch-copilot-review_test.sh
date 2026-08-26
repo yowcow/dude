@@ -64,6 +64,14 @@ JQ_FILTER='.reviews[]
 #                 id-only, so it is the other way a baseline can fail to
 #                 yield an id: `jq -r` would render the missing key as `null`
 #                 and admit it to the set as an id no review can match.
+#   valid-then-garbage
+#               — the fixture's first line, then a line that is not JSON.
+#                 The only kind whose failure is *partial*: jq streams, so
+#                 it prints the first id and fails afterwards. An
+#                 implementation that read jq's output instead of its exit
+#                 status would take that one id for the whole baseline and
+#                 report every other review in the listing as new, on a
+#                 baseline it never finished reading.
 make_baseline() {
   local kind="$1" dir path first_line id
   dir="$(mktemp -d "${HARNESS_TMP}/baseline.XXXXXX")"
@@ -85,17 +93,18 @@ make_baseline() {
     dir) mkdir "$path" ;;
     empty) : >"$path" ;;
     no-id) printf '%s\n' '{"author":"copilot-pull-request-reviewer","state":"COMMENTED"}' >"$path" ;;
+    valid-then-garbage) { head -n 1 "$TWO"; printf '%s\n' 'oops'; } >"$path" ;;
     all) cat "$TWO" >"$path" ;;
     first) head -n 1 "$TWO" >"$path" ;;
     id-only)
       # Derived from the fixture rather than written out again, so the line
       # stays a real id of a review the listing carries — the legacy baseline
       # shape rather than an invented string. Asserted rather than assumed,
-      # because `sed` prints a
-      # non-matching line through unchanged: a fixture that stopped carrying
-      # an `id` key would silently turn this kind into a copy of `first`, and
-      # the row would go on passing with the detection power it exists for
-      # gone. Same reason the `unreadable` kind above checks its own result.
+      # because `sed` prints a non-matching line through unchanged: a fixture
+      # that stopped carrying an `id` key would silently turn this kind into a
+      # copy of `first`, and the row would go on passing with the detection
+      # power it exists for gone. Same reason the `unreadable` kind above
+      # checks its own result.
       first_line="$(head -n 1 "$TWO")"
       id="$(printf '%s' "$first_line" | sed 's/.*"id":"\([^"]*\)".*/\1/')"
       if [ -z "$id" ] || [ "$id" = "$first_line" ]; then
@@ -167,6 +176,7 @@ everything-already-in-baseline|copilot-reviews-two|all|acme widgets 7 %B 1 1|1|1
 no-review-yet|-|empty|acme widgets 7 %B 1 1|1|1|
 listing-not-a-listing|copilot-reviews-unreadable|empty|acme widgets 7 %B 1 1|1|1|
 baseline-object-without-id|copilot-reviews-two|no-id|acme widgets 7 %B 1 1|2|0|
+baseline-valid-then-garbage|copilot-reviews-two|valid-then-garbage|acme widgets 7 %B 1 1|2|0|
 listing-fails-every-poll|-:1|empty|acme widgets 7 %B 2 1|1|2|
 baseline-absent|copilot-reviews-two|absent|acme widgets 7 %B 1 1|2|0|
 baseline-unreadable|copilot-reviews-two|unreadable|acme widgets 7 %B 1 1|2|0|
