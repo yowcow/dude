@@ -35,6 +35,12 @@ Claude Code:
 /plugin install dude@dude
 ```
 
+Gemini CLI:
+
+```
+gemini extensions install https://github.com/yowcow/dude
+```
+
 Codex CLI:
 
 ```
@@ -53,6 +59,13 @@ yourself on a first install — trust is what lets a plugin run hooks. `--trust`
 skips it, which is why the Development section below uses it on a clone you
 already own.
 
+Gemini asks you to consent before installing any third-party extension, and adds
+a second warning when the extension ships hooks, as dude does. Answer it yourself
+on a first install, for the reason the prompt gives — Google does not vet what it
+installs for you. `--consent` skips it, which is why the Development section
+below uses it too. Without it a non-interactive run does not fail; it waits on
+the prompt for as long as you let it.
+
 ## Use
 
 In Claude Code the skills are namespaced by the plugin:
@@ -64,10 +77,27 @@ In Claude Code the skills are namespaced by the plugin:
 ```
 
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
-context at the start of every session. Codex and Grok both install all nine
-skills and both place `hooks/hooks.json` in the install — `grok inspect --json`
-lists it as a recognized hook — but neither was observed to run it, so
-`using-dude` is not in context there. Grok's interactive mode is untested.
+context at the start of every session. Gemini needs none either, by a different
+route: `gemini-extension.json` names `GEMINI.md` as the extension's context file,
+and that file `@`-imports `skills/using-dude/SKILL.md` rather than repeating it.
+The import was measured resolving in full — the assembled session context carries
+the skill body through its last line, not a truncated preview — and all nine
+skills resolve to the extension rather than to anything installed alongside it.
+
+Codex and Grok both install all nine skills and both place `hooks/hooks.json` in
+the install — `grok inspect --json` lists it as a recognized hook — but neither
+was observed to run it, so `using-dude` is not in context there. Grok's
+interactive mode is untested.
+
+Gemini reads `hooks/hooks.json` too, and **does not run it — leave it that way.**
+A Gemini lifecycle matcher is compared for equality, not as a pattern, so the
+`startup|clear|compact` this repository ships never equals the `startup` Gemini
+sends, and the hook stays inert. Measured against a control that fires: with a
+bare `startup` matcher linked alongside, Gemini registered both hooks and
+executed only the control's. Narrowing the matcher to `startup` to "fix" that
+would break Gemini rather than help it, because Gemini does not hydrate
+`${CLAUDE_PLUGIN_ROOT}` — the hook would run an empty path and fail. Gemini's
+injection is the `GEMINI.md` route above and needs no hook.
 
 Invoke it by name instead: Codex namespaces it `dude:using-dude`, and Grok marks
 it user-invocable, exposing each skill as a slash command named after it
@@ -78,8 +108,8 @@ injection route still reaches it by name.
 
 The skill bodies themselves use bare names (`plan-work`), because the `dude:`
 prefix is a plugin namespace the host adds — Claude Code and Codex both do,
-Grok exposes the bare name — and a body that hard-coded one host's prefix would
-read wrongly on the others.
+while Gemini and Grok expose the bare name — and a body that hard-coded one
+host's prefix would read wrongly on the others.
 
 ## Development
 
@@ -89,11 +119,16 @@ Point a marketplace at a local clone instead of the remote:
 /plugin marketplace add ~/repos/dude
 /plugin install dude@dude
 
+gemini extensions link --consent ~/repos/dude
+
 codex plugin marketplace add ~/repos/dude
 codex plugin add dude@dude
 
 grok plugin install ~/repos/dude --trust
 ```
+
+`gemini extensions link` tracks the clone rather than copying it, so an edit to a
+skill shows up in the next Gemini session without reinstalling.
 
 Check the manifests before installing — the validators name the offending
 field:
@@ -101,13 +136,19 @@ field:
 ```
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 grok plugin validate .
+gemini extensions validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
 The first two read the plugin manifests, and the Codex one walks every
-`SKILL.md` as well, so it catches malformed frontmatter at the same time.
-Neither looks at `.agents/plugins/marketplace.json` — both still pass with that
-file deliberately corrupted — so the third line is what covers it, syntax only.
+`SKILL.md` as well, so it catches malformed frontmatter at the same time. The
+Gemini one reads `gemini-extension.json` only, and what it checks there is narrow
+— that `version` parses as semver, and that the file `contextFileName` names
+exists. Point that key at a file that is not there and it names the missing file;
+it will not tell you the context file is empty, or that an `@` import inside it
+went nowhere. None of the three looks at
+`.agents/plugins/marketplace.json` — each still passes with that file
+deliberately corrupted — so the last line is what covers it, syntax only.
 `make lint test` checks none of them: it covers shell and the test suite.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
