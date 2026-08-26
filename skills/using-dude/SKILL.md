@@ -5,7 +5,7 @@ description: Use when starting any task - establishes how a task is classified, 
 
 # Using dude
 
-The skills cite sections of this document, and of the general agent guidelines it sits beside, alike as "the guidelines' **X**" — look in both.
+The skills cite sections of this document as "the guidelines' **X**".
 
 - Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
 - This document owns the orchestration invariants: the orchestrator owns control flow and declares which execution method it chose; a skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf, and one that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
