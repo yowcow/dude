@@ -102,30 +102,34 @@ EMPTY_GRACE=3
 default_branch_runs_no_checks() {
   local repo_raw branch listing
   repo_raw="$(gh api "repos/${OWNER}/${REPO}" 2>/dev/null)" || return 1
-  # `// empty` rather than a bare `.default_branch`: on an error body the field
-  # is absent, `jq -r` renders that as the four characters `null`, and the
-  # listing read below would then ask about a ref named "null" and treat its
-  # 422 as "unreadable" — the right answer reached by accident, and only until
-  # someone creates a branch by that name.
+  # Three separate things have to hold before the branch name below is believed,
+  # and each was measured against the same filter this line now runs, dropping
+  # one clause at a time.
   #
   # jq's own status is kept rather than discarded, for the same reason the two
   # `gh` calls keep theirs: jq streams, so a body that is valid JSON followed by
-  # trailing bytes prints the field and *then* fails. Measured: `printf
-  # '{"default_branch":"trunk"} garbage' | jq -r '.default_branch // empty'`
-  # prints `trunk` and exits 5. Under `|| true` that partial value survives, the
-  # probe goes on to read a branch named by a response it could not parse, and
-  # an empty listing there produces exit 5 — "this repository runs no checks" —
-  # off a repository response that was never wholly read.
+  # trailing bytes yields the field and *then* fails. Without `-s` the filter
+  # prints `trunk` and exits 5 on `{"default_branch":"trunk"} garbage`. Discard
+  # that status and the value survives, the probe reads a branch named by a
+  # response it could not parse, and an empty listing there produces exit 5 —
+  # "this repository runs no checks" — off a response that was never wholly read.
   #
-  # `-s` and `length == 1` because jq reads a STREAM of top-level values, not
-  # one document. Measured: `printf '{"default_branch":"trunk"} {}' | jq -r
-  # '.default_branch // empty'` prints `trunk` and exits 0. Unslurped, a body
-  # that is two documents is accepted and the probe goes on to read a branch
-  # named by a response that was never one object — and then decides exit 5 off
-  # it. Checking jq's status does not catch this: a stream of valid values is
-  # not an error.
+  # `-s` and `length == 1` because jq reads a STREAM of top-level values, not one
+  # document, and a stream of valid values is no error at all: without `-s` the
+  # filter prints `trunk` and exits 0 on `{"default_branch":"trunk"} {}`. So the
+  # status check above cannot catch this one, and a body that was two documents
+  # would name the branch the exit 5 verdict rests on. Slurped, both bodies above
+  # yield nothing.
+  #
+  # The field has to BE a string, not merely be present: `jq -r` renders
+  # `{"default_branch":123}` as the three characters `123`, which then goes into
+  # the endpoint as a ref. Should a branch by that name happen to exist and carry
+  # no checks, the verdict below is exit 5 — decided off a repository response
+  # that never named a branch at all. `select(type == "string")` subsumes the
+  # absent and null cases too, which is why no `// empty` appears here; an empty
+  # string passes it and is caught by the `-n` test instead.
   branch="$(printf '%s' "$repo_raw" |
-    jq -r -s 'select(length == 1) | .[0].default_branch // empty' 2>/dev/null)" || return 1
+    jq -r -s 'select(length == 1) | .[0].default_branch | select(type == "string")' 2>/dev/null)" || return 1
   [ -n "$branch" ] || return 1
   listing="$(gh api "repos/${OWNER}/${REPO}/commits/${branch}/check-runs" 2>/dev/null)" || return 1
   # `.check_runs` is tested for being an array before its length is read,
