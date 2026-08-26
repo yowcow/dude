@@ -66,6 +66,39 @@ installs for you. `--consent` skips it, which is why the Development section
 below uses it too. Without it a non-interactive run does not fail; it waits on
 the prompt for as long as you let it.
 
+## Versions
+
+dude is not versioned. Every runtime is meant to carry the latest master, so
+there is no release to cut and nothing to bump. Which manifest carries a
+`version` at all follows from what each runtime does with one:
+
+| Runtime | Requires `version`? | Uses it to decide an update? |
+| --- | --- | --- |
+| Claude Code | no — `validate` only warns | **yes — a version left in place stops updates** |
+| Codex | yes, strict semver | no |
+| Gemini | yes | no, on the git install and link routes above |
+| Grok | no | no |
+
+So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
+plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
+`claude plugin update dude@dude` compares commits instead, and the version it
+reports is a short commit sha. An install made while those manifests still said
+`0.1.0` moves onto sha-tracking at its first `claude plugin update`, so nobody
+has to reinstall. `claude plugin validate .` warns that no version is specified;
+that warning is the expected state here, not something to fix.
+
+`.codex-plugin/plugin.json` and `gemini-extension.json` keep `version: 0.1.0`
+because their validators reject a manifest without one — and **that value is
+never bumped**, because neither runtime reads it to decide an update. Codex
+installs the marketplace snapshot's root directory itself, with no per-version
+cache in between. Gemini's git install compares the HEAD `git ls-remote` reports
+against the local one; it is the local-path install, which this README does not
+document as a route, that compares versions instead.
+
+What each runtime printed when this was measured — and the throwaway plugins the
+version-less control was taken with — is recorded in
+[issue #42](https://github.com/yowcow/dude/issues/42).
+
 ## Use
 
 In Claude Code the skills are namespaced by the plugin:
