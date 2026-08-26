@@ -1,6 +1,6 @@
 # Authoring dude's Skills
 
-`using-dude` is the single source of the workflow rules, installed to Claude Code, Gemini CLI, Codex, and Grok CLI alike; the general agent rules it sits beside are not dude's, and stay in `yowcow/dotfiles`' `GUIDELINES.md`. Everything below binds every file in this repository — `using-dude`'s `SKILL.md`, every other `SKILL.md`, and everything they carry. When updating any of them, prefer consolidation and simplification over appending, and leave no duplicated or stale text behind, except where **Duplication and rationale** below says otherwise.
+`using-dude` is the single source of the workflow rules, installed to Claude Code, Gemini CLI, Codex, and Grok CLI alike; rules that are not about the workflow are out of scope here. Everything below binds every file in this repository — `using-dude`'s `SKILL.md`, every other `SKILL.md`, and everything they carry. When updating any of them, prefer consolidation and simplification over appending, and leave no duplicated or stale text behind, except where **Duplication and rationale** below says otherwise.
 
 What all of this protects is one thing: that the basic flow — `(investigate-* →) plan-work → implement-work → pr-to-ready` — reads fluently enough to run, review gates included. Preparation for rare exceptions is deliberately not built in. The run stops and asks a person instead.
 

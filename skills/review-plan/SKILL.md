@@ -52,7 +52,7 @@ Each lens is a distinct failure mode, and none of them lowers the bar in **What 
 
 Each reviewer gets its assigned lenses, the artifact under review, the original request, and the paths it touches. Every reviewer takes the same stance: try to make the plan fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
 
-Size the fan-out to the target, per the guidelines' **Subagents & worker safety**. Both targets here are small artifacts — a list of PR-sized items, or one PR's plan — so keep it small.
+Size the fan-out to the target. Both targets here are small artifacts — a list of PR-sized items, or one PR's plan — so keep it small.
 
 - **Default — one reviewer** takes the target's whole lens list.
 - **Two reviewers**, when the work is large, risky, or spans subsystems: split the lens list into the ones that need only the artifact and the original request, and the ones that need to read the repo. Independence is what the split buys — neither sees the other's findings, so neither anchors on them.
