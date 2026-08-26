@@ -1,0 +1,13 @@
+{
+  "reviews": [
+    {
+      "id": "PRR_kwDOTtThvc8AAAABK8Ag-A",
+      "author": {
+        "login": "copilot-pull-request-reviewer[bot]"
+      },
+      "state": "COMMENTED",
+      "submittedAt": "2026-08-26T09:48:58Z",
+      "body": "### 🟢 Approval recommended\n\nThe changes are narrow, internally consistent with the stated behavior, and verified by repository search to leave `version` only in the Codex and Gemini manifests.\n\n<details>\n<summary>Review details</summary>\n\n- **Files reviewed:** 3/3 changed files\n- **Comments generated:** 0 new\n- **Review effort level:** Lite\n</details>"
+    }
+  ]
+}
