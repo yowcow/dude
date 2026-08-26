@@ -125,10 +125,12 @@ with it.
   remote-tracking refs and fetch refspec a real checkout has.
 - `git_repo_origin_head <dir> <branch>` — points `refs/remotes/origin/HEAD` at
   that branch, which a real clone has and a `git init` + `git remote add` pair
-  does not. `resolve-pr-base.sh` reads that symref as the first rung of its
-  default-branch ladder. The target need not exist: `git symbolic-ref` accepts
-  a dangling one, which is how a test builds "the default branch is named but
-  absent from the remote".
+  does not. No default-branch ladder reads that symref any more; callers plant
+  it either to reproduce that real-clone state for realism, or to prove a
+  stale or wrong value here is ignored — the proving kind names a branch that
+  exists on the remote and is the wrong answer, which is the shape the removed
+  rung got wrong. A row wanting "the default branch is named but absent from
+  the remote" builds it by stubbing `gh repo view` with that name, not here.
 - `git_repo_merge <dir> <ref>` — merges `<ref>` into `<dir>`'s current branch
   with the same fixed clock `git_repo_commit` uses.
 - `git_repo_deny_push <bare>` / `git_repo_allow_push <bare>` — install and

@@ -28,32 +28,24 @@
 # branch" from "fetched the prerequisite's head" in the two rows that could
 # otherwise be told apart only by their stdout.
 #
-# Limitation: `resolve_default_branch`'s rung 2 is stubbed with
+# Limitation: `resolve_default_branch`'s gh call is stubbed with
 # gh_stub_response, so the `--jq .defaultBranchRef.name` expression itself is
-# not executed. The rung under test is which one answers, not that filter. The
-# two `gh issue view` calls carry no --jq, so the SUT's own jq -- the counting
-# this file's `two-prerequisites` and `several-prs` rows exist for -- does run.
+# not executed. The two `gh issue view` calls carry no --jq, so the SUT's own
+# jq -- the counting this file's `two-prerequisites` and `several-prs` rows
+# exist for -- does run.
 #
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; each variant below is one mutation of a guard the SUT's own
 # header names, and the rows it must fail are named:
 #   - fetch_ref's explicit refspec -> plain `git fetch origin "$1"`:
 #     every row asserting `tip`, i.e. no-argument-uses-default-branch,
-#     no-prerequisite-uses-default-branch, symref-rung-wins-over-api,
+#     no-prerequisite-uses-default-branch, stale-symref-is-ignored,
 #     default-branch-from-api, prerequisite-open-uses-its-head,
 #     prerequisite-merged-uses-the-default-branch
 #   - blockedBy counted -> checked for emptiness: two-prerequisites-stop
 #   - closedByPullRequestsReferences counted with `length` -> checked for
 #     emptiness: prerequisite-has-several-prs
-#   - rung 2's non-empty check dropped: default-branch-api-answers-empty
-#   - rung 1 (the local symref) removed from resolve_default_branch, so rung 2
-#     answers first: symref-rung-wins-over-api, which gets `BASE decoy` with
-#     one gh call instead of `BASE main` with zero. Every other row that
-#     reaches the ladder with only the symref planted -- no-argument-uses-
-#     default-branch, no-prerequisite-uses-default-branch, prerequisite-
-#     merged-uses-the-default-branch, and default-branch-absent-on-remote --
-#     fails too, but as an unstubbed `gh repo view` argv rather than a wrong
-#     answer, because none of them stubs rung 2
+#   - the non-empty check dropped: default-branch-api-answers-empty
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -116,12 +108,6 @@ work_repo() {
   git clone -q --single-branch --branch decoy -- "$2" "$dir"
   stale_ref "$dir" "$2" main
   stale_ref "$dir" "$2" feature
-  # Deleted rather than assumed absent. Measured on git 2.43.0 a
-  # --single-branch clone records no refs/remotes/origin/HEAD, so the rows that
-  # want the ladder's rung 2 get it for free today -- but a later git that
-  # started recording it would send those rows to rung 1 instead, and they
-  # would still pass, having stopped testing the rung they name.
-  git -C "$dir" symbolic-ref -d refs/remotes/origin/HEAD 2>/dev/null || true
   if [ "$#" -ge 3 ]; then
     git_repo_origin_head "$dir" "$3"
   fi
@@ -172,7 +158,8 @@ stub_pr_view() {
   gh_stub_raw_response '*' "$2" pr view "$1" --json headRefName,state --jq "$PR_JQ"
 }
 
-# stub_default_branch <exit-status> -- the ladder's rung 2, body already filtered
+# stub_default_branch <exit-status> -- the `gh repo view` rung of the
+# default-branch ladder, body already filtered
 stub_default_branch() {
   gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
@@ -265,16 +252,18 @@ fi
 #
 # A task with no issue behind it has no relation to read, which has to land on
 # the same answer as a count of 0 -- and reach `gh issue view` not at all. The
-# zero-call assertion is the whole point of the row: an implementation that
-# asked about an empty issue number would be answered by the stub as a
-# violation, but one that skipped the count and fetched the default anyway
-# would still print `BASE main`.
+# point is not that `gh` is called zero times -- the default-branch ladder's
+# own `gh repo view` call runs on this row too -- but that the single `gh`
+# call is that one and `gh issue view` is never among them: an implementation
+# that asked about an empty issue number would be answered by the stub as a
+# violation, since the argv-exact-match stub has no case for an empty number.
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 W="$(work_repo no-arg "$REMOTE" main)"
 run_in "$W"
-assert_row 'no-argument-uses-default-branch' 0 'BASE main\n' 0
+assert_row 'no-argument-uses-default-branch' 0 'BASE main\n' 1
 check_row x check_tracking 'no-argument: origin/main fetched' "$W" "$REMOTE" main tip
 check_row x check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE" feature stale
 
@@ -283,9 +272,10 @@ check_row x check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE
 total=$((total + 1))
 stub_dir_new
 blocked_json 0 | stub_blocked 203 0
+printf 'main\n' | stub_default_branch 0
 W="$(work_repo blocked-none "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'no-prerequisite-uses-default-branch' 0 'BASE main\n' 1
+assert_row 'no-prerequisite-uses-default-branch' 0 'BASE main\n' 2
 check_row x check_tracking 'no-prerequisite: origin/main fetched' "$W" "$REMOTE" main tip
 
 # ---- blockedBy: 2 or more ----------------------------------------------
@@ -391,9 +381,10 @@ stub_dir_new
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"MERGED"}\n' | stub_pr_view 55 0
+printf 'main\n' | stub_default_branch 0
 W="$(work_repo state-merged "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'prerequisite-merged-uses-the-default-branch' 0 'BASE main\n' 3
+assert_row 'prerequisite-merged-uses-the-default-branch' 0 'BASE main\n' 4
 check_row x check_tracking 'merged: origin/main fetched' "$W" "$REMOTE" main tip
 check_row x check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" feature stale
 
@@ -447,21 +438,24 @@ check_row x check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the default-branch ladder ----------------------------------------
 #
-# Rung 1 is the local symref, rung 2 the API, rung 3 giving up. Every row here
-# runs with no argument, so the issue lookups stay out of the picture and the
-# gh call count is the ladder's own.
+# Two-rung ladder: the GitHub API, then give up. Every row here runs with no
+# argument, so the issue lookups stay out of the picture and the gh call
+# count is the ladder's own.
 #
-# The first row stubs rung 2 with a DIFFERENT branch name and asserts zero
-# calls: that is what pins the order. A row where both rungs answer `main`
-# would pass with the rungs swapped.
+# The first row plants a stale refs/remotes/origin/HEAD symref naming `main`
+# -- the wrong branch -- and stubs the API to answer `feature`, the right
+# one, then asserts the base comes from `feature`: the symref is never
+# consulted, so a stale answer sitting in it cannot steer the base even when
+# it disagrees with the API.
 
 total=$((total + 1))
 stub_dir_new
-printf 'decoy\n' | stub_default_branch 0
-W="$(work_repo ladder-symref "$REMOTE" main)"
+printf 'feature\n' | stub_default_branch 0
+W="$(work_repo ladder-stale-symref "$REMOTE" main)"
 run_in "$W"
-assert_row 'symref-rung-wins-over-api' 0 'BASE main\n' 0
-check_row x check_tracking 'symref rung: origin/main fetched' "$W" "$REMOTE" main tip
+assert_row 'stale-symref-is-ignored' 0 'BASE feature\n' 1
+check_row x check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
+check_row x check_tracking 'stale symref: origin/main untouched' "$W" "$REMOTE" main stale
 
 total=$((total + 1))
 stub_dir_new
@@ -509,16 +503,17 @@ check_row x check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main st
 
 # ---- fetches that fail -------------------------------------------------
 #
-# `git symbolic-ref` accepts a dangling target, which is how a row builds "the
-# default branch is named but absent from the remote". fetch_ref has no
+# The API answered a name the remote does not have, which is how a row builds
+# "the default branch is named but absent from the remote". fetch_ref has no
 # handling for it, so git's 128 propagates under `set -e` and nothing is
 # printed -- the loud direction, and the row pins that it is not `BASE nosuch`.
 
 total=$((total + 1))
 stub_dir_new
-W="$(work_repo default-absent "$REMOTE" nosuch)"
+printf 'nosuch\n' | stub_default_branch 0
+W="$(work_repo default-absent "$REMOTE")"
 run_in "$W"
-assert_row 'default-branch-absent-on-remote' 128 '' 0
+assert_row 'default-branch-absent-on-remote' 128 '' 1
 
 total=$((total + 1))
 stub_dir_new

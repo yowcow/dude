@@ -139,12 +139,16 @@ git_repo_remote() {
 # git_repo_origin_head <dir> <branch>
 #
 # Point refs/remotes/origin/HEAD at a branch, which is what a real clone gets
-# and a `git init` + `git remote add` pair does not. resolve-pr-base.sh reads
-# exactly this symref as the first rung of its default-branch ladder, so
-# without it every repository built here would look like one whose remote HEAD
-# was never recorded. The target is deliberately not required to exist:
-# `git symbolic-ref` accepts a dangling target, which is how a test builds
-# "the default branch is named but absent from the remote".
+# and a `git init` + `git remote add` pair does not. No default-branch ladder
+# reads this symref any more, so callers plant it for one of two reasons: to
+# reproduce that real-clone state for realism in a fixture the ladder never
+# consults, or to prove a stale or wrong value here is ignored. The proving
+# kind names a branch that exists on the remote and is the wrong answer, since
+# that is the shape the removed rung got wrong: a symref left over from before
+# a rename keeps naming a branch that is still there, so it resolves and
+# nothing reports the mistake. A row wanting "the default branch is named but
+# absent from the remote" builds it by stubbing `gh repo view` with that name,
+# not here.
 git_repo_origin_head() {
   local dir="$1" branch="$2"
   git -C "$dir" symbolic-ref refs/remotes/origin/HEAD "refs/remotes/origin/${branch}"

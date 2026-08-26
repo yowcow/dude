@@ -14,14 +14,18 @@ fi
 
 ISSUE="${1:-}"
 
-# Three-rung ladder, never guessing a branch name: the local remote-HEAD
-# symref, then the GitHub API, then give up and let the caller ask a person.
+# Two-rung ladder, never guessing a branch name: the GitHub API, then give up
+# and let the caller ask a person.
+#
+# refs/remotes/origin/HEAD is deliberately not consulted. A clone sets that
+# symref once and never refreshes it, so after the repository renames its
+# default branch it keeps naming the old one; while that branch still exists
+# this function would answer with it and the task's branch would be cut from
+# the wrong base, with no error anywhere. Reading it saved one `gh` call and
+# nothing else -- every path that reaches here fetches immediately afterwards,
+# so there was no offline case to keep.
 resolve_default_branch() {
   local ref
-  if ref="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"; then
-    printf '%s\n' "${ref#origin/}"
-    return 0
-  fi
   if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
     printf '%s\n' "$ref"
     return 0
