@@ -18,12 +18,12 @@
 # a row run from the scripts directory would pass even against a cwd-relative
 # call to the sibling -- one of the guards the SUT's own header names.
 #
-# fixture() below sets refs/remotes/origin/HEAD by hand after cloning. That is
-# not redundant: git_repo_bare leaves the bare repo's HEAD on
+# fixture() below sets refs/remotes/origin/HEAD by hand after cloning, purely
+# for realism -- git_repo_bare leaves the bare repo's HEAD on
 # refs/heads/master, a branch these fixtures never create, so a real clone of
-# it records no refs/remotes/origin/HEAD at all. Left unset, every row would
-# fall through the sibling's default-branch ladder to its `gh repo view` rung
-# and fail as an argv no case stubbed -- so do not "simplify" this call away.
+# it records no refs/remotes/origin/HEAD at all, and a real one would. The
+# sibling's default-branch resolution never reads this symref, so no row's
+# answer depends on the call; see fixture()'s own comment for why it stays.
 #
 # RED verification (see tests/README.md):
 #   tmp="$(mktemp -d)"
@@ -95,13 +95,21 @@ commit_msg() {
 # The work repo is a real clone rather than init + remote add, so it has the
 # remote-tracking refs, the upstream and the fetch refspec a real checkout has.
 #
-# refs/remotes/origin/HEAD is then set by hand, and that is not redundant:
-# git_repo_bare leaves the bare repo's HEAD on refs/heads/master, a branch
-# these fixtures never create, so the clone finds no advertised HEAD to record
-# and the symref is absent. Measured -- `git symbolic-ref --short
-# refs/remotes/origin/HEAD` fails with "is not a symbolic ref". Left absent,
-# the sibling's default-branch ladder would fall to its `gh repo view` rung in
-# every row, so every row would fail on an argv no case stubbed.
+# refs/remotes/origin/HEAD is then set by hand: git_repo_bare leaves the bare
+# repo's HEAD on refs/heads/master, a branch these fixtures never create, so
+# the clone finds no advertised HEAD to record and the symref would otherwise
+# be absent. Measured -- `git symbolic-ref --short refs/remotes/origin/HEAD`
+# fails with "is not a symbolic ref" without this call.
+#
+# The sibling's default-branch resolution no longer reads this symref at all,
+# so this call is not load-bearing for any row's answer -- yet it stays. It
+# reproduces the state a real clone has, and leaving it planted while every
+# row's answer is unaffected is itself the evidence that the rung reading it
+# is really gone: if a rung consulting this symref were reintroduced, every
+# row that reaches base resolution would stop calling `gh repo view`, the `gh
+# calls` count each row asserts would come back wrong, and this table would
+# catch it. A fixture with the symref removed could not catch that
+# regression -- it would answer the same whether or not such a rung existed.
 fixture() {
   local name="$1" branch="$2" where="$3" trailer="${4:--}" bare seed work
   bare="$(git_repo_bare acme "$name")"
@@ -153,9 +161,9 @@ stub_prereq_list() {
   gh_stub_raw_response "$1" "$3" pr list --head "$2" --state all --json number,state --jq "$STATE_JQ"
 }
 
-# The sibling's second default-branch rung, reached only when
-# refs/remotes/origin/HEAD is unset or dangling: `gh repo view --json
-# defaultBranchRef --jq .defaultBranchRef.name`.
+# The sibling's default-branch rung, reached unconditionally every time base
+# resolution runs: `gh repo view --json defaultBranchRef --jq
+# .defaultBranchRef.name`.
 stub_default_branch() {
   gh_stub_response "$1" "$2" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
@@ -258,10 +266,11 @@ stub_dir_new
 fixture order feature local
 stamp_push_order "$FIXTURE_BARE"
 printf '[]\n' | stub_pr_list 1 feature 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 3 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'local-only-branch-is-pushed-before-the-base-is-resolved' 0 'PR 7 created draft=true base=main\n' 3
+assert_row 'local-only-branch-is-pushed-before-the-base-is-resolved' 0 'PR 7 created draft=true base=main\n' 4
 
 total=$((total + 1))
 if ! check_eq 'push-precedes-every-gh-call' 0 "$(push_order_stamp)"; then
@@ -301,10 +310,11 @@ stub_dir_new
 fixture othercheckout feature local
 git_repo_checkout "$FIXTURE_WORK" main
 printf '[]\n' | stub_pr_list 1 feature 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 3 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'PR 7 created draft=true base=main\n' 3
+assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'PR 7 created draft=true base=main\n' 4
 
 total=$((total + 1))
 if ! check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"; then
@@ -351,7 +361,6 @@ assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draf
 total=$((total + 1))
 stub_dir_new
 fixture nobase feature remote
-git_repo_origin_head "$FIXTURE_WORK" nosuch
 printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'an-existing-pr-needs-no-base' 0 'PR 12 found draft=true\n' 1
@@ -362,10 +371,11 @@ fixture create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf '[]' | gh_stub_raw_response 1 0 pr list --head feature --json number,isDraft \
   --jq '.[0] | "\(.number) \(.isDraft)"'
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 3 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=true base=main\n' 3
+assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=true base=main\n' 4
 
 # ---- step 3: the base, resolved by the real sibling ----------------------
 #
@@ -384,21 +394,13 @@ assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=
 #
 # Every fixture below is `fixture <name> feature remote [<trailer>]`, and
 # every row stubs call 1 -- the SUT's own branch lookup -- as an empty list,
-# so control always reaches the sibling. The sibling's own gh calls, if any,
-# follow starting at call 2.
+# so control always reaches the sibling. The sibling's own default-branch
+# lookup is unconditional, so it is always call 2; its remaining gh calls, if
+# any, follow starting at call 3.
 
 total=$((total + 1))
 stub_dir_new
 fixture default-unknown feature remote
-# Deletes the symref `fixture` just set, so the sibling's default-branch
-# ladder falls through its first rung to `gh repo view`. This only works
-# because the symref exists to delete: measured, `symbolic-ref -d` on a
-# symref that was never set exits 128 with "Cannot delete
-# refs/remotes/origin/HEAD, not a symbolic ref", and as a plain statement
-# under `set -euo pipefail` that would abort this whole test file instead of
-# failing one row -- so do not "simplify" the fixture in a way that leaves
-# the symref unset before this line runs.
-git -C "$FIXTURE_WORK" symbolic-ref -d refs/remotes/origin/HEAD
 printf '[]\n' | stub_pr_list 1 feature 0
 : | stub_default_branch 2 1
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
@@ -407,59 +409,64 @@ assert_row 'base-stop-default-branch-unknown' 0 'STOP ask-default-branch\n' 2
 total=$((total + 1))
 stub_dir_new
 fixture default-absent feature remote
-git_repo_origin_head "$FIXTURE_WORK" nosuch
 printf '[]\n' | stub_pr_list 1 feature 0
+printf 'nosuch\n' | stub_default_branch 2 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-default-branch-named-but-absent' 0 'STOP default-fetch-failed\n' 1
+assert_row 'base-stop-default-branch-named-but-absent' 0 'STOP default-fetch-failed\n' 2
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-lookup-failed feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-: | gh_stub_response 2 1 pr list --head dep --state all --json number,state --jq "$STATE_JQ"
+printf 'main\n' | stub_default_branch 2 0
+: | gh_stub_response 3 1 pr list --head dep --state all --json number,state --jq "$STATE_JQ"
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-lookup-failed' 0 'STOP prereq-lookup-failed\n' 2
+assert_row 'base-stop-prerequisite-lookup-failed' 0 'STOP prereq-lookup-failed\n' 3
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-none feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[]\n' | stub_prereq_list 2 dep 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 2
+assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 3
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-several feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[{"number":9,"state":"OPEN"},{"number":8,"state":"CLOSED"}]\n' | stub_prereq_list 2 dep 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[{"number":9,"state":"OPEN"},{"number":8,"state":"CLOSED"}]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 # Prints the same slug, STOP ask-multiple-prs, as Task 2's
 # several-prs-for-one-branch-stop -- both are intended, and deliberately not
 # redundant: one comes from the SUT's own branch lookup, the other from the
 # sibling's prerequisite lookup, and they are told apart by gh call count (1
-# there, 2 here).
-assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
+# there, 3 here).
+assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 3
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-abandoned feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[{"number":9,"state":"CLOSED"}]\n' | stub_prereq_list 2 dep 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[{"number":9,"state":"CLOSED"}]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 2
+assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 3
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-unrecognised feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[{"number":9,"state":"DRAFT"}]\n' | stub_prereq_list 2 dep 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[{"number":9,"state":"DRAFT"}]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 # The sibling exits 1 having printed nothing on stdout, and the SUT's
 # RESOLVED="$(...)" dies with it under set -e -- this is the SUT's one
 # non-STOP failure exit, and the fault is the sibling's, not the SUT's, so
 # this asserts exit 1 with empty stdout rather than a slug.
-assert_row 'an-unrecognised-prerequisite-state-kills-the-run' 1 '' 2
+assert_row 'an-unrecognised-prerequisite-state-kills-the-run' 1 '' 3
 
 total=$((total + 1))
 if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
@@ -472,21 +479,23 @@ total=$((total + 1))
 stub_dir_new
 fixture prereq-open feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[{"number":9,"state":"OPEN"}]\n' | stub_prereq_list 2 dep 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature dep 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[{"number":9,"state":"OPEN"}]\n' | stub_prereq_list 3 dep 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature dep 0
+printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 5 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep\n' 4
+assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep\n' 5
 
 total=$((total + 1))
 stub_dir_new
 fixture prereq-merged feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[{"number":9,"state":"MERGED"}]\n' | stub_prereq_list 2 dep 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf '[{"number":9,"state":"MERGED"}]\n' | stub_prereq_list 3 dep 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature main 0
+printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 5 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main\n' 4
+assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main\n' 5
 
 # ---- steps 4-5: create, then read the record back -----------------------
 #
@@ -497,43 +506,47 @@ assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 crea
 # are exactly the confusion this whole suite exists to catch.
 #
 # Every fixture below is `fixture <name> feature remote`, no trailer, so the
-# base resolves to `main` on the sibling's first rung with no `gh` call of its
-# own. Call 1 is the lookup, call 2 the create, call 3 the readback.
+# base resolves to `main`. Call 1 is the SUT's own PR-existence lookup, call 2
+# the sibling's default-branch lookup, call 3 the create, call 4 the readback.
 
 total=$((total + 1))
 stub_dir_new
 fixture create-fail feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
-: | stub_pr_create 2 feature main 1
+printf 'main\n' | stub_default_branch 2 0
+: | stub_pr_create 3 feature main 1
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'create-failure-stops' 0 'STOP pr-create-failed\n' 2
+assert_row 'create-failure-stops' 0 'STOP pr-create-failed\n' 3
 
 total=$((total + 1))
 stub_dir_new
 fixture not-created feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-printf '[]\n' | stub_pr_list 3 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+printf '[]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'a-record-that-does-not-read-back-stops' 0 'STOP pr-not-created\n' 3
+assert_row 'a-record-that-does-not-read-back-stops' 0 'STOP pr-not-created\n' 4
 
 total=$((total + 1))
 stub_dir_new
 fixture readback-fail feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-: | stub_pr_list_filtered 3 feature 1
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+: | stub_pr_list_filtered 4 feature 1
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'readback-failure-is-not-a-missing-record' 0 'STOP pr-readback-failed\n' 3
+assert_row 'readback-failure-is-not-a-missing-record' 0 'STOP pr-readback-failed\n' 4
 
 total=$((total + 1))
 stub_dir_new
 fixture several-after-create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 2 feature main 0
-printf '[{"number":7,"isDraft":true},{"number":8,"isDraft":true}]\n' | stub_pr_list 3 feature 0
+printf 'main\n' | stub_default_branch 2 0
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
+printf '[{"number":7,"isDraft":true},{"number":8,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create\n' 3
+assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create\n' 4
 
 # ---- argument validation -------------------------------------------------
 #
