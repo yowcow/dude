@@ -183,8 +183,9 @@ check_not_committed 'diff3-ancestor-marker-is-refused' "$W"
 # the whole merge change set would refuse this merge, and refuse it for good:
 # this repository's own fixtures for these scripts hold literal marker lines,
 # so every merge that brings such a file in would be blocked with no way past
-# the guard. The conflicted set -- read from MERGE_MSG -- is where a forgotten
-# marker can actually be.
+# the guard. A path that already held marker text on one side of the merge is
+# exempted for that reason; what is left is where a forgotten marker can
+# actually be.
 
 total=$((total + 1))
 stub_dir_new
@@ -211,9 +212,8 @@ check_not_committed 'unresolved-paths-are-refused' "$W"
 
 # ---- a conflict resolved by deleting the file ---------------------------
 #
-# The path stays in MERGE_MSG's `# Conflicts:` block with no file in the tree
-# (measured), so the scan has to tolerate a missing file rather than fail on
-# it.
+# A deletion is not in the scanned change set at all: `--diff-filter=d` drops
+# it, so there is nothing to open and nothing to refuse.
 
 total=$((total + 1))
 stub_dir_new

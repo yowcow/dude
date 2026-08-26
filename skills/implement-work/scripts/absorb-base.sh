@@ -89,9 +89,7 @@ if [ "$ancestor_status" -ne 1 ]; then
 fi
 
 # The sha is merged rather than the ref, so what lands is exactly what the
-# fetch above resolved. `-m` only names it readably in the log; git records
-# the same `# Conflicts:` block in MERGE_MSG either way (measured), which is
-# what commit-merge.sh reads.
+# fetch above resolved. `-m` only names it readably in the log.
 set +e
 git merge -m "Merge origin/${BASE} into ${BRANCH}" "$BASE_SHA" >&2
 merge_status=$?
