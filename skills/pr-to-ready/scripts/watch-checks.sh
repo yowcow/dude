@@ -80,9 +80,9 @@ EMPTY_GRACE=3
 #
 # The default branch is read from `repos/{owner}/{repo}`'s default_branch field
 # rather than through the resolve_default_branch() helper the sibling scripts
-# share (skills/implement-work/scripts/resolve-base.sh:19,
-# skills/pr-to-ready/scripts/resolve-pr-base.sh:36,
-# skills/review-code/scripts/resolve-range.sh:56). All three answer for the
+# share (skills/implement-work/scripts/resolve-base.sh:27,
+# skills/pr-to-ready/scripts/resolve-pr-base.sh:43,
+# skills/review-code/scripts/resolve-range.sh:65). All three answer for the
 # *current checkout*, and this script takes <owner> <repo> on the argv precisely
 # so it can watch a repository it is not standing in; run from inside another
 # checkout, that helper would resolve a different repository's default branch
