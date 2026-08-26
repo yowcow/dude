@@ -260,6 +260,16 @@ tree rather than stating as prose:
   exempted` and exit 0, naming the symlink nowhere. The target is never resolved
   or read — only visibility is at stake — so a dangling link is reported rather
   than fatal.
+- A **symlink at the expected test path** is **not** coverage, which is the
+  other half of the bullet above: there a symlink is enumerated because the
+  question is visibility, here it is refused because the question is whether the
+  test runs, and `run.sh` collects with `find -type f`, which never collects it.
+  `-f` follows the link, so without the `! -L` guard such a file was counted as
+  covered while nothing ran it. Measured on that version: `1 script(s), 1 with
+  tests, 0 exempted` and exit 0, with `run.sh`'s own collection finding no test
+  file. It is reported with its own message rather than as `no test for`, since
+  the file is there — it just will not run. An allowlisted script stays exempt
+  regardless: an exemption says it needs no test at all.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so
