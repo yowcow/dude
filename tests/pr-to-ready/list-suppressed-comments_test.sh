@@ -13,6 +13,14 @@
 # 5028978936, which carries the same <details> block with no suppressed section.
 # That pair is what holds detection and false detection apart.
 #
+# The two latest-review rows are not a duplicate pair. `latest-review-wins` has
+# the listing already in chronological order, which is how the API returns it, so
+# it alone would pass against a filter that simply took the array's last element.
+# `latest-review-wins-against-array-order` reverses the two, so the answer
+# differs between selecting by `submittedAt` and trusting the array: only the
+# former prints the block. That is what holds the filter's `sort_by` load-bearing
+# rather than incidental.
+#
 # Empty stdout is not an answer on its own: a failing `gh` call prints nothing on
 # stdout either, and neither does a review with no suppressed block.
 # `no-suppressed-block` and `gh-call-fails` are the pair that holds those apart,
@@ -71,6 +79,7 @@ done <<'ROWS'
 suppressed-block-found|reviews-suppressed|0|acme widgets 7|0|1|suppressed-block.out
 no-suppressed-block|reviews-no-suppressed|0|acme widgets 7|0|1|-
 latest-review-wins|reviews-suppressed-not-latest|0|acme widgets 7|0|1|-
+latest-review-wins-against-array-order|reviews-suppressed-latest-out-of-order|0|acme widgets 7|0|1|suppressed-block.out
 human-suppressed-block-ignored|reviews-suppressed-by-human|0|acme widgets 7|0|1|-
 no-reviews-at-all|reviews-empty|0|acme widgets 7|0|1|-
 gh-call-fails|not-found|1|acme widgets 7|1|1|-
