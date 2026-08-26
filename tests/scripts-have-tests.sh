@@ -127,7 +127,15 @@ fi
 # there, so no single line can spell it — and that is the safe direction: such a
 # script is reported as uncovered rather than quietly passed.
 allow=()
-if [ -e "$ALLOWLIST" ]; then
+# `-L` as well as `-e`, because `-e` follows the link: at a dangling symlink it
+# is false, so the existence test answered "absent" — a success state — and the
+# `-f`/`-r` refusal below was never reached. Measured on the version without
+# `-L`: a dangling link at this path gave `1 script(s), 1 with tests, 0
+# exempted` and exit 0, the same "absent" versus "could not ask" confusion the
+# `-r` guard below exists to refuse, arriving where that guard cannot see it.
+# A link that resolves to a readable regular file is still read: only this gate
+# reads the allowlist, so following it costs nothing.
+if [ -e "$ALLOWLIST" ] || [ -L "$ALLOWLIST" ]; then
   # `-f` as well as `-r`, and `-f` is the load-bearing half: `-r` is true for a
   # directory, so a directory at this path walked straight through a guard that
   # only asked about readability, and the `done <"$ALLOWLIST"` redirection then
