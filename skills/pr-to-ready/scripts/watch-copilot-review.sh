@@ -112,7 +112,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
     new=()
     unreadable=""
     while IFS= read -r line; do
-      if ! id="$(printf '%s\n' "$line" | jq -r "$ID_FILTER" 2>/dev/null)" || [ -z "$id" ]; then
+      if ! id="$(jq -r "$ID_FILTER" <<<"$line" 2>/dev/null)" || [ -z "$id" ]; then
         unreadable=1
         break
       fi
