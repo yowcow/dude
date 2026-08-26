@@ -167,22 +167,27 @@ Check the manifests before installing — the validators name the offending
 field:
 
 ```
+claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 grok plugin validate .
 gemini extensions validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
-The first two read the plugin manifests, and the Codex one walks every
-`SKILL.md` as well, so it catches malformed frontmatter at the same time. The
-Gemini one reads `gemini-extension.json` only, and what it checks there is narrow
+`grok plugin validate` reads `.claude-plugin/plugin.json`. `claude plugin
+validate` starts from `.claude-plugin/marketplace.json` and reaches that same
+`plugin.json` through the entry's `source: "./"`, which is where its `No version
+specified` warning comes from — expected here, per the Versions section above.
+The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
+as well, so it catches malformed frontmatter at the same time. `gemini extensions
+validate` reads `gemini-extension.json` only, and what it checks there is narrow
 — that `version` parses as semver, and that the file `contextFileName` names
 exists. Point that key at a file that is not there and it names the missing file;
 it will not tell you the context file is empty, or that an `@` import inside it
-went nowhere. None of the three looks at
+went nowhere. None of the manifest validators named above looks at
 `.agents/plugins/marketplace.json` — each still passes with that file
-deliberately corrupted — so the last line is what covers it, syntax only.
-`make lint test` checks none of them: it covers shell and the test suite.
+deliberately corrupted — so `python3 -m json.tool` is what covers it, syntax
+only. `make lint test` checks none of them: it covers shell and the test suite.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
