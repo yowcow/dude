@@ -87,7 +87,7 @@ reports is a short commit sha. An install made while those manifests still said
 has to reinstall. `claude plugin validate .` warns that no version is specified;
 that warning is the expected state here, not something to fix.
 
-`.codex-plugin/plugin.json` and `gemini-extension.json` keep `version: 0.1.0`
+`.codex-plugin/plugin.json` and `gemini-extension.json` keep `"version": "0.1.0"`
 because their validators reject a manifest without one — and **that value is
 never bumped**, because neither runtime reads it to decide an update. Codex
 installs the marketplace snapshot's root directory itself, with no per-version
@@ -176,7 +176,7 @@ python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 
 `grok plugin validate` reads `.claude-plugin/plugin.json`. `claude plugin
 validate` starts from `.claude-plugin/marketplace.json` and reaches that same
-`plugin.json` through the entry's `source: "./"`, which is where its `No version
+`plugin.json` through the entry's `"source": "./"`, which is where its `No version
 specified` warning comes from — expected here, per the Versions section above.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
 as well, so it catches malformed frontmatter at the same time. `gemini extensions
