@@ -60,6 +60,10 @@ JQ_FILTER='.reviews[]
 #                 script has to say so and stop, rather than read the file as
 #                 an empty baseline and report reviews the caller has already
 #                 seen as new.
+#   no-id       — one JSON object with no `id` key. Readable as JSON, unlike
+#                 id-only, so it is the other way a baseline can fail to
+#                 yield an id: `jq -r` would render the missing key as `null`
+#                 and admit it to the set as an id no review can match.
 make_baseline() {
   local kind="$1" dir path first_line id
   dir="$(mktemp -d "${HARNESS_TMP}/baseline.XXXXXX")"
@@ -80,6 +84,7 @@ make_baseline() {
       ;;
     dir) mkdir "$path" ;;
     empty) : >"$path" ;;
+    no-id) printf '%s\n' '{"author":"copilot-pull-request-reviewer","state":"COMMENTED"}' >"$path" ;;
     all) cat "$TWO" >"$path" ;;
     first) head -n 1 "$TWO" >"$path" ;;
     id-only)
@@ -160,6 +165,8 @@ arrives-on-the-second-poll|-,copilot-reviews-two|empty|acme widgets 7 %B 3 1|0|2
 state-change-is-not-new|copilot-reviews-one-dismissed|first|acme widgets 7 %B 1 1|1|1|
 everything-already-in-baseline|copilot-reviews-two|all|acme widgets 7 %B 1 1|1|1|
 no-review-yet|-|empty|acme widgets 7 %B 1 1|1|1|
+listing-not-a-listing|copilot-reviews-unreadable|empty|acme widgets 7 %B 1 1|1|1|
+baseline-object-without-id|copilot-reviews-two|no-id|acme widgets 7 %B 1 1|2|0|
 listing-fails-every-poll|-:1|empty|acme widgets 7 %B 2 1|1|2|
 baseline-absent|copilot-reviews-two|absent|acme widgets 7 %B 1 1|2|0|
 baseline-unreadable|copilot-reviews-two|unreadable|acme widgets 7 %B 1 1|2|0|
