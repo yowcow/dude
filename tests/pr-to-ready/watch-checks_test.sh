@@ -44,6 +44,12 @@
 # the remote does not have. Recorded because a later change to that predicate
 # has no other way to tell a row that would have caught the regression from one
 # that passes against both versions.
+#
+# `missing-commit` stubs a FAILING call, because that is the only kind real gh
+# makes here: measured, `gh api .../commits/deadbeef/check-runs` exits 1. Stubbed
+# as a success — which is how that row read until then — it holds the exit 3 test
+# to a response gh never produces, and moving that test inside the poll's success
+# gate would leave the row green while the watch stopped answering exit 3 at all.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -155,7 +161,7 @@ default-branch-listing-is-two-documents|*=check-runs-empty|4=repo-default-branch
 total-count-below-the-run-count-is-not-a-listing|*=check-runs-count-below-runs|-|-|acme widgets deadbeef 2 1|4|2|
 poll-body-is-two-documents-is-not-a-listing|*=check-runs-two-documents|-|-|acme widgets deadbeef 2 1|4|2|
 runs-without-the-fields-the-decision-reads|*=check-runs-degenerate-runs|-|-|acme widgets deadbeef 2 1|4|2|
-missing-commit|*=no-commit-for-sha|-|-|acme widgets deadbeef 3 1|3|1|
+missing-commit|*=no-commit-for-sha:1|-|-|acme widgets deadbeef 3 1|3|1|
 error-body-every-poll|*=not-found|-|-|acme widgets deadbeef 2 1|4|2|
 listing-without-a-run-array-is-not-a-listing|*=check-runs-no-array|-|-|acme widgets deadbeef 2 1|4|2|
 run-list-as-an-object-is-not-a-listing|*=check-runs-object-runs|-|-|acme widgets deadbeef 2 1|4|2|
