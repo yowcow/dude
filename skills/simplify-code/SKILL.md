@@ -48,7 +48,7 @@ Each lens is a distinct kind of avoidable complexity, and every one is behavior-
 
 ## Dispatch
 
-Proposers are read-only and share no mutable state, so they may run in parallel (`superpowers:dispatching-parallel-agents` — this is independent fact-finding, not implementation). The fan-out follows the guidelines' **Subagents & worker safety**, sized to the diff:
+Proposers are read-only and share no mutable state, so they may run in parallel (`superpowers:dispatching-parallel-agents` — this is independent fact-finding, not implementation). The fan-out is sized to the diff:
 
 - **Default** — one proposer takes every lens.
 - **Large diff, or one spanning subsystems** — one proposer per lens, dispatched together.

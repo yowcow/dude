@@ -60,7 +60,7 @@ Confine every search to the project root or narrower.
 One invocation is one pass, and a pass is as many rounds as it takes:
 
 1. Resolve the scope per **Scope** and declare it.
-2. Dispatch one reviewer with the code as it now stands. One reviewer per round, fresh each round — the fan-out here is fixed at one, because a diff doesn't warrant more, per the guidelines' **Subagents & worker safety**.
+2. Dispatch one reviewer with the code as it now stands. One reviewer per round, fresh each round — the fan-out here is fixed at one, because a diff doesn't warrant more.
 3. Judge every finding with `superpowers:receiving-code-review`: verify the claim against the code before accepting it, and reject — with a stated reason — findings that are wrong, that only reflect reviewer preference, or that ask for work beyond the request.
 4. Apply the accepted Critical and Important findings yourself — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`). Record Minor findings; don't fix them.
 5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output.
