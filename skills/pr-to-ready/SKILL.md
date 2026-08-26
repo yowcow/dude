@@ -5,7 +5,7 @@ description: Use to take a branch of verified commits — with or without a PR o
 
 # pr-to-ready
 
-Take a branch of verified commits to a reviewed PR: open the draft PR if it isn't there yet, then loop until CI passes and the review is clean, and finally leave it at **ready** or **draft** per the user's up-front choice. Precondition: a branch whose commits are already verified. An unpushed branch is not a blocker — push it and go on rather than stopping. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
+Take a branch of verified commits to a reviewed PR: open the draft PR if it isn't there yet, then loop until CI passes and the review is clean. **The only PR-status change this flow makes is draft → ready**, and it makes that one only when the user asked for it up front and the run came out clean; anywhere else, clean or not, the PR's status is left as it was found. Precondition: a branch whose commits are already verified. An unpushed branch is not a blocker — push it and go on rather than stopping. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
 
 ## Orchestration model
 
@@ -27,7 +27,7 @@ Title and body are standard Japanese (標準語), following the repo's PR templa
 
 ### 0-2. Ask whether to mark ready on clean
 
-Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave it as draft? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
+Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
 
 ## Step 1: Settle the base, then get CI clean
 
@@ -106,7 +106,7 @@ Once Step 2 exits clean, re-confirm the same five conditions on the HEAD it leav
 
 Otherwise branch on the flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
-- **ready-on-clean = no**: leave the PR as draft, and report that CI and review are clean.
+- **ready-on-clean = no**: report that CI and review are clean.
 
 **This flow has three terminal states: ready, draft, and handed back to a person.** The third is reached from Step 1's base-settlement, from a `needs-user` finding in 2-3, from the mergeability stop condition above, or from this step's own re-confirmation — every one of them just reports what was found and stops. **None of them is Escalation, and none of them calls `plan-work`**: a conflict, a drifted base, or a finding only a person can settle has not touched the agreed design, so the question re-approval asks — which part of the design this undoes — has no honest answer there.
 
