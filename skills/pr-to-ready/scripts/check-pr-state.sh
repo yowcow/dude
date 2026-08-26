@@ -39,8 +39,8 @@ MERGEABLE_RETRY_SECONDS=3
 # for a default SSH clone stops matching its own repository. Lowercased
 # through `tr` rather than `${x,,}` to keep this running on the bash 3.2 its
 # siblings here still run on. The case fold is not cosmetic either: GitHub
-# matches owner and repo case-insensitively, so `yowcow/Dotfiles` and
-# `yowcow/dotfiles` name one repository and have to compare equal.
+# matches owner and repo case-insensitively, so `acme/Widgets` and
+# `acme/widgets` name one repository and have to compare equal.
 normalize_repo_path() {
   local url="$1" owner repo
   repo="${url##*/}"
