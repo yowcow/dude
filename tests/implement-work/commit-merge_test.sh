@@ -25,6 +25,9 @@
 #     `a-path-holding-a-newline-is-scanned`
 #   - scan the working-tree file instead of the index blob:
 #     `the-staged-blob-is-what-is-scanned`
+#   - exempt a path because a parent's blob holds a marker line anywhere,
+#     instead of because the index blob is byte-identical to a parent's:
+#     `a-file-that-holds-marker-text-and-conflicts-is-refused`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -46,6 +49,13 @@ MARKER_BODY='<<<<<<< HEAD\ntask side\n=======\nbase side\n>>>>>>> origin/main\n'
 # Both hold both sides' text, so neither is a resolution.
 PARTIAL_BODY='task side\n=======\nbase side\n'
 DIFF3_BODY='task side\n||||||| 1a2b3c4\nfirst\nbase side\n'
+
+# A file whose own content legitimately holds marker text -- a document about
+# conflicts, or one of this suite's own fixtures -- and which the two sides then
+# change in the same place. The marker text is the file's, not a resolution's.
+SELF_MARKER_FIRST='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: first\n'
+SELF_MARKER_TASK='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: task side\n'
+SELF_MARKER_MAIN='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: base side\n'
 
 # build_conflict <name> [extra-base-file] [conflict-path] [comment-char] --
 # prints the path of a work repository on branch `task` with a conflict in
@@ -287,6 +297,33 @@ printf 'tidied after staging\n' >"${W}/shared.txt"
 run_in "$W"
 assert_row 'the-staged-blob-is-what-is-scanned' 0 'MARKERS shared.txt\n'
 check_not_committed 'the-staged-blob-is-what-is-scanned' "$W"
+
+# ---- a file that holds marker text of its own, and also conflicts -------
+#
+# Exempting a path because a parent's blob holds a marker line *anywhere* is too
+# wide. A file that carries marker text as its own content -- this repository's
+# own fixtures do -- and then genuinely conflicts would never be scanned, and
+# the real unresolved markers git wrote into it would be committed. Measured
+# against that wider rule: COMMITTED, with git's own markers in the tree, where
+# the pre-change script refused it. The exemption is therefore keyed on the
+# index blob being byte-identical to a parent's, which a path someone actually
+# resolved never is.
+
+total=$((total + 1))
+stub_dir_new
+W="$(git_repo_scratch selfmarker)"
+git_repo_init "$W" main
+git_repo_commit "$W" doc.txt "$SELF_MARKER_FIRST" 'c1'
+git_repo_checkout "$W" task main
+git_repo_commit "$W" doc.txt "$SELF_MARKER_TASK" 'task work'
+git_repo_checkout "$W" main
+git_repo_commit "$W" doc.txt "$SELF_MARKER_MAIN" 'base rewrites the shared line'
+git_repo_checkout "$W" task
+git -C "$W" merge -m 'Merge origin/main into task' main >/dev/null 2>&1 || true
+git -C "$W" add doc.txt
+run_in "$W"
+assert_row 'a-file-that-holds-marker-text-and-conflicts-is-refused' 0 'MARKERS doc.txt\n'
+check_not_committed 'a-file-that-holds-marker-text-and-conflicts-is-refused' "$W"
 
 # ---- the commit itself is refused --------------------------------------
 #
