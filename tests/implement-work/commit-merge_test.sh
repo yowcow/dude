@@ -19,6 +19,12 @@
 #   - scan the whole merge change set instead of the conflicted paths:
 #     `markers-outside-the-conflict-are-ignored`
 #   - ignore whether the commit succeeded: `commit-hook-rejects-the-resolution`
+#   - read the conflicted paths from MERGE_MSG's `# Conflicts:` block instead
+#     of from the index: `a-rename-carrying-markers-is-refused`,
+#     `a-changed-comment-char-does-not-empty-the-scan`,
+#     `a-path-holding-a-newline-is-scanned`
+#   - scan the working-tree file instead of the index blob:
+#     `the-staged-blob-is-what-is-scanned`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -41,20 +47,26 @@ MARKER_BODY='<<<<<<< HEAD\ntask side\n=======\nbase side\n>>>>>>> origin/main\n'
 PARTIAL_BODY='task side\n=======\nbase side\n'
 DIFF3_BODY='task side\n||||||| 1a2b3c4\nfirst\nbase side\n'
 
-# build_conflict <name> [extra-base-file] -- prints the path of a work
-# repository on branch `task` with a conflict in shared.txt already left in
-# the tree by a real `git merge`. With <extra-base-file>, main also adds that
-# file carrying conflict-marker text of its own, which merges cleanly: it is
-# in the merge's change set but was never conflicted.
+# build_conflict <name> [extra-base-file] [conflict-path] [comment-char] --
+# prints the path of a work repository on branch `task` with a conflict in
+# <conflict-path> (default shared.txt) already left in the tree by a real
+# `git merge`. With <extra-base-file>, main also adds that file carrying
+# conflict-marker text of its own, which merges cleanly: it is in the merge's
+# change set but was never conflicted. With <comment-char>, core.commentChar
+# is set **before** the merge, so the `# Conflicts:` block MERGE_MSG receives
+# is written with that character instead of `#`.
 build_conflict() {
-  local name="$1" extra="${2:-}" w
+  local name="$1" extra="${2:-}" path="${3:-shared.txt}" cchar="${4:-}" w
   w="$(git_repo_scratch "$name")"
   git_repo_init "$w" main
-  git_repo_commit "$w" shared.txt 'first\n' 'c1'
+  if [ -n "$cchar" ]; then
+    git -C "$w" config core.commentChar "$cchar"
+  fi
+  git_repo_commit "$w" "$path" 'first\n' 'c1'
   git_repo_checkout "$w" task main
-  git_repo_commit "$w" shared.txt 'task side\n' 'task work'
+  git_repo_commit "$w" "$path" 'task side\n' 'task work'
   git_repo_checkout "$w" main
-  git_repo_commit "$w" shared.txt 'base side\n' 'base rewrites shared'
+  git_repo_commit "$w" "$path" 'base side\n' 'base rewrites shared'
   if [ -n "$extra" ]; then
     git_repo_commit "$w" "$extra" "$MARKER_BODY" 'base adds a file holding marker text'
   fi
@@ -210,6 +222,71 @@ git -C "$W" rm -q -f shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
 assert_row 'a-conflict-resolved-by-deletion-is-committed' 0 "COMMITTED ${MERGE_SHA}\n"
+
+# ---- a conflict resolved by renaming the file ---------------------------
+#
+# The `# Conflicts:` block names only the path the conflict landed in, so a
+# resolution that moved the file leaves the markers at a path the block never
+# mentions. Reading the change set from the index instead puts the rename's
+# destination in the scan.
+
+total=$((total + 1))
+stub_dir_new
+W="$(build_conflict renamed)"
+cp "${W}/shared.txt" "${W}/renamed.txt"
+rm -f "${W}/shared.txt"
+git -C "$W" add -A
+run_in "$W"
+assert_row 'a-rename-carrying-markers-is-refused' 0 'MARKERS renamed.txt\n'
+check_not_committed 'a-rename-carrying-markers-is-refused' "$W"
+
+# ---- core.commentChar moves the block out from under the scan -----------
+#
+# The `# Conflicts:` block's prefix is core.commentChar, so a repository that
+# changed it gets a block the `#`-anchored scan does not recognise -- an empty
+# path list, which refuses nothing while printing COMMITTED. Reading the
+# change set from the index does not depend on the setting at all.
+
+total=$((total + 1))
+stub_dir_new
+W="$(build_conflict commentchar '' shared.txt ';')"
+printf '%b' "$MARKER_BODY" >"${W}/shared.txt"
+git -C "$W" add shared.txt
+run_in "$W"
+assert_row 'a-changed-comment-char-does-not-empty-the-scan' 0 'MARKERS shared.txt\n'
+check_not_committed 'a-changed-comment-char-does-not-empty-the-scan' "$W"
+
+# ---- a path holding a newline ------------------------------------------
+#
+# The block is line-oriented, so a path holding a newline is truncated at the
+# break and the real file is never opened. Nothing line-based can carry such a
+# path; a NUL-separated listing can.
+
+total=$((total + 1))
+stub_dir_new
+NL_PATH="$(printf 'we\nird.txt')"
+W="$(build_conflict newline '' "$NL_PATH")"
+printf '%b' "$MARKER_BODY" >"${W}/${NL_PATH}"
+git -C "$W" add -A
+run_in "$W"
+assert_row 'a-path-holding-a-newline-is-scanned' 0 "MARKERS ${NL_PATH}\n"
+check_not_committed 'a-path-holding-a-newline-is-scanned' "$W"
+
+# ---- the index is what gets committed, not the working tree -------------
+#
+# A resolution staged with markers and then tidied in the working tree without
+# a second `git add` commits the index's marker-laden blob (measured). A scan
+# that reads the working-tree file sees the tidy copy and passes it.
+
+total=$((total + 1))
+stub_dir_new
+W="$(build_conflict staged)"
+printf '%b' "$MARKER_BODY" >"${W}/shared.txt"
+git -C "$W" add shared.txt
+printf 'tidied after staging\n' >"${W}/shared.txt"
+run_in "$W"
+assert_row 'the-staged-blob-is-what-is-scanned' 0 'MARKERS shared.txt\n'
+check_not_committed 'the-staged-blob-is-what-is-scanned' "$W"
 
 # ---- the commit itself is refused --------------------------------------
 #
