@@ -50,7 +50,7 @@ Request review from both Claude and Copilot when both are available — they cat
 
 ### 2-0. Verify PR body issue links
 
-Before reviewers are asked to read it: for every issue reference in the body, resolve it against the PR's own repository and confirm it's the intended issue — ask the user when the intended repository is ambiguous rather than guessing. Correct any wrong link before continuing.
+Before reviewers are asked to read it: for every issue reference in the body, resolve it against the repository the reference itself names — the one in a reference qualified as `owner/repo#NNN`, and the PR's own only for a bare `#NNN` — and confirm it's the intended issue. Ask the user when the intended repository is ambiguous rather than guessing. Correct any wrong link before continuing.
 
 ### 2-1. Request the reviewers
 
