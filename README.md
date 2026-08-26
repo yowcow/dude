@@ -68,9 +68,9 @@ the prompt for as long as you let it.
 
 ## Versions
 
-dude is not versioned. Every runtime is meant to carry the latest master, so
-there is no release to cut and nothing to bump. Which manifest carries a
-`version` at all follows from what each runtime does with one:
+dude is not versioned. Every runtime is meant to carry the default branch's
+latest commit, so there is no release to cut and nothing to bump. Which manifest
+carries a `version` at all follows from what each runtime does with one:
 
 | Runtime | Requires `version`? | Uses it to decide an update? |
 | --- | --- | --- |
