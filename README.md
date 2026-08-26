@@ -66,6 +66,39 @@ installs for you. `--consent` skips it, which is why the Development section
 below uses it too. Without it a non-interactive run does not fail; it waits on
 the prompt for as long as you let it.
 
+## Versions
+
+dude is not versioned. Every runtime is meant to carry the default branch's
+latest commit, so there is no release to cut and nothing to bump. Which manifest
+carries a `version` at all follows from what each runtime does with one:
+
+| Runtime | Requires `version`? | Uses it to decide an update? |
+| --- | --- | --- |
+| Claude Code | no — `validate` only warns | **yes — a version left in place stops updates** |
+| Codex | yes, strict semver | no |
+| Gemini | yes | no, on the git install and link routes above |
+| Grok | no | no |
+
+So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
+plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
+`claude plugin update dude@dude` compares commits instead, and the version it
+reports is a short commit sha. An install made while those manifests still said
+`0.1.0` moves onto sha-tracking at its first `claude plugin update`, so nobody
+has to reinstall. `claude plugin validate .` warns that no version is specified;
+that warning is the expected state here, not something to fix.
+
+`.codex-plugin/plugin.json` and `gemini-extension.json` keep `"version": "0.1.0"`
+because their validators reject a manifest without one — and **that value is
+never bumped**, because neither runtime reads it to decide an update. Codex
+installs the marketplace snapshot's root directory itself, with no per-version
+cache in between. Gemini's git install compares the HEAD `git ls-remote` reports
+against the local one; it is the local-path install, which this README does not
+document as a route, that compares versions instead.
+
+What each runtime printed when this was measured — and the throwaway plugins the
+version-less control was taken with — is recorded in
+[issue #42](https://github.com/yowcow/dude/issues/42).
+
 ## Use
 
 In Claude Code the skills are namespaced by the plugin:
@@ -134,22 +167,27 @@ Check the manifests before installing — the validators name the offending
 field:
 
 ```
+claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 grok plugin validate .
 gemini extensions validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
-The first two read the plugin manifests, and the Codex one walks every
-`SKILL.md` as well, so it catches malformed frontmatter at the same time. The
-Gemini one reads `gemini-extension.json` only, and what it checks there is narrow
+`grok plugin validate` reads `.claude-plugin/plugin.json`. `claude plugin
+validate` starts from `.claude-plugin/marketplace.json` and reaches that same
+`plugin.json` through the entry's `"source": "./"`, which is where its `No version
+specified` warning comes from — expected here, per the Versions section above.
+The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
+as well, so it catches malformed frontmatter at the same time. `gemini extensions
+validate` reads `gemini-extension.json` only, and what it checks there is narrow
 — that `version` parses as semver, and that the file `contextFileName` names
 exists. Point that key at a file that is not there and it names the missing file;
 it will not tell you the context file is empty, or that an `@` import inside it
-went nowhere. None of the three looks at
+went nowhere. None of the manifest validators named above looks at
 `.agents/plugins/marketplace.json` — each still passes with that file
-deliberately corrupted — so the last line is what covers it, syntax only.
-`make lint test` checks none of them: it covers shell and the test suite.
+deliberately corrupted — so `python3 -m json.tool` is what covers it, syntax
+only. `make lint test` checks none of them: it covers shell and the test suite.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
