@@ -43,7 +43,7 @@ A Change that carries no design decision has a lane of its own, not an exemption
 
 ### Change workflow
 
-Three flows, each of which can be entered on its own, and each with its own deliverable and handoff.
+Three flows, each of which can be entered on its own, and each with its own deliverable and hand-off.
 
 - **`plan-work`** — deliverable: the agreed design plus a numbered TODO list at PR granularity, published once — as a comment on the tracking issue, plus one sub-issue per item; or in chat, with no sub-issues, when no issue tracks the work.
 - **`implement-work`** — deliverable: a pushed branch of verified commits.
@@ -68,7 +68,7 @@ The deliverable is an evidence-backed explanation of an observed problem. `super
 
 - At each phase transition and gate iteration, write a concise hand-off summary, dropping exploratory dumps and stale tool output while keeping the substance.
 - You own this summary even when your runtime can't compact context on its own — when context is heavy and only the user can trigger compaction, prompt them to. Never let a summary or compaction relax a gate.
-- A handoff between flows may land in a different session. The canonical record is the tracking issue's comment — chat only when no issue tracks the work. At each flow's end, name the artifact the next flow picks up. The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
+- A hand-off between flows may land in a different session. The canonical record is the tracking issue's comment — chat only when no issue tracks the work. At each flow's end, name the artifact the next flow picks up. The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
 - **A loop's intermediate state is orchestrator-facing.** Report each round to the caller in chat, and never to GitHub. Only the converged result reaches the canonical record above.
 
 ### Loop convergence
