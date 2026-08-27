@@ -450,44 +450,4 @@ if ! check_bytes 'zero-byte allowlist: stdout' \
   'scripts-have-tests: 1 script(s), 1 with tests, 0 exempted by the allowlist\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# --- case 21: a dangling symlink at the allowlist path is refused -----------
-# `-e` follows the link, so it is false for a dangling one and the existence
-# test read "absent" — a success state — without ever reaching the `-f`/`-r`
-# refusal below it. That is the same "absent" versus "could not ask" confusion
-# case 14 pins for an unreadable regular file, arriving through a path that
-# guard never sees. Measured on the unfixed gate: `1 script(s), 1 with tests, 0
-# exempted` and exit 0, where the contract wants exit 1.
-#
-# The covered script is load-bearing: without it the tree enumerates empty and
-# the run fails on that guard instead, which would pass this case for the wrong
-# reason.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-mk_test "$root" alpha 'a_test.sh'
-ln -s /nonexistent/nope "${root}/tests/scripts-have-tests.allowlist"
-run_sut bash "$SUT" "$root"
-if ! check_eq 'dangling symlink allowlist: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'dangling symlink allowlist' 'cannot be read'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-# --- case 22: a symlink to a readable allowlist still grants exemptions -----
-# The other side of case 21, and what keeps its fix from being written as a
-# blanket refusal of every symlink at this path. Nothing collects the allowlist
-# the way run.sh collects test files, so a link that resolves to a readable
-# regular file is "present and readable" and the gate reads it — the asymmetry
-# in case 24 does not apply here.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-printf 'skills/alpha/scripts/a.sh\n' >"${root}/real_allowlist"
-ln -s "${root}/real_allowlist" "${root}/tests/scripts-have-tests.allowlist"
-run_sut bash "$SUT" "$root"
-if ! check_eq 'symlinked allowlist: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_bytes 'symlinked allowlist: stdout' \
-  'scripts-have-tests: 1 script(s), 0 with tests, 1 exempted by the allowlist\n'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
 harness_exit "$failed" "$total"

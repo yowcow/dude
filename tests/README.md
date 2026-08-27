@@ -247,13 +247,6 @@ tree rather than stating as prose:
   printed for it. A name carrying a literal newline therefore cannot be exempted
   at all, since `read -r` splits there; it is reported as uncovered, which is the
   safe direction.
-- A **dangling symlink** at the allowlist path is "present but unreadable", an
-  **error** — not "absent". `-e` follows the link and is false for a dangling
-  one, so the existence test answered with a success state and never reached the
-  readability refusal. Measured on that version: a dangling link gave `1
-  script(s), 1 with tests, 0 exempted` and exit 0. A link that resolves to a
-  readable regular file is still read: only this gate reads the allowlist, so
-  following it costs nothing.
 - A **symlink** under `scripts/` is enumerated like a regular file, which is
   where this parts company with `lint.sh`'s deliberate `-type f`. For a linter
   that exclusion is right; for this gate `-type f` answers the wrong question,
