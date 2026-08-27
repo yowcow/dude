@@ -1,5 +1,0 @@
-[
-  {"title": "item one", "state": "closed", "number": 13, "html_url": "https://example.invalid/13"},
-  {"title": "item two", "state": "open", "number": 57, "html_url": "https://example.invalid/57"},
-  {"title": "item three", "state": "open", "number": 99, "html_url": "https://example.invalid/99"}
-]
