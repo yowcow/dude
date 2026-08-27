@@ -137,12 +137,20 @@ REMOTE_DEP="$(build_remote dep - dep)"
 REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
 
 # ---- the default-branch ladder, with no trailer to find ------------------
+#
+# The symref names `feature`, a branch that exists on the remote and is the
+# wrong answer, while the API answers `main`. That pairing is the hazard the
+# rung was removed for: a symref left over from before a rename keeps naming a
+# branch that is still there, so it resolves and nothing reports the mistake. A
+# symref pointed at an absent branch would fail loudly on the fetch instead, and
+# would leave that case untested.
 
 total=$((total + 1))
 stub_dir_new
-W="$(work_repo dflt-symref "$REMOTE_PLAIN" main)"
+printf 'main\n' | stub_default_branch 0
+W="$(work_repo dflt-stale-symref "$REMOTE_PLAIN" feature)"
 run_in "$W" feature
-assert_row 'no-trailer-symref-names-default' 0 'BASE main\n' 0
+assert_row 'stale-symref-is-ignored' 0 'BASE main\n' 1
 
 total=$((total + 1))
 stub_dir_new
@@ -177,10 +185,11 @@ assert_row 'default-branch-lookup-empty' 0 'STOP ask-default-branch\n' 1
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list ancestor-base 0
 W="$(work_repo ancestor "$REMOTE_ANCESTOR" main)"
 run_in "$W" feature
-assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 0
+assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 1
 
 # ---- a trailer the task branch recorded itself --------------------------
 #
@@ -191,60 +200,68 @@ assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 0
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list newer-base 0
 printf '8 OPEN\n' | stub_pr_list older-base 0
 W="$(work_repo shadow "$REMOTE_SHADOW" main)"
 run_in "$W" feature
-assert_row 'newest-trailer-shadows-older' 0 'BASE newer-base\n' 1
+assert_row 'newest-trailer-shadows-older' 0 'BASE newer-base\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list dep 0
 W="$(work_repo prereq-open "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 1
+assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 MERGED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-merged "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 1
+assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-closed "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 1
+assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 : | stub_pr_list dep 0
 W="$(work_repo prereq-none "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 1
+assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 : | stub_pr_list dep 1
 W="$(work_repo prereq-unreadable "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-lookup-fails' 0 'STOP prereq-lookup-failed\n' 1
+assert_row 'prerequisite-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n8 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-multiple "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 1
+assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 printf '9 DRAFT\n' | stub_pr_list dep 0
 W="$(work_repo prereq-unknown-state "$REMOTE_DEP" main)"
 run_in "$W" feature
-assert_row 'prerequisite-state-unrecognised' 1 '' 1
+assert_row 'prerequisite-state-unrecognised' 1 '' 2
 
 total=$((total + 1))
 if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
@@ -257,23 +274,27 @@ fi
 #
 # The two failures carry different slugs on purpose: a missing default branch
 # and a missing task branch want different answers from the person the caller
-# stops for. Neither row reaches `gh`, so both assert zero calls.
+# stops for. Both rows reach `gh` exactly once, for the default-branch lookup
+# that now precedes every fetch.
 #
-# The first row's origin/HEAD points at a branch the remote does not have.
-# `git symbolic-ref` accepts a dangling target, so the ladder's first rung
-# answers `nosuch` and the fetch that follows is what fails.
+# The first row's API answer names a branch the remote does not have, so the
+# default branch's own fetch is what fails. The second row's API answer names
+# a real branch, so that fetch succeeds and it is the task branch's fetch that
+# fails instead.
 
 total=$((total + 1))
 stub_dir_new
-W="$(work_repo default-absent "$REMOTE_PLAIN" nosuch)"
+printf 'nosuch\n' | stub_default_branch 0
+W="$(work_repo default-absent "$REMOTE_PLAIN" -)"
 run_in "$W" feature
-assert_row 'default-branch-absent-on-remote' 0 'STOP default-fetch-failed\n' 0
+assert_row 'default-branch-absent-on-remote' 0 'STOP default-fetch-failed\n' 1
 
 total=$((total + 1))
 stub_dir_new
+printf 'main\n' | stub_default_branch 0
 W="$(work_repo branch-absent "$REMOTE_PLAIN" main)"
 run_in "$W" nosuchbranch
-assert_row 'task-branch-absent-on-remote' 0 'STOP fetch-failed\n' 0
+assert_row 'task-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 
 # ---- argument validation ------------------------------------------------
 #

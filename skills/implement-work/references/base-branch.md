@@ -12,7 +12,9 @@ Branching from the default branch records **nothing**.
 
 ## Resolving the default branch
 
-Never guess a branch name. Three rungs, in order — `git symbolic-ref`, then `gh repo view`, then ask the user.
+Never guess a branch name. Two rungs, in order — `gh repo view`, then ask the user.
+
+`git symbolic-ref refs/remotes/origin/HEAD` is not a rung. A clone sets that symref once and never refreshes it, so once the repository renames its default branch the symref keeps naming the old one for as long as that branch still exists, and a rung reading it would resolve the base to the wrong branch with nothing anywhere reporting the mistake.
 
 Each skill's own form belongs in its own `scripts/`.
 

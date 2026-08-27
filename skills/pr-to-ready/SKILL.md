@@ -5,7 +5,7 @@ description: Use to take a branch of verified commits — with or without a PR o
 
 # pr-to-ready
 
-Take a branch of verified commits to a reviewed PR: open the draft PR if it isn't there yet, then loop until CI passes and the review is clean, and finally leave it at **ready** or **draft** per the user's up-front choice. Precondition: a branch whose commits are already verified. An unpushed branch is not a blocker — push it and go on rather than stopping. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
+Take a branch of verified commits to a reviewed PR: open the draft PR if it isn't there yet, then loop until CI passes and the review is clean. **The only PR-status change this flow makes is draft → ready**, and it makes that one only when the user asked for it up front and the run came out clean; anywhere else, clean or not, the PR's status is left as it was found. Precondition: a branch whose commits are already verified. An unpushed branch is not a blocker — push it and go on rather than stopping. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
 
 ## Orchestration model
 
@@ -27,7 +27,7 @@ Title and body are standard Japanese (標準語), following the repo's PR templa
 
 ### 0-2. Ask whether to mark ready on clean
 
-Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave it as draft? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
+Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
 
 ## Step 1: Settle the base, then get CI clean
 
@@ -67,7 +67,9 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 
 Delegate collection to a subagent: gather every reviewer comment left after the latest push, together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh <owner> <repo> <pr-number>` printed, dedupe, and return a structured list of findings, each with `file:line`, the thread or comment id where it has one — a suppressed finding has none — and a one-line summary. Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`.
 
-Back in the orchestrator, sequentially — these mutate shared state: fix every `accept`, the same ordinary-change discipline as Step 1's fixes; commit and push; reply to every thread, `reject` included, explaining the pushback; resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`; record the round's verdict on every suppressed finding — accepted and rejected alike, with the same reasoning — in one PR comment, since a suppressed finding has no thread to reply to and none to resolve, so it reaches neither of those two calls; write every one of those — the thread replies and that comment alike — in standard Japanese only, never Kansai dialect, and never mentioning `@claude`, which would re-trigger the workflow; then go back to 2-1 and re-request both reviewers.
+**Count the `needs-user` verdicts back in the orchestrator before anything else.** One or more ends the round before anything is applied: it takes the **third terminal state**. Nothing is fixed, nothing is committed or pushed, no thread is replied to or resolved, and no verdict comment is posted. Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again. Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
+
+Otherwise, sequentially — these mutate shared state: fix every `accept`, the same ordinary-change discipline as Step 1's fixes; commit and push; reply to every thread, `reject` included, explaining the pushback; resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`; record the round's verdict on every suppressed finding — accepted and rejected alike, with the same reasoning — in one PR comment, since a suppressed finding has no thread to reply to and none to resolve, so it reaches neither of those two calls; write every one of those — the thread replies and that comment alike — in standard Japanese only, never Kansai dialect, and never mentioning `@claude`, which would re-trigger the workflow; then go back to 2-1 and re-request both reviewers.
 
 ### Clean judgment & stop conditions
 
@@ -81,7 +83,7 @@ Back in the orchestrator, sequentially — these mutate shared state: fix every 
 
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now.
 
-When it isn't clean, what to do follows from which condition failed, and every remedy but one returns to a loop that pushes, so the next round has to start from 2-1 again:
+When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state returns to a loop that pushes, so the next round has to start from 2-1 again:
 - conditions 2 or 3 (reviewer feedback) → address it, per 2-3;
 - condition 1 → per Step 1's own branch on the exit status: a failing conclusion is diagnosed and fixed there, borrowing the diagnosis and not Step 1's own loop, so it isn't counted against Step 1's rounds; a status that yielded no settled listing is the third terminal state here too;
 - condition 4 (base drift) → pull the resolved base in with `retarget-pr.sh`, per Step 1 — it pushes the merge itself, so the next round starts from 2-1 on the new tip;
@@ -91,9 +93,10 @@ When it isn't clean, what to do follows from which condition failed, and every r
 
 1. Clean, per above → Step 3.
 2. **A finding invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round.
-3. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does.
-4. **LGTM-equivalent twice in a row, with the other four conditions true on the HEAD it leaves from** → Step 3. This is the stricter exit the guidelines' **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
-5. **A non-clean stopping condition in the guidelines' Loop convergence fires** → stop and hand the user the decision.
+3. **Any finding came back `needs-user`** → the third terminal state, per 2-3.
+4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does.
+5. **LGTM-equivalent twice in a row, with the other four conditions true on the HEAD it leaves from** → Step 3. This is the stricter exit the guidelines' **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
+6. **A non-clean stopping condition in the guidelines' Loop convergence fires** → stop and hand the user the decision.
 
 A round here is one 2-1 → 2-2 → 2-3 → clean-judgment cycle; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
 
@@ -103,9 +106,9 @@ Once Step 2 exits clean, re-confirm the same five conditions on the HEAD it leav
 
 Otherwise branch on the flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
-- **ready-on-clean = no**: leave the PR as draft, and report that CI and review are clean.
+- **ready-on-clean = no**: report that CI and review are clean.
 
-**This flow has three terminal states: ready, draft, and handed back to a person.** The third is reached from Step 1's base-settlement, from the mergeability stop condition above, or from this step's own re-confirmation — every one of them just reports what was found and stops. **None of them is Escalation, and none of them calls `plan-work`**: a conflict or a drifted base hasn't touched the agreed design, so the question re-approval asks — which part of the design this undoes — has no honest answer there.
+**This flow has three terminal states: ready, draft, and handed back to a person.** The third is reached from Step 1's base-settlement, from a `needs-user` finding in 2-3, from the mergeability stop condition above, or from this step's own re-confirmation — every one of them just reports what was found and stops. **None of them is Escalation, and none of them calls `plan-work`**: a conflict, a drifted base, or a finding only a person can settle has not touched the agreed design, so the question re-approval asks — which part of the design this undoes — has no honest answer there.
 
 Either way, the run ends here. Everything depending on the merge belongs to a person — report it as hand-over and act on none of it:
 - **the parent issue**, whenever one backs this sub-issue: GitHub doesn't close a parent when its children close, so report the sub-issue's state as of now, and if it's the last one open, that the parent becomes closable on this merge — then leave it;

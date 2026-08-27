@@ -29,7 +29,7 @@
 # rather than counted as covered. What each mutant actually produced,
 # measured:
 #
-#   1. The trailer read guarded as well as captured (resolve-range.sh:69-83).
+#   1. The trailer read guarded as well as captured (resolve-range.sh:74-88).
 #      Replacing the `if ! TRAILER_LOG=...` block with
 #      `TRAILER_LOG="$(git log ... 2>/dev/null || true)"` failed
 #      `trailer-read-fails` alone: want `STOP trailer-read-failed`, got
@@ -37,14 +37,14 @@
 #      fetched `trunk` on the way. That is the widening this file exists to
 #      pin -- a read that failed, taken for a trailer that was absent, sends
 #      the range to the default branch.
-#   2. The MERGED boundary being the prerequisite's own head (:129-134).
+#   2. The MERGED boundary being the prerequisite's own head (:134-139).
 #      Replacing `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
 #      `FETCH_SPEC="$(resolve_default_branch)"` failed three rows:
 #      `prereq-merged-uses-the-pr-head`, `merged-base-is-not-the-default-branch`
 #      (which named the default branch tip it had used), and
 #      `merged-pull-ref-absent` -- the last because a MERGED path that never
 #      builds a `refs/pull/<n>/head` spec cannot fail to fetch one.
-#   3. An empty PR list being "no prerequisite PR" (:112-115). Deleting the
+#   3. An empty PR list being "no prerequisite PR" (:117-120). Deleting the
 #      `[ "$LINE_COUNT" -eq 0 ]` block failed `prereq-has-no-pr` on both exit
 #      status (want 0, got 1) and stdout: the empty list fell through to the
 #      unexpected-state branch instead.
@@ -52,17 +52,17 @@
 #      with an unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
 #      `pr-shape-empty-when-ends-coincide` and
 #      `no-trailer-empty-when-head-is-the-default-tip`.
-#   5. The default branch being looked up rather than guessed (:56-67).
+#   5. The default branch being looked up rather than guessed (:65-72).
 #      Replacing resolve_default_branch's whole body with `printf 'main\n'`
-#      failed five rows, `no-trailer-symref-names-default` among them. This is
+#      failed five rows, `stale-symref-is-ignored` among them. This is
 #      why build_remote's default branch is called `trunk`: with the
 #      conventional name, this mutant passes every row.
-#   6. OPEN fetching the branch the trailer recorded (:126-128). Replacing
+#   6. OPEN fetching the branch the trailer recorded (:131-133). Replacing
 #      `FETCH_SPEC="${RECORDED}"` with the MERGED path's
 #      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
 #      two others. This is why `refs/pull/9/head` is a decoy under `with-dep`:
 #      pointed at dep's own commit, this mutant passes.
-#   7. The trailer scan keeping the newest trailer (:86-91). Deleting the
+#   7. The trailer scan keeping the newest trailer (:91-96). Deleting the
 #      `break` leaves the loop holding the last non-empty line -- the oldest,
 #      since the log is newest-first -- and `newest-trailer-shadows-older`
 #      then failed on the range it printed. This is why `older-base` exists as
@@ -71,7 +71,7 @@
 #      scan's order.
 #
 # Partly covered, and measured to be no more coverable than this: reading
-# FETCH_HEAD rather than a remote-tracking ref (:146-153). Replacing
+# FETCH_HEAD rather than a remote-tracking ref (:151-158). Replacing
 # `git merge-base FETCH_HEAD HEAD` with
 # `git merge-base "origin/${FETCH_SPEC}" HEAD` failed exactly one row,
 # `prereq-merged-uses-the-pr-head` -- `refs/pull/<n>/head` lies outside every
@@ -116,8 +116,9 @@ commit_msg() {
 # point rather than a flourish: the script's header promises it never guesses
 # a branch name, and a fixture whose default branch carries the conventional
 # name cannot tell a lookup from a guess -- an implementation that skipped
-# `git symbolic-ref` and hard-coded `main` would produce the expected range
-# and the expected zero gh calls. With `trunk`, only the lookup can answer.
+# `gh repo view` and hard-coded `main` would produce the expected range even
+# though the row's own gh-call assertion would still catch the missing call.
+# With `trunk`, only the lookup can answer either assertion.
 #
 # The branches. `trunk` carries the one base commit; `older-base` is cut from
 # it immediately after, a decoy that exists only so a scan reading the stack
@@ -293,16 +294,19 @@ PLAIN_SHA="$(bare_sha "$REMOTE" plain)"
 # ---- no trailer recorded: the default-branch ladder ---------------------
 #
 # `plain` carries no Base-Branch trailer anywhere in its history, so each of
-# these rows exercises one rung of the ladder and nothing else. The first
-# asserts zero gh calls: answering from the local symref is the whole point of
-# that rung existing, and a run that reached GitHub anyway would still print
-# the right range.
+# these rows exercises one rung of the two-rung ladder and nothing else. The
+# first plants a stale refs/remotes/origin/HEAD symref naming `task` -- the
+# wrong branch -- and stubs the API to answer `trunk`, the right one, then
+# asserts the range comes from `trunk`: the symref is never consulted, so a
+# stale answer sitting in it cannot steer the range even when it disagrees
+# with the API.
 
 total=$((total + 1))
 stub_dir_new
-W="$(work_repo dflt-symref "$REMOTE" plain trunk)"
+printf 'trunk\n' | stub_default_branch 0
+W="$(work_repo dflt-stale-symref "$REMOTE" plain task)"
 run_in "$W"
-assert_row 'no-trailer-symref-names-default' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
+assert_row 'stale-symref-is-ignored' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 1
 
 total=$((total + 1))
 stub_dir_new
@@ -336,9 +340,10 @@ assert_row 'default-branch-lookup-empty' 0 'STOP ask-default-branch\n' 1
 # review.
 total=$((total + 1))
 stub_dir_new
+printf 'trunk\n' | stub_default_branch 0
 W="$(work_repo empty-nopr "$REMOTE" fresh trunk)"
 run_in "$W"
-assert_row 'no-trailer-empty-when-head-is-the-default-tip' 0 'EMPTY\n' 0
+assert_row 'no-trailer-empty-when-head-is-the-default-tip' 0 'EMPTY\n' 1
 
 DEP_SHA="$(bare_sha "$REMOTE" dep)"
 TASK_SHA="$(bare_sha "$REMOTE" task)"
@@ -462,9 +467,8 @@ fi
 # argument 'HEAD'"), which is the trailer read *failing* rather than the
 # trailer being absent -- two causes that must not collapse, because "absent"
 # sends the range to the default branch. refs/remotes/origin/HEAD is pointed
-# at `trunk` deliberately: it gives a collapsing implementation somewhere to
-# walk to, so this row fails on the widening itself rather than on a fixture
-# that had no answer either way.
+# at `trunk` for realism only -- resolve_default_branch never reads it, so it
+# has no bearing on this row's answer.
 total=$((total + 1))
 stub_dir_new
 W="$(git_repo_scratch trailer-unreadable)"
@@ -475,14 +479,15 @@ run_in "$W"
 assert_row 'trailer-read-fails' 0 'STOP trailer-read-failed\n' 0
 
 # Two fetches can fail, and they carry the same slug from different rungs.
-# The first row's origin/HEAD names a branch the remote does not have --
-# `git symbolic-ref` accepts a dangling target, so the ladder answers `nosuch`
-# and the fetch behind it is what fails, without ever reaching gh.
+# The first row's API answer names a branch the remote does not have --
+# the ladder answers `nosuch`, and the fetch behind it is what fails, after
+# reaching gh exactly once.
 total=$((total + 1))
 stub_dir_new
-W="$(work_repo fetch-dflt "$REMOTE" plain nosuch)"
+printf 'nosuch\n' | stub_default_branch 0
+W="$(work_repo fetch-dflt "$REMOTE" plain -)"
 run_in "$W"
-assert_row 'default-branch-absent-on-remote' 0 'STOP fetch-failed\n' 0
+assert_row 'default-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 
 # The second is the MERGED rung: `refs/pull/77/head` exists on no fixture
 # remote, so the spec that fails is the one the MERGED path builds itself.

@@ -28,17 +28,20 @@ fi
 
 BRANCH="$1"
 
-# Three-rung ladder, never guessing a branch name: the local remote-HEAD
-# symref, then the GitHub API, then give up and let the caller ask a person.
-# `--short`/`.defaultBranchRef.name` plus the `origin/` strip give the bare
-# name this caller needs, since it compares the result against branch names
-# rather than fetching a ref with it.
+# Two-rung ladder, never guessing a branch name: the GitHub API, then give up
+# and let the caller ask a person. `.defaultBranchRef.name` gives the bare name
+# this caller needs, since it compares the result against branch names rather
+# than fetching a ref with it.
+#
+# refs/remotes/origin/HEAD is deliberately not consulted. A clone sets that
+# symref once and never refreshes it, so after the repository renames its
+# default branch it keeps naming the old one; while that branch still exists
+# this function would answer with it, the PR would be opened or retargeted
+# against the wrong base, and nothing would say so. Reading it saved one `gh`
+# call and nothing else -- every path that reaches here fetches immediately
+# afterwards, so there was no offline case to keep.
 resolve_default_branch() {
   local ref
-  if ref="$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null)"; then
-    printf '%s\n' "${ref#origin/}"
-    return 0
-  fi
   if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
     printf '%s\n' "$ref"
     return 0
