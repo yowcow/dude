@@ -22,7 +22,7 @@ One question, asked of every sentence: **without it, what does the AI do?** The 
 - **(b) It stops and asks a person** → delete it. That is the wanted behavior, not a failure to prevent.
 - **(c) It silently returns a wrong result** → keep it — and if it is mechanism, keep it in `scripts/`.
 
-**Claiming (c) costs one sentence of concrete failure**: which command gets run, which value gets read wrong, which branch gets written. "It might get confused" is not that sentence. That sentence names an input a real run has produced or is expected to; a failure reachable only by constructing the input is (b). "The sibling does it" is symmetry, not a (c). If you cannot write it, the answer was (a) or (b), and the text goes.
+**Claiming (c) costs one sentence of concrete failure**: which command gets run, which value gets read wrong, which branch gets written. "It might get confused" is not that sentence. That sentence names an input a real run has produced or is expected to; a failure reachable only by constructing the input is (b). "The sibling does it" is symmetry, not a (c). A wrong result a later gate in the same flow has to catch is (b), not (c). If you cannot write it, the answer was (a) or (b), and the text goes.
 
 ## Call what already exists
 
