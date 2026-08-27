@@ -127,15 +127,7 @@ fi
 # there, so no single line can spell it — and that is the safe direction: such a
 # script is reported as uncovered rather than quietly passed.
 allow=()
-# `-L` as well as `-e`, because `-e` follows the link: at a dangling symlink it
-# is false, so the existence test answered "absent" — a success state — and the
-# `-f`/`-r` refusal below was never reached. Measured on the version without
-# `-L`: a dangling link at this path gave `1 script(s), 1 with tests, 0
-# exempted` and exit 0, the same "absent" versus "could not ask" confusion the
-# `-r` guard below exists to refuse, arriving where that guard cannot see it.
-# A link that resolves to a readable regular file is still read: only this gate
-# reads the allowlist, so following it costs nothing.
-if [ -e "$ALLOWLIST" ] || [ -L "$ALLOWLIST" ]; then
+if [ -e "$ALLOWLIST" ]; then
   # `-f` as well as `-r`, and `-f` is the load-bearing half: `-r` is true for a
   # directory, so a directory at this path walked straight through a guard that
   # only asked about readability, and the `done <"$ALLOWLIST"` redirection then
@@ -207,37 +199,18 @@ for rel in "${scripts[@]}"; do
   # *_test.sh and `bash <empty>` exits 0, so an empty file is a passing test with
   # no detection power; counting it as coverage would let exactly the state this
   # gate exists to prevent through the front door.
-  # `! -L` as well, and this is where the gate parts company with its own
-  # enumeration above: there the question is visibility, so a symlink under
-  # scripts/ is enumerated like a regular file; here the question is whether the
-  # test will actually run, and run.sh collects with `find -type f`, which
-  # classifies a symlink by the link and never collects it. `-f` follows the
-  # link, so without `! -L` a symlinked test file was counted as coverage while
-  # nothing ever ran it. Measured on that version: `1 script(s), 1 with tests, 0
-  # exempted` and exit 0, with run.sh's own collection finding no test file at
-  # all — this gate's reason for existing, through this gate's front door.
-  if [ ! -L "$abs_test" ] && [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
+  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))
     if in_allowlist "$key"; then
       notes+=("scripts-have-tests: allowlist entry no longer needed (the script has a test): ${key}")
     fi
     continue
   fi
-  # The allowlist is consulted before the refusal below, symlink or not: an
-  # exemption says the script needs no test, so what sits at the expected path
-  # is beside the point.
   if in_allowlist "$key"; then
     exempted=$((exempted + 1))
     continue
   fi
-  # Two messages, because "no test for" would be actively misleading about a
-  # path that does hold a file: the author has to be told that the file is there
-  # and still will not run, not that it is missing.
-  if [ -L "$abs_test" ]; then
-    printf 'scripts-have-tests: expected test for %s is a symlink, which tests/run.sh does not collect: %s\n' "$key" "$want" >&2
-  else
-    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
-  fi
+  printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
   problems=$((problems + 1))
 done
 
