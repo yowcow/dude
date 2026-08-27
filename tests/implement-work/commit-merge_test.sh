@@ -28,6 +28,9 @@
 #   - exempt a path because a parent's blob holds a marker line anywhere,
 #     instead of because the index blob is byte-identical to a parent's:
 #     `a-file-that-holds-marker-text-and-conflicts-is-refused`
+#   - decide the scan set from what the index still shows instead of from the
+#     conflict set git reports:
+#     `an-auto-merged-file-holding-marker-text-is-committed`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -56,6 +59,14 @@ DIFF3_BODY='task side\n||||||| 1a2b3c4\nfirst\nbase side\n'
 SELF_MARKER_FIRST='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: first\n'
 SELF_MARKER_TASK='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: task side\n'
 SELF_MARKER_MAIN='This documents conflict markers.\n<<<<<<< example\none side\n=======\nother side\n>>>>>>> example\nshared: base side\n'
+
+# A document that legitimately holds a bare `=======` rule, the way a setext
+# heading underline or a table rule does, with a line at each end for the two
+# sides to edit independently and enough body between them that git merges the
+# two edits without conflict.
+RULE_DOC_FIRST='TITLE\n=======\nbody a\nbody b\nbody c\nbody d\nbody e\nbody f\nbody g\nTAIL\n'
+RULE_DOC_TASK='TITLE task\n=======\nbody a\nbody b\nbody c\nbody d\nbody e\nbody f\nbody g\nTAIL\n'
+RULE_DOC_MAIN='TITLE\n=======\nbody a\nbody b\nbody c\nbody d\nbody e\nbody f\nbody g\nTAIL main\n'
 
 # build_conflict <name> [extra-base-file] [conflict-path] [comment-char] --
 # prints the path of a work repository on branch `task` with a conflict in
@@ -324,6 +335,37 @@ git -C "$W" add doc.txt
 run_in "$W"
 assert_row 'a-file-that-holds-marker-text-and-conflicts-is-refused' 0 'MARKERS doc.txt\n'
 check_not_committed 'a-file-that-holds-marker-text-and-conflicts-is-refused' "$W"
+
+# ---- a file both sides edited, auto-merged, holding marker text ---------
+#
+# The mirror of the row above, and the other way the scan set goes wrong. A
+# file that carries marker text as its own content and that both sides edit in
+# different places auto-merges cleanly: git never conflicted in it. Keyed on
+# anything the index can still show after `git add`, it is scanned anyway, its
+# own `=======` is found, and a merge that was never broken is refused with no
+# way past the guard. Measured against that rule: MARKERS, where the
+# pre-change script committed it. Only the conflict set git itself reports
+# leaves it alone.
+
+total=$((total + 1))
+stub_dir_new
+W="$(git_repo_scratch automerged)"
+git_repo_init "$W" main
+git_repo_commit "$W" doc.txt "$RULE_DOC_FIRST" 'c1'
+git_repo_commit "$W" shared.txt 'shared: first\n' 'c2'
+git_repo_checkout "$W" task main
+git_repo_commit "$W" doc.txt "$RULE_DOC_TASK" 'task edits the top'
+git_repo_commit "$W" shared.txt 'shared: task side\n' 'task work'
+git_repo_checkout "$W" main
+git_repo_commit "$W" doc.txt "$RULE_DOC_MAIN" 'base edits the bottom'
+git_repo_commit "$W" shared.txt 'shared: base side\n' 'base rewrites shared'
+git_repo_checkout "$W" task
+git -C "$W" merge -m 'Merge origin/main into task' main >/dev/null 2>&1 || true
+printf 'resolved by hand\n' >"${W}/shared.txt"
+git -C "$W" add shared.txt
+run_in "$W"
+MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
+assert_row 'an-auto-merged-file-holding-marker-text-is-committed' 0 "COMMITTED ${MERGE_SHA}\n"
 
 # ---- the commit itself is refused --------------------------------------
 #
