@@ -52,8 +52,9 @@ Codex records hook trust per hook rather than per plugin — `~/.codex/config.to
 gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
 carrying a `trusted_hash`. Installing dude does not grant it: `codex plugin add`
 records no such entry, and an untrusted hook does not run, so `using-dude` is
-not in context until you trust it. Unlike Grok's and Gemini's install-time
-prompts, Codex's hook trust decides whether injection happens at all.
+not in context until you trust it — though the skills are still invocable
+by name. Unlike Grok's and Gemini's install-time prompts, Codex's hook trust
+decides whether injection happens at all.
 
 Grok CLI:
 
