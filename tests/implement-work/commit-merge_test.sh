@@ -26,7 +26,7 @@
 #   - scan the working-tree file instead of the index blob:
 #     `the-staged-blob-is-what-is-scanned`
 #   - exempt a path because a parent's blob holds a marker line anywhere,
-#     instead of because the index blob is byte-identical to a parent's:
+#     instead of scanning only the conflict set git itself reports:
 #     `a-file-that-holds-marker-text-and-conflicts-is-refused`
 #   - decide the scan set from what the index still shows instead of from the
 #     conflict set git reports:
@@ -316,9 +316,9 @@ check_not_committed 'the-staged-blob-is-what-is-scanned' "$W"
 # own fixtures do -- and then genuinely conflicts would never be scanned, and
 # the real unresolved markers git wrote into it would be committed. Measured
 # against that wider rule: COMMITTED, with git's own markers in the tree, where
-# the pre-change script refused it. The exemption is therefore keyed on the
-# index blob being byte-identical to a parent's, which a path someone actually
-# resolved never is.
+# the pre-change script refused it. The scan is therefore keyed on the
+# scan set being the conflict set git itself reports, which a file that merged
+# cleanly is not in, whatever its own content looks like.
 
 total=$((total + 1))
 stub_dir_new

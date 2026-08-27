@@ -58,9 +58,68 @@ fi
 # redirection's own failure instead.
 CHANGED="$(mktemp)"
 BLOB="$(mktemp)"
-PARENT="$(mktemp)"
-trap 'rm -f "$CHANGED" "$BLOB" "$PARENT"' EXIT
+trap 'rm -f "$CHANGED" "$BLOB" "${MT:-}" "${CONFLICTED:-}"' EXIT
 git diff --cached --name-only -z --diff-filter=d HEAD >"$CHANGED"
+
+# The true conflict set, recomputed from the two parents. `git add` destroys
+# the unmerged stages, and both ways of guessing the set back from what
+# survives have been measured wrong, in opposite directions: keyed on whether a
+# parent held a marker line anywhere, a file that carries marker text *and*
+# conflicts is exempted whole and its real markers are committed; keyed on the
+# index blob matching a parent, a file both sides edited in different places is
+# scanned and its own marker-looking text refuses a merge that never
+# conflicted. Neither is a blind spot -- both are worse than the MERGE_MSG scan
+# they replaced. merge-tree asks git the question instead of approximating it.
+# Both tips are resolved first. `merge-tree` exits 1 for a genuine conflict
+# *and* for a ref it cannot resolve -- this repository already records that
+# measurement in `skills/pr-to-ready/references/gh-mechanics.md`. The guard
+# above only checks that the MERGE_HEAD *file* exists; an empty or truncated
+# one resolves to nothing and produces exactly the same exit 1 (measured).
+# Without this, that case yields an empty conflict set, nothing is scanned, and
+# COMMITTED is printed over a tree nobody looked at.
+if ! git rev-parse --verify --quiet HEAD >/dev/null 2>&1 \
+  || ! git rev-parse --verify --quiet MERGE_HEAD >/dev/null 2>&1; then
+  echo "STOP conflict-set-unavailable"
+  exit 0
+fi
+
+MT="$(mktemp)"
+# With both tips resolved, exit 1 can only mean "the merge conflicts", which is
+# the ordinary case here. Above that is a real failure.
+MT_STATUS=0
+git merge-tree -z --write-tree --name-only HEAD MERGE_HEAD >"$MT" 2>/dev/null || MT_STATUS=$?
+if [ "$MT_STATUS" -gt 1 ]; then
+  echo "STOP conflict-set-unavailable"
+  exit 0
+fi
+
+CONFLICTED="$(mktemp)"
+# Field 0 is the tree oid; the conflicted paths follow; an empty field ends
+# them, and the informational messages follow that.
+#
+# Read in bash rather than with `awk 'BEGIN { RS = "\0" }'`. Setting RS to NUL
+# is not portable: measured, busybox awk ignores it, prints nothing and exits
+# 0 -- handing the scan an empty set with no error anywhere, which is this
+# script's own failure mode reached through the choice of awk.
+mt_field=0
+while IFS= read -r -d '' field; do
+  mt_field=$((mt_field + 1))
+  if [ "$mt_field" -eq 1 ]; then
+    continue
+  fi
+  if [ -z "$field" ]; then
+    break
+  fi
+  printf '%s\0' "$field"
+done <"$MT" >"$CONFLICTED"
+
+# Exit 1 said this merge conflicts, so the set cannot be empty. If it is, the
+# read above did not see what merge-tree wrote, and scanning nothing is exactly
+# what must not happen quietly.
+if [ "$MT_STATUS" -eq 1 ] && [ ! -s "$CONFLICTED" ]; then
+  echo "STOP conflict-set-unavailable"
+  exit 0
+fi
 
 # The blob is written to a file and grepped there rather than piped into
 # grep. `grep -q` exits at its first match, which sends SIGPIPE upstream, and
@@ -88,28 +147,24 @@ holds_markers() {
   grep -q -e '^<<<<<<<' -e '^|||||||' -e '^=======$' -e '^>>>>>>>' -- "$BLOB"
 }
 
-# A path is exempt only when the index blob is byte-identical to one parent's
-# blob there -- when the resolution took one side untouched, or the merge
-# brought the file in cleanly. Confining the scan is what reading MERGE_MSG
-# used to buy: this repository's own fixtures hold literal marker lines, so
-# scanning every changed path would refuse each merge that carries such a file
-# in, with no way past the guard.
-#
-# Keyed on "a parent held a marker line anywhere" instead, the exemption is far
-# too wide: a file that carries marker text as its own content *and* genuinely
-# conflicts is exempted whole, and the markers git wrote into it are committed.
-# Measured -- COMMITTED where the pre-change script refused it, so that rule was
-# a regression, not merely a blind spot. A path someone actually resolved is
-# never byte-identical to either parent, so byte-identity cannot exempt it.
-took_a_side_untouched() {
-  local side
-  git cat-file blob ":$1" >"$BLOB" 2>/dev/null || return 1
-  for side in HEAD MERGE_HEAD; do
-    if git cat-file blob "${side}:$1" >"$PARENT" 2>/dev/null && cmp -s "$BLOB" "$PARENT"; then
+# A path is scanned when git reports this merge conflicted in it, or when the
+# resolution created it and neither parent has it -- a conflict resolved by
+# renaming leaves the markers at a path merge-tree names nowhere. A file that
+# merged cleanly is in neither, whatever its own content looks like.
+in_conflict_set() {
+  local c
+  while IFS= read -r -d '' c; do
+    if [ "$c" = "$1" ]; then
       return 0
     fi
-  done
+  done <"$CONFLICTED"
   return 1
+}
+
+absent_from_both_parents() {
+  git cat-file -e "HEAD:$1" 2>/dev/null && return 1
+  git cat-file -e "MERGE_HEAD:$1" 2>/dev/null && return 1
+  return 0
 }
 
 # The index blob is what is scanned, not the working-tree file: the index is
@@ -119,11 +174,10 @@ took_a_side_untouched() {
 MARKED=""
 while IFS= read -r -d '' path; do
   [ -n "$path" ] || continue
-  if took_a_side_untouched "$path"; then
-    continue
-  fi
-  if holds_markers ":${path}"; then
-    MARKED="${MARKED}${path} "
+  if in_conflict_set "$path" || absent_from_both_parents "$path"; then
+    if holds_markers ":${path}"; then
+      MARKED="${MARKED}${path} "
+    fi
   fi
 done <"$CHANGED"
 
