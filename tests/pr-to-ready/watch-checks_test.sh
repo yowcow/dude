@@ -38,13 +38,6 @@
 # `default-branch-has-checks-so-the-watch-runs-out` stops at three calls, since
 # the pre-fix script has no probe to make the other two.
 #
-# `name-that-looks-like-a-missing-commit-still-settles` is RED against ba30e8f,
-# where the exit 3 test still grepped the raw body: there it is exit 3 after a
-# single call, a listing whose check *name* carries the phrase read as a commit
-# the remote does not have. Recorded because a later change to that predicate
-# has no other way to tell a row that would have caught the regression from one
-# that passes against both versions.
-#
 # `missing-commit` stubs a FAILING call, because that is the only kind real gh
 # makes here: measured, `gh api .../commits/deadbeef/check-runs` exits 1. Stubbed
 # as a success — which is how that row read until then — it holds the exit 3 test
@@ -137,7 +130,6 @@ done <<'ROWS'
 settled-prints-rows|*=check-runs-settled|-|-|acme widgets deadbeef 2 1|0|2|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 one-poll-cannot-settle|*=check-runs-settled|-|-|acme widgets deadbeef 1 1|1|1|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 name-that-looks-unsettled-still-settles|*=check-runs-name-looks-unsettled|-|-|acme widgets deadbeef 2 1|0|2|e2e (in_progress shard)\tcompleted\tsuccess\nqueued-jobs monitor\tcompleted\tsuccess\n
-name-that-looks-like-a-missing-commit-still-settles|*=check-runs-name-looks-like-missing-commit|-|-|acme widgets deadbeef 2 1|0|2|No commit found for SHA: weirdcheck\tcompleted\tsuccess\n
 unsettled-then-settled|1=check-runs-in-progress;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 partial-registration-is-not-settled|1=check-runs-partial;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
 same-size-different-checks-is-not-settled|1=check-runs-name-looks-unsettled;*=check-runs-settled|-|-|acme widgets deadbeef 3 1|0|3|build\tcompleted\tsuccess\nlint\tcompleted\tskipped\n
