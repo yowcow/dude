@@ -10,8 +10,13 @@
 # {"message":"No commit found for SHA: ...","status":"422"}: no "in_progress"
 # anywhere in it, so the naive predicate calls CI settled and the caller marks a
 # PR ready having never read a check. So the response is validated for the
-# total_count field before it is believed, and a missing commit is reported as
-# its own exit status rather than as an empty run list.
+# total_count field before it is believed. A missing commit is then reported
+# as its own exit status for the wait it saves, not a wrong answer it stops:
+# once total_count is demanded that 422 body is no listing at all, so without
+# the test the watch polls to its cap and answers exit 4 — measured on the
+# `missing-commit` row — handing the same person the same PR twenty minutes
+# later, with a generic listing-read failure in place of the specific
+# missing-commit diagnosis.
 #
 # Whether the checks *pass* is the caller's judgement, never this script's: it
 # reports the conclusions and stops there. A skipped check is not a failure, and
@@ -198,25 +203,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # stdout. Gated, the one failure worth ending the watch on would be read as an
   # ordinary blip and every later iteration would ask the same wrong question
   # until the cap ran out.
-  #
-  # The verdict is read off the JSON rather than by grepping the body, for the
-  # same reason the status test below is: a check whose *name* carries that
-  # phrase makes a body-wide match report a commit that HAS checks as one the
-  # remote does not have, and exit 3 then sends the caller to hand a person back
-  # a PR whose CI it never read. `has("total_count")` is what separates the two
-  # — the field every listing carries and no error body does, which is the
-  # agreement the validator below and the default-branch probe already rest on.
-  #
-  # Slurped, for the reason those two are: `jq -e` takes its status from the
-  # LAST value it emitted, so on a stream it answers about the last document
-  # alone. Measured: a listing followed by this error object makes the unslurped
-  # predicate print `false` then `true` and exit 0 — exit 3 for a commit whose
-  # check-runs this script had just read.
-  if printf '%s' "$raw" |
-    jq -e -s 'length == 1 and (.[0]
-       | (has("total_count") | not)
-       and (.message | type) == "string"
-       and (.message | startswith("No commit found for SHA")))' >/dev/null 2>&1; then
+  if printf '%s' "$raw" | grep -q 'No commit found for SHA'; then
     printf '%s\n' "$raw" >&2
     exit 3
   fi

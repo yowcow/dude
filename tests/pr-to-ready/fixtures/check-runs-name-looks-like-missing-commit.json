@@ -1,6 +1,0 @@
-{
-  "total_count": 1,
-  "check_runs": [
-    { "id": 301, "name": "No commit found for SHA: weirdcheck", "status": "completed", "conclusion": "success" }
-  ]
-}
