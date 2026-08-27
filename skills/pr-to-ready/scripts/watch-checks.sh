@@ -10,8 +10,12 @@
 # {"message":"No commit found for SHA: ...","status":"422"}: no "in_progress"
 # anywhere in it, so the naive predicate calls CI settled and the caller marks a
 # PR ready having never read a check. So the response is validated for the
-# total_count field before it is believed, and a missing commit is reported as
-# its own exit status rather than as an empty run list.
+# total_count field before it is believed. A missing commit is then reported as
+# its own exit status for the wait it saves, not a wrong answer it stops: once
+# total_count is demanded that 422 body is no listing at all, so without the
+# test the watch polls to its cap and answers exit 4 — measured on the
+# `missing-commit` row — handing the same person the same PR twenty minutes
+# later, with "no listing could be read" in place of the SHA.
 #
 # Whether the checks *pass* is the caller's judgement, never this script's: it
 # reports the conclusions and stops there. A skipped check is not a failure, and
