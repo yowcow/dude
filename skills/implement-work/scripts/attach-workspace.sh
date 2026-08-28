@@ -43,7 +43,7 @@ status=$?
 set -e
 
 if [ "${status}" -eq 0 ]; then
-  git fetch origin "${BRANCH}" >&2
+  git fetch origin -- "${BRANCH}" >&2
   git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"
   git worktree add --track -b "${BRANCH}" "${WORKTREE_PATH}" "origin/${BRANCH}" >&2
   echo "ATTACHED ${WORKTREE_PATH}"

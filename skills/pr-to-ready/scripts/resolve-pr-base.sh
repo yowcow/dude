@@ -50,7 +50,7 @@ resolve_default_branch() {
 }
 
 fetch_ref() {
-  git fetch origin "$1" >&2
+  git fetch origin -- "$1" >&2
 }
 
 # Resolve the default branch before the scan below rather than at the two

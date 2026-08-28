@@ -35,7 +35,7 @@ resolve_default_branch() {
 
 # Fetch the branch, so the caller can cut from origin/<name>.
 fetch_ref() {
-  git fetch origin "$1" >&2
+  git fetch origin -- "$1" >&2
 }
 
 # blockedBy and closedByPullRequestsReferences must be counted, never merely

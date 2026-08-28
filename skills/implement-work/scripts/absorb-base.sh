@@ -55,7 +55,7 @@ fi
 # refs/remotes/origin/<base> left by an earlier round is the same defect one
 # step quieter: it is stale, so the base's newer commits are absent and the
 # answer is UP-TO-DATE for a base that has moved.
-if ! git fetch origin "${BASE}" >&2; then
+if ! git fetch origin -- "${BASE}" >&2; then
   echo "STOP base-fetch-failed"
   exit 0
 fi
