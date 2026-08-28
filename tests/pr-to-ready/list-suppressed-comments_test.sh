@@ -32,6 +32,17 @@
 # bytes; expected/suppressed-block.out is unchanged from before the projection,
 # which is what makes the second one evidence rather than a restatement.
 #
+# `two-entries-projected` is the only row where the projection's print loop
+# (`for (i = 1; i <= count; i++)`) runs past a single entry — every other
+# passing row declares N=1, and the one N=2 fixture (`count-mismatch-stops`)
+# exits 4 before the loop is reached. An off-by-one in that loop's bounds
+# (say, `i < count`) would still satisfy the guard, since the guard compares
+# `declared` against the count accumulated during the parse pass, not against
+# what the loop actually printed — so the script would exit 0 with fewer
+# `path:line` lines than its own `suppressed<TAB>N` header promises, and the
+# clean judgment would read fewer outstanding suppressed findings than the
+# review actually holds, taking a PR to ready with one left unaddressed.
+#
 # `count-mismatch-stops` and `count-mismatch-full-still-prints` are one fixture
 # read two ways: the heading declares two entries and only one line parses, so
 # the default path exits 4 with nothing on stdout while --full keeps handing back
@@ -96,6 +107,7 @@ while IFS='|' read -r name fixture status args want_exit want_calls want_file; d
 done <<'ROWS'
 # name|fixture|gh-status|args|exit|calls|expected-file
 suppressed-block-found|reviews-suppressed|0|acme widgets 7|0|1|suppressed-projection.out
+two-entries-projected|reviews-suppressed-two-entries|0|acme widgets 7|0|1|suppressed-two-entries.out
 suppressed-block-full|reviews-suppressed|0|--full acme widgets 7|0|1|suppressed-block.out
 count-mismatch-stops|reviews-suppressed-count-mismatch|0|acme widgets 7|4|1|-
 count-mismatch-full-still-prints|reviews-suppressed-count-mismatch|0|--full acme widgets 7|0|1|suppressed-block-mismatch.out
