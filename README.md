@@ -1,5 +1,7 @@
 # dude
 
+![Dudes hanging out at a beachside skate park with pizza and skateboards](docs/dude.jpeg)
+
 Yet another AI workflow.
 
 dude packages the skills that carry a change from an issue to a pull request
