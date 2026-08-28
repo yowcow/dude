@@ -48,6 +48,14 @@ codex plugin marketplace add yowcow/dude
 codex plugin add dude@dude
 ```
 
+Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
+gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
+carrying a `trusted_hash`. Installing dude does not grant it: `codex plugin add`
+records no such entry, and an untrusted hook does not run, so `using-dude` is
+not in context until you trust it — though the skills are still invocable
+by name. Unlike Grok's and Gemini's install-time prompts, Codex's hook trust
+decides whether injection happens at all.
+
 Grok CLI:
 
 ```
@@ -55,9 +63,9 @@ grok plugin install yowcow/dude
 ```
 
 Grok asks you to trust the plugin before installing it. Answer that prompt
-yourself on a first install — trust is what lets a plugin run hooks. `--trust`
-skips it, which is why the Development section below uses it on a clone you
-already own.
+yourself on a first install — it is what lets the plugin be installed at all.
+`--trust` skips it, which is why the Development section below uses it on a
+clone you already own.
 
 Gemini asks you to consent before installing any third-party extension, and adds
 a second warning when the extension ships hooks, as dude does. Answer it yourself
@@ -117,10 +125,12 @@ The import was measured resolving in full — the assembled session context carr
 the skill body through its last line, not a truncated preview — and all nine
 skills resolve to the extension rather than to anything installed alongside it.
 
-Codex and Grok both install all nine skills and both place `hooks/hooks.json` in
-the install — `grok inspect --json` lists it as a recognized hook — but neither
-was observed to run it, so `using-dude` is not in context there. Grok's
-interactive mode is untested.
+Codex installs all nine skills and runs `hooks/hooks.json` once the hook is
+trusted, so `using-dude` is in context there too — the Install section above
+covers what trust involves. Grok installs all nine skills and places
+`hooks/hooks.json` in the install — `grok inspect --json` lists it as a
+recognized hook — but was never observed to run it, in an interactive session or
+headless, so `using-dude` is not in context there.
 
 Gemini reads `hooks/hooks.json` too, and **does not run it — leave it that way.**
 A Gemini lifecycle matcher is compared for equality, not as a pattern, so the
@@ -132,9 +142,9 @@ would break Gemini rather than help it, because Gemini does not hydrate
 `${CLAUDE_PLUGIN_ROOT}` — the hook would run an empty path and fail. Gemini's
 injection is the `GEMINI.md` route above and needs no hook.
 
-Invoke it by name instead: Codex namespaces it `dude:using-dude`, and Grok marks
-it user-invocable, exposing each skill as a slash command named after it
-(`/using-dude`).
+Grok exposes each skill as a slash command named after it (`/using-dude`), which
+is how you reach `using-dude` there. Codex namespaces skills `dude:using-dude`,
+so the same name works there as well, trusted hook or not.
 
 This is why `using-dude` is a skill rather than plain Markdown: an agent with no
 injection route still reaches it by name.
