@@ -38,7 +38,7 @@ A Change that carries no design decision has a lane of its own, not an exemption
 
 ### Understand
 
-- Read before acting: read the relevant files (Serena when available, else `rg`), understand the surrounding architecture and impacted interfaces, assess the impact, and identify existing failures and constraints.
+- Identify existing failures and constraints before acting.
 - For investigations, also pin down the symptom precisely — what is observed, where, since when, at what scope — and what a sufficient explanation would look like.
 
 ### Change workflow
