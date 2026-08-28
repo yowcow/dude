@@ -50,7 +50,7 @@ Request review from both Claude and Copilot when both are available — they cat
 
 ### 2-0. Verify PR body issue links
 
-Before reviewers are asked to read it: for every issue reference in the body, resolve it against the repository the reference itself names — the one in a reference qualified as `owner/repo#NNN`, and the PR's own only for a bare `#NNN` — and confirm it's the intended issue. Ask the user when the intended repository is ambiguous rather than guessing. Correct any wrong link before continuing.
+Before reviewers are asked to read it: for every issue reference in the body, resolve it against the repository the reference itself names — the one in a reference qualified as `owner/repo#NNN`, and the PR's own only for a bare `#NNN` — and confirm it's the intended issue. A reference carrying a closing keyword takes one confirmation more — that it resolves to an **issue** at all. A successful lookup is not that confirmation: issues and PRs share one number space, and a PR's title can echo the issue it closes, so the title alone settles nothing. The record's URL path is what separates them — `/issues/` against `/pull/` — and a closing keyword on a PR number closes nothing, leaving the issue open after the merge. Ask the user when the intended repository is ambiguous rather than guessing. Correct any wrong link before continuing.
 
 ### 2-1. Request the reviewers
 
