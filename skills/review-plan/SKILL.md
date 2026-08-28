@@ -42,9 +42,9 @@ Each lens is a distinct failure mode, and none of them lowers the bar in **What 
   - On an **implementation plan**: also a task with no verification step.
   - On a **TODO list**: an item with no stated completion criteria. **Not** a missing verification command — the TODO list is contractually forbidden to carry those, so flagging their absence would manufacture a finding against every item. Verification detail is Executability's business, and Executability is skipped for this target.
 - **Consistency** — steps that contradict each other, ordering or dependency errors, tasks assuming state no earlier task produces, terminology drift.
-- **Reality** — mismatch with the repo as it is: paths, symbols, or commands that don't exist; existing utilities or patterns the plan reinvents; existing failures, constraints, or config the plan ignores.
+- **Reality** — mismatch with the repo as it is: existing failures, constraints, or config the plan ignores.
 - **Assumptions** — what the plan takes for granted without checking: unstated preconditions, dependency behavior nobody verified, assumed environment, permissions, or data shape. Where Reality catches what the repo contradicts, this catches what nobody has confirmed either way — list each assumption and mark it verified or unverified.
-- **Executability** — tasks too large or too vague to implement and verify independently; shared files that break task independence; verification that isn't a concrete command, or one that wouldn't actually show the change worked. A named command whose result-testing method is unspecified counts here.
+- **Executability** — tasks too large or too vague to implement and verify independently; shared files that break task independence; verification that wouldn't actually show the change worked. A named command whose result-testing method is unspecified counts here.
 - **Risk** — blast radius, backward compatibility, data and security implications, and what happens if a task half-lands.
   - On a **TODO list**: also whether every intermediate state is safe — the PRs land one at a time, so a state where only some have merged has to hold together.
 
