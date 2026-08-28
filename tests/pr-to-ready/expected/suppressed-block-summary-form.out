@@ -1,0 +1,8 @@
+<summary>Suppressed comments (2)</summary>
+
+**Previously missed (2)** — in code that hasn't changed since the last review.
+
+**skills/pr-to-ready/scripts/list-copilot-reviews.sh:44**
+* The filter drops a review whose author is null, so one left by a since-deleted account is invisible in the listing.
+**tests/lib/harness.sh:210**
+* `check_bytes` reports only the first differing offset, so a caller wanting the whole difference has to re-run `cmp` itself.

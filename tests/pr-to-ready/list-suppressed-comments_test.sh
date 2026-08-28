@@ -13,6 +13,14 @@
 # 5028978936, which carries the same <details> block with no suppressed section.
 # That pair is what holds detection and false detection apart.
 #
+# `summary-form-block-found` is the other shape Copilot emits for the same
+# block: the name is carried by `<summary>` inside the block's own `<details>`,
+# with no `###` heading and no `Review effort level` line. It is what holds the
+# start rule to the section name plus its count rather than to the markup — the
+# heading rows all pass against a rule anchored on `^### `, which is the defect
+# it was added for. Its body reproduces the structure recorded in
+# yowcow/dude#90; the observed review's own text was withheld there.
+#
 # The two latest-review rows are not a duplicate pair. `latest-review-wins` has
 # the listing already in chronological order, which is how the API returns it, so
 # it alone would pass against a filter that simply took the array's last element.
@@ -25,6 +33,15 @@
 # stdout either, and neither does a review with no suppressed block.
 # `no-suppressed-block` and `gh-call-fails` are the pair that holds those apart,
 # and they differ only in the exit status.
+#
+# RED verification (see tests/README.md) -- against the script as it was before
+# the start rule moved off the heading shape, `summary-form-block-found` must
+# fail, because the pattern matched no line in that body and the script printed
+# nothing at exit 0 (#92). Unlike the commits tests/README.md names, this one
+# resolves in this repository: it is master as the fix was branched from.
+#   tmp="$(mktemp -d)"
+#   git show 0c685b4:skills/pr-to-ready/scripts/list-suppressed-comments.sh >"$tmp/old.sh"
+#   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/list-suppressed-comments_test.sh
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -77,6 +94,7 @@ while IFS='|' read -r name fixture status args want_exit want_calls want_file; d
 done <<'ROWS'
 # name|fixture|gh-status|args|exit|calls|expected-file
 suppressed-block-found|reviews-suppressed|0|acme widgets 7|0|1|suppressed-block.out
+summary-form-block-found|reviews-suppressed-summary-form|0|acme widgets 7|0|1|suppressed-block-summary-form.out
 no-suppressed-block|reviews-no-suppressed|0|acme widgets 7|0|1|-
 latest-review-wins|reviews-suppressed-not-latest|0|acme widgets 7|0|1|-
 latest-review-wins-against-array-order|reviews-suppressed-latest-out-of-order|0|acme widgets 7|0|1|suppressed-block.out
