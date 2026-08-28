@@ -38,7 +38,7 @@ A Change that carries no design decision has a lane of its own, not an exemption
 
 ### Understand
 
-- Identify existing failures and constraints before acting.
+- Identify existing failures and constraints.
 - For investigations, also pin down the symptom precisely — what is observed, where, since when, at what scope — and what a sufficient explanation would look like.
 
 ### Change workflow
