@@ -25,6 +25,25 @@
 # stdout either, and neither does a review with no suppressed block.
 # `no-suppressed-block` and `gh-call-fails` are the pair that holds those apart,
 # and they differ only in the exit status.
+#
+# The projection rows and the --full rows are the two consumers this script now
+# serves. `suppressed-block-found` pins what the clean judgment reads and
+# `suppressed-block-full` pins that 2-3's collection still gets the block's own
+# bytes; expected/suppressed-block.out is unchanged from before the projection,
+# which is what makes the second one evidence rather than a restatement.
+#
+# `count-mismatch-stops` and `count-mismatch-full-still-prints` are one fixture
+# read two ways: the heading declares two entries and only one line parses, so
+# the default path exits 4 with nothing on stdout while --full keeps handing back
+# the block. Without the first, a Copilot format change would reach the clean
+# judgment as "no suppressed findings" and take a PR to ready with one
+# outstanding.
+#
+# RED verification (the projection, the guard, and the flag must all fail against
+# the pre-projection script) -- see tests/README.md:
+#   tmp="$(mktemp -d)"
+#   git show 0c685b4:skills/pr-to-ready/scripts/list-suppressed-comments.sh >"$tmp/old.sh"
+#   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/list-suppressed-comments_test.sh
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -76,10 +95,13 @@ while IFS='|' read -r name fixture status args want_exit want_calls want_file; d
   fi
 done <<'ROWS'
 # name|fixture|gh-status|args|exit|calls|expected-file
-suppressed-block-found|reviews-suppressed|0|acme widgets 7|0|1|suppressed-block.out
+suppressed-block-found|reviews-suppressed|0|acme widgets 7|0|1|suppressed-projection.out
+suppressed-block-full|reviews-suppressed|0|--full acme widgets 7|0|1|suppressed-block.out
+count-mismatch-stops|reviews-suppressed-count-mismatch|0|acme widgets 7|4|1|-
+count-mismatch-full-still-prints|reviews-suppressed-count-mismatch|0|--full acme widgets 7|0|1|suppressed-block-mismatch.out
 no-suppressed-block|reviews-no-suppressed|0|acme widgets 7|0|1|-
 latest-review-wins|reviews-suppressed-not-latest|0|acme widgets 7|0|1|-
-latest-review-wins-against-array-order|reviews-suppressed-latest-out-of-order|0|acme widgets 7|0|1|suppressed-block.out
+latest-review-wins-against-array-order|reviews-suppressed-latest-out-of-order|0|acme widgets 7|0|1|suppressed-projection.out
 human-suppressed-block-ignored|reviews-suppressed-by-human|0|acme widgets 7|0|1|-
 no-reviews-at-all|reviews-empty|0|acme widgets 7|0|1|-
 gh-call-fails|not-found|1|acme widgets 7|1|1|-
