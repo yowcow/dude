@@ -16,7 +16,7 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 **This skill dispatches proposers: read-only workers that may run in parallel.** Everything else runs in the main loop.
 
 - The orchestrator owns this pass: it dispatches proposers, judges what they return, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
-- Proposers are read-only workers, following the contract stated in `review-code`'s **Orchestration model** and bought for the same reason. Each gets the diff, the paths it touches, the standards that apply, and its assigned lenses. A proposer returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean.
+- Proposers are read-only workers, following the contract stated in `review-code`'s **Orchestration model** and bought for the same reason. Each gets the diff, the paths it touches, and its assigned lenses. A proposer returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean.
 - Proposers stay read-only for two reasons beyond that contract: it matches how the other local skills treat workers (`pr-to-ready` keeps every code change, commit, and push in the orchestrator), and `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
 ## Scope
@@ -26,15 +26,11 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 - Preserve behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics.
 - When the existing checks can't prove a simplification behavior-preserving, add the minimal characterization test that can, and say so in the report. That's the proof, not scope creep.
 
-## Standards
-
-Follow local standards over generic preferences — check `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` or shared guidelines, README and contributor docs, the formatter/linter/typechecker/test config, and nearby code for style.
-
 ## Lenses
 
 Each lens is a distinct kind of avoidable complexity, and every one is behavior-preserving. How many proposers they map to is decided in **Dispatch** below.
 
-- **Structure** — unnecessary complexity, nesting, or branching; redundant or duplicated logic; unclear names; related logic scattered where it could be consolidated.
+- **Structure** — unnecessary complexity, nesting, or branching; redundant or duplicated logic; unclear names; related logic that could be consolidated.
 - **Cost** — work the change itself added beyond what its result needs, where the excess is evident from reading the diff rather than from a measurement: per-iteration queries or IO that one call covers. Reshape to the same result at the lower cost.
 - **Noise** — formatting churn unrelated to the task; comments that merely restate the code.
 - **Reuse** — places where the diff reimplements what the repository already has. Grep the shared and utility modules and the files adjacent to the change, and name the existing helper it should call instead.
@@ -53,7 +49,7 @@ Proposers are read-only and share no mutable state, so they may run in parallel 
 - **Default** — one proposer takes every lens.
 - **Large diff, or one spanning subsystems** — one proposer per lens, dispatched together.
 
-Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Standards**, **Lenses**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
+Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Lenses**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
 
 ## Proposal contract
 
@@ -68,7 +64,7 @@ Report "no proposals" explicitly rather than inventing one.
 
 ## Pass
 
-1. Gather the inputs: the diff, the paths it touches, and the standards that apply.
+1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
 3. Evaluate every proposal with `superpowers:receiving-code-review`: reject — with a stated reason — anything that changes behavior, that needs a measurement to justify it (see **Don't over-simplify**), that reaches outside the diff (see **Scope**), or that only reflects proposer preference.
 4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output.
