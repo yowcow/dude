@@ -28,6 +28,10 @@ The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered a
 whichever stage the work has actually reached. An investigation runs first
 where the cause is unknown, and hands its findings to `plan-work`.
 
+## Requirements
+
+dude requires [Superpowers](https://github.com/obra/superpowers#installation). Install it first, in the same runtime you are installing dude into. dude's skills name Superpowers procedures and neither ship nor reimplement them, so those calls have nowhere to go until Superpowers is present.
+
 ## Install
 
 Claude Code:
