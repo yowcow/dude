@@ -25,17 +25,6 @@
 #    weakening `^[0-9]+$` to `[0-9]+` left this file reporting ok 7/7, so a
 #    number like `7x` would have been forwarded to the API.
 #
-#    These two rows still do not exhaust "looks numeric". Measured: under a
-#    UTF-8 locale `[0-9]` also matches fullwidth `２５４４` and Arabic-Indic
-#    `٢٥٤٤` (both rejected under `LC_ALL=C`), and the script forwards such an
-#    id to `gh` rather than refusing. Deliberately NOT given a row, and not
-#    tracked anywhere either: #229 measured this and settled that it will not
-#    be fixed — a fullwidth issue number is not an input path this tool has to
-#    account for — so there is no follow-up for a later reader to go looking
-#    for. Asserting today's behaviour would record it as intended, and
-#    asserting a refusal would leave the suite red against a script nobody is
-#    going to change.
-#
 #    The body-file guard gets two rows of its own: `missing-body-file` for a
 #    path that is not there, and `unreadable-body-file` for one that is there
 #    with mode 000. `-f` alone let the second through, and the `jq -Rs ... | gh`

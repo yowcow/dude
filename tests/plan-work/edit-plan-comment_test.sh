@@ -10,16 +10,7 @@
 #    half of that same check — that the pattern is **anchored**. Without it the
 #    node-id row happens to catch a de-anchored `[0-9]+` only by accident,
 #    because the fixture id `IC_kwDOAZjEl85e3xyz` contains digits; `2544x`
-#    makes the anchoring deliberate rather than incidental. Neither row
-#    exhausts "looks numeric": measured, under a UTF-8 locale `[0-9]` also
-#    matches fullwidth `２５４４` and Arabic-Indic `٢٥٤٤` (both rejected under
-#    `LC_ALL=C`), and the script PATCHes such an id rather than refusing.
-#    Deliberately given no row, and not tracked anywhere either: #229 measured
-#    this and settled that it will not be fixed — a fullwidth comment id is not
-#    an input path this tool has to account for — so there is no follow-up for a
-#    later reader to go looking for. Pinning today's behaviour would record it as
-#    intended, and pinning a refusal would leave the suite red against a script
-#    nobody is going to change.
+#    makes the anchoring deliberate rather than incidental.
 # 2. The body comes from a file and reaches gh on stdin as one JSON document
 #    (`jq -Rs`). The payload is compared byte for byte against the same
 #    hand-written golden post-plan-comment_test.sh uses, which is what makes
