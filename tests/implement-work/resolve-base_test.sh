@@ -3,30 +3,21 @@
 # names for each shape of the issue's native `blockedBy` relation, and -- for
 # every answer that names one -- that the branch was really fetched.
 #
-# git is not stubbed. The claim the SUT's fetch_ref comment makes is about
-# git's own behaviour ("`git fetch origin <name>` ... leaves
-# refs/remotes/origin/<name> at whatever an earlier fetch wrote whenever the
-# clone's remote.origin.fetch refspec doesn't cover it"), so a git stub would
-# encode the test author's belief about that rather than git's behaviour.
+# git is not stubbed. Which ref a fetch updates is git's own behaviour, so a
+# git stub would encode the test author's belief about that rather than git's
+# behaviour.
 #
-# Every work repository here is cloned with `--single-branch`, which is what
-# makes "the fetch actually happened" assertable at all. Measured on git
-# 2.43.0: with remote.origin.fetch covering only the cloned branch, the SUT's
-# explicit `+refs/heads/X:refs/remotes/origin/X` creates or advances
-# refs/remotes/origin/X, while a plain `git fetch origin X` updates FETCH_HEAD
-# and leaves that ref untouched -- and BOTH print the same `BASE X` line. In a
-# full clone git's opportunistic update advances the ref either way, hiding the
-# difference completely. So the stdout assertions carry none of this, and the
-# check_tracking assertions carry all of it.
+# The `BASE X` line is printed whether or not the fetch happened, so the
+# stdout assertions carry nothing about it and the check_tracking assertions
+# carry all of it.
 #
 # The remote every row shares holds three branches: `main` and `feature` with
 # two commits each, and `decoy` with one. `decoy` is what the work repository
-# clones, so neither `main` nor `feature` is covered by its refspec, and each
-# row plants both tracking refs one commit behind. A row that expects a fetch
-# therefore asserts the ref MOVED to the tip, and a row that expects none
-# asserts it stayed behind -- which also distinguishes "fetched the default
-# branch" from "fetched the prerequisite's head" in the two rows that could
-# otherwise be told apart only by their stdout.
+# checks out, and each row plants both tracking refs one commit behind. A row
+# that expects a fetch therefore asserts the ref MOVED to the tip, and a row
+# that expects none asserts it stayed behind -- which also distinguishes
+# "fetched the default branch" from "fetched the prerequisite's head" in the
+# two rows that could otherwise be told apart only by their stdout.
 #
 # Limitation: `resolve_default_branch`'s gh call is stubbed with
 # gh_stub_response, so the `--jq .defaultBranchRef.name` expression itself is
@@ -37,11 +28,6 @@
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; each variant below is one mutation of a guard the SUT's own
 # header names, and the rows it must fail are named:
-#   - fetch_ref's explicit refspec -> plain `git fetch origin "$1"`:
-#     every row asserting `tip`, i.e. no-argument-uses-default-branch,
-#     no-prerequisite-uses-default-branch, stale-symref-is-ignored,
-#     default-branch-from-api, prerequisite-open-uses-its-head,
-#     prerequisite-merged-uses-the-default-branch
 #   - blockedBy counted -> checked for emptiness: two-prerequisites-stop
 #   - closedByPullRequestsReferences counted with `length` -> checked for
 #     emptiness: prerequisite-has-several-prs
@@ -86,26 +72,12 @@ build_remote() {
 }
 
 # work_repo <name> <bare> [<origin-head>] -- prints the path of a work repo
-# cloned from <bare> with --single-branch on `decoy`, its origin/main and
+# cloned from <bare> with `decoy` checked out, its origin/main and
 # origin/feature planted one commit behind the remote, and
 # refs/remotes/origin/HEAD pointed at <origin-head> when one is given.
-#
-# --single-branch is deliberate and load-bearing: it is what leaves
-# remote.origin.fetch covering `decoy` alone, so nothing but the SUT's own
-# explicit refspec can advance the other two refs. A plain `git clone` would
-# advance them opportunistically and every fetch assertion here would pass
-# against a SUT that never fetched.
-#
-# git_repo_clone is not used for the same reason -- it clones every branch --
-# and the --single-branch form is not added to gitrepo.sh because it is this
-# file's own fixture concern and that file is shared with eight sibling
-# branches.
 work_repo() {
-  gitrepo_reject_traversal "$1"
-  local dir="${HARNESS_TMP}/repos/$1"
-  rm -rf "$dir"
-  mkdir -p "$(dirname -- "$dir")"
-  git clone -q --single-branch --branch decoy -- "$2" "$dir"
+  local dir
+  dir="$(git_repo_clone "$1" "$2" decoy)"
   stale_ref "$dir" "$2" main
   stale_ref "$dir" "$2" feature
   if [ "$#" -ge 3 ]; then
@@ -117,8 +89,7 @@ work_repo() {
 # stale_ref <work> <bare> <branch> -- plant refs/remotes/origin/<branch> at the
 # remote's <branch>~1, i.e. one commit behind. "Behind" rather than "absent" on
 # purpose: absence would also be reported by a `git fetch` that failed, while a
-# ref sitting at the older commit is the exact state the SUT's fetch_ref
-# comment describes -- "at whatever an earlier fetch wrote".
+# ref sitting at the older commit is what an earlier fetch leaves behind.
 stale_ref() {
   local sha
   sha="$(git -C "$2" rev-parse "refs/heads/$3~1")"
