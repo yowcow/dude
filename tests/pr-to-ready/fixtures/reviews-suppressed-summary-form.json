@@ -1,0 +1,13 @@
+{
+  "reviews": [
+    {
+      "id": "PRR_kwDOTtThvc8AAAABK800Aa",
+      "author": {
+        "login": "copilot-pull-request-reviewer[bot]"
+      },
+      "state": "COMMENTED",
+      "submittedAt": "2026-08-27T04:11:20Z",
+      "body": "## Pull request overview\n\nCopilot reviewed 4 out of 4 changed files in this pull request and generated no new comments.\n\n<details>\n<summary>Suppressed comments (2)</summary>\n\n**Previously missed (2)** — in code that hasn't changed since the last review.\n\n**skills/pr-to-ready/scripts/list-copilot-reviews.sh:44**\n* The filter drops a review whose author is null, so one left by a since-deleted account is invisible in the listing.\n**tests/lib/harness.sh:210**\n* `check_bytes` reports only the first differing offset, so a caller wanting the whole difference has to re-run `cmp` itself.\n</details>"
+    }
+  ]
+}

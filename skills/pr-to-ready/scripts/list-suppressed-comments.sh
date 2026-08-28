@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Project the `### Suppressed comments (N)` block of Copilot's latest review on a
-# PR down to what the clean judgment reads — `suppressed<TAB>N`, then one
+# Project the `Suppressed comments (N)` block of Copilot's latest review on a PR
+# down to what the clean judgment reads — `suppressed<TAB>N`, then one
 # `path:line` per entry — or print nothing when that review carries none.
 # `--full` prints the block verbatim instead, for the collection that has to read
 # the findings themselves.
 #
 # This exists as a command because Copilot's findings arrive on two paths and
 # only one of them is a review thread. A finding Copilot judged low confidence is
-# written into the review body instead, under `### Suppressed comments (N)`, and
-# never becomes a thread — so list-unresolved-threads.sh cannot see it, and a
+# written into the review body instead, under a `Suppressed comments (N)` block,
+# and never becomes a thread — so list-unresolved-threads.sh cannot see it, and a
 # clean judgment resting on that script alone reads a review carrying an
 # unaddressed finding as carrying none. Measured on yowcow/dude#45, where a
 # suppressed finding was valid and the run reported clean with it outstanding.
@@ -38,6 +38,12 @@
 #           with nothing on stdout — Copilot's format moved, so stop rather
 #           than read the block as carrying no findings
 #       other = the gh call failed — stop and inspect
+#
+# Empty output alone never means "no suppressed comments": read it together with
+# the exit status, since a failing gh call prints nothing on stdout either. One
+# residue survives even that pairing: if Copilot renames the section itself, no
+# line carries `Suppressed comments (N)`, and this exits 0 with nothing to print
+# — which no caller can tell apart from a review that truly carries none.
 set -euo pipefail
 
 FULL=0
@@ -55,8 +61,9 @@ OWNER="$1"
 REPO="$2"
 PR="$3"
 
-# The block runs from its own heading to the `</details>` that closes the
-# "Review details" section it sits in.
+# The block starts at the line carrying `Suppressed comments (N)` — a `###`
+# heading in one Copilot shape, a `<summary>` in another — and runs to the next
+# `</details>`.
 fetch_block() {
   gh pr view "$PR" --repo "$OWNER/$REPO" --json reviews \
     --jq '.reviews
@@ -64,7 +71,7 @@ fetch_block() {
         | sort_by(.submittedAt)
         | last
         | .body // ""' \
-    | awk '/^### Suppressed comments/ { in_block = 1 }
+    | awk '/Suppressed comments \([0-9]+\)/ { in_block = 1 }
          in_block && /^<\/details>/ { in_block = 0 }
          in_block { print }'
 }
@@ -89,10 +96,13 @@ if [ -z "$block" ]; then
   exit 0
 fi
 
+# N is read off the block's own start line by the same markup-blind rule that
+# found it, so the `<summary>` shape reaches the clean judgment as its entries
+# rather than as a block whose declared count the guard cannot find.
 printf '%s\n' "$block" | awk '
-  /^### Suppressed comments \([0-9]+\)$/ {
-    n = $0
-    sub(/^### Suppressed comments \(/, "", n)
+  !have_heading && match($0, /Suppressed comments \([0-9]+\)/) {
+    n = substr($0, RSTART, RLENGTH)
+    sub(/^Suppressed comments \(/, "", n)
     sub(/\)$/, "", n)
     declared = n
     have_heading = 1
