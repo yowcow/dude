@@ -14,12 +14,10 @@
 # runs. The expected files are hand-written, so a wrong filter cannot bake
 # itself into its own expectation.
 #
-# The expected files carry each object's keys in ALPHABETICAL order while the
-# fixtures carry them in the order the GraphQL query asks for them. That is not
-# an inconsistency to tidy up: gh filters with gojq, which sorts object keys,
-# so sorted is what a caller really sees (measured). Because the two orders
-# differ, these rows also pin that the stub sorts — with both in query order the
-# question would be invisible.
+# The fixtures still carry a `body` on every comment, which the query no longer
+# asks for. That is deliberate rather than stale: the expected files show the
+# projection dropping it, so a --jq that went back to printing whole nodes fails
+# here on bytes rather than passing unnoticed.
 #
 # The query and the --jq expression below are byte-identical copies of what the
 # script passes, because the stub matches the exact argv. That is deliberate
@@ -27,11 +25,13 @@
 # these rows as an unstubbed argv, which is the review this file is here to
 # force. What it cannot check is the query's meaning — the server is not here.
 #
-# RED verification (the usage rows must fail against the pre-fix script, which
-# exited 1 where the contract now says 2) — see tests/README.md:
+# RED verification (the projected expectations must fail against the pre-
+# projection script, which printed whole thread nodes) -- see tests/README.md:
 #   tmp="$(mktemp -d)"
-#   git show a6d7ed9^:skills/pr-to-ready/scripts/list-unresolved-threads.sh >"$tmp/old.sh"
+#   git show 0c685b4:skills/pr-to-ready/scripts/list-unresolved-threads.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/list-unresolved-threads_test.sh
+# It fails on the unstubbed argv as well as on stdout: the byte-identical QUERY
+# and JQ copies below are what make the old script unable to reach a stub at all.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -59,13 +59,12 @@ QUERY='
             nodes {
               id
               isResolved
-              comments(first: 50) {
+              comments(first: 1) {
                 nodes {
                   databaseId
                   author { login }
                   path
                   line
-                  body
                 }
               }
             }
@@ -73,7 +72,10 @@ QUERY='
         }
       }
     }'
-JQ='.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
+JQ='.data.repository.pullRequest.reviewThreads.nodes[]
+        | select(.isResolved == false)
+        | .comments.nodes[0] as $c
+        | "\(.id)\t\($c.databaseId)\t\($c.author.login)\t\($c.path):\($c.line)"'
 
 failed=0
 total=0

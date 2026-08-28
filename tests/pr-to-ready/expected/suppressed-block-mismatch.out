@@ -1,0 +1,13 @@
+### Suppressed comments (2)
+
+**Previously missed (2)** — in code that hasn't changed since the last review.
+
+**README.md:179**
+* The README cites the marketplace entry field as `source: "./"`, but in `.claude-plugin/marketplace.json` the key is JSON (`"source": "./"`). Using the JSON form here avoids suggesting a YAML-like syntax.
+```
+`plugin.json` through the entry's `source: "./"`, which is where its `No version
+```
+
+- **Files reviewed:** 3/3 changed files
+- **Comments generated:** 0 new
+- **Review effort level:** Lite

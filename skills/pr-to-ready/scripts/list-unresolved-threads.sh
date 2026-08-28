@@ -1,5 +1,13 @@
 #!/usr/bin/env bash
-# List unresolved PR review threads (with up to the first 50 comments each) via GitHub GraphQL.
+# List unresolved PR review threads via GitHub GraphQL, one TSV line each:
+# <thread-id> <first-comment-databaseId> <author> <path>:<line>.
+#
+# The whole thread node is deliberately not printed. Its only consumer is the
+# clean judgment, which reads emptiness and never a body, so every comment body
+# it carried was re-read into the caller's context on each round while the
+# thread stayed unresolved. The one databaseId is the FIRST comment's, which is
+# all resolve-thread.sh needs: it re-queries the thread's comment ids itself and
+# resolves against that snapshot.
 #
 # Usage: list-unresolved-threads.sh <owner> <repo> <pr-number>
 #
@@ -39,13 +47,12 @@ gh api graphql --paginate \
             nodes {
               id
               isResolved
-              comments(first: 50) {
+              comments(first: 1) {
                 nodes {
                   databaseId
                   author { login }
                   path
                   line
-                  body
                 }
               }
             }
@@ -53,4 +60,7 @@ gh api graphql --paginate \
         }
       }
     }' \
-  --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]
+        | select(.isResolved == false)
+        | .comments.nodes[0] as $c
+        | "\(.id)\t\($c.databaseId)\t\($c.author.login)\t\($c.path):\($c.line)"'
