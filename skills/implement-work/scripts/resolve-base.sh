@@ -33,14 +33,9 @@ resolve_default_branch() {
   return 1
 }
 
-# Fetch into an explicit destination ref, so the caller can cut from
-# origin/<name>. Two things make the plain form wrong here: `git fetch origin
-# <name>` never updates a local branch of that same name, and it leaves
-# refs/remotes/origin/<name> at whatever an earlier fetch wrote whenever the
-# clone's remote.origin.fetch refspec doesn't cover it — either way the caller
-# would cut the new branch from a stale commit and nothing would say so.
+# Fetch the branch, so the caller can cut from origin/<name>.
 fetch_ref() {
-  git fetch origin "+refs/heads/$1:refs/remotes/origin/$1" >&2
+  git fetch origin "$1" >&2
 }
 
 # blockedBy and closedByPullRequestsReferences must be counted, never merely

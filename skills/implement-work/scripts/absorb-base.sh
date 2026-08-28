@@ -54,11 +54,8 @@ fi
 # some other branch entirely while still printing MERGED. A
 # refs/remotes/origin/<base> left by an earlier round is the same defect one
 # step quieter: it is stale, so the base's newer commits are absent and the
-# answer is UP-TO-DATE for a base that has moved. The explicit refspec is what
-# makes the destination ref certain -- a plain `git fetch origin <base>` leaves
-# it at whatever an earlier fetch wrote whenever the clone's configured
-# refspec does not cover it.
-if ! git fetch origin "+refs/heads/${BASE}:refs/remotes/origin/${BASE}" >&2; then
+# answer is UP-TO-DATE for a base that has moved.
+if ! git fetch origin "${BASE}" >&2; then
   echo "STOP base-fetch-failed"
   exit 0
 fi

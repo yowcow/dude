@@ -43,11 +43,7 @@ status=$?
 set -e
 
 if [ "${status}" -eq 0 ]; then
-  # Fetch into an explicit destination ref. `git fetch origin <branch>` leaves
-  # refs/remotes/origin/<branch> at whatever an earlier fetch wrote whenever the
-  # clone's remote.origin.fetch refspec doesn't cover it, so the attach below
-  # would build the workspace from that stale commit and still print ATTACHED.
-  git fetch origin "+refs/heads/${BRANCH}:refs/remotes/origin/${BRANCH}" >&2
+  git fetch origin "${BRANCH}" >&2
   git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"
   git worktree add --track -b "${BRANCH}" "${WORKTREE_PATH}" "origin/${BRANCH}" >&2
   echo "ATTACHED ${WORKTREE_PATH}"
