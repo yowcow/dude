@@ -9,8 +9,6 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 
 ## Orchestration model
 
-**This skill dispatches no workers of its own.** It runs in the main loop as the orchestrator, and the only workers in this flow are the reviewers `review-plan` dispatches under its own declaration.
-
 - The orchestrator owns everything that decides: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, judging findings and folding the accepted ones in, calling convergence or escalation, and publishing.
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
