@@ -49,10 +49,8 @@ resolve_default_branch() {
   return 1
 }
 
-# Fetch into an explicit destination refspec so a narrowed clone's
-# remote.origin.fetch can't leave refs/remotes/origin/<name> stale.
 fetch_ref() {
-  git fetch origin "+refs/heads/$1:refs/remotes/origin/$1" >&2
+  git fetch origin -- "$1" >&2
 }
 
 # Resolve the default branch before the scan below rather than at the two
