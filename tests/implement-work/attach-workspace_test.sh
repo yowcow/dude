@@ -24,14 +24,6 @@
 #   - drop `--exit-code` from `git ls-remote`: `nowhere-is-create`
 #   - drop the `elif [ "${status}" -ne 2 ]` arm, falling through to CREATE:
 #     `unreachable-remote-is-not-absent`, `no-origin-remote-is-not-absent`
-#
-# The `git fetch origin "+refs/heads/<b>:refs/remotes/origin/<b>"` ->
-# `git fetch origin "<b>"` guard is not covered by a RED row here: the only
-# configuration where the two differ is a clone whose `remote.origin.fetch`
-# does not cover `<b>` (e.g. `--single-branch`), and in exactly that
-# configuration the following `git worktree add --track` fails regardless of
-# which fetch spelling produced the ref (measured on git 2.43.0). Recorded as
-# a defect for a follow-up issue rather than encoded here.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -254,17 +246,11 @@ tally check_eq 'remote-only-is-attached: the branch tracks the remote' 'origin/t
 #
 # The clone is taken while `task` is still at OLD_TIP, so
 # refs/remotes/origin/task is genuinely stale by the time the remote advances
-# to NEW_TIP -- no forced narrowing needed. A SUT that skipped the fetch (or
-# fetched into the wrong ref) would attach the workspace at OLD_TIP while
-# still printing ATTACHED; the caller would then work on top of a commit the
-# remote branch has moved past, and its own later push would be refused as
-# non-fast-forward (or, worse, the missing commits re-derived by hand).
-#
-# A narrowed `remote.origin.fetch` (what `--single-branch` leaves) was tried
-# here to also pin down the fetch's exact refspec spelling, but in that
-# configuration `git worktree add --track` fails outright regardless of the
-# spelling (measured on git 2.43.0) -- so this row only exercises the natural
-# staleness above, not the refspec wording.
+# to NEW_TIP. A SUT that skipped the fetch would attach the workspace at
+# OLD_TIP while still printing ATTACHED; the caller would then work on top of
+# a commit the remote branch has moved past, and its own later push would be
+# refused as non-fast-forward (or, worse, the missing commits re-derived by
+# hand).
 
 total=$((total + 1))
 stub_dir_new
