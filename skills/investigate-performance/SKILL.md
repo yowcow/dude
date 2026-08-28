@@ -9,11 +9,9 @@ Root-cause an observed performance shortfall. `superpowers:systematic-debugging`
 
 ## Investigation rules
 
-These bind every investigation, this one included.
-
-- Preserve volatile evidence before anything else. Investigation workers are read-only: they collect evidence and report findings; the orchestrator owns hypothesis selection, conclusions, and the report. Delegate only independent evidence-gathering — how it splits across workers belongs to the domain skill.
+- Preserve volatile evidence before anything else.
 - Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
-- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors. Report findings with evidence and confidence; the domain skill, when one applies, defines the concrete report format, and proposed fixes are options in the report, not work to start.
+- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors.
 
 ## Rules
 
