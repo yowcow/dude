@@ -115,13 +115,55 @@ version-less control was taken with — is recorded in
 
 ## Use
 
-In Claude Code the skills are namespaced by the plugin:
+### A typical run
 
-```
-/dude:plan-work
-/dude:implement-work
-/dude:pr-to-ready
-```
+A run starts with an issue and ends with a pull request waiting for a person to
+merge it — an issue and two prompts, across two kinds of session:
+
+1. **Open an issue** for what you want done. It is what the plan gets published
+   against, and the parent the sub-issues hang from.
+
+2. **Plan it, in one session:**
+
+   ```
+   /dude:plan-work <issue-url>
+   ```
+
+   It researches, agrees a design with you, then publishes that design plus a
+   numbered TODO list at PR granularity as one comment on the issue, and opens
+   one sub-issue per item.
+
+3. **Implement each item, one fresh session per sub-issue:**
+
+   ```
+   /dude:implement-work <sub-issue-url> dude:pr-to-ready (ready-on-clean=yes)
+   ```
+
+   The first flow takes the item to a pushed branch of verified commits; the
+   second opens the draft PR and loops on CI and review until both are clean.
+
+Then wait for the PR.
+
+Only the first name on that last line is a slash command: Claude Code passes
+everything after it to the skill as free text.
+
+That is what makes the trailing `dude:pr-to-ready` a hand-off you perform
+yourself, up front — `implement-work` ends by *naming* the next flow rather than
+invoking it, because which flow runs next is the caller's decision rather than
+the skill's. `ready-on-clean=yes` answers in the same breath the one question
+`pr-to-ready` would otherwise stop and ask: whether a clean run should mark the
+PR ready.
+
+Neither is a parsed flag; the argument text is read rather than matched against a
+grammar, and it is Claude Code's pass-through that was measured, not the other
+runtimes'.
+
+A fresh session per sub-issue is the shape rather than a preference: a later PR
+is never a continuation of the previous one and inherits none of its
+verification. And dude stops at ready — merging, closing the parent issue, and
+deleting the branch and worktree are yours.
+
+### How each runtime reaches the skills
 
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
 context at the start of every session. Gemini needs none either, by a different
