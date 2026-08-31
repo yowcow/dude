@@ -59,8 +59,11 @@ gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
 carrying a `trusted_hash`. Installing dude does not grant it: `codex plugin add`
 records no such entry, and an untrusted hook does not run, so `using-dude` is
 not in context until you trust it — though the skills are still invocable
-by name. Unlike Grok's and Gemini's install-time prompts, Codex's hook trust
-decides whether injection happens at all.
+by name. Codex asks at the start of the next interactive session instead: after
+the directory-trust prompt, a `Hooks need review` prompt offers to review the
+hook, trust it, or continue without trusting. Unlike Grok's and Gemini's
+install-time prompts, Codex's hook trust decides whether injection happens at
+all.
 
 Grok CLI:
 
