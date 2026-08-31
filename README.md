@@ -121,7 +121,7 @@ version-less control was taken with — is recorded in
 ### A typical run
 
 A run starts with an issue and ends with a pull request waiting for a person to
-merge it — an issue and two prompts, across two kinds of session:
+merge it — that issue plus two prompts, across two kinds of session:
 
 1. **Open an issue** for what you want done. It is what the plan gets published
    against, and the parent the sub-issues hang from.
