@@ -230,10 +230,10 @@ in context there. What a session does carry is the skill's *listing*: asked
 whether the rules were present, it quoted back the `description` from
 `using-dude`'s frontmatter and no line of its body. Measured on agy 1.1.23.
 
-Where a runtime has no injection route, `using-dude` has to be reached by hand,
-and there are three shapes of that. **Ask for it by name** — Grok exposes each
-skill as a slash command named after it (`/using-dude`), and Codex namespaces
-skills `dude:using-dude`, which works trusted hook or not. Antigravity needs no
+Where `using-dude` is not in context, it has to be reached by hand, and there
+are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
+slash command named after it (`/using-dude`), and Codex namespaces skills
+`dude:using-dude`, which works trusted hook or not. Antigravity needs no
 syntax at all: asked to use the skill named `using-dude`, a session opened the
 installed `SKILL.md` and quoted a line of the body back. This is why `using-dude`
 is a skill rather than plain Markdown, and it is the route that needs no setup.
