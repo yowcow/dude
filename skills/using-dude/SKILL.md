@@ -68,6 +68,14 @@ The deliverable is an evidence-backed explanation of an observed problem. `super
 - An investigation never starts editing. When a fix is wanted, enter `plan-work` with the findings as input.
 - Carry the reproduction forward: it becomes the regression test for the fix.
 
+### Worker tier
+
+**Tier** is whatever the runtime has for putting more capability on one task — a stronger model, a higher reasoning effort, or both.
+
+The orchestrator can re-judge what a worker returned, but never what it didn't return: a worker whose miss passes as "nothing found" is dispatched at the highest tier the run has. The run's default is fine for every other worker, and this rule constrains nothing about them. Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
+
+Where the runtime has no means of choosing a tier, this rule settles nothing and the run proceeds unchanged.
+
 ### Stage boundaries
 
 - At each phase transition and gate iteration, write a concise hand-off summary, dropping exploratory dumps and stale tool output while keeping the substance.
