@@ -5,6 +5,10 @@ description: Use when starting any task - establishes how a task is classified, 
 
 # Using dude
 
+<SUBAGENT-STOP>
+If you were dispatched as a subagent to execute a specific task, ignore this skill.
+</SUBAGENT-STOP>
+
 The skills cite sections of this document as "the guidelines' **X**".
 
 - Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
