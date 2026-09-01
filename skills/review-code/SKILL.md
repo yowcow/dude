@@ -17,6 +17,7 @@ One invocation runs the loop to completion: review, judge, fix, verify, review a
 
 - The orchestrator owns the loop: it resolves the scope, dispatches the reviewer, judges findings, applies accepted fixes, verifies, and decides when the loop ends. A reviewer never declares the code clean.
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review`. It gets the scope and the requirements and returns findings only. It never edits code, never runs the project's checks, and never commits.
+- The reviewer goes out at the highest tier the run has (the guidelines' **Worker tier**): a finding it doesn't return leaves this loop *clean* and passes `implement-work`'s completion gate, which is itself this check.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way. `simplify-code`'s proposers are dispatched on the same contract, for the same reason.
 
 ## Boundaries

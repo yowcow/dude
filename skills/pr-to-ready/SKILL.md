@@ -15,6 +15,8 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 **Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; collecting reviewer comments into a structured list of findings; and evaluating each finding, one subagent per finding, fanned out together since findings are independent. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
+**Evaluating a finding goes out at the highest tier the run has** (the guidelines' **Worker tier**): a real finding it rejects with a plausible reason is replied to and resolved on that verdict, and no later round reads the thread again.
+
 ## Step 0: Set up the run
 
 ### 0-1. Create the draft PR if none exists
