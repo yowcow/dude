@@ -83,6 +83,19 @@ installs for you. `--consent` skips it, which is why the Development section
 below uses it too. Without it a non-interactive run does not fail; it waits on
 the prompt for as long as you let it.
 
+Antigravity:
+
+```
+agy plugin import gemini
+```
+
+`agy plugin import gemini` takes what Gemini CLI already has, so dude has to be
+installed there first — the `gemini extensions install` above. `agy plugin list`
+then reports dude with `"source": "gemini-cli"` and `"components": ["skills",
+"hooks"]`, and all nine skills land in `~/.gemini/config/plugins/dude/skills/`.
+The hooks come across with them but do not run; the section below has what that
+costs. Measured on agy 1.1.23.
+
 ## Versions
 
 dude is not versioned. Every runtime is meant to carry the default branch's
@@ -168,6 +181,16 @@ deleting the branch and worktree are yours.
 
 ### How each runtime reaches the skills
 
+| Runtime | `using-dude` in context at session start? | How to reach it by hand |
+| --- | --- | --- |
+| Claude Code | yes — a SessionStart hook | — |
+| Gemini CLI | yes — the `GEMINI.md` `@`-import | — |
+| Codex | yes, once the hook is trusted | `dude:using-dude` |
+| Grok | no | `/using-dude`, a copy in `~/.grok/AGENTS.md`, or `--rules` |
+| Antigravity | no | ask for `using-dude` by name |
+
+Each row's evidence is in the prose below.
+
 `using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
 context at the start of every session. Gemini needs none either, by a different
 route: `gemini-extension.json` names `GEMINI.md` as the extension's context file,
@@ -193,12 +216,39 @@ would break Gemini rather than help it, because Gemini does not hydrate
 `${CLAUDE_PLUGIN_ROOT}` — the hook would run an empty path and fail. Gemini's
 injection is the `GEMINI.md` route above and needs no hook.
 
-Grok exposes each skill as a slash command named after it (`/using-dude`), which
-is how you reach `using-dude` there. Codex namespaces skills `dude:using-dude`,
-so the same name works there as well, trusted hook or not.
+Antigravity installs all nine skills — `agy plugin import gemini` carries the
+hooks across too — and then rejects the hook file: it logs `Failed to parse hooks
+for plugin dude: invalid hook "hooks": command hook must specify 'command'`, and
+`loaded 0 named hooks from 0 hooks.json file(s)`. Its own format takes each
+top-level key as a hook *name*, where dude's file has Claude Code's single
+`hooks` wrapper, and the events its shipped documentation lists are `PreToolUse`,
+`PostToolUse`, `PreInvocation`, `PostInvocation`, and `Stop` — `SessionStart` is
+not among them. The `GEMINI.md` route does not carry over either: Antigravity's
+shipped documentation has it merging a plugin's rules from
+`plugins/<name>/rules/`, and dude ships no such directory. So `using-dude` is not
+in context there. What a session does carry is the skill's *listing*: asked
+whether the rules were present, it quoted back the `description` from
+`using-dude`'s frontmatter and no line of its body. Measured on agy 1.1.23.
 
-This is why `using-dude` is a skill rather than plain Markdown: an agent with no
-injection route still reaches it by name.
+Where `using-dude` is not in context, it has to be reached by hand, and there
+are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
+slash command named after it (`/using-dude`), and Codex namespaces skills
+`dude:using-dude`, which works trusted hook or not. Antigravity needs no
+syntax at all: asked to use the skill named `using-dude`, a session opened the
+installed `SKILL.md` and quoted a line of the body back. This is why `using-dude`
+is a skill rather than plain Markdown, and it is the route that needs no setup.
+**Put the body where the runtime already looks** — `grok inspect --json`, run
+outside any project, reports `~/.grok/AGENTS.md` with `"scope": "global"`, and a
+headless session started outside any project quoted a line of that file back, so
+what it holds reaches the session and not just the inspector. That distinction is
+the one the hook above fails: `grok inspect` lists the hook too. Put a copy of
+`skills/using-dude/SKILL.md` there and the rules arrive with it — a copy, because
+`AGENTS.md` has no import mechanism to point at the installed skill instead, and
+a copy goes stale when the skill moves on. **Or pass it at launch** —
+`grok --help` documents `--rules <RULES>` as "Extra rules to append to the system
+prompt", so handing it the skill body appends the rules for that session. The
+first two were measured here; the third is the flag's documented behavior, which
+this repository has not observed.
 
 The skill bodies themselves use bare names (`plan-work`), because the `dude:`
 prefix is a plugin namespace the host adds — Claude Code and Codex both do,
