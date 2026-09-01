@@ -223,12 +223,12 @@ for plugin dude: invalid hook "hooks": command hook must specify 'command'`, and
 top-level key as a hook *name*, where dude's file has Claude Code's single
 `hooks` wrapper, and the events its shipped documentation lists are `PreToolUse`,
 `PostToolUse`, `PreInvocation`, `PostInvocation`, and `Stop` — `SessionStart` is
-not among them. The `GEMINI.md` route does not carry over either: Antigravity
-merges a plugin's rules from `plugins/<name>/rules/`, and dude ships no such
-directory. So `using-dude` is not in context there. What a session does carry is
-the skill's *listing*: asked whether the rules were present, it quoted back the
-`description` from `using-dude`'s frontmatter and no line of its body. Measured
-on agy 1.1.23.
+not among them. The `GEMINI.md` route does not carry over either: Antigravity's
+shipped documentation has it merging a plugin's rules from
+`plugins/<name>/rules/`, and dude ships no such directory. So `using-dude` is not
+in context there. What a session does carry is the skill's *listing*: asked
+whether the rules were present, it quoted back the `description` from
+`using-dude`'s frontmatter and no line of its body. Measured on agy 1.1.23.
 
 Where a runtime has no injection route, `using-dude` has to be reached by hand,
 and there are three shapes of that. **Ask for it by name** — Grok exposes each
@@ -238,10 +238,13 @@ syntax at all: asked to use the skill named `using-dude`, a session opened the
 installed `SKILL.md` and quoted a line of the body back. This is why `using-dude`
 is a skill rather than plain Markdown, and it is the route that needs no setup.
 **Put the body where the runtime already looks** — `grok inspect --json`, run
-outside any project, reports `~/.grok/AGENTS.md` with `"scope": "global"`, so a
-copy of `skills/using-dude/SKILL.md` there is read in every Grok session. A copy,
-because `AGENTS.md` has no import mechanism to point at the installed skill
-instead, and a copy goes stale when the skill moves on. **Or pass it at launch** —
+outside any project, reports `~/.grok/AGENTS.md` with `"scope": "global"`, and a
+headless session started outside any project quoted a line of that file back, so
+what it holds reaches the session and not just the inspector. That distinction is
+the one the hook above fails: `grok inspect` lists the hook too. Put a copy of
+`skills/using-dude/SKILL.md` there and the rules arrive with it — a copy, because
+`AGENTS.md` has no import mechanism to point at the installed skill instead, and
+a copy goes stale when the skill moves on. **Or pass it at launch** —
 `grok --help` documents `--rules <RULES>` as "Extra rules to append to the system
 prompt", so handing it the skill body appends the rules for that session. The
 first two were measured here; the third is the flag's documented behavior, which
