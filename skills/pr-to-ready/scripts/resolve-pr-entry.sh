@@ -90,11 +90,29 @@ normalize_repo_path() {
 # it, and every fix is pushed to it. `gh repo view` can answer differently
 # (GH_REPO, `gh repo set-default`, a second remote), and an identity check that
 # reads a different remote than the one being written to checks nothing.
-if ! ORIGIN_URL="$(git remote get-url origin 2>/dev/null)" || [ -z "$ORIGIN_URL" ]; then
+#
+# Both of `origin`'s URLs, because that "everything downstream" travels on two
+# of them and not one: attach-workspace.sh fetches over the fetch URL, while
+# every later `git push origin` follows `remote.origin.pushurl` where one is
+# set. Measured on git 2.43.0, such a push lands the ref in the pushurl's
+# repository and leaves the fetch URL's without it — so on a checkout fetching
+# `acme/widgets` and pushing to `git@github.com:fork/widgets.git`, a
+# fetch-URL-only comparison answers `PR 12 branch=feature … repo=acme/widgets`,
+# and Step 1's diagnosis fix and 2-3's `accept` fixes are pushed into the fork
+# while the PR they were written for does not move. `--push` falls back to the
+# fetch URL where no pushurl is set, so an ordinary checkout compares against
+# itself; a `url.<base>.pushInsteadOf` rewrite changes only scheme and host,
+# which normalize_repo_path drops.
+if ! ORIGIN_URL="$(git remote get-url origin 2>/dev/null)" || [ -z "$ORIGIN_URL" ] ||
+  ! PUSH_URL="$(git remote get-url --push origin 2>/dev/null)" || [ -z "$PUSH_URL" ]; then
   echo "STOP wrong-checkout"
   exit 0
 fi
 CHECKOUT="$(normalize_repo_path "$ORIGIN_URL")"
+if [ "$(normalize_repo_path "$PUSH_URL")" != "$CHECKOUT" ]; then
+  echo "STOP wrong-checkout"
+  exit 0
+fi
 
 # --- Step 2: split the reference into owner, repo and number. ---
 

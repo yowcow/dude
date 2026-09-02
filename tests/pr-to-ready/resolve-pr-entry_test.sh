@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/resolve-pr-entry.sh: the two
-# reference forms, the five STOP slugs, and the three rows that are the point
+# reference forms, the five STOP slugs, and the four rows that are the point
 # of the script — a URL is resolved against the repository the URL itself
 # names; a checkout that is not that repository stops the run before any
-# lookup; and a head branch living in a fork stops it too, which the origin
+# lookup; a checkout that fetches that repository but pushes to another stops
+# it too; and so does a head branch living in a fork, which the origin
 # comparison cannot see because the reference names the base repository.
 #
 # git is not stubbed, for the reason ../lib/gitrepo.sh gives: the only git the
-# SUT runs is `git remote get-url origin`, and the identity a fixture presents
-# is carried by its remote's path (.../acme/widgets.git reduces to
-# `acme/widgets`), so a real repository produces both "origin is this PR's
-# repository" and "origin is some other repository" with no network.
+# SUT runs is `git remote get-url origin`, with and without `--push`, and the
+# identity a fixture presents is carried by its remote's path
+# (.../acme/widgets.git reduces to `acme/widgets`), so a real repository
+# produces "origin is this PR's repository", "origin is some other repository"
+# and "origin pushes somewhere else" alike with no network.
 #
 # The gh stub serves a body and then exits with the scripted status, which is
 # what lets the GraphQL error rows be written exactly as real gh behaves: on an
@@ -23,7 +25,8 @@
 #
 # RED verification (see tests/README.md): with a script that drops the origin
 # comparison, the 'url naming another repository' row fails — it answers with a
-# branch instead of STOP wrong-checkout.
+# branch instead of STOP wrong-checkout; dropping the push comparison alone
+# fails 'pushurl naming another repository' the same way.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -53,12 +56,14 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
 failed=0
 total=0
 
-# Three checkouts, told apart by what their `origin` points at. Nothing is ever
+# Four checkouts, told apart by what their `origin` points at. Nothing is ever
 # fetched from these bare repos — the SUT only reads the remote's URL — so they
 # stay empty.
+ACME_WIDGETS="$(git_repo_bare acme widgets)"
+
 WIDGETS="$(git_repo_scratch widgets-work)"
 git_repo_init "$WIDGETS" main
-git_repo_remote "$WIDGETS" origin "$(git_repo_bare acme widgets)"
+git_repo_remote "$WIDGETS" origin "$ACME_WIDGETS"
 
 ELSEWHERE="$(git_repo_scratch elsewhere-work)"
 git_repo_init "$ELSEWHERE" main
@@ -66,6 +71,14 @@ git_repo_remote "$ELSEWHERE" origin "$(git_repo_bare other elsewhere)"
 
 NOREMOTE="$(git_repo_scratch noremote-work)"
 git_repo_init "$NOREMOTE" main
+
+# Fetches this PR's repository and pushes somewhere else. `pushurl` is set
+# repo-locally because ../lib/gitrepo.sh cuts the global config out, so a
+# personal `url.<base>.pushInsteadOf` cannot reach this fixture.
+PUSHAWAY="$(git_repo_scratch pushaway-work)"
+git_repo_init "$PUSHAWAY" main
+git_repo_remote "$PUSHAWAY" origin "$ACME_WIDGETS"
+git -C "$PUSHAWAY" config remote.origin.pushurl "$(git_repo_bare fork widgets)"
 
 # stub_graphql <owner> <name> <number> [<exit>]   body on stdin
 stub_graphql() {
@@ -148,7 +161,17 @@ stub_dir_new
 run_sut_in "$NOREMOTE" bash "$SUT" 12
 assert_row 'no origin remote' 0 'STOP wrong-checkout\n' 0
 
-# --- 8. a head branch living in a fork is not on this origin at all -------
+# --- 8. the reference names this origin's fetch URL, and pushes go elsewhere
+# The URL row above cannot see this: the reference and the fetch URL agree, and
+# only `--push` reports the repository the fixes would land in. Stubbed and
+# never called for the same reason row 6 is — drop the push comparison and this
+# row answers `PR 12 branch=feature …` with one gh call.
+stub_dir_new
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+run_sut_in "$PUSHAWAY" bash "$SUT" https://github.com/acme/widgets/pull/12
+assert_row 'pushurl naming another repository' 0 'STOP wrong-checkout\n' 0
+
+# --- 9. a head branch living in a fork is not on this origin at all -------
 # The origin comparison above cannot see this: the reference names the base
 # repository, which is exactly the repository this checkout is.
 stub_dir_new
@@ -156,7 +179,7 @@ pr_body 12 main main OPEN false true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'cross-fork head' 0 'STOP cross-fork\n' 1
 
-# --- 9/10. a PR that is not open is not something this flow can drive -----
+# --- 10/11. a PR that is not open is not something this flow can drive -----
 stub_dir_new
 pr_body 12 feature main MERGED false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
@@ -167,14 +190,14 @@ pr_body 12 feature main CLOSED false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'closed' 0 'STOP pr-not-open\n' 1
 
-# --- 11. NOT_FOUND on the pullRequest node -------------------------------
+# --- 12. NOT_FOUND on the pullRequest node -------------------------------
 stub_dir_new
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"message":"Could not resolve to a PullRequest with the number of 12."}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'no such pr' 0 'STOP no-pr\n' 1
 
-# --- 12. NOT_FOUND on the repository node reaches the same answer ---------
+# --- 13. NOT_FOUND on the repository node reaches the same answer ---------
 # The repository was renamed or deleted since this clone: origin still says
 # acme/widgets, so the guard passes and GitHub is the one that says no.
 stub_dir_new
@@ -183,26 +206,26 @@ printf '%s\n' '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'no such repository' 0 'STOP no-pr\n' 1
 
-# --- 13. any other GraphQL error is "couldn't tell", not "no PR" ----------
+# --- 14. any other GraphQL error is "couldn't tell", not "no PR" ----------
 stub_dir_new
 printf '%s\n' '{"errors":[{"type":"RATE_LIMITED","message":"API rate limit exceeded"}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'rate limited' 0 'STOP pr-lookup-failed\n' 1
 
-# --- 14. a transport failure prints nothing at all -----------------------
+# --- 15. a transport failure prints nothing at all -----------------------
 stub_dir_new
 printf '' | stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'transport failure' 0 'STOP pr-lookup-failed\n' 1
 
-# --- 15. exit 0 with a null node, no errors array ------------------------
+# --- 16. exit 0 with a null node, no errors array ------------------------
 stub_dir_new
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}}}' | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'null node without errors' 0 'STOP no-pr\n' 1
 
-# --- 16/17/18. usage errors are exits, not STOP lines --------------------
+# --- 17/18/19. usage errors are exits, not STOP lines --------------------
 stub_dir_new
 run_sut_in "$WIDGETS" bash "$SUT"
 assert_row 'no argument' 1 '' 0
