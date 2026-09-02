@@ -34,7 +34,7 @@ Change and Investigation both begin with **Understand**; a bug whose cause is un
 
 Match a named deliverable against the skills' `description`s, and where two could fit, let the deliverable named decide rather than the topic. Where the run turns up work beyond that deliverable, report it and let the user pick the flow instead of widening the run.
 
-For a Change, enter at the flow the work has actually reached: no agreed design or PR-sized split yet → `plan-work`; one PR-sized task in hand → `implement-work`; verified commits on a branch → `pr-to-ready`.
+For a Change, enter at the flow the work has actually reached: no agreed design or PR-sized split yet → `plan-work`; one PR-sized task in hand → `implement-work`; an open PR of verified commits → `pr-to-ready`, given its number or URL, with a branch carrying no PR yet as that flow's own fallback entry.
 
 A Change that carries no design decision has a lane of its own, not an exemption from the flows: the test is that the change is determined once stated, with no interface, structure, or trade-off left open — declare that in one line and carry it into the run's report so the skipped gate stays checkable. This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution, while the completion gate and `pr-to-ready` still run in full — integration goes through a PR at any size. The moment a design decision surfaces, the lane is over: take **Escalation**.
 

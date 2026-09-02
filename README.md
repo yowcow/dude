@@ -134,7 +134,7 @@ version-less control was taken with — is recorded in
 ### A typical run
 
 A run starts with an issue and ends with a pull request waiting for a person to
-merge it — that issue plus two prompts, across two kinds of session:
+merge it — that issue plus three prompts, across three kinds of session:
 
 1. **Open an issue** for what you want done. It is what the plan gets published
    against, and the parent the sub-issues hang from.
@@ -152,27 +152,38 @@ merge it — that issue plus two prompts, across two kinds of session:
 3. **Implement each item, one fresh session per sub-issue:**
 
    ```
-   /dude:implement-work <sub-issue-url> dude:pr-to-ready (ready-on-clean=yes)
+   /dude:implement-work <sub-issue-url>
    ```
 
-   The first flow takes the item to a draft PR on a pushed branch of verified
-   commits; the second loops on CI and review until both are clean.
+   It takes the item to a draft PR on a pushed branch of verified commits, and
+   ends by naming that PR's URL.
+
+4. **Take that PR to ready, in another fresh session:**
+
+   ```
+   /dude:pr-to-ready <pr-url> (ready-on-clean=yes)
+   ```
+
+   It resolves the branch, base and repository from the PR, sets up its own
+   worktree, then loops on CI and review until both are clean.
 
 Then wait for the PR.
 
-Only the first name on that last line is a slash command: Claude Code passes
-everything after it to the skill as free text.
+Steps 3 and 4 are separate sessions rather than two prompts in one because the
+second flow's cost is dominated by re-reading the first's context: measured over
+126 runs, the stretch after `pr-to-ready` starts is 41% of the session's cost,
+and starting it fresh drops what it re-reads each turn from roughly 269k tokens
+to roughly 60k. Handing it the PR URL is what makes that split practical — the
+reference is the whole entry, so no branch name has to be remembered and no
+checkout prepared by hand.
 
-That is what makes the trailing `dude:pr-to-ready` a hand-off you perform
-yourself, up front — `implement-work` ends by *naming* the next flow rather than
-invoking it, because which flow runs next is the caller's decision rather than
-the skill's. `ready-on-clean=yes` answers in the same breath the one question
-`pr-to-ready` would otherwise stop and ask: whether a clean run should mark the
-PR ready.
-
-Neither is a parsed flag; the argument text is read rather than matched against a
-grammar, and it is Claude Code's pass-through that was measured, not the other
-runtimes'.
+Only the first name on each of those lines is a slash command: Claude Code
+passes everything after it to the skill as free text. That is what makes
+`ready-on-clean=yes` usable — it answers in the same breath the one question
+`pr-to-ready` would otherwise stop and ask, whether a clean run should mark the
+PR ready. It is not a parsed flag; the argument text is read rather than matched
+against a grammar, and it is Claude Code's pass-through that was measured, not
+the other runtimes'.
 
 A fresh session per sub-issue is the shape rather than a preference: a later PR
 is never a continuation of the previous one and inherits none of its
