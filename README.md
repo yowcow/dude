@@ -230,21 +230,24 @@ dude used to have: in the same session Antigravity logged the parse failure for
 `superpowers` and none for `dude`. A run logging neither is one that never
 reached the parse stage, and settles nothing either way.
 
-`loaded 0 named hooks from 0 hooks.json file(s)` still appears — it comes from a
-separate startup stage, is emitted before any plugin is parsed, and reads the
-same before and after, so it is no measure of this. The no-op is registered but
-does not run: the events Antigravity's shipped documentation lists are
-`PreToolUse`, `PostToolUse`, `PreInvocation`, `PostInvocation`, and `Stop`, and
-`SessionStart` is not among them — that is read off the documented event list,
-not observed — and `true` would exit 0 with no effect if it ever did run.
+`loaded 0 named hooks from 0 hooks.json file(s)` still appears — it is emitted
+before any plugin is parsed and reads the same before and after, so it is no
+measure of this. Whether the no-op is registered as a handler at all is
+therefore unobserved; either way it does not run. The events Antigravity's
+shipped documentation lists are `PreToolUse`, `PostToolUse`, `PreInvocation`,
+`PostInvocation`, and `Stop`, and `SessionStart` is not among them — that is read
+off the documented event list, not observed — and `true` would exit 0 with no
+effect if it ever did run.
 
 Parsing cleanly buys quiet logs, not injection. The `GEMINI.md` route does not
 carry over: Antigravity's shipped documentation has it merging a plugin's rules
 from `plugins/<name>/rules/`, and dude ships no such directory. So `using-dude`
 is still not in context there. What a session does carry is the skill's
 *listing*: asked whether the rules were present, it quoted back the `description`
-from `using-dude`'s frontmatter and no line of its body. The parse result above
-was measured on agy 1.1.24; the rest of this paragraph on agy 1.1.23.
+from `using-dude`'s frontmatter and no line of its body. The parse result and the
+`loaded 0 named hooks` comparison were measured on agy 1.1.24 and the
+skill-listing finding on 1.1.23; the event list and the `rules/` route are read
+from the shipped documentation rather than measured.
 
 Where `using-dude` is not in context, it has to be reached by hand, and there
 are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
