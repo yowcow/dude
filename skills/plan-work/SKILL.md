@@ -24,7 +24,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 
 - **An issue number** — read the issue and its comments before anything else.
 - **A planning request with no tracking issue** — the research in **Pass** step 2 still runs. **Splitting into sub-issues** asks for a tracking issue before anything is published.
-- **Investigation findings** — arrives with three things: the findings report, the reproduction or observation baseline, and the fix options the investigation proposed. Enter at research like the entries above rather than at **Design agreement**: the root cause is established, so what research settles is the shape of the fix, and those options are input to that agreement, never the agreement itself. Should research contradict the root cause, don't re-diagnose it here — take the guidelines' **Escalation** back to the investigation.
+- **Investigation findings** — arrives with three things: the findings report, the reproduction or observation baseline, and the fix options the investigation proposed. Enter at research like the entries above rather than at **Design agreement**: the root cause is established, so what research settles is the shape of the fix, and those options are input to that agreement, never the agreement itself. Should research contradict the root cause, don't re-diagnose it here — take `using-dude`'s **Escalation** back to the investigation.
 - **A design invalidated downstream** — arrives with three things: the finding and which part of the design it undoes, the existing branch's name, and that branch's state, meaning whether it is pushed and whether a PR is open on it. Re-enter at **Design agreement**, since the design is what needs re-approval. Where an issue tracks the work it is still the canonical record, so the re-approved design edits that same comment in place rather than adding another.
 
 ## Design agreement
@@ -46,7 +46,7 @@ The published artifact is the design plus a numbered list of PR-sized items, and
 
 Two entries add to that list:
 
-- **From investigation findings** — the reproduction goes into the completion criteria of the item that owns the fix, per the guidelines' **Investigation → Change transition**. It takes one of two forms: a regression test that fails before the fix and passes after, or, for a symptom observable only in production, the observation window and the metric that shows it. The steps behind either stay in the findings report, so cite that report here by URL — a sub-issue carries this comment's URL and nothing else, so an uncited report is one it cannot reach.
+- **From investigation findings** — the reproduction goes into the completion criteria of the item that owns the fix, per `using-dude`'s **Investigation → Change transition**. It takes one of two forms: a regression test that fails before the fix and passes after, or, for a symptom observable only in production, the observation window and the metric that shows it. The steps behind either stay in the findings report, so cite that report here by URL — a sub-issue carries this comment's URL and nothing else, so an uncited report is one it cannot reach.
 - **From a design invalidated downstream** — every item accounts for the existing branch: **reuse** it and the item names it, or **discard** it and the item names a **new** one. `implement-work`'s isolation ladder reuses whatever branch it finds and has no rung that discards one, so an item carrying the old name would quietly resume work on top of the very commits the invalidated design produced. Name the discarded branch in the artifact as a person's cleanup, with the worktree checked out on it — identified by that branch rather than by a path, since this flow is never handed one — and any open PR by number: its body still holds the closing keyword, so merging it later would land the invalidated commits *and* close the child behind them. Each item also names, by number, the existing child it corresponds to, so **Publish** acts on a match that was visible in the list under review rather than re-derived afterwards. Work already finished before the invalidation stays out of the numbered list and goes in the split policy instead, each entry carrying its child's number and the fact that its PR merged — recorded either way, because work dropped from the record gets rebuilt.
 
 ## Splitting into sub-issues
@@ -80,7 +80,7 @@ This is clean when the published artifact satisfies **Output contract** and the 
 
 ## Escalation
 
-This loop's stopping conditions are the guidelines' **Loop convergence**. One round is one `review-plan` pass plus the fold-in that follows it, and a finding repeats when a later pass makes the same objection to the same item, whatever words it arrives in. A Critical finding that invalidates the agreed design is never fixed in this loop: stop and return to **Design agreement** for re-approval.
+This loop's stopping conditions are `using-dude`'s **Loop convergence**. One round is one `review-plan` pass plus the fold-in that follows it, and a finding repeats when a later pass makes the same objection to the same item, whatever words it arrives in. A Critical finding that invalidates the agreed design is never fixed in this loop: stop and return to **Design agreement** for re-approval.
 
 ## Report
 

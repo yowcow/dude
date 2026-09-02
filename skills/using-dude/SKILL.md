@@ -9,8 +9,6 @@ description: Use when starting any task - establishes how a task is classified, 
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
 </SUBAGENT-STOP>
 
-The skills cite sections of this document as "the guidelines' **X**".
-
 - Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
 - This document owns the orchestration invariants: the orchestrator owns control flow and declares which execution method it chose; a skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf, and one that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
 

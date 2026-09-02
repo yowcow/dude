@@ -65,11 +65,11 @@ Run `<skill-dir>/scripts/resolve-base.sh <issue-number>`. It reads the prerequis
 
 **Record a non-default base** as a single `Base-Branch: <base>` line in the trailer block of this task's **first** commit — `<base>` the bare branch name, no `origin/` prefix and no `refs/heads/` path. Branching from the default branch records nothing.
 
-If the verified baseline contradicts what the plan assumes — an existing failure, missing tooling — go back to **Plan gate** before starting tasks, or take **Escalation** where the guidelines' small-change lane skipped that gate.
+If the verified baseline contradicts what the plan assumes — an existing failure, missing tooling — go back to **Plan gate** before starting tasks, or take **Escalation** where the small-change lane in `using-dude`'s **Workflow selection** skipped that gate.
 
 ## Plan gate
 
-The guidelines' small-change lane skips this gate outright.
+The small-change lane in `using-dude`'s **Workflow selection** skips this gate outright.
 
 1. Read the task. Where the design lives depends on the entry: a **sub-issue** carries its own body plus a link to the parent's design comment; an **issue that fits one PR** carries its own comment; a **request with no issue** is itself the input, together with whatever `plan-work` left in chat.
 2. Draft the detailed plan with `superpowers:writing-plans`. What this gate takes from it is a plan that has been through that skill's own self-review — not the file the moment it lands. It goes in the workspace, git-ignored, and is never committed or published. **Don't follow that skill onward into whatever it moves on to next; what runs after this gate is settled here.**
@@ -77,7 +77,7 @@ The guidelines' small-change lane skips this gate outright.
 4. Leave by exactly one of three exits:
    - **Clean** — no blocking finding → **Execution**.
    - **Design invalidated** — a Critical finding that undoes the agreed design → take **Escalation**.
-   - **Stalled** — one of the guidelines' **Loop convergence** non-clean stopping conditions fired while a blocking finding that doesn't invalidate the design survives → stop and let the user decide, per that rule. A round is one `review-plan` pass on this plan and the fold-in that follows it; two findings are the same when they fault the same step for the same reason.
+   - **Stalled** — one of `using-dude`'s **Loop convergence** non-clean stopping conditions fired while a blocking finding that doesn't invalidate the design survives → stop and let the user decide, per that rule. A round is one `review-plan` pass on this plan and the fold-in that follows it; two findings are the same when they fault the same step for the same reason.
 
 ## Execution
 
@@ -85,7 +85,7 @@ Choose the method and say which you chose and why — explicitly, never by drift
 
 - **Default** → `superpowers:subagent-driven-development`.
 - **A separate session picking the plan up later** → `superpowers:executing-plans`.
-- **Manual** is the fitting method on the guidelines' small-change lane, and an exception that needs a reason anywhere else. Off that lane, try first to replan the work into tasks that can each be verified on their own; do it yourself only when it genuinely won't split, or when workers aren't available. Name the reason.
+- **Manual** is the fitting method on the small-change lane in `using-dude`'s **Workflow selection**, and an exception that needs a reason anywhere else. Off that lane, try first to replan the work into tasks that can each be verified on their own; do it yourself only when it genuinely won't split, or when workers aren't available. Name the reason.
 
 Delegate and don't restate: worker dispatch, model selection, the ban on parallel implementers, per-task review, the fix loop, and progress tracking all belong to `superpowers:subagent-driven-development`; TDD to `superpowers:test-driven-development`; parallel workers, for independent fact-finding only, to `superpowers:dispatching-parallel-agents`.
 
@@ -95,11 +95,11 @@ Two judgements stay here: delegation only pays when a task is big enough to cove
 
 ## Completion gate
 
-Add only what the execution method left undone. A round is one pass of steps 1-5, and this loop stops per the guidelines' **Loop convergence** — step 6 orders those conditions against this gate's own. A finding is the same one when a later round brings back what a previous round already tried to resolve: the same claim about the same location, or the same unmet completion criterion.
+Add only what the execution method left undone. A round is one pass of steps 1-5, and this loop stops per `using-dude`'s **Loop convergence** — step 6 orders those conditions against this gate's own. A finding is the same one when a later round brings back what a previous round already tried to resolve: the same claim about the same location, or the same unmet completion criterion.
 
-1. **Verify** — `superpowers:verification-before-completion`. Its requirements checklist reads **the task's own entry artifact**, not the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work. The plan is a transcription of that artifact, so checking against it confirms only the transcription — and on the guidelines' small-change lane there is no plan to check against at all.
+1. **Verify** — `superpowers:verification-before-completion`. Its requirements checklist reads **the task's own entry artifact**, not the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work. The plan is a transcription of that artifact, so checking against it confirms only the transcription — and on the small-change lane in `using-dude`'s **Workflow selection** there is no plan to check against at all.
    - **The scope boundary is part of that source, not commentary on it.** What it excludes never becomes a checklist row, so an exclusion cannot come back as a gap.
-   - **An unmet criterion routes on one test: does meeting it require touching what the scope boundary excludes?** No → it is this task's work, so implement it in this round. Yes → don't implement it; record it and leave by step 6's first exit. Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take the guidelines' **Escalation** by that route, recorded and exited the same way.
+   - **An unmet criterion routes on one test: does meeting it require touching what the scope boundary excludes?** No → it is this task's work, so implement it in this round. Yes → don't implement it; record it and leave by step 6's first exit. Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take `using-dude`'s **Escalation** by that route, recorded and exited the same way.
 2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job.
 3. **Review** — run `review-code`. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward — **Hand off** pushes it, and a push carries only commits, while **Escalation** hands `plan-work` a branch name that re-approval judges by what it contains; either way, anything left uncommitted is simply absent from what the next flow reads. Confirm it worked by running `<skill-dir>/scripts/check-clean.sh` and reading its exit status — 0 is clean, non-zero is dirty and prints what is pending; don't leave this step while it reports dirty. A byproduct of step 1's checks belongs in `.gitignore`; the byproduct itself is never committed. A round that changed nothing commits nothing, and anything you can't account for as this round's own work stops the gate and goes to the user rather than being swept in.
@@ -113,10 +113,10 @@ Add only what the execution method left undone. A round is one pass of steps 1-5
    | # | Condition | Where it goes |
    | --- | --- | --- |
    | 1 | **The agreed design is what has to change** — `review-code` reported a Critical finding that invalidates it, or step 1 recorded a criterion that the scope boundary puts out of reach, or one that contradicts another criterion or the agreed design | Stop the gate and return to `plan-work`, per **Escalation** |
-   | 2 | **`review-code` stopped short of clean with blocking findings open**, per **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
+   | 2 | **`review-code` stopped short of clean with blocking findings open**, per `using-dude`'s **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
    | 3 | **This gate's own rounds hit one of those non-clean conditions** — the gate as an ordinary loop, rather than as the receiver of `review-code`'s stop | Stop and hand the decision over the same way |
    | 4 | **Any step of this round changed something** — code, or a base absorbed by step 5 | Back to step 1 — verification and simplification have to run against the tree as it now stands |
-   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per **Loop convergence** |
+   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per `using-dude`'s **Loop convergence** |
 
    The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward. The rows differ in kind, not degree — a design-invalidating finding, a stopped review, this gate's own stall, more work to do, and done — so per `AUTHORING.md`'s rule 3 the table stays whole rather than compressed to an invariant.
 
@@ -131,7 +131,7 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**. Whi
 
 ## Report
 
-- whether the guidelines' small-change lane was taken, and the one-line basis if it was
+- whether the small-change lane in `using-dude`'s **Workflow selection** was taken, and the one-line basis if it was
 - the execution method chosen, and why
 - the base branch the task was created from, and which of **Base branch**'s outcomes chose it
 - the `review-plan` rounds run on the detailed plan, and the final verdict
@@ -146,6 +146,6 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**. Whi
 
 ## Escalation
 
-Per the guidelines' **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work` for re-approval, and this skill is no exception — not in the plan gate, and not in the completion gate.
+Per `using-dude`'s **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work` for re-approval, and this skill is no exception — not in the plan gate, and not in the completion gate.
 
 What this flow hands over is the branch: its name, whether it is pushed, and any PR open on it — this skill never opens one, but the reuse path at **Entry** rung 2 can arrive on a branch that already has one. `plan-work`'s **Entry** says what it does with that. Where the finding surfaced in the completion gate, the branch already carries the round's commits, since the gate commits before taking either exit.
