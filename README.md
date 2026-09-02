@@ -14,7 +14,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 | Skill | What it produces |
 | --- | --- |
-| `using-dude` | The workflow rules the other skills are wired by, in context every session |
+| `using-dude` | The workflow rules the other skills are wired by |
 | `plan-work` | An agreed design plus a numbered TODO list at PR granularity |
 | `implement-work` | A pushed branch of verified commits, for one PR-sized task |
 | `pr-to-ready` | A PR whose CI passes and whose review is clean |
