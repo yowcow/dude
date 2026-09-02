@@ -95,7 +95,7 @@ Two judgements stay here: delegation only pays when a task is big enough to cove
 
 ## Completion gate
 
-Add only what the execution method left undone. A round is one pass of steps 1-5, and this loop stops per **Loop convergence** — step 6 orders those conditions against this gate's own. A finding is the same one when a later round brings back what a previous round already tried to resolve: the same claim about the same location, or the same unmet completion criterion.
+Add only what the execution method left undone. A round is one pass of steps 1-5, and this loop stops per `using-dude`'s **Loop convergence** — step 6 orders those conditions against this gate's own. A finding is the same one when a later round brings back what a previous round already tried to resolve: the same claim about the same location, or the same unmet completion criterion.
 
 1. **Verify** — `superpowers:verification-before-completion`. Its requirements checklist reads **the task's own entry artifact**, not the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work. The plan is a transcription of that artifact, so checking against it confirms only the transcription — and on the small-change lane in `using-dude`'s **Workflow selection** there is no plan to check against at all.
    - **The scope boundary is part of that source, not commentary on it.** What it excludes never becomes a checklist row, so an exclusion cannot come back as a gap.
@@ -113,10 +113,10 @@ Add only what the execution method left undone. A round is one pass of steps 1-5
    | # | Condition | Where it goes |
    | --- | --- | --- |
    | 1 | **The agreed design is what has to change** — `review-code` reported a Critical finding that invalidates it, or step 1 recorded a criterion that the scope boundary puts out of reach, or one that contradicts another criterion or the agreed design | Stop the gate and return to `plan-work`, per **Escalation** |
-   | 2 | **`review-code` stopped short of clean with blocking findings open**, per **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
+   | 2 | **`review-code` stopped short of clean with blocking findings open**, per `using-dude`'s **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
    | 3 | **This gate's own rounds hit one of those non-clean conditions** — the gate as an ordinary loop, rather than as the receiver of `review-code`'s stop | Stop and hand the decision over the same way |
    | 4 | **Any step of this round changed something** — code, or a base absorbed by step 5 | Back to step 1 — verification and simplification have to run against the tree as it now stands |
-   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per **Loop convergence** |
+   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per `using-dude`'s **Loop convergence** |
 
    The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward. The rows differ in kind, not degree — a design-invalidating finding, a stopped review, this gate's own stall, more work to do, and done — so per `AUTHORING.md`'s rule 3 the table stays whole rather than compressed to an invariant.
 
