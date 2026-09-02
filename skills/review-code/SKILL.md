@@ -17,14 +17,14 @@ One invocation runs the loop to completion: review, judge, fix, verify, review a
 
 - The orchestrator owns the loop: it resolves the scope, dispatches the reviewer, judges findings, applies accepted fixes, verifies, and decides when the loop ends. A reviewer never declares the code clean.
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review`. It gets the scope and the requirements and returns findings only. It never edits code, never runs the project's checks, and never commits.
-- The reviewer goes out at the highest tier the run has (the guidelines' **Worker tier**): a finding it doesn't return leaves this loop *clean* and passes `implement-work`'s completion gate, which is itself this check.
+- The reviewer goes out at the highest tier the run has (`using-dude`'s **Worker tier**): a finding it doesn't return leaves this loop *clean* and passes `implement-work`'s completion gate, which is itself this check.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way. `simplify-code`'s proposers are dispatched on the same contract, for the same reason.
 
 ## Boundaries
 
 - This skill applies fixes but never commits — commits are the caller's.
 - Simplification belongs to `simplify-code`; don't fold it in here.
-- GitHub-side review — Claude and Copilot on a PR, thread replies, thread resolution — belongs to `pr-to-ready`. Report each round to the caller in chat and never to GitHub, per the guidelines' **Stage boundaries**.
+- GitHub-side review — Claude and Copilot on a PR, thread replies, thread resolution — belongs to `pr-to-ready`. Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
 
 ## Scope
 
@@ -72,8 +72,8 @@ A round is one review → judge → fix → verify cycle. The pass is clean when
 
 ## Escalation
 
-- This loop stops per the guidelines' **Loop convergence**. **Pass** says what a round is here, and two findings are the same when a later round faults the same location on the same grounds, however the wording moved — including a claim restated after a fix meant to resolve it. A round that trips a stopping condition still applies and verifies its accepted findings before the loop ends; it just doesn't start another review.
-- A Critical finding that invalidates the approved design is not fixed in this loop. Per the guidelines' **Escalation** it goes back to `plan-work` for re-approval, and this skill is no exception. What this pass hands over is the finding itself, reported separately from the ordinary verdict so the caller routes it rather than reading the pass as merely unfinished.
+- This loop stops per `using-dude`'s **Loop convergence**. **Pass** says what a round is here, and two findings are the same when a later round faults the same location on the same grounds, however the wording moved — including a claim restated after a fix meant to resolve it. A round that trips a stopping condition still applies and verifies its accepted findings before the loop ends; it just doesn't start another review.
+- A Critical finding that invalidates the approved design is not fixed in this loop. Per `using-dude`'s **Escalation** it goes back to `plan-work` for re-approval, and this skill is no exception. What this pass hands over is the finding itself, reported separately from the ordinary verdict so the caller routes it rather than reading the pass as merely unfinished.
 
 ## Report
 

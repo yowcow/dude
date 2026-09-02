@@ -15,7 +15,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 **Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; collecting reviewer comments into a structured list of findings; and evaluating each finding, one subagent per finding, fanned out together since findings are independent. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
-**Evaluating a finding goes out at the highest tier the run has** (the guidelines' **Worker tier**): a real finding it rejects with a plausible reason is replied to and resolved on that verdict, and no later round reads the thread again.
+**Evaluating a finding goes out at the highest tier the run has** (`using-dude`'s **Worker tier**): a real finding it rejects with a plausible reason is replied to and resolved on that verdict, and no later round reads the thread again.
 
 ## Step 0: Set up the run
 
@@ -44,7 +44,7 @@ Then watch CI with `<skill-dir>/scripts/watch-checks.sh <owner> <repo> <sha>`, a
 
 On that failing conclusion, delegate the diagnosis to a subagent: hand it the failing check, have it apply `superpowers:systematic-debugging`, and return only the root cause and a concrete fix plan, never the raw logs. Before applying it, confirm it's actually a fix — a diagnosis showing that the agreed design itself is wrong is not one; take **Escalation** instead. Otherwise apply it as an ordinary change: implement, verify, simplify with `simplify-code`, review with `review-code` — never re-running `implement-work`'s own completion gate — then commit and push, never straight to the default branch. Go back to this step's CI watch.
 
-**Clean = exit 0 with every conclusion passing, or exit 5.** A failing conclusion is the one non-clean answer that loops, subject to the guidelines' **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
+**Clean = exit 0 with every conclusion passing, or exit 5.** A failing conclusion is the one non-clean answer that loops, subject to `using-dude`'s **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
 
 ## Step 2: Request review, then loop on feedback
 
@@ -99,8 +99,8 @@ When it isn't clean, what to do follows from which condition failed, and every r
 2. **A finding invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round.
 3. **Any finding came back `needs-user`** → the third terminal state, per 2-3.
 4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does.
-5. **LGTM-equivalent twice in a row, with the other four conditions true on the HEAD it leaves from** → Step 3. This is the stricter exit the guidelines' **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
-6. **A non-clean stopping condition in the guidelines' Loop convergence fires** → stop and hand the user the decision.
+5. **LGTM-equivalent twice in a row, with the other four conditions true on the HEAD it leaves from** → Step 3. This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
+6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision.
 
 A round here is one 2-1 → 2-2 → 2-3 → clean-judgment cycle; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
 
@@ -123,4 +123,4 @@ Carrying on into the next one would do `implement-work`'s job with none of its g
 
 ## Escalation
 
-The single source is the guidelines' **Escalation**; this phase is not an exception to it. Hand `plan-work`'s entry the three things it asks for: the finding — what it showed, and which part of the agreed design it undoes; the branch name; and the branch's state — whether it's pushed, and the `<PR>` this run was driving. Add where the review had got to: the round the finding surfaced on, and what was already fixed and pushed. Leave the PR as it is — don't close it, and don't change its draft state.
+The single source is `using-dude`'s **Escalation**; this phase is not an exception to it. Hand `plan-work`'s entry the three things it asks for: the finding — what it showed, and which part of the agreed design it undoes; the branch name; and the branch's state — whether it's pushed, and the `<PR>` this run was driving. Add where the review had got to: the round the finding surfaced on, and what was already fixed and pushed. Leave the PR as it is — don't close it, and don't change its draft state.

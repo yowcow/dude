@@ -25,7 +25,7 @@ Root-cause an observed performance shortfall. `superpowers:systematic-debugging`
 
 ## Entry
 
-An observed shortfall and where it was observed: the endpoint, job, or query that is slow, or the metric that moved, together with the measurement, trace, dashboard, or report it came from. Where that falls short of what the guidelines' **Understand** asks for, pinning it down is the first task here rather than a precondition for starting — Step 1 is where it happens.
+An observed shortfall and where it was observed: the endpoint, job, or query that is slow, or the metric that moved, together with the measurement, trace, dashboard, or report it came from. Where that falls short of what `using-dude`'s **Understand** asks for, pinning it down is the first task here rather than a precondition for starting — Step 1 is where it happens.
 
 ## Explore
 
@@ -68,4 +68,4 @@ Descend the layers, measuring each one's share of the total cost; stop at the fi
 6. **Fix options** — expected gain and cost of each.
 7. **Open questions**
 
-What a fix carries into `plan-work` is **Reproduction** and **Fix options**, per the guidelines' **Investigation → Change transition** — input to that flow, never work started from here.
+What a fix carries into `plan-work` is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to that flow, never work started from here.

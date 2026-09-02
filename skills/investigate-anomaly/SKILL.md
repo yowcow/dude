@@ -26,13 +26,13 @@ Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core
 
 ## Entry
 
-An observed symptom and where it was observed: the error text or metric values, plus the log, dashboard, alert, or report that surfaced them. Closing any gap against the guidelines' **Understand** is Step 1's job — the first work here, not a precondition for starting.
+An observed symptom and where it was observed: the error text or metric values, plus the log, dashboard, alert, or report that surfaced them. Closing any gap against `using-dude`'s **Understand** is Step 1's job — the first work here, not a precondition for starting.
 
 ## Explore
 
 ### Step 1: Frame the symptom
 
-- Turn a vague concern ("costs keep growing", "something has felt off lately") into a measurable statement: what the guidelines' **Understand** asks an investigation to pin down, plus how large the deviation is against what baseline or expectation.
+- Turn a vague concern ("costs keep growing", "something has felt off lately") into a measurable statement: what `using-dude`'s **Understand** asks an investigation to pin down, plus how large the deviation is against what baseline or expectation.
 - If no number can be attached yet, producing one is the first evidence-gathering task — an anomaly that cannot be measured cannot be root-caused.
 
 ### Step 2: Capture and preserve
@@ -84,4 +84,4 @@ Sweep every change class across the last-good → first-bad window:
 7. **Remediation options** — immediate mitigation vs preventive fixes.
 8. **Open questions**
 
-**Reproduction or observation baseline** and **Remediation options** are what the guidelines' **Investigation → Change transition** hands to `plan-work` — that flow's input, not work this one starts.
+**Reproduction or observation baseline** and **Remediation options** are what `using-dude`'s **Investigation → Change transition** hands to `plan-work` — that flow's input, not work this one starts.

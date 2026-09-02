@@ -73,7 +73,7 @@ Report "no proposals" explicitly rather than inventing one.
 
 ## Convergence
 
-This pass's loop stops per the guidelines' **Loop convergence**. A round here is one dispatch → judge → apply → verify cycle, and two proposals are the same finding when they target the same location with the same change, however the wording moved — including one re-raised after it was rejected.
+This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is one dispatch → judge → apply → verify cycle, and two proposals are the same finding when they target the same location with the same change, however the wording moved — including one re-raised after it was rejected.
 
 ## Report
 
