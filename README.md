@@ -16,7 +16,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | --- | --- |
 | `using-dude` | The workflow rules the other skills are wired by |
 | `plan-work` | An agreed design plus a numbered TODO list at PR granularity |
-| `implement-work` | A pushed branch of verified commits, for one PR-sized task |
+| `implement-work` | A draft PR on a pushed branch of verified commits, for one PR-sized task |
 | `pr-to-ready` | A PR whose CI passes and whose review is clean |
 | `review-plan` | Findings on a TODO list or an implementation plan |
 | `review-code` | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
@@ -155,8 +155,8 @@ merge it — that issue plus two prompts, across two kinds of session:
    /dude:implement-work <sub-issue-url> dude:pr-to-ready (ready-on-clean=yes)
    ```
 
-   The first flow takes the item to a pushed branch of verified commits; the
-   second opens the draft PR and loops on CI and review until both are clean.
+   The first flow takes the item to a draft PR on a pushed branch of verified
+   commits; the second loops on CI and review until both are clean.
 
 Then wait for the PR.
 
