@@ -16,7 +16,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | --- | --- |
 | `using-dude` | The workflow rules the other skills are wired by |
 | `plan-work` | An agreed design plus a numbered TODO list at PR granularity |
-| `implement-work` | A pushed branch of verified commits, for one PR-sized task |
+| `implement-work` | A draft PR on a pushed branch of verified commits, for one PR-sized task |
 | `pr-to-ready` | A PR whose CI passes and whose review is clean |
 | `review-plan` | Findings on a TODO list or an implementation plan |
 | `review-code` | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
@@ -155,8 +155,8 @@ merge it — that issue plus two prompts, across two kinds of session:
    /dude:implement-work <sub-issue-url> dude:pr-to-ready (ready-on-clean=yes)
    ```
 
-   The first flow takes the item to a pushed branch of verified commits; the
-   second opens the draft PR and loops on CI and review until both are clean.
+   The first flow takes the item to a draft PR on a pushed branch of verified
+   commits; the second loops on CI and review until both are clean.
 
 Then wait for the PR.
 
@@ -270,6 +270,61 @@ The skill bodies themselves use bare names (`plan-work`), because the `dude:`
 prefix is a plugin namespace the host adds — Claude Code and Codex both do,
 while Gemini and Grok expose the bare name — and a body that hard-coded one
 host's prefix would read wrongly on the others.
+
+### What tier a marked worker runs at
+
+`using-dude`'s **Worker tier** sends a worker whose miss would pass as "nothing
+found" out at the highest tier the run has. Which tier that actually is gets
+settled by a ladder rather than by the run alone: where the runtime carries a
+default for subagents, a worker dispatched without a model of its own lands on
+that default; where none is set, it falls back to the run's own tier. So raising
+the run's own tier does not reach the marked worker on a machine whose subagent
+default sits below it — the mark reads as satisfied while that worker runs a
+tier under the session that dispatched it.
+
+Measured on Claude Code 2.1.258, the two rungs have separate carriers. The
+subagent default is the environment variable `CLAUDE_CODE_SUBAGENT_MODEL`; the
+run's own model is the `model` key in `settings.json`, or `claude --model` at
+launch. The first is carried by no settings key of its own, so the check goes to
+the environment — the session's own rather than a bare login shell, since a
+settings file's `env` block is documented as carrying variables too:
+
+```
+env | grep CLAUDE_CODE_SUBAGENT_MODEL
+```
+
+Output naming a model below the run's own is the case where the mark quietly
+loses, and this repository's own machine was measured in exactly that state:
+`sonnet` there, exported from a shell profile, against `opus` for the run, while
+`settings.json` carried no subagent key whatsoever. Reading `settings.json`
+alone is what makes such a default look absent.
+
+What the dispatched worker then ran on has to be read back from its transcript
+rather than asked of it — a self-report is the worker's own account rather than
+the runtime's record of the call, and the environment it inherits can name a
+model it is not running. Read that way here, a worker dispatched with no model
+named ran on `claude-sonnet-5` while the session ran `claude-opus-5`; one
+dispatched with `opus` named ran on `claude-opus-5`. Empty output from the check
+means no default is set, and the fallback to the parent's model is then
+documented behavior rather than something this repository has observed.
+
+Two ways to close the gap, and the check above says which one is yours. Where it
+named a model below the run's own, that default is where the marked worker lands
+unless its own dispatch named one: unset it, or raise it to the run's model. The
+default knows nothing of which workers are marked, so every worker dispatched
+without a model of its own rises with it — but none of them past the run's own
+tier, and the session stays where it is. Where the check came back empty,
+nothing stands between the worker and the run's own tier, so raising that tier
+is the route that reaches it — and that one moves the ceiling itself, lifting
+the session and every worker under it, the unmarked ones and their cost
+included.
+
+Only the model axis is recorded here. Whether a reasoning-effort setting reaches
+a dispatched worker was not settled: a transcript records the thinking a worker
+spent, which is consumption rather than the setting that allowed it. This ladder
+was measured on Claude Code alone; what the other four runtimes do with a
+subagent default has not been measured here, which is not a claim that they have
+no tier lever.
 
 ## Development
 

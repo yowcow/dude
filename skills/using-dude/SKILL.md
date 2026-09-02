@@ -48,7 +48,7 @@ A Change that carries no design decision has a lane of its own, not an exemption
 Three flows, each of which can be entered on its own, and each with its own deliverable and hand-off.
 
 - **`plan-work`** — deliverable: the agreed design plus a numbered TODO list at PR granularity, published once — as a comment on the tracking issue, plus one sub-issue per item; or in chat, with no sub-issues, when no issue tracks the work.
-- **`implement-work`** — deliverable: a pushed branch of verified commits.
+- **`implement-work`** — deliverable: a draft PR on a pushed branch of verified commits.
 - **`pr-to-ready`** — deliverable: a PR whose CI passes and whose review is clean, left at ready or draft.
 
 A phase is *clean* when its checks pass: verification (the relevant test, lint, build, typecheck, smoke test, or manual check passes, and the deliverable meets the requirements the task itself states), simplification with `simplify-code` (no behavior-preserving cleanup is left), and review with `review-code` (no blocking findings remain). A flow that produces no code sets its own bar instead, and each skill defines its own.

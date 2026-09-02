@@ -1,13 +1,13 @@
 ---
 name: implement-work
-description: Use to take one PR-sized task — a sub-issue, an issue that fits a single PR, or a request of that size — all the way to a pushed branch of verified commits. Triggers on "implement this sub-issue", "start implementing", "work through this task", "run the completion gate", "take this to a branch".
+description: Use to take one PR-sized task — a sub-issue, an issue that fits a single PR, or a request of that size — all the way to a draft PR on a pushed branch of verified commits. Triggers on "implement this sub-issue", "start implementing", "work through this task", "run the completion gate", "take this to a branch".
 ---
 
 # Implement Work
 
 There is no plan yet.
 
-This skill holds two gates: one on the detailed plan, before any code, and the completion gate at the end. It does not own the PR-side loop — once a branch is handed off, `pr-to-ready` runs its own completion path, and neither gate here is re-entered from there.
+This skill holds two gates: one on the detailed plan, before any code, and the completion gate at the end. It does not own the PR-side loop — the draft PR it opens at the end is where `pr-to-ready` takes over with its own completion path, and neither gate here is re-entered from there.
 
 ## Orchestration model
 
@@ -122,11 +122,21 @@ Add only what the execution method left undone. A round is one pass of steps 1-5
 
 ## Hand off
 
-The deliverable is a **pushed** branch of verified commits — exactly what `pr-to-ready` takes as its entry. Once the completion gate takes its normal exit, push it to `origin` under its own name, unconditionally. The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
+The deliverable is a **draft PR** on a pushed branch of verified commits — exactly what `pr-to-ready` takes as its entry. Once the completion gate takes its normal exit, push and then open the PR, in that order.
+
+Push the branch to `origin` under its own name, unconditionally. The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
+
+Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once — the sibling skill's script, reached by relative path because this skill holds no copy of it. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints:
+
+- `PR <n> found draft=<bool>` — an earlier session on this branch already opened one. Take it as the deliverable and **leave its status as it is**: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen.
+- `PR <n> created draft=true base=<base>` — this run opened it.
+- `STOP <slug>` — no PR was opened. Report the stop, and hand the branch over regardless.
+
+Title and body are standard Japanese (標準語), following the repo's PR template when it has one. The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository. The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
 
 Then stop, and name `pr-to-ready` as the next entry **without invoking it**. Which flow runs next is the caller's decision, not this skill's.
 
-- **PR creation belongs to `pr-to-ready`.** Don't create one here.
+- **PR creation belongs here**, and to this one point in the flow.
 - **Integration goes through a PR.** Merging this branch into its base instead of handing it over would skip `pr-to-ready`, CI, and PR review entirely. If the user explicitly wants that, confirm they mean to skip the PR before doing it — this skill carries no merge procedure of its own.
 
 ## Report
@@ -141,11 +151,11 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**. Whi
 - the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
 - the concrete checks run, and any that couldn't be
 - what changed and why
-- the pushed branch, and `pr-to-ready` named as the next entry
+- the pushed branch and the draft PR — its URL, and whether this run opened it or found one already open — with `pr-to-ready` named as the next entry
 - assumptions made, and areas needing manual review
 
 ## Escalation
 
 Per `using-dude`'s **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work` for re-approval, and this skill is no exception — not in the plan gate, and not in the completion gate.
 
-What this flow hands over is the branch: its name, whether it is pushed, and any PR open on it — this skill never opens one, but the reuse path at **Entry** rung 2 can arrive on a branch that already has one. `plan-work`'s **Entry** says what it does with that. Where the finding surfaced in the completion gate, the branch already carries the round's commits, since the gate commits before taking either exit.
+What this flow hands over is the branch: its name, whether it is pushed, and any PR open on it — this flow opens one only at **Hand off**, which an escalating run never reaches. `plan-work`'s **Entry** says what it does with that. Where the finding surfaced in the completion gate, the branch already carries the round's commits, since the gate commits before taking either exit.
