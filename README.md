@@ -217,18 +217,37 @@ would break Gemini rather than help it, because Gemini does not hydrate
 injection is the `GEMINI.md` route above and needs no hook.
 
 Antigravity installs all nine skills — `agy plugin import gemini` carries the
-hooks across too — and then rejects the hook file: it logs `Failed to parse hooks
-for plugin dude: invalid hook "hooks": command hook must specify 'command'`, and
-`loaded 0 named hooks from 0 hooks.json file(s)`. Its own format takes each
-top-level key as a hook *name*, where dude's file has Claude Code's single
-`hooks` wrapper, and the events its shipped documentation lists are `PreToolUse`,
-`PostToolUse`, `PreInvocation`, `PostInvocation`, and `Stop` — `SessionStart` is
-not among them. The `GEMINI.md` route does not carry over either: Antigravity's
-shipped documentation has it merging a plugin's rules from
-`plugins/<name>/rules/`, and dude ships no such directory. So `using-dude` is not
-in context there. What a session does carry is the skill's *listing*: asked
-whether the rules were present, it quoted back the `description` from
-`using-dude`'s frontmatter and no line of its body. Measured on agy 1.1.23.
+hooks across too — and **parses the hook file, which it used to reject.** Its own
+format takes each top-level key as a hook *name*, so dude's Claude Code `hooks`
+wrapper is read as a hook named `hooks`, and each entry under it is validated as
+a handler object. A handler must carry a `command`, which the `SessionStart`
+group did not, so the file failed with `Failed to parse hooks for plugin dude:
+invalid hook "hooks": command hook must specify 'command'` and was discarded
+whole. That group now carries a no-op `"command": "true"`, which satisfies the
+check; Claude Code ignores the extra key. The warning is gone — measured against
+the installed superpowers as a positive control, since it still ships the shape
+dude used to have: in the same session Antigravity logged the parse failure for
+`superpowers` and none for `dude`. A run logging neither is one that never
+reached the parse stage, and settles nothing either way.
+
+`loaded 0 named hooks from 0 hooks.json file(s)` still appears — it is emitted
+before any plugin is parsed and reads the same before and after, so it is no
+measure of this. Whether the no-op is registered as a handler at all is
+therefore unobserved; either way it does not run. The events Antigravity's
+shipped documentation lists are `PreToolUse`, `PostToolUse`, `PreInvocation`,
+`PostInvocation`, and `Stop`, and `SessionStart` is not among them — that is read
+off the documented event list, not observed — and `true` would exit 0 with no
+effect if it ever did run.
+
+Parsing cleanly buys quiet logs, not injection. The `GEMINI.md` route does not
+carry over: Antigravity's shipped documentation has it merging a plugin's rules
+from `plugins/<name>/rules/`, and dude ships no such directory. So `using-dude`
+is still not in context there. What a session does carry is the skill's
+*listing*: asked whether the rules were present, it quoted back the `description`
+from `using-dude`'s frontmatter and no line of its body. The parse result and the
+`loaded 0 named hooks` comparison were measured on agy 1.1.24 and the
+skill-listing finding on 1.1.23; the event list and the `rules/` route are read
+from the shipped documentation rather than measured.
 
 Where `using-dude` is not in context, it has to be reached by hand, and there
 are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
