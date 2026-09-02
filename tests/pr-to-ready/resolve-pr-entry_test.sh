@@ -21,10 +21,9 @@
 # The SUT filters with its own `jq`, so a defect in a filter expression IS
 # visible here.
 #
-# RED verification (see tests/README.md): with the script absent every row
-# fails; with a script that drops the origin comparison, the
-# 'url naming another repository' row fails — it answers with a branch instead
-# of STOP wrong-checkout.
+# RED verification (see tests/README.md): with a script that drops the origin
+# comparison, the 'url naming another repository' row fails — it answers with a
+# branch instead of STOP wrong-checkout.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR

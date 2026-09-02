@@ -125,22 +125,19 @@ fi
 
 # --- Step 3: one lookup, read as three answers. ---
 
-# The status and the body are captured together and read together. `set +e`
-# around the assignment, because under `set -e` a non-zero `gh` inside a bare
-# command substitution kills the script outright, and the caller would get a
-# bare non-zero exit with nothing on stdout instead of a STOP line.
-set +e
 # `owner` and `name` are `-f` (raw string): `-F`'s magic type conversion would
 # turn a digits-only repository or owner — e.g. github.com/gabrielecirulli/2048
 # — into a JSON number against `$name:String!`, and GitHub's coercion error
 # carries no `.type`, so it reads as a lookup failure for a PR that exists.
 # `number` stays `-F` — it must be a JSON integer for `$number:Int!`.
-RESPONSE="$(gh api graphql -f "query=${QUERY}" \
-  -f "owner=${OWNER}" -f "name=${REPO}" -F "number=${NUMBER}" 2>/dev/null)"
-status=$?
-set -e
-
-if [ "$status" -ne 0 ]; then
+#
+# Guarded like the read below, because under `set -e` a non-zero `gh` inside a
+# bare command substitution kills the script outright and the caller would get a
+# bare non-zero exit with nothing on stdout instead of a STOP line. The body is
+# captured either way — `gh` prints it even as it exits 1 on an `errors` array —
+# and it is what tells the two answers below apart.
+if ! RESPONSE="$(gh api graphql -f "query=${QUERY}" \
+  -f "owner=${OWNER}" -f "name=${REPO}" -F "number=${NUMBER}" 2>/dev/null)"; then
   # Every error NOT_FOUND means the reference names nothing — a PR number that
   # does not exist, or a repository that no longer does. Anything else, an
   # empty body included, is the lookup itself failing.
