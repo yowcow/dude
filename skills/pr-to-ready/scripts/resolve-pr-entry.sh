@@ -130,8 +130,13 @@ fi
 # command substitution kills the script outright, and the caller would get a
 # bare non-zero exit with nothing on stdout instead of a STOP line.
 set +e
+# `owner` and `name` are `-f` (raw string): `-F`'s magic type conversion would
+# turn a digits-only repository or owner — e.g. github.com/gabrielecirulli/2048
+# — into a JSON number against `$name:String!`, and GitHub's coercion error
+# carries no `.type`, so it reads as a lookup failure for a PR that exists.
+# `number` stays `-F` — it must be a JSON integer for `$number:Int!`.
 RESPONSE="$(gh api graphql -f "query=${QUERY}" \
-  -F "owner=${OWNER}" -F "name=${REPO}" -F "number=${NUMBER}" 2>/dev/null)"
+  -f "owner=${OWNER}" -f "name=${REPO}" -F "number=${NUMBER}" 2>/dev/null)"
 status=$?
 set -e
 

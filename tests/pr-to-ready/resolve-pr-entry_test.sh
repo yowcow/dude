@@ -18,8 +18,8 @@
 # (measured against github.com — see the SUT's header). The SUT reads that
 # body, so the fixtures below are real response shapes, not post-filter bytes.
 #
-# Unlike its siblings, this SUT filters with its own `jq` rather than with
-# `gh --jq`, so a defect in a filter expression IS visible here.
+# The SUT filters with its own `jq`, so a defect in a filter expression IS
+# visible here.
 #
 # RED verification (see tests/README.md): with the script absent every row
 # fails; with a script that drops the origin comparison, the
@@ -71,7 +71,7 @@ git_repo_init "$NOREMOTE" main
 # stub_graphql <owner> <name> <number> [<exit>]   body on stdin
 stub_graphql() {
   gh_stub_response '*' "${4:-0}" api graphql -f "query=${QUERY}" \
-    -F "owner=$1" -F "name=$2" -F "number=$3"
+    -f "owner=$1" -f "name=$2" -F "number=$3"
 }
 
 # pr_body <n> <head> <base> <state> <draft> [<cross-repository>]
