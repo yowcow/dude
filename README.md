@@ -379,6 +379,21 @@ grok plugin install ~/repos/dude --trust
 `gemini extensions link` tracks the clone rather than copying it, so an edit to a
 skill shows up in the next Gemini session without reinstalling.
 
+Installing dude a second time under a throwaway name is not a way to try hook
+changes out. Two installs run the `SessionStart` hook twice, and both blocks
+reach the same session. Which tree each one came from is readable — the injected
+text names the install path it ran from — but the session is still carrying
+`using-dude` twice, counted twice against the context and in two versions that
+disagree wherever the branch has moved. Read the rules from the older block and
+the session was not checking the branch at all. Uninstalling the github-sourced
+`dude@dude` first is what avoids that, and it rewrites somebody's plugin
+environment — ask whoever owns it.
+
+The hazard is the hook running twice, so it is not specific to Claude Code:
+Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
+Codex install injects twice as well has not been measured here. Gemini is not
+on this route at all — it does not run the hook.
+
 Check the manifests before installing — the validators name the offending
 field:
 
