@@ -385,9 +385,9 @@ reach the same session. Which tree each one came from is readable — the inject
 text names the install path it ran from — but the session is still carrying
 `using-dude` twice, counted twice against the context and in two versions that
 disagree wherever the branch has moved. Read the rules from the older block and
-the session is not the one the branch was meant to be checked in. Uninstalling
-the github-sourced `dude@dude` first is what avoids that, and it rewrites
-somebody's plugin environment — ask whoever owns it.
+the session was not checking the branch at all. Uninstalling the github-sourced
+`dude@dude` first is what avoids that, and it rewrites somebody's plugin
+environment — ask whoever owns it.
 
 The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
