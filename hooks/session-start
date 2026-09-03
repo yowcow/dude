@@ -8,8 +8,22 @@
 
 set -euo pipefail
 
-hook_dir="$(cd "$(dirname "$0")" && pwd)"
-skill_file="${hook_dir}/../skills/using-dude/SKILL.md"
+# CDPATH is cleared rather than trusted: `cd` searches it for a relative
+# operand and echoes the directory it landed on, so an exported CDPATH would
+# resolve this to a tree the hook was never invoked from and fold the echoed
+# line into the value. That path is printed below as the block's identity, and
+# a wrong identity is worse than none -- it is the line a reader trusts to tell
+# two installs apart. Spelled as tests/lib/harness.sh and tests/run.sh spell it.
+hook_dir="$(CDPATH='' cd -- "$(dirname "$0")" && pwd)"
+# The install this hook is running out of. Two installs of dude each run their
+# own copy of this script and inject a near-identical block; without the tree
+# named in the block, the two cannot be told apart by reading them. The value
+# was already being computed here and thrown away -- $CLAUDE_PLUGIN_ROOT is
+# deliberately not consulted, so what is printed stays the tree this file
+# actually ran from. `dirname` rather than ${hook_dir%/*}, which yields the
+# empty string for a hook_dir of `/hooks`.
+plugin_root="$(dirname "$hook_dir")"
+skill_file="${plugin_root}/skills/using-dude/SKILL.md"
 
 # On a read failure this says so in the injected context: a session that
 # silently lost its workflow rules improvises every gate and looks normal.
@@ -27,8 +41,12 @@ escape_for_json() {
 }
 
 escaped=$(escape_for_json "$skill_content")
+# Through the same escape as the content: `"` and `\` are legal in a POSIX
+# filename, and an install path carrying either would close the JSON string
+# early -- taking the whole ruleset with it, not just the path.
+escaped_root=$(escape_for_json "$plugin_root")
 
-context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — the \`dude:using-dude\` skill, in full:\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
+context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — the \`dude:using-dude\` skill, in full, from the dude install at ${escaped_root}:\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
 
 # printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
