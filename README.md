@@ -340,6 +340,26 @@ was measured on Claude Code alone; what the other four runtimes do with a
 subagent default has not been measured here, which is not a claim that they have
 no tier lever.
 
+### What the run's own tier decides
+
+That ladder is about workers; the judgments are mostly not there.
+`implement-work` owns both of its gates and lets no worker declare either
+clean. `pr-to-ready` never delegates the clean judgment or the stop
+conditions, reading whether checks pass included. `review-code` dispatches a
+reviewer that returns findings and `simplify-code` proposers that return
+proposals — which of those are accepted, and when either loop ends, stays in
+the main loop. Each of those skills draws that line in its **Orchestration
+model**, and `pr-to-ready` deliberately puts one judgment on the far side:
+evaluating a review finding goes out to a marked worker and never runs in the
+main loop.
+
+So the run's own tier is not only the fallback a worker dispatched without a
+model of its own lands on. Lower it to spend less and every judgment on the
+near side of those lines goes down at once, while the run keeps reporting
+*clean* — what fell is the judgment rather than the shape of the output, so no
+gate in the flow has anything to catch. Where that fallback is the one in
+force, the far side comes down with it.
+
 ## Development
 
 Point a marketplace at a local clone instead of the remote:
