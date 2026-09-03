@@ -288,7 +288,8 @@ host's prefix would read wrongly on the others.
 ### What tier a marked worker runs at
 
 `using-dude`'s **Worker tier** sends a worker whose miss would pass as "nothing
-found" out at the highest tier the run has. Which tier that actually is gets
+found" out at the highest tier the runtime can put on a worker, which the run's
+own tier does not cap. Which tier that actually is gets
 settled by a ladder rather than by the run alone: where the runtime carries a
 default for subagents, a worker dispatched without a model of its own lands on
 that default; where none is set, it falls back to the run's own tier. So raising
@@ -342,16 +343,17 @@ no tier lever.
 
 ### What the run's own tier decides
 
-That ladder is about workers; the judgments are mostly not there.
-`implement-work` owns both of its gates and lets no worker declare either
+That ladder is about workers, and a review finding's verdict is on that side of
+it. `implement-work` owns both of its gates and lets no worker declare either
 clean. `pr-to-ready` never delegates the clean judgment or the stop
-conditions, reading whether checks pass included. `review-code` dispatches a
-reviewer that returns findings and `simplify-code` proposers that return
-proposals; in both skills the main loop is what decides which of those are
-accepted and when the loop ends. Each of those skills draws that line in its
-**Orchestration model**, and `pr-to-ready` deliberately puts one judgment on
-the far side: evaluating a review finding goes out to a marked worker and
-never runs in the main loop.
+conditions, reading whether checks pass included. `simplify-code` dispatches
+proposers and keeps in the main loop which of their proposals are accepted;
+`review-code` and `review-plan` dispatch reviewers that return findings, and
+there the main loop is what decides when the loop or the pass ends. Each of
+those skills draws that line in its **Orchestration model**, and the three that
+judge a review finding put that one judgment on the far side alike: in
+`review-code`, `review-plan` and `pr-to-ready`, a finding's verdict goes out to
+a marked worker and never runs in the main loop.
 
 So the run's own tier is not only the fallback a worker dispatched without a
 model of its own lands on. Lower it to spend less and every judgment on the
