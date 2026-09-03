@@ -1,11 +1,11 @@
 ---
 name: pr-to-ready
-description: Use to take a branch of verified commits — with or without a PR on it yet — to a PR whose CI passes and whose review is clean, left at ready or draft. Triggers on "implementation is done, take it to a PR", "open the draft PR and drive it", "what next after opening the PR", "CI is failing", "run the review loop", "take it out of draft", "handle the review feedback".
+description: Use to take an open PR — given its number or URL — to a PR whose CI passes and whose review is clean, left at ready or draft; it sets up its own workspace, so a fresh session needs nothing but the reference. A branch with no PR on it yet is the fallback entry. Triggers on "take this PR to ready", "drive this PR", a PR URL on its own, "what next after opening the PR", "CI is failing", "run the review loop", "take it out of draft", "handle the review feedback".
 ---
 
 # pr-to-ready
 
-Take a branch of verified commits to a reviewed PR: open the draft PR if it isn't there yet, then loop until CI passes and the review is clean. **The only PR-status change this flow makes is draft → ready**, and it makes that one only when the user asked for it up front and the run came out clean; anywhere else, clean or not, the PR's status is left as it was found. Precondition: a branch whose commits are already verified. An unpushed branch is not a blocker — push it and go on rather than stopping. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
+Take an open PR to a reviewed one: resolve the run from the PR's number or URL, set up the workspace its head branch needs, then loop until CI passes and the review is clean. **The only PR-status change this flow makes is draft → ready**, and it makes that one only when the user asked for it up front and the run came out clean; anywhere else, clean or not, the PR's status is left as it was found. Precondition: a PR whose commits are already verified — normally the draft PR `implement-work` left behind. A branch carrying no PR yet is the fallback entry, and an unpushed one is not a blocker: push it, open the draft PR, and go on. This flow ends at one of three terminal states: ready, draft, or **handed back to a person** when something surfaces that this run cannot resolve on its own.
 
 ## Orchestration model
 
@@ -19,23 +19,38 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 ## Step 0: Set up the run
 
-### 0-1. Create the draft PR if none exists
-
-Bind `<branch>` before anything else runs, from the caller's explicit input — a hand-off from `implement-work`, or a name given directly. If none was given, ask; don't guess it from the current checkout.
-
-Call `<skill-dir>/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once — `<skill-dir>` being this skill's own directory inside the installed plugin, `skills/pr-to-ready/`. It pushes the branch first if only a local ref exists, looks for a PR already on `<branch>`, and creates one only when none is found — resolving the base itself, at that point alone, by reading the `Base-Branch:` trailer `implement-work` wrote (`base-branch.md`'s "## The contract") and settling it from the prerequisite's current state (that file's "## Reading the trailer back" table). It answers `PR <n> found draft=<bool>` when a PR already existed, `PR <n> created draft=true base=<base>` when it opened one, or `STOP <slug>`. **Every stop the base carries fires before the PR is created** — the state table's stop rows can never leave a PR opened against a base nobody settled. Other stops can come later, and the slug says which side of creation it came from. Bind `<PR>` from the answer.
-
-Title and body are standard Japanese (標準語), following the repo's PR template when it has one. The body must carry a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository. The PR is created as a draft; when one already exists but is not a draft, leave it as it is rather than converting it.
-
-### 0-2. Ask whether to mark ready on clean
+### 0-1. Ask whether to mark ready on clean
 
 Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
+
+### 0-2. Resolve the run from the PR reference
+
+Bind the run from the caller's reference — a PR number or a PR URL. If none was given, ask; **don't guess it from the current checkout**, whose repository need not be the PR's at all.
+
+Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once — `<skill-dir>` being this skill's own directory inside the installed plugin, `skills/pr-to-ready/`. It resolves the reference against the repository the reference itself names, checks that this working tree is a checkout of that repository, and answers on one line. Branch on it:
+
+- `PR <n> branch=<head> base=<base> repo=<owner>/<repo> draft=<bool>` — bind `<PR>`, `<branch>`, and the `<owner>` and `<repo>` every later script call takes; none of those three is re-derived from the checkout again. `<base>` is the base the PR points at **now**, which is not the same question as the base it *should* sit on: Step 1 re-resolves that and may replace it.
+- `STOP <slug>` — report the stop and end the run. Nothing downstream has a repository, a branch, or a base it could work from.
+
+**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `<skill-dir>/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` first: it pushes the branch if only a local ref exists, looks for a PR already on it, and creates a draft one when none is found — resolving the base itself, at that point alone. It answers `PR <n> found draft=<bool>`, `PR <n> created draft=true base=<base>`, or `STOP <slug>`. On either `PR` line, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on a `STOP`, report it and end the run. Title and body follow `implement-work`'s **Hand off**, which owns that convention.
+
+### 0-3. Prepare the workspace
+
+`<branch>` need not be checked out here, or exist here at all — a fresh session entered from a PR URL is the ordinary case — and every later step writes to a working tree: Step 1's `retarget-pr.sh` merges the base and pushes it, and Step 1's diagnosis fixes and 2-3's `accept` fixes commit and push. Preparing it once here rather than where each of those needs it keeps one step instead of three.
+
+Call `<skill-dir>/../implement-work/scripts/attach-workspace.sh <branch> <path>` — the sibling skill's script, reached by relative path because this skill holds no copy of it. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
+
+- `REUSE <path>` — a worktree already carries `<branch>`; use it as-is.
+- `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
+- `CREATE` — **stop.** A PR's head branch exists on its repository's remote by definition, and 0-2 has already established that this checkout is that repository, so nothing to attach to means the branch was deleted under an open PR. Report it; don't cut a fresh branch, which would put an empty history under the name the PR points at.
+
+**Run every later step from that workspace.** Without this, the run edits, commits and pushes in whatever tree the session started in — with `<branch>` unchecked-out, that is whatever branch was: Step 1's diagnosis fix and 2-3's `accept` fixes are committed onto the default branch and pushed there, reviewed by nobody, while the PR they were written for does not move.
 
 ## Step 1: Settle the base, then get CI clean
 
 Before watching CI, settle whether the base is still the right one — the prerequisite's state can have moved since Step 0.
 
-1. Re-resolve it: `<skill-dir>/scripts/resolve-pr-base.sh <branch>` → `BASE <name>` or `STOP <slug>`. Same lookup 0-1 used, read again.
+1. Re-resolve it: `<skill-dir>/scripts/resolve-pr-base.sh <branch>` → `BASE <name>` or `STOP <slug>`. This is the base the branch *should* sit on, read from its `Base-Branch:` trailer and the prerequisite's current state — a different question from the `<base>` 0-2 bound, which is the one the PR points at now.
 2. Check the PR against that answer: `<skill-dir>/scripts/check-pr-state.sh <owner> <repo> <pr-number> <base>` → `BASE-OK|BASE-DRIFT <current-base> MERGEABLE|CONFLICTING|UNKNOWN`, or `STOP <slug>`. The name it prints is the base the PR points at **now**, not the one you passed in — which is what makes `BASE-DRIFT` worth reading. Read-only: it measures and never fixes.
 3. On `BASE-DRIFT`: pull the resolved base in with `<skill-dir>/scripts/retarget-pr.sh <owner> <repo> <pr-number> <branch> <base>` → `BASE-OK <base>` (nothing to do), `RETARGETED <old> <new>` — the merge is pushed, so CI below runs against the new tip rather than the one it already passed on — or `STOP <slug>` on a conflict while merging the new base in.
 4. On `CONFLICTING`, or on an `UNKNOWN` that stands after the script's own bounded re-read: neither is something to fix here — both are the **third terminal state**. Stop, and hand the branch back to a person with what was found; don't attempt a resolution, and don't take an undetermined mergeability for a clean one. **Name `implement-work` as where it goes back to**, whose completion gate absorbs the base and re-verifies: with no destination named, the person's only cue is the PR they were already in, so they re-enter `pr-to-ready` and land on this same terminal state again, having changed nothing.
@@ -118,7 +133,7 @@ Otherwise branch on the flag Step 0 recorded:
 
 Either way, the run ends here. Everything depending on the merge belongs to a person — report it as hand-over and act on none of it:
 - **the parent issue**, whenever one backs this sub-issue: GitHub doesn't close a parent when its children close, so report the sub-issue's state as of now, and if it's the last one open, that the parent becomes closable on this merge — then leave it;
-- **the worktree and the branch**, both outliving this run — name both;
+- **the workspace and the branch**, both outliving this run — name the path 0-3 reused or attached, and the branch;
 - **the next sub-issue**, when children remain open — say which.
 
 Carrying on into the next one would do `implement-work`'s job with none of its gates. The one exception is an explicit instruction already in the chat covering what comes after — and even then this run still ends here: what that licenses is starting the next run through its own entry and gates, not extending this one.
