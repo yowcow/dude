@@ -347,11 +347,11 @@ That ladder is about workers; the judgments are mostly not there.
 clean. `pr-to-ready` never delegates the clean judgment or the stop
 conditions, reading whether checks pass included. `review-code` dispatches a
 reviewer that returns findings and `simplify-code` proposers that return
-proposals — which of those are accepted, and when either loop ends, stays in
-the main loop. Each of those skills draws that line in its **Orchestration
-model**, and `pr-to-ready` deliberately puts one judgment on the far side:
-evaluating a review finding goes out to a marked worker and never runs in the
-main loop.
+proposals; in both skills the main loop is what decides which of those are
+accepted and when the loop ends. Each of those skills draws that line in its
+**Orchestration model**, and `pr-to-ready` deliberately puts one judgment on
+the far side: evaluating a review finding goes out to a marked worker and
+never runs in the main loop.
 
 So the run's own tier is not only the fallback a worker dispatched without a
 model of its own lands on. Lower it to spend less and every judgment on the
