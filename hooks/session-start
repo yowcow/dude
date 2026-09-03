@@ -14,7 +14,7 @@ set -euo pipefail
 # line into the value. That path is printed below as the block's identity, and
 # a wrong identity is worse than none -- it is the line a reader trusts to tell
 # two installs apart. Spelled as tests/lib/harness.sh and tests/run.sh spell it.
-hook_dir="$(CDPATH='' cd -- "$(dirname "$0")" && pwd)"
+hook_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # The install this hook is running out of. Two installs of dude each run their
 # own copy of this script and inject a near-identical block; without the tree
 # named in the block, the two cannot be told apart by reading them. The value
@@ -22,7 +22,7 @@ hook_dir="$(CDPATH='' cd -- "$(dirname "$0")" && pwd)"
 # deliberately not consulted, so what is printed stays the tree this file
 # actually ran from. `dirname` rather than ${hook_dir%/*}, which yields the
 # empty string for a hook_dir of `/hooks`.
-plugin_root="$(dirname "$hook_dir")"
+plugin_root="$(dirname -- "$hook_dir")"
 skill_file="${plugin_root}/skills/using-dude/SKILL.md"
 
 # On a read failure this says so in the injected context: a session that
@@ -31,19 +31,43 @@ skill_content=$(sed -n '/^# /,$p' "$skill_file" 2>&1) \
   || skill_content="Error reading the using-dude skill at ${skill_file}. dude's workflow rules are NOT in context; read the file yourself before starting any task."
 
 escape_for_json() {
-    local s="$1"
+    local s="$1" o c u
     s="${s//\\/\\\\}"
     s="${s//\"/\\\"}"
     s="${s//$'\n'/\\n}"
     s="${s//$'\r'/\\r}"
     s="${s//$'\t'/\\t}"
+    # Everything below is guarded: every one of the 28 characters it rewrites
+    # matches [[:cntrl:]], so a string failing the guard carried none of them and
+    # each skipped pass would have been a no-op -- and unguarded that is 28
+    # further walks of a ten-kilobyte skill body. The guard also fires on DEL
+    # and, in a UTF-8 locale, on U+0080..U+009F, which JSON allows raw: those
+    # runs make 28 no-op passes, a wasted walk rather than a wrong one. The 26
+    # C0 controls with no two-character escape go out as \u00XX. One left raw
+    # invalidates the whole object: Claude Code drops the block, so neither the
+    # ruleset nor the read-failure notice arrives, and this hook still exits 0 --
+    # nothing says so. NUL is absent from the list because a bash string cannot
+    # hold one. `printf '%b'` rather than a computed format string, which is
+    # SC2059. The codes are spelled in octal, the base `\0NNN` wants, and printf
+    # reads a leading-zero argument as octal too -- so neither line needs a
+    # subshell to change base.
+    if [[ $s == *[[:cntrl:]]* ]]; then
+        s="${s//$'\b'/\\b}"
+        s="${s//$'\f'/\\f}"
+        for o in 001 002 003 004 005 006 007 013 016 017 020 021 022 023 024 025 026 027 030 031 032 033 034 035 036 037; do
+            printf -v c '%b' "\\0$o"
+            printf -v u '\\u%04x' "0$o"
+            s="${s//"$c"/"$u"}"
+        done
+    fi
     printf '%s' "$s"
 }
 
 escaped=$(escape_for_json "$skill_content")
-# Through the same escape as the content: `"` and `\` are legal in a POSIX
-# filename, and an install path carrying either would close the JSON string
-# early -- taking the whole ruleset with it, not just the path.
+# Through the same escape as the content: `"`, `\` and the C0 controls a path
+# can hold are all legal in a POSIX filename, and an install path carrying
+# any of them would close or invalidate the JSON string early -- taking the
+# whole ruleset with it, not just the path.
 escaped_root=$(escape_for_json "$plugin_root")
 
 context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — the \`dude:using-dude\` skill, in full, from the dude install at ${escaped_root}:\n\n${escaped}\n</EXTREMELY_IMPORTANT>"

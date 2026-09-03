@@ -18,12 +18,12 @@
 # No row stubs `gh`: this script never calls it. Every row asserts zero gh
 # calls, which is what holds that to being true.
 #
-# RED verification (see tests/README.md). Against the pre-change script, six of
-# the seven rows fail and only `frontmatter-dropped` passes -- that row asserts
-# behaviour this change does not touch. The six are `plain-tree`,
-# `names-the-install-path`, `weird-path-json-intact`, `cdpath-ignored`,
-# `missing-skill-file` and `read-failure-names-the-path`, and they fail for
-# three distinct reasons:
+# RED verification (see tests/README.md). Against the pre-change script, seven
+# of the eight rows fail and only `frontmatter-dropped` passes -- that row
+# asserts behaviour this change does not touch. The seven are `plain-tree`,
+# `names-the-install-path`, `weird-path-json-intact`,
+# `control-chars-json-intact`, `cdpath-ignored`, `missing-skill-file` and
+# `read-failure-names-the-path`, and they fail for three distinct reasons:
 #   - the wrapper named no install path, so every row reading the heading line
 #     differs there;
 #   - the fallback message spelled the skill file `<root>/hooks/../skills/...`,
@@ -53,9 +53,10 @@ total=0
 
 # The body of the fixture SKILL.md, from the first `# ` line on -- which is the
 # span the script's `sed -n '/^# /,$p'` selects. It carries a quote, a
-# backslash, a tab and a carriage return, because those are the four characters
+# backslash, a tab and a carriage return -- four of the characters
 # escape_for_json rewrites; content that exercised none of them would pass
-# through a broken escaper unharmed.
+# through a broken escaper unharmed. The control characters it does not carry
+# are exercised through the install path, by `control-chars-json-intact`.
 BODY="${HARNESS_TMP}/body.md"
 {
   printf '# Using dude\n\n'
@@ -234,6 +235,30 @@ if ! check_json 'weird-path-json-intact'; then fails=1; fi
 if ! check_context 'weird-path-json-intact: context' "$ROOT"; then fails=1; fi
 row_done 'weird-path-json-intact' "$fails"
 
+# ---- a plugin root carrying C0 control characters -----------------------
+#
+# JSON forbids a raw U+0000..U+001F inside a string and only five of them have
+# a two-character escape. The install path is not this repository's to
+# constrain -- it is whatever directory the plugin was installed into -- so a
+# control character there is reachable the same way the quote above is. Left
+# raw it invalidates the whole object rather than merely the path: Claude Code
+# drops the block, and the hook still exits 0, so neither the ruleset nor the
+# read-failure notice arrives and nothing says so.
+#
+# The path carries every C0 control the escaper has to convert, not a sample of
+# them: the conversion spells its codes in octal, and a single mis-numbered
+# entry would otherwise ship green.
+
+total=$((total + 1))
+stub_dir_new
+ROOT="${HARNESS_TMP}/tree.ctl"$'\b\f\001\002\003\004\005\006\007\013\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037'"end"
+build_tree "$ROOT"
+run_sut bash "${ROOT}/hooks/session-start"
+fails=0
+if ! check_json 'control-chars-json-intact'; then fails=1; fi
+if ! check_context 'control-chars-json-intact: context' "$ROOT"; then fails=1; fi
+row_done 'control-chars-json-intact' "$fails"
+
 # ---- CDPATH must not redirect the derivation ----------------------------
 #
 # `cd` consults CDPATH for a relative operand and prints the directory it
@@ -257,9 +282,9 @@ DECOY="${HARNESS_TMP}/decoy.cdpath"
 rm -rf -- "$DECOY"
 mkdir -p -- "${DECOY}/hooks"
 cd "$ROOT"
-export CDPATH="$DECOY"
-run_sut bash hooks/session-start
-unset CDPATH
+# Set for this one call rather than exported and unset afterwards, which would
+# destroy a CDPATH the parent had set.
+CDPATH="$DECOY" run_sut bash hooks/session-start
 cd "$REPO_ROOT"
 fails=0
 if ! check_json 'cdpath-ignored'; then fails=1; fi
