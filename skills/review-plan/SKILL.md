@@ -9,7 +9,7 @@ Use on planning work before any code is written, or on a revision of it. This re
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: read-only reviewers, and one verdict worker per finding.** Writing the report is what stays in the main loop.
+**This skill dispatches two kinds of worker: read-only reviewers, and one verdict worker per finding.** Everything else — gathering the inputs, sizing the fan-out, writing the report, and calling the pass clean — stays in the main loop.
 
 - A reviewer takes its assigned lenses, reports findings, and hands back. It never edits what it reviewed and never declares the plan clean. **Dispatch** sizes the fan-out. Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: a design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
 - **Judging a finding never happens in the main loop** either, on the contract and at the marked tier `review-code`'s **Orchestration model** sets out. What that buys here is that the main loop drafted the very artifact under review — `plan-work`'s TODO list, or `implement-work`'s implementation plan — so a verdict reached there rests on its own account of the design, and a real design flaw rejected on it flows into the implementation, which is all any later gate reads. The orchestrator writes the report from the verdicts and re-judges none of them.
