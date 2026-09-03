@@ -70,7 +70,7 @@ The deliverable is an evidence-backed explanation of an observed problem. `super
 
 **Tier** is whatever the runtime has for putting more capability on one task — a stronger model, a higher reasoning effort, or both.
 
-The orchestrator can re-judge what a worker returned, but never what it didn't return: a worker whose miss passes as "nothing found" is dispatched at the highest tier the run has. The run's default is fine for every other worker, and this rule constrains nothing about them. Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
+The orchestrator can re-judge what a worker returned, but never what it didn't return: a worker whose miss passes as "nothing found" is dispatched at the highest tier the runtime can put on a worker — a ceiling the run's own tier does not lower, so a run started cheaply dispatches such a worker above the tier it is itself on. The run's default is fine for every other worker, and this rule constrains nothing about them. Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
 
 Where the runtime has no means of choosing a tier, this rule settles nothing and the run proceeds unchanged.
 
