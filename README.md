@@ -294,25 +294,30 @@ installed for real (`gemini extensions install`); a `link`-installed
 extension gave `agy plugin import gemini` nothing to find.
 
 What the other four runtimes do with a stray `rules/` directory: Claude
-Code's `claude plugin validate` neither rejects it nor inspects it (a
-manifest check, not a runtime probe); Grok's `plugin validate` and
-`inspect --json` both omit it silently, no warning either way; Codex has no
-non-interactive command to check with — `codex plugin` exposes only
-`add`/`list`/`marketplace`/`remove`; and Gemini CLI's own runtime handling is
-not measured, because this account can no longer authenticate to the
-interactive CLI at all ("This client is no longer supported for Gemini Code
-Assist for individuals... migrate to the Antigravity suite of products"),
-independent of anything about `rules/`.
+Code's `claude plugin validate` neither rejects it nor inspects it — a
+manifest check, not a runtime probe, so its runtime handling is unmeasured
+too; Grok's `plugin validate` and `inspect --json` both omit it silently, no
+warning either way; Codex is unmeasured — `codex plugin` has no
+`validate`/`inspect` equivalent (only `add`/`list`/`marketplace`/`remove`, on
+codex-cli 0.153.2), and no runtime probe was run in its place; and Gemini
+CLI's own runtime handling is not measured, because this account can no
+longer authenticate to the interactive CLI at all ("This client is no longer
+supported for Gemini Code Assist for individuals... migrate to the
+Antigravity suite of products"), independent of anything about `rules/`.
 
-Given both paths reached the model, and `rules/`'s one advantage over
-`PreInvocation` — avoiding duplicated body text — never came back as a
-confirmed yes, `PreInvocation` is the path yowcow/dude#146 should implement:
-it carries no duplication risk of its own (it can read `SKILL.md` fresh at
-the point it fires), while `rules/` would plausibly still need the body
-copied in, given its import mechanism showed no sign of resolving to actual
-file content. `PreInvocation`'s own cost — it fires on every model call, not
-once per session — still needs the once-per-session narrowing that issue
-already calls for.
+Both paths reached the model, so the choice comes down to what each
+costs. `rules/` is the runtime's own passive mechanism and costs nothing
+to fire, but it needs the body duplicated — and the one thing that could
+have removed that, an import resolving to file content, never came back
+as a confirmed yes. `PreInvocation` is the mirror image: it carries no
+duplication risk (it can read `SKILL.md` fresh at the point it fires),
+but it fires on every model call rather than once per session. Neither
+dominates, and the tie breaks on which cost is the harder to undo:
+duplicating the body runs straight into `AUTHORING.md`'s rule against
+leaving duplicated text behind, while the firing cost is answered by
+narrowing the injection to once per session, which yowcow/dude#146
+already requires. So `PreInvocation` is the path that issue should
+implement.
 
 Where `using-dude` is not in context, it has to be reached by hand, and there
 are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
