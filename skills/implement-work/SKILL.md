@@ -73,9 +73,9 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
 
 1. Read the task. Where the design lives depends on the entry: a **sub-issue** carries its own body plus a link to the parent's design comment; an **issue that fits one PR** carries its own comment; a **request with no issue** is itself the input, together with whatever `plan-work` left in chat.
 2. Dispatch a drafter to write the detailed plan with `superpowers:writing-plans`. Three things bind the dispatch:
-   - **Fresh context.** A dispatch form that carries this session's context forward is barred; the references below are all the worker needs.
+   - **Fresh context.** A dispatch form that carries this session's context forward is barred.
    - **The brief carries references, not the design.** Point the worker at where step 1 found the design, and give it the workspace path and the branch. Restating the design in the brief puts its decisions back in the main loop and leaves the worker transcribing them.
-   - **The worker drafts and returns the plan's path; it never implements.** `superpowers:writing-plans` ends by presenting execution options and naming what to run next — the brief is where that is refused, since what runs after this gate is settled here.
+   - **The worker drafts the plan and returns its path; it never implements.** `superpowers:writing-plans` ends by presenting execution options — the brief is where that is refused, since what runs after this gate is settled here.
 
    What this gate takes back is a plan that has been through that skill's own self-review — not the file the moment it lands. The plan goes in the workspace, git-ignored, and is never committed or published.
 3. Dispatch `review-plan` with the target declared as the implementation plan. Fold every accepted finding in yourself — except one that invalidates the agreed design, which is not folded in at all: stop and take the **Design invalidated** exit below. Then re-run `review-plan`, handing over the record of the previous pass so it doesn't re-litigate rejected findings.
