@@ -262,24 +262,24 @@ documentation rather than measured. `PreInvocation` and the `rules/` merging
 behavior were measured directly for yowcow/dude#145, below.
 
 Measured on agy 1.1.25: `PreInvocation` fires as documented — before the
-model is called — with `invocationNum` starting at `0` and resetting to `0`
-at the start of each user turn, incrementing only across additional model
-calls *within* that turn (a turn forcing a tool call produced two
-`PreInvocation` fires in a row, `invocationNum` `0` then `1`). The handler's
-`cwd` is the plugin root, and a `command` written relative to that root
-resolves correctly — both held across all seven fires taken in one session,
-no exceptions. An `ephemeralMessage` injected on the first fire
-reached the model in that same turn, and the value was still recoverable a
-turn later — though that persistence read is not conclusive on its own,
-since the model's own prior reply already states the value and could be
-answering from its transcript rather than from anything still injected. A
-`userMessage` injected the same way also reached the model, and unlike the
-ephemeral one it rendered as its own turn in the transcript, indistinguishable
-from something the user had typed — that visibility is the concrete
-difference between the two step types.
+model is called — with `invocationNum` resetting to `0` at the start of
+each user turn and incrementing only across additional model calls
+*within* that turn (a turn forcing a tool call produced two `PreInvocation`
+fires in a row, `invocationNum` `0` then `1`). The handler's `cwd` is the
+plugin root, and a `command` written relative to that root resolves
+correctly — both held across all seven fires taken in one session. An
+`ephemeralMessage` injected on the first fire reached the model in that
+same turn, and the value was still recoverable a turn later — though that
+persistence read is not conclusive on its own, since the model's own prior
+reply already states the value and could be answering from its transcript
+rather than from anything still injected. A `userMessage` injected the
+same way also reached the model, and unlike the ephemeral one it rendered
+as its own turn in the transcript, indistinguishable from something the
+user had typed — that visibility is the concrete difference between the
+two step types.
 
 `rules/AGENTS.md` does load when placed at a plugin's root, and the full
-body arrived head to tail with no truncation. Whether an `@`-import inside
+body arrived head to tail. Whether an `@`-import inside
 it avoids duplicating body text stayed inconclusive: the fixture's
 `@./import-target.md` line came back with its relative path resolved to an
 absolute one, but the referenced file's own content was never substituted in
