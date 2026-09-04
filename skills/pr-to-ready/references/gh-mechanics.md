@@ -47,10 +47,6 @@ Its `BEHIND` value is no better as a trigger for taking the base in, and for a s
 
 That re-read is bounded by a clock, and a small one. The bound has nothing in common with waiting on a reviewer: the computation is a background job that finishes in seconds, so anything near 2-2's review wait would leave the run idle for no reason.
 
-**`git merge-tree` sits after `mergeable`, not in place of it.** It is permission-independent and answers at once with no polling, which is what a last rung wants — but the question being asked is what GitHub's merge button will say, and `mergeable` is the authority on that. So the local check settles what GitHub was too slow to settle, instead of pre-empting it.
-
-**Resolve both refs before reading `merge-tree`'s exit status.** It exits 1 for a genuine conflict *and* for a ref that fails to resolve — measured on git 2.43.0, where a nonexistent ref produced exit 1 exactly as a real conflict did, the two separated only by a message on stderr. Read on its own, that exit status turns a mistyped or never-fetched ref into a reported conflict, halting the run over something that was never wrong with the branch at all. Resolving each tip through `git rev-parse --verify --quiet` first removes that case before the exit status is read.
-
 **Capture the two tips as shas, one per fetch.** `git fetch` rewrites `FETCH_HEAD` on every call, so fetching the base and then the branch leaves `FETCH_HEAD` holding only the second of them. Passing it as both arguments would compare the branch with itself and find no conflict — a clean answer to a question nobody asked.
 
 ## Recording the Copilot baseline — before the request, not after
