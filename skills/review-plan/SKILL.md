@@ -9,10 +9,10 @@ Use on planning work before any code is written, or on a revision of it. This re
 
 ## Orchestration model
 
-**This skill dispatches workers.** Reviewers are read-only and do the reading; judging what they return and writing the report stay in the main loop.
+**This skill dispatches two kinds of worker: read-only reviewers, and one verdict worker per finding.** Everything else — gathering the inputs, sizing the fan-out, writing the report, and calling the pass clean — stays in the main loop.
 
-- A reviewer takes its assigned lenses, reports findings, and hands back. It never edits what it reviewed and never declares the plan clean. **Dispatch** sizes the fan-out. Each reviewer goes out at the highest tier the run has (`using-dude`'s **Worker tier**): a design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
-- The orchestrator accepts or rejects every finding and writes the report.
+- A reviewer takes its assigned lenses, reports findings, and hands back. It never edits what it reviewed and never declares the plan clean. **Dispatch** sizes the fan-out. Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: a design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
+- **Judging a finding never happens in the main loop** either, on the contract and at the marked tier `review-code`'s **Orchestration model** sets out. What that buys here is that the main loop drafted the very artifact under review — `plan-work`'s TODO list, or `implement-work`'s implementation plan — so a verdict reached there rests on its own account of the design, and a real design flaw rejected on it flows into the implementation, which is all any later gate reads. The orchestrator writes the report from the verdicts and re-judges none of them.
 - One invocation is one pass, and it never re-reviews on its own. Revising and re-running until it comes back clean belongs to the caller — `plan-work` for a TODO list, `implement-work` for an implementation plan.
 
 ## What counts as a finding
@@ -76,10 +76,10 @@ Report "no findings" explicitly rather than inventing one. Confine every search 
 
 1. Gather the inputs: the declared target, the artifact, the original request, the paths it touches, and the record of an earlier pass if the caller supplied one.
 2. Dispatch reviewers, sized per **Dispatch**.
-3. Evaluate every finding with `superpowers:receiving-code-review`: verify the claim against the repo before accepting it, and reject — with a stated reason — findings that are wrong, that ask for work beyond the request, or that fail the test in **What counts as a finding**.
+3. Dispatch one verdict worker per finding, per **Orchestration model**, and take back what each returns. A worker verifies the claim against the repo before accepting it, and rejects — with a stated reason — a finding that is wrong, that asks for work beyond the request, or that fails the test in **What counts as a finding**; where the call is a person's rather than a technical one, it returns `needs-user` instead.
 4. Report per **Report**, and stop there — revising and re-reviewing are the caller's job.
 
-This pass is clean when no finding survives step 3.
+This pass is clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean, and that finding is reported as blocking — applied by nobody and rejected by nobody, since no edit to the plan settles it — for the caller to put to a person rather than to another pass. This is `using-dude`'s **Loop convergence** non-clean handling reached on a verdict instead of a round count, so a caller that hands a **Loop convergence** stop to a person hands this one over the same way. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced. `pr-to-ready`'s stop condition 3 is the precedent for a skill stopping itself on this verdict.
 
 ## Report
 
@@ -88,4 +88,5 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 - the target reviewed, the fan-out used, and any lens skipped with why
 - accepted findings with lens, severity, evidence, and suggested change
 - rejected findings with the reason
+- `needs-user` findings, with why the worker put the decision to a person
 - the verdict: clean, or the blocking findings that remain — flagging any Critical finding separately, since **Finding contract** puts its remedy outside a plan edit
