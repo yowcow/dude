@@ -251,14 +251,73 @@ off the documented event list, not observed — and `true` would exit 0 with no
 effect if it ever did run.
 
 Parsing cleanly buys quiet logs, not injection. The `GEMINI.md` route does not
-carry over: Antigravity's shipped documentation has it merging a plugin's rules
-from `plugins/<name>/rules/`, and dude ships no such directory. So `using-dude`
-is still not in context there. What a session does carry is the skill's
-*listing*: asked whether the rules were present, it quoted back the `description`
-from `using-dude`'s frontmatter and no line of its body. The parse result and the
-`loaded 0 named hooks` comparison were measured on agy 1.1.24 and the
-skill-listing finding on 1.1.23; the event list and the `rules/` route are read
-from the shipped documentation rather than measured.
+carry over, and dude ships no `plugins/<name>/rules/` directory, so
+`using-dude` is still not in context there. What a session does carry is the
+skill's *listing*: asked whether the rules were present, it quoted back the
+`description` from `using-dude`'s frontmatter and no line of its body. The
+parse result and the `loaded 0 named hooks` comparison were measured on agy
+1.1.24 and the skill-listing finding on 1.1.23; the `PreToolUse`/`PostToolUse`/
+`PostInvocation`/`Stop` event list is still read from the shipped
+documentation rather than measured. `PreInvocation` and the `rules/` merging
+behavior were measured directly for yowcow/dude#145, below.
+
+Measured on agy 1.1.25: `PreInvocation` fires as documented — before the
+model is called — with `invocationNum` resetting to `0` at the start of
+each user turn and incrementing only across additional model calls
+*within* that turn (a turn forcing a tool call produced two `PreInvocation`
+fires in a row, `invocationNum` `0` then `1`). The handler's `cwd` is the
+plugin root, and a `command` written relative to that root resolves
+correctly — both held across all seven fires taken in one session. An
+`ephemeralMessage` injected on the first fire reached the model in that
+same turn, and the value was still recoverable a turn later — though that
+persistence read is not conclusive on its own, since the model's own prior
+reply already states the value and could be answering from its transcript
+rather than from anything still injected. A `userMessage` injected the
+same way also reached the model, and unlike the ephemeral one it rendered
+as its own turn in the transcript, indistinguishable from something the
+user had typed — that visibility is the concrete difference between the
+two step types.
+
+`rules/AGENTS.md` does load when placed at a plugin's root, and the full
+body arrived head to tail. Whether an `@`-import inside
+it avoids duplicating body text stayed inconclusive: the fixture's
+`@./import-target.md` line came back with its relative path resolved to an
+absolute one, but the referenced file's own content was never substituted in
+its place — neither a working import nor a plain literal miss, so this
+doesn't settle the question either way. `agy plugin import gemini` does
+carry a `rules/` directory across as a real file, confirmed by placing one
+in a throwaway Gemini-CLI extension and finding it land byte-for-byte inside
+the imported plugin's own directory — even though the import manifest's
+`components` field never lists `rules` among its tracked categories, so its
+absence there is not a rejection. This only worked once the extension was
+installed for real (`gemini extensions install`); a `link`-installed
+extension gave `agy plugin import gemini` nothing to find.
+
+What the other four runtimes do with a stray `rules/` directory: Claude
+Code's `claude plugin validate` neither rejects it nor inspects it — a
+manifest check, not a runtime probe, so its runtime handling is unmeasured
+too; Grok's `plugin validate` and `inspect --json` both omit it silently, no
+warning either way; Codex is unmeasured — `codex plugin` has no
+`validate`/`inspect` equivalent (only `add`/`list`/`marketplace`/`remove`, on
+codex-cli 0.153.2), and no runtime probe was run in its place; and Gemini
+CLI's own runtime handling is not measured, because this account can no
+longer authenticate to the interactive CLI at all ("This client is no longer
+supported for Gemini Code Assist for individuals... migrate to the
+Antigravity suite of products"), independent of anything about `rules/`.
+
+Both paths reached the model, so the choice comes down to what each
+costs. `rules/` is the runtime's own passive mechanism and costs nothing
+to fire, but it needs the body duplicated — and the one thing that could
+have removed that, an import resolving to file content, never came back
+as a confirmed yes. `PreInvocation` is the mirror image: it carries no
+duplication risk (it can read `SKILL.md` fresh at the point it fires),
+but it fires on every model call rather than once per session. Neither
+dominates, and the tie breaks on which cost is the harder to undo:
+duplicating the body runs straight into `AUTHORING.md`'s rule against
+leaving duplicated text behind, while the firing cost is answered by
+narrowing the injection to once per session, which yowcow/dude#146
+already requires. So `PreInvocation` is the path that issue should
+implement.
 
 Where `using-dude` is not in context, it has to be reached by hand, and there
 are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
