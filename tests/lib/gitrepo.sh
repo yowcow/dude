@@ -4,12 +4,13 @@
 # first, since everything here lives under $HARNESS_TMP and is removed with it.
 #
 # git is NOT stubbed. The scripts under test lean on real git behaviour --
-# FETCH_HEAD being overwritten per fetch, `git merge-tree` exiting 1 for both a
-# genuine conflict and an unresolvable ref -- and a stub would encode whatever
-# the test author believed about that rather than what git does.
+# FETCH_HEAD being overwritten per fetch, `git merge-base --is-ancestor`'s
+# exit codes, a real `git merge` producing a genuine conflict -- and a stub
+# would encode whatever the test author believed about that rather than what
+# git does.
 #
 # The identity a repository presents is carried by its *path*:
-# check-pr-state.sh reduces a remote URL to its last two segments, so a bare
+# resolve-pr-entry.sh reduces a remote URL to its last two segments, so a bare
 # repo at .../acme/widgets.git reads as `acme/widgets` while still being a
 # local directory that `git fetch` can reach without a network.
 #

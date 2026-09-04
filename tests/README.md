@@ -101,14 +101,14 @@ responses served: invocations for an ordinary call, pages for a paginated one.
 
 Scripts that shell out to `git` are tested against **real repositories**, not a
 git stub: they lean on behaviour a stub would only encode an opinion about —
-`FETCH_HEAD` being overwritten by each fetch, `git merge-tree` exiting 1 for a
-genuine conflict and an unresolvable ref alike. Source `gitrepo.sh` after
-`harness.sh`; everything it builds lives under `$HARNESS_TMP` and is removed
-with it.
+`FETCH_HEAD` being overwritten by each fetch, `git merge-base --is-ancestor`'s
+exit codes, a real `git merge` producing a genuine conflict. Source
+`gitrepo.sh` after `harness.sh`; everything it builds lives under
+`$HARNESS_TMP` and is removed with it.
 
 - `git_repo_bare <owner> <repo>` — a new bare repo at
   `$HARNESS_TMP/remotes/<owner>/<repo>.git`; prints the path. The **path is the
-  identity**: `check-pr-state.sh` reduces a remote URL to its last two
+  identity**: `resolve-pr-entry.sh` reduces a remote URL to its last two
   segments, so this repo reads as `<owner>/<repo>` while still being a local
   directory `git fetch` can reach offline.
 - `git_repo_scratch <name>` — a fresh empty directory; prints the path.
@@ -362,9 +362,6 @@ also refuses a `SUT` that does not name a readable non-empty file, before
 running anything: a missing path makes nearly every row fail, which is the shape
 of a successful RED, an unreadable one fails them the same way at exit 126, and
 an empty one makes them all pass, which reads as a test with no detection power.
-
-`check-pr-state.sh` → `a548e36^` — the local fallback did not verify that the
-working tree's `origin` was the PR's repository (#172).
 
 `resolve-pr-base.sh` → `bb8d8b8^` — the `Base-Branch` trailer scan walked to
 root, so a branch that recorded nothing picked up whatever trailer it inherited

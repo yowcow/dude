@@ -21,10 +21,9 @@
 # script finds the same branch name on the *wrong* remote and answers
 # `ATTACHED`; every later fix is then committed in that tree and
 # `git push origin` sends it to the wrong repository. Nothing downstream
-# catches it: ./check-pr-state.sh's identical comparison lives inside its
-# local-mergeability fallback, which does not run when GitHub answers
-# `mergeable`, and ./retarget-pr.sh only compares HEAD against the branch name,
-# which matches in the wrong repository too.
+# catches it: ./check-pr-state.sh performs no repository comparison of its
+# own, and ./retarget-pr.sh only compares HEAD against the branch name, which
+# matches in the wrong repository too.
 #
 # ./retarget-pr.sh's `STOP checkout-required` and `STOP dirty-worktree` are NOT
 # evidence for either failure above, and a reviewer applying AUTHORING.md's
@@ -67,12 +66,15 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
   }
 }'
 
-# The same reduction ./check-pr-state.sh performs, kept as a copy because this
-# tree has no shared library under scripts/ and adding one would put a file
-# with no behaviour of its own under the coverage gate. That script's header
-# carries the full account of why the scp form and the case fold are both
-# load-bearing; in short, `git@host:owner/repo` hides the host inside the owner
-# segment, and GitHub matches owner and repo case-insensitively.
+# Reduce a git remote URL to a lowercase `<owner>/<repo>`, the only part of it
+# this script compares. The `##*:` strip is what covers the scp form
+# (`git@host:owner/repo`), where the host sits with no path separator after it
+# and so lands inside the owner segment; drop that line and the form git uses
+# for a default SSH clone stops matching its own repository. The case fold is
+# not cosmetic either: GitHub matches owner and repo case-insensitively, so
+# `acme/Widgets` and `acme/widgets` name one repository and have to compare
+# equal — done through `tr` rather than `${x,,}` to keep this running on the
+# bash 3.2 this skill's scripts still run on.
 normalize_repo_path() {
   local url="$1" owner repo
   repo="${url##*/}"
@@ -130,8 +132,8 @@ elif [[ "$REF" =~ ^(https?://)?[^/]+/([^/]+)/([^/]+)/pull/([0-9]+)([/?#].*)?$ ]]
   # would call canonical: a renamed repository answers with its new name while
   # a correct checkout's origin still carries the old one, and comparing
   # against the canonical name would reject that checkout. The host is not
-  # compared, which leaves the same known limitation ./check-pr-state.sh
-  # records — a repository of the same owner and name on a different host.
+  # compared — a repository of the same owner and name on a different host
+  # passes this comparison too.
   if [ "$(normalize_repo_path "${OWNER}/${REPO}")" != "$CHECKOUT" ]; then
     echo "STOP wrong-checkout"
     exit 0
