@@ -266,9 +266,9 @@ model is called — with `invocationNum` starting at `0` and resetting to `0`
 at the start of each user turn, incrementing only across additional model
 calls *within* that turn (a turn forcing a tool call produced two
 `PreInvocation` fires in a row, `invocationNum` `0` then `1`). The handler's
-`cwd` is the plugin root on every fire, and a `command` written relative to
-that root resolves correctly — both held across all seven fires taken in one
-session, no exceptions. An `ephemeralMessage` injected on the first fire
+`cwd` is the plugin root, and a `command` written relative to that root
+resolves correctly — both held across all seven fires taken in one session,
+no exceptions. An `ephemeralMessage` injected on the first fire
 reached the model in that same turn, and the value was still recoverable a
 turn later — though that persistence read is not conclusive on its own,
 since the model's own prior reply already states the value and could be
@@ -288,10 +288,11 @@ doesn't settle the question either way. `agy plugin import gemini` does
 carry a `rules/` directory across as a real file, confirmed by placing one
 in a throwaway Gemini-CLI extension and finding it land byte-for-byte inside
 the imported plugin's own directory — even though the import manifest's
-`components` field never lists `rules` as one of its tracked categories at
-all, so its absence there is not a rejection. This only worked once the
-extension was installed for real (`gemini extensions install`); a
-`link`-installed extension gave `agy plugin import gemini` nothing to find.
+`components` field never lists `rules` among its tracked categories, so its
+absence there is not a rejection. This only worked once the extension was
+installed for real (`gemini extensions install`); a `link`-installed
+extension gave `agy plugin import gemini` nothing to find.
+
 What the other four runtimes do with a stray `rules/` directory: Claude
 Code's `claude plugin validate` neither rejects it nor inspects it (a
 manifest check, not a runtime probe); Grok's `plugin validate` and
