@@ -257,7 +257,10 @@ injects the `using-dude` body as an `ephemeralMessage`. The gate is
 turn, so gating there would re-inject the whole body on every turn and block
 the loop. The command is `./hooks/pre-invocation`, relative to the plugin
 root — `${CLAUDE_PLUGIN_ROOT}` is not hydrated here. `userMessage` is unused
-because it renders as a user turn. Before this handler, a session asked
+because it renders as a user turn. Measured on agy 1.1.25: a TTY session
+quoted `Classify the task first:` from the injected body — a line that is
+not in the frontmatter `description` — and a second turn of the same
+`conversationId` got `{}` from the handler (`invocationNum` was `0` again). Before this handler, a session asked
 whether the rules were present quoted back the `description` from
 `using-dude`'s frontmatter and no line of its body. The parse result and the
 `loaded 0 named hooks` comparison were measured on agy 1.1.24 and that
