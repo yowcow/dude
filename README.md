@@ -198,7 +198,7 @@ deleting the branch and worktree are yours.
 | Gemini CLI | yes — the `GEMINI.md` `@`-import | — |
 | Codex | yes, once the hook is trusted | `dude:using-dude` |
 | Grok | no | `/using-dude`, a copy in `~/.grok/AGENTS.md`, or `--rules` |
-| Antigravity | no | ask for `using-dude` by name |
+| Antigravity | yes — a PreInvocation hook | ask for `using-dude` by name |
 
 Each row's evidence is in the prose below.
 
@@ -250,13 +250,18 @@ shipped documentation lists are `PreToolUse`, `PostToolUse`, `PreInvocation`,
 off the documented event list, not observed — and `true` would exit 0 with no
 effect if it ever did run.
 
-Parsing cleanly buys quiet logs, not injection. The `GEMINI.md` route does not
-carry over, and dude ships no `plugins/<name>/rules/` directory, so
-`using-dude` is still not in context there. What a session does carry is the
-skill's *listing*: asked whether the rules were present, it quoted back the
-`description` from `using-dude`'s frontmatter and no line of its body. The
-parse result and the `loaded 0 named hooks` comparison were measured on agy
-1.1.24 and the skill-listing finding on 1.1.23; the `PreToolUse`/`PostToolUse`/
+Parsing cleanly bought quiet logs, not injection. The `GEMINI.md` route does
+not carry over. A `PreInvocation` handler under the same `hooks` key now
+injects the `using-dude` body as an `ephemeralMessage`. The gate is
+`conversationId`, not `invocationNum == 0`: that counter resets at every user
+turn, so gating there would re-inject the whole body on every turn and block
+the loop. The command is `./hooks/pre-invocation`, relative to the plugin
+root — `${CLAUDE_PLUGIN_ROOT}` is not hydrated here. `userMessage` is unused
+because it renders as a user turn. Before this handler, a session asked
+whether the rules were present quoted back the `description` from
+`using-dude`'s frontmatter and no line of its body. The parse result and the
+`loaded 0 named hooks` comparison were measured on agy 1.1.24 and that
+listing-only finding on 1.1.23; the `PreToolUse`/`PostToolUse`/
 `PostInvocation`/`Stop` event list is still read from the shipped
 documentation rather than measured. `PreInvocation` and the `rules/` merging
 behavior were measured directly for yowcow/dude#145, below.
@@ -305,19 +310,17 @@ longer authenticate to the interactive CLI at all ("This client is no longer
 supported for Gemini Code Assist for individuals... migrate to the
 Antigravity suite of products"), independent of anything about `rules/`.
 
-Both paths reached the model, so the choice comes down to what each
+Both paths reached the model, so the choice came down to what each
 costs. `rules/` is the runtime's own passive mechanism and costs nothing
 to fire, but it needs the body duplicated — and the one thing that could
 have removed that, an import resolving to file content, never came back
 as a confirmed yes. `PreInvocation` is the mirror image: it carries no
-duplication risk (it can read `SKILL.md` fresh at the point it fires),
-but it fires on every model call rather than once per session. Neither
-dominates, and the tie breaks on which cost is the harder to undo:
-duplicating the body runs straight into `AUTHORING.md`'s rule against
-leaving duplicated text behind, while the firing cost is answered by
-narrowing the injection to once per session, which yowcow/dude#146
-already requires. So `PreInvocation` is the path that issue should
-implement.
+duplication risk (it reads `SKILL.md` at the point it fires), but it
+fires on every model call rather than once per session. Duplicating the
+body runs straight into `AUTHORING.md`'s rule against leaving duplicated
+text behind; the firing cost is the `conversationId` gate above. So
+`PreInvocation` is what shipped, and dude still ships no `rules/`
+directory.
 
 Where `using-dude` is not in context, it has to be reached by hand, and there
 are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
