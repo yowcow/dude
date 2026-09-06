@@ -24,6 +24,8 @@ One question, asked of every sentence: **without it, what does the AI do?** The 
 
 **Claiming (c) costs one sentence of concrete failure**: which command gets run, which value gets read wrong, which branch gets written. "It might get confused" is not that sentence. That sentence names an input a real run has produced or is expected to produce; a failure reachable only by constructing the input is (b). "The sibling does it" is symmetry, not a (c). A wrong result a later gate in the same flow has to catch is (b), not (c). If you cannot write it, the answer was (a) or (b), and the text goes.
 
+Zero can mean two different things: a mechanism nobody has reached, or a rare input inside one that already runs — telling them apart turns on whether the mechanism itself has ever run, not on whether the script holding it does. The first is decided as a feature, on whether it is wanted; the second is this section's test — and deciding the first never exempts the guards already inside it, which still answer their own (a)/(b)/(c).
+
 ## Call what already exists
 
 `superpowers:*`, and whatever else your runtime already ships or has installed, own procedures of their own. Where one of them owns the procedure you are about to describe, **name it and stop.** A local skill's job is the wiring — which procedure runs when, what each hand-off carries, where the gates sit — never a second copy of the procedure itself. A copy is what goes stale silently: the original moves and nothing here says so.
