@@ -96,6 +96,17 @@ then reports dude with `"source": "gemini-cli"` and `"components": ["skills",
 The hooks come across with them but do not run; the section below has what that
 costs. Measured on agy 1.1.23.
 
+OpenCode:
+
+```json
+{
+  "plugin": ["dude@git+https://github.com/yowcow/dude.git"]
+}
+```
+
+Add the entry to the `plugin` array in the global
+`~/.config/opencode/opencode.json`, then restart OpenCode.
+
 ## Versions
 
 dude is not versioned. Every runtime is meant to carry the default branch's
@@ -108,6 +119,7 @@ carries a `version` at all follows from what each runtime does with one:
 | Codex | yes, strict semver | no |
 | Gemini | yes | no, on the git install and link routes above |
 | Grok | no | no |
+| OpenCode | yes | no, git-backed installs do not use it to decide an update |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
 plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
@@ -117,13 +129,18 @@ reports is a short commit sha. An install made while those manifests still said
 has to reinstall. `claude plugin validate .` warns that no version is specified;
 that warning is the expected state here, not something to fix.
 
-`.codex-plugin/plugin.json` and `gemini-extension.json` keep `"version": "0.1.0"`
-because their validators reject a manifest without one — and **that value is
-never bumped**, because neither runtime reads it to decide an update. Codex
-installs the marketplace snapshot's root directory itself, with no per-version
-cache in between. Gemini's git install compares the HEAD `git ls-remote` reports
-against the local one; it is the local-path install, which this README does not
-document as a route, that compares versions instead.
+`.codex-plugin/plugin.json`, `gemini-extension.json`, and `package.json` keep
+`"version": "0.1.0"` because their formats require one — and **that value is
+never bumped**, because none of these git-backed routes reads it to decide an
+update. Codex installs the marketplace snapshot's root directory itself, with no
+per-version cache in between. Gemini's git install compares the HEAD `git
+ls-remote` reports against the local one; it is the local-path install, which
+this README does not document as a route, that compares versions instead.
+OpenCode caches the commit first installed for an unchanged git spec; restarting,
+removing and re-adding the config entry, or rerunning `opencode plugin` with that
+spec does not refresh it. To update to HEAD, quit OpenCode, remove
+`~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
+restart.
 
 What each runtime printed when this was measured — and the throwaway plugins the
 version-less control was taken with — is recorded in
@@ -199,6 +216,7 @@ deleting the branch and worktree are yours.
 | Codex | yes, once the hook is trusted | `dude:using-dude` |
 | Grok | no | `/using-dude`, a copy in `~/.grok/AGENTS.md`, or `--rules` |
 | Antigravity | no | ask for `using-dude` by name |
+| OpenCode | no | the native `skill` tool |
 
 Each row's evidence is in the prose below.
 
@@ -216,6 +234,10 @@ covers what trust involves. Grok installs all nine skills and places
 `hooks/hooks.json` in the install — `grok inspect --json` lists it as a
 recognized hook — but was never observed to run it, in an interactive session or
 headless, so `using-dude` is not in context there.
+
+OpenCode's package plugin registers all nine skills but does not inject
+`using-dude`, so it is not in context at session start. Automatic injection
+remains yowcow/dude#185.
 
 Gemini reads `hooks/hooks.json` too, and **does not run it — leave it that way.**
 A Gemini lifecycle matcher is compared for equality, not as a pattern, so the
@@ -439,6 +461,11 @@ grok plugin install ~/repos/dude --trust
 
 `gemini extensions link` tracks the clone rather than copying it, so an edit to a
 skill shows up in the next Gemini session without reinstalling.
+
+Starting OpenCode from the repository checkout loads
+`.opencode/plugins/dude.js` as a project plugin. Temporarily remove any globally
+configured dude plugin entry first, then use the native `skill` tool to verify
+all nine local skills.
 
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks
