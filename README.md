@@ -203,8 +203,8 @@ leaves you to handle: **What tier a marked worker runs at**, for keeping the
 marked workers high once the session under them is cheap, and
 **What the run's own tier decides**, for the judgments that come down with the
 session instead of staying with those workers. Effort is not split the same
-way: a worker runs at the session's effort, so launch even a cheap session at
-the effort you want its marked workers to have. Whether a cheap main loop still
+way: on Claude Code a worker runs at the session's effort, so launch even a cheap
+session at the effort you want its marked workers to have. Whether a cheap main loop still
 runs `implement-work`'s gates and `pr-to-ready`'s clean judgment at the same
 fidelity is not settled here, so nothing below reports that it holds. That
 unsettled question does not reach **What the run's own tier decides**, which
