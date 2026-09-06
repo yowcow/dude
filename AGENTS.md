@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multi-runtime AI-workflow plugin (Claude Code, Codex, Gemini, Grok, Antigravity), not an application. Default branch is `master`. dude is unversioned: every runtime is meant to track this branch's HEAD.
+Multi-runtime AI-workflow plugin (Claude Code, Codex, Gemini, Grok, Antigravity, OpenCode), not an application. Default branch is `master`. dude is unversioned: every runtime is meant to track this branch's HEAD.
 
 Skill bodies, `AUTHORING.md`, and `README.md` stay English. Commit messages in this repo are standard Japanese (標準語). Branches follow `<issue-number>-<slug>`.
 
