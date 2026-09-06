@@ -1,7 +1,6 @@
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const skillsDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../skills');
+const skillsDir = fileURLToPath(new URL('../../skills', import.meta.url));
 
 export const DudePlugin = async () => ({
   config: async (config) => {
