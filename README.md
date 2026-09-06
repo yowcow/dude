@@ -286,8 +286,8 @@ root — `${CLAUDE_PLUGIN_ROOT}` is not hydrated here. `userMessage` is unused
 because it renders as a user turn. Measured on agy 1.1.25: a TTY session
 quoted `Classify the task first:` from the injected body — a line that is
 not in the frontmatter `description` — and a second turn of the same
-`conversationId` got `{}` from the handler (`invocationNum` was `0` again). Before this handler, a session asked
-whether the rules were present quoted back the `description` from
+`conversationId` got `{}` from the handler (`invocationNum` was `0` again). Before this handler, when a session was asked
+whether the rules were present, it quoted back the `description` from
 `using-dude`'s frontmatter and no line of its body. The parse result and the
 `loaded 0 named hooks` comparison were measured on agy 1.1.24 and that
 listing-only finding on 1.1.23; the `PreToolUse`/`PostToolUse`/
