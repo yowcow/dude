@@ -195,6 +195,22 @@ to roughly 60k. Handing it the PR URL is what makes that split practical — the
 reference is the whole entry, so no branch name has to be remembered and no
 checkout prepared by hand.
 
+A run's sessions need not all be at the same tier. `plan-work` is where a
+design gets agreed and a bad call is expensive to undo, so give it the highest
+tier you have; `implement-work` and `pr-to-ready` mostly execute and inquire,
+and a cheaper tier carries their main loops. Two sections below are what that
+leaves you to handle: **What tier a marked worker runs at**, for keeping the
+marked workers high once the session under them is cheap, and
+**What the run's own tier decides**, for the judgments that come down with the
+session instead of staying with those workers. Effort is not split the same
+way: on Claude Code a worker runs at the session's effort, so launch even a cheap
+session at the effort you want its marked workers to have. Whether a cheap main loop still
+runs `implement-work`'s gates and `pr-to-ready`'s clean judgment at the same
+fidelity is not settled here, so nothing below reports that it holds. That
+unsettled question does not reach **What the run's own tier decides**, which
+records a different thing: where those judgments run, and what a lowered tier
+costs them.
+
 Only the first name on each of those lines is a slash command: Claude Code
 passes everything after it to the skill as free text. That is what makes
 `ready-on-clean=yes` usable — it answers in the same breath the one question
@@ -399,10 +415,10 @@ settings file's `env` block is documented as carrying variables too:
 env | grep CLAUDE_CODE_SUBAGENT_MODEL
 ```
 
-Output naming a model below the run's own is the case where the mark quietly
-loses, and this repository's own machine was measured in exactly that state:
-`sonnet` there, exported from a shell profile, against `opus` for the run, while
-`settings.json` carried no subagent key whatsoever. Reading `settings.json`
+Output naming a model below the highest tier you have is the case where the mark
+quietly loses, and this repository's own machine was measured in exactly that
+state: `sonnet` there, exported from a shell profile, while `settings.json`
+carried no subagent key whatsoever. Reading `settings.json`
 alone is what makes such a default look absent.
 
 What the dispatched worker then ran on has to be read back from its transcript
@@ -414,23 +430,63 @@ dispatched with `opus` named ran on `claude-opus-5`. Empty output from the check
 means no default is set, and the fallback to the parent's model is then
 documented behavior rather than something this repository has observed.
 
-Two ways to close the gap, and the check above says which one is yours. Where it
-named a model below the run's own, that default is where the marked worker lands
-unless its own dispatch named one: unset it, or raise it to the run's model. The
-default knows nothing of which workers are marked, so every worker dispatched
-without a model of its own rises with it — but none of them past the run's own
-tier, and the session stays where it is. Where the check came back empty,
-nothing stands between the worker and the run's own tier, so raising that tier
-is the route that reaches it — and that one moves the ceiling itself, lifting
-the session and every worker under it, the unmarked ones and their cost
-included.
+Close the gap at the default: set `CLAUDE_CODE_SUBAGENT_MODEL` to the highest
+tier you have and leave it there whatever tier the run itself is on — a session
+measured at a cheap tier dispatched workers a tier above itself throughout.
+Setting it there is what makes the mark independent of the dispatch, and
+dispatches do omit the model in practice: 5 of the pilot's 55 workers were
+dispatched with none named, and in the one window measured alone that was 2 of
+4, a marked reviewer among them
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
+It also reaches a worker that a worker dispatched, two levels down, which the
+dispatching skill never sees. Naming the model at the dispatch was measured
+working too, and remains right to do; it just has to be got right once per
+dispatch, where the default is got right once.
 
-Only the model axis is recorded here. Whether a reasoning-effort setting reaches
-a dispatched worker was not settled: a transcript records the thinking a worker
-spent, which is consumption rather than the setting that allowed it. This ladder
-was measured on Claude Code alone; what the other four runtimes do with a
-subagent default has not been measured here, which is not a claim that they have
-no tier lever.
+The default knows nothing of which workers are marked, so every worker
+dispatched without a model of its own rises with it, the unmarked ones and their
+cost included, while the session stays where it is. A fork stays outside its
+reach: it continues the parent's context and runs the parent's model by
+construction, so a cheap session forks cheap however the default is set. It can
+cost more per request than the session it came from, having inherited the
+context at its largest
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
+dude's skills dispatch no forks, so this is a mechanism to recognize rather than
+a hole in the flow.
+
+On Claude Code, reasoning effort needs no ladder, because a worker runs at the session's effort.
+Every worker across the pilot's four windows did, including workers running a
+model the session was not — which is what rules out their having picked it up
+from a per-model setting
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995)).
+There is no lever here for spending less on the work you would rather run
+cheaply, and a per-agent definition is not one: its `effort:` binds only where
+a dispatch names that agent type, dude's dispatches do not, and the only route
+left would be writing dude's own wiring into your instruction file — which
+yowcow/dude#139 declined.
+
+Prompt-cache TTL is a third setting, and it splits the main loop from its
+workers by construction. Claude Code carries it as `promptCacheTtl` in
+`settings.json`, whose own description scopes it to the main conversation, and
+as `CLAUDE_CODE_PROMPT_CACHE_TTL` in the environment, which takes precedence;
+both take `5m` or `1h`, and a `subagentPromptCacheTtl` sits beside it for
+everything outside the main conversation. Measurement agrees with that scope:
+the window set to `5m` wrote all of its main-loop cache at `5m`, while subagents
+wrote at `5m` in every window — the pilot varied only the main-conversation
+setting, so that is the reach of the finding rather than a property of
+subagents. That it can be chosen at all corrects yowcow/dude#159's record of
+it as fixed. Which way it moves cost is not settled — the cheaper write is
+offset by having to write more often, and separating the two needs the same work
+replayed
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995)).
+
+All three were measured on Claude Code alone; what the other four runtimes do
+with a subagent default, a session's effort, or a cache TTL has not been
+measured here, which is not a claim that they have no tier lever. Where a
+runtime turns out to have none, `using-dude`'s **Worker tier** leaves it
+undecided by design — so leave the main loop's tier alone there, because a
+marked worker with no rung above the session has nowhere to stand once the
+session comes down.
 
 ### What the run's own tier decides
 
