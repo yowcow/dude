@@ -93,8 +93,9 @@ agy plugin import gemini
 installed there first — the `gemini extensions install` above. `agy plugin list`
 then reports dude with `"source": "gemini-cli"` and `"components": ["skills",
 "hooks"]`, and all nine skills land in `~/.gemini/config/plugins/dude/skills/`.
-The hooks come across with them but do not run; the section below has what that
-costs. Measured on agy 1.1.23.
+The hooks come across with them; a PreInvocation hook injects `using-dude`.
+The section below has the details. The import and plugin list were measured
+on agy 1.1.23.
 
 ## Versions
 
