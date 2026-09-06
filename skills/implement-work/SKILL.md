@@ -11,7 +11,7 @@ This skill holds two gates: one on the detailed plan, before any code, and the c
 
 ## Orchestration model
 
-**This skill dispatches no workers of its own.** It runs in the main loop as the orchestrator; every worker in this flow is dispatched by a sub-skill it calls — `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
+**This skill dispatches one worker of its own: the plan drafter.** It goes out at **Plan gate** step 2. Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
 
 The orchestrator owns the task, the workspace, both gates, the execution-method choice, every commit, and the hand-off, and decides when a gate is clean. Workers do bounded, single-task work and hand back — never an objective spanning more than one task, and never a gate declared clean by a worker.
 
@@ -72,7 +72,12 @@ If the verified baseline contradicts what the plan assumes — an existing failu
 The small-change lane in `using-dude`'s **Workflow selection** skips this gate outright.
 
 1. Read the task. Where the design lives depends on the entry: a **sub-issue** carries its own body plus a link to the parent's design comment; an **issue that fits one PR** carries its own comment; a **request with no issue** is itself the input, together with whatever `plan-work` left in chat.
-2. Draft the detailed plan with `superpowers:writing-plans`. What this gate takes from it is a plan that has been through that skill's own self-review — not the file the moment it lands. It goes in the workspace, git-ignored, and is never committed or published. **Don't follow that skill onward into whatever it moves on to next; what runs after this gate is settled here.**
+2. Dispatch a drafter to write the detailed plan with `superpowers:writing-plans`. Three things bind the dispatch:
+   - **Fresh context.** A dispatch form that carries this session's context forward is barred.
+   - **The brief carries references, not the design.** Point the worker at where step 1 found the design, and give it the workspace path and the branch. Restating the design in the brief puts its decisions back in the main loop and leaves the worker transcribing them.
+   - **The worker drafts the plan and returns its path; it never implements.** `superpowers:writing-plans` ends by presenting execution options — the brief is where that is refused, since what runs after this gate is settled here.
+
+   What this gate takes back is a plan that has been through that skill's own self-review — not the file the moment it lands. The plan goes in the workspace, git-ignored, and is never committed or published.
 3. Dispatch `review-plan` with the target declared as the implementation plan. Fold every accepted finding in yourself — except one that invalidates the agreed design, which is not folded in at all: stop and take the **Design invalidated** exit below. Then re-run `review-plan`, handing over the record of the previous pass so it doesn't re-litigate rejected findings.
 4. Leave by exactly one of three exits:
    - **Clean** — no blocking finding → **Execution**.
