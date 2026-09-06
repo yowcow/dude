@@ -514,13 +514,13 @@ force, the far side comes down with it.
 ### What else the run's cost rides on
 
 The same cheap main loop, measured in two windows, cost 2.4× per request
-($0.1091 against $0.0452) once the session had grown: `cache_read` 372,916
-against 153,951, over 3 hours 15 minutes against 22 minutes. The cheap-tier
+($0.1091 against $0.0452) once the session had grown: `cache_read` / request
+372,916 against 153,951, over 3 hours 15 minutes against 22 minutes. The cheap-tier
 saving is eaten by that growth; window 1 came back 5.7% under the lower end of
 the band in yowcow/dude#161. In that longer window the workers carried 73.3% of
 the $60.92 total. A worker request was cheaper than the main loop's ($0.0583
 against $0.1091); the count is what dominated. Lowering the main loop's tier
-does not reach that share
+does not reduce that share
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995);
 [correction](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
 
