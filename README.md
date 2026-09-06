@@ -216,7 +216,7 @@ deleting the branch and worktree are yours.
 | Codex | yes, once the hook is trusted | `dude:using-dude` |
 | Grok | no | `/using-dude`, a copy in `~/.grok/AGENTS.md`, or `--rules` |
 | Antigravity | no | ask for `using-dude` by name |
-| OpenCode | no | the native `skill` tool |
+| OpenCode | yes — `messages.transform` on the first user message | — |
 
 Each row's evidence is in the prose below.
 
@@ -235,9 +235,12 @@ covers what trust involves. Grok installs all nine skills and places
 recognized hook — but was never observed to run it, in an interactive session or
 headless, so `using-dude` is not in context there.
 
-OpenCode's package plugin registers all nine skills but does not inject
-`using-dude`, so it is not in context at session start. Automatic injection
-remains yowcow/dude#185.
+OpenCode's package plugin registers all nine skills and prepends `using-dude`
+to the first user message through `experimental.chat.messages.transform`, so
+it is in context at session start. The injected text uses a dude-only marker
+and does not contain `EXTREMELY_IMPORTANT`, so Superpowers' bootstrap and
+this one do not skip each other. Two loads of the same plugin (a global git
+install plus the checkout's `.opencode/plugins/`) still inject once.
 
 Gemini reads `hooks/hooks.json` too, and **does not run it — leave it that way.**
 A Gemini lifecycle matcher is compared for equality, not as a pattern, so the
