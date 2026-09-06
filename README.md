@@ -198,11 +198,13 @@ checkout prepared by hand.
 A run's sessions need not all be at the same tier. `plan-work` is where a
 design gets agreed and a bad call is expensive to undo, so give it the highest
 tier you have; `implement-work` and `pr-to-ready` mostly execute and inquire,
-and a cheaper tier carries their main loops. Two sections below are what that
+and a cheaper tier carries their main loops. Three sections below are what that
 leaves you to handle: **What tier a marked worker runs at**, for keeping the
-marked workers high once the session under them is cheap, and
+marked workers high once the session under them is cheap,
 **What the run's own tier decides**, for the judgments that come down with the
-session instead of staying with those workers. Effort is not split the same
+session instead of staying with those workers, and **What else the run's cost
+rides on**, for the session length and worker count that remain after the
+model is cheap. Effort is not split the same
 way: on Claude Code a worker runs at the session's effort, so launch even a cheap
 session at the effort you want its marked workers to have. Whether a cheap main loop still
 runs `implement-work`'s gates and `pr-to-ready`'s clean judgment at the same
@@ -508,6 +510,19 @@ near side of those lines goes down at once, while the run keeps reporting
 *clean* — what fell is the judgment rather than the shape of the output, so no
 gate in the flow has anything to catch. Where that fallback is the one in
 force, the far side comes down with it.
+
+### What else the run's cost rides on
+
+The same cheap main loop, measured in two windows, cost 2.4× per request
+($0.1091 against $0.0452) once the session had grown: `cache_read` / request
+372,916 against 153,951, over 3 hours 15 minutes against 22 minutes. The cheap-tier
+saving is eaten by that growth; window 1 came back 5.7% under the lower end of
+the band in yowcow/dude#161. In that longer window the workers carried 73.3% of
+the $60.92 total. A worker request was cheaper than the main loop's ($0.0583
+against $0.1091); the count is what dominated. Lowering the main loop's tier
+does not reduce that share
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995);
+[correction](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
 
 ## Development
 
