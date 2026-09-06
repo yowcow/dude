@@ -454,7 +454,7 @@ context at its largest
 dude's skills dispatch no forks, so this is a mechanism to recognize rather than
 a hole in the flow.
 
-Reasoning effort needs no ladder, because a worker runs at the session's effort.
+On Claude Code, reasoning effort needs no ladder, because a worker runs at the session's effort.
 Every worker across the pilot's four windows did, including workers running a
 model the session was not — which is what rules out their having picked it up
 from a per-model setting
