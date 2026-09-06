@@ -136,8 +136,11 @@ update. Codex installs the marketplace snapshot's root directory itself, with no
 per-version cache in between. Gemini's git install compares the HEAD `git
 ls-remote` reports against the local one; it is the local-path install, which
 this README does not document as a route, that compares versions instead.
-OpenCode's git package spec tracks repository commits, though its package cache
-may require reinstalling dude to observe a new commit.
+OpenCode caches the commit first installed for an unchanged git spec; restarting,
+removing and re-adding the config entry, or rerunning `opencode plugin` with that
+spec does not refresh it. To update to HEAD, quit OpenCode, remove
+`~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
+restart.
 
 What each runtime printed when this was measured — and the throwaway plugins the
 version-less control was taken with — is recorded in
@@ -460,9 +463,9 @@ grok plugin install ~/repos/dude --trust
 skill shows up in the next Gemini session without reinstalling.
 
 Starting OpenCode from the repository checkout loads
-`.opencode/plugins/dude.js` as a project plugin, so contributors can use the
-native `skill` tool to verify all nine local skills without installing a second
-copy.
+`.opencode/plugins/dude.js` as a project plugin. Temporarily remove any globally
+configured dude plugin entry first, then use the native `skill` tool to verify
+all nine local skills.
 
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks
