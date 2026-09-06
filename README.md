@@ -182,17 +182,16 @@ design gets agreed and a bad call is expensive to undo, so give it the highest
 tier you have; `implement-work` and `pr-to-ready` mostly execute and inquire,
 and a cheaper tier carries their main loops. Two sections below are what that
 leaves you to handle: **What tier a marked worker runs at**, for keeping the
-marked workers high once the session under them is cheap — the launch-time
-carrier of the run's own tier included — and
+marked workers high once the session under them is cheap, and
 **What the run's own tier decides**, for the judgments that come down with the
 session instead of staying with those workers. Effort is not split the same
 way: a worker runs at the session's effort, so launch even a cheap session at
 the effort you want its marked workers to have. Whether a cheap main loop still
 runs `implement-work`'s gates and `pr-to-ready`'s clean judgment at the same
-fidelity is not settled here — it is the thing these notes' own pilot set out to
-measure and did not, so nothing below reports that it holds. What **What the
-run's own tier decides** records is a different thing and is not in question:
-where those judgments run, and what a lowered tier costs them.
+fidelity is not settled here, so nothing below reports that it holds. That
+unsettled question does not reach **What the run's own tier decides**, which
+records a different thing: where those judgments run, and what a lowered tier
+costs them.
 
 Only the first name on each of those lines is a slash command: Claude Code
 passes everything after it to the skill as free text. That is what makes
@@ -428,11 +427,11 @@ Every worker across the pilot's four windows did, including workers running a
 model the session was not — which is what rules out their having picked it up
 from a per-model setting
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995)).
-The consequence is that the work you would rather run cheaply runs at that
-effort too. There is no lever here for spending less on it, and a per-agent
-definition is not one: its `effort:` binds only where a dispatch names that
-agent type, dude's dispatches do not, and the only route left would be writing
-dude's own wiring into your instruction file — which yowcow/dude#139 declined.
+There is no lever here for spending less on the work you would rather run
+cheaply, and a per-agent definition is not one: its `effort:` binds only where
+a dispatch names that agent type, dude's dispatches do not, and the only route
+left would be writing dude's own wiring into your instruction file — which
+yowcow/dude#139 declined.
 
 Prompt-cache TTL is a third setting, and it splits the main loop from its
 workers by construction. Claude Code carries it as `promptCacheTtl` in
