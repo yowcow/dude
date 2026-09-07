@@ -1,6 +1,6 @@
 # dude
 
-![Dudes hanging out at a beachside skate park with pizza and skateboards](docs/dude.jpeg)
+![Dude Workflow](docs/dude.png)
 
 Yet another AI workflow.
 
@@ -12,17 +12,17 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 ## Skills
 
-| Skill | What it produces |
-| --- | --- |
-| `using-dude` | The workflow rules the other skills are wired by |
-| `plan-work` | An agreed design plus a numbered TODO list at PR granularity |
-| `implement-work` | A draft PR on a pushed branch of verified commits, for one PR-sized task |
-| `pr-to-ready` | A PR whose CI passes and whose review is clean |
-| `review-plan` | Findings on a TODO list or an implementation plan |
-| `review-code` | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
-| `simplify-code` | Recently changed code simplified, behavior preserved |
-| `investigate-performance` | An evidence-backed explanation of a performance shortfall |
-| `investigate-anomaly` | A blameless findings report on a failure, incident, or drifting metric |
+| Skill                     | What it produces                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `using-dude`              | The workflow rules the other skills are wired by                                   |
+| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                       |
+| `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task           |
+| `pr-to-ready`             | A PR whose CI passes and whose review is clean                                     |
+| `review-plan`             | Findings on a TODO list or an implementation plan                                  |
+| `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
+| `simplify-code`           | Recently changed code simplified, behavior preserved                               |
+| `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
+| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation runs first
@@ -41,8 +41,8 @@ OpenCode:
   "$schema": "https://opencode.ai/config.json",
   "plugin": [
     "dude@git+https://github.com/yowcow/dude.git",
-    "superpowers@git+https://github.com/obra/superpowers.git"
-  ]
+    "superpowers@git+https://github.com/obra/superpowers.git",
+  ],
 }
 ```
 
@@ -79,11 +79,11 @@ dude is not versioned. Every runtime is meant to carry the default branch's
 latest commit, so there is no release to cut and nothing to bump. Which manifest
 carries a `version` at all follows from what each runtime does with one:
 
-| Runtime | Requires `version`? | Uses it to decide an update? |
-| --- | --- | --- |
-| OpenCode | yes | no, git-backed installs do not use it to decide an update |
-| Claude Code | no — `validate` only warns | **yes — a version left in place stops updates** |
-| Codex | yes, strict semver | no |
+| Runtime     | Requires `version`?        | Uses it to decide an update?                              |
+| ----------- | -------------------------- | --------------------------------------------------------- |
+| OpenCode    | yes                        | no, git-backed installs do not use it to decide an update |
+| Claude Code | no — `validate` only warns | **yes — a version left in place stops updates**           |
+| Codex       | yes, strict semver         | no                                                        |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
 plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
@@ -188,11 +188,11 @@ deleting the branch and worktree are yours.
 
 ### How each runtime reaches the skills
 
-| Runtime | `using-dude` in context at session start? | How to reach it by hand |
-| --- | --- | --- |
-| OpenCode | yes — `experimental.chat.messages.transform` on the first user message | — |
-| Claude Code | yes — a SessionStart hook | — |
-| Codex | yes, once the hook is trusted | `dude:using-dude` |
+| Runtime     | `using-dude` in context at session start?                              | How to reach it by hand |
+| ----------- | ---------------------------------------------------------------------- | ----------------------- |
+| OpenCode    | yes — `experimental.chat.messages.transform` on the first user message | —                       |
+| Claude Code | yes — a SessionStart hook                                              | —                       |
+| Codex       | yes, once the hook is trusted                                          | `dude:using-dude`       |
 
 Each row's evidence is in the prose below.
 
@@ -327,7 +327,7 @@ a marked worker and never runs in the main loop.
 So the run's own tier is not only the fallback a worker dispatched without a
 model of its own lands on. Lower it to spend less and every judgment on the
 near side of those lines goes down at once, while the run keeps reporting
-*clean* — what fell is the judgment rather than the shape of the output, so no
+_clean_ — what fell is the judgment rather than the shape of the output, so no
 gate in the flow has anything to catch. Where that fallback is the one in
 force, the far side comes down with it.
 
