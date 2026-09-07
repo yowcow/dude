@@ -46,7 +46,7 @@ OpenCode:
 }
 ```
 
-Add the entry to the `plugin` array in the global
+Put `$schema` and both `plugin` entries in the global
 `~/.config/opencode/opencode.jsonc`, then restart OpenCode.
 
 Claude Code:
