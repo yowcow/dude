@@ -13,12 +13,6 @@
           }
         ]
       }
-    ],
-    "PreInvocation": [
-      {
-        "type": "command",
-        "command": "./hooks/pre-invocation"
-      }
     ]
   }
 }
