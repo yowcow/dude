@@ -34,6 +34,17 @@ dude requires [Superpowers](https://github.com/obra/superpowers#installation). I
 
 ## Install
 
+OpenCode:
+
+```json
+{
+  "plugin": ["dude@git+https://github.com/yowcow/dude.git"]
+}
+```
+
+Add the entry to the `plugin` array in the global
+`~/.config/opencode/opencode.json`, then restart OpenCode.
+
 Claude Code:
 
 ```
@@ -41,13 +52,7 @@ Claude Code:
 /plugin install dude@dude
 ```
 
-Gemini CLI:
-
-```
-gemini extensions install https://github.com/yowcow/dude
-```
-
-Codex CLI:
+Codex:
 
 ```
 codex plugin marketplace add yowcow/dude
@@ -61,52 +66,8 @@ records no such entry, and an untrusted hook does not run, so `using-dude` is
 not in context until you trust it — though the skills are still invocable
 by name. Codex asks at the start of the next interactive session instead: after
 the directory-trust prompt, a `Hooks need review` prompt offers to review the
-hook, trust it, or continue without trusting. Unlike Grok's and Gemini's
-install-time prompts, Codex's hook trust decides whether injection happens at
-all.
-
-Grok CLI:
-
-```
-grok plugin install yowcow/dude
-```
-
-Grok asks you to trust the plugin before installing it. Answer that prompt
-yourself on a first install — it is what lets the plugin be installed at all.
-`--trust` skips it, which is why the Development section below uses it on a
-clone you already own.
-
-Gemini asks you to consent before installing any third-party extension, and adds
-a second warning when the extension ships hooks, as dude does. Answer it yourself
-on a first install, for the reason the prompt gives — Google does not vet what it
-installs for you. `--consent` skips it, which is why the Development section
-below uses it too. Without it a non-interactive run does not fail; it waits on
-the prompt for as long as you let it.
-
-Antigravity:
-
-```
-agy plugin import gemini
-```
-
-`agy plugin import gemini` takes what Gemini CLI already has, so dude has to be
-installed there first — the `gemini extensions install` above. `agy plugin list`
-then reports dude with `"source": "gemini-cli"` and `"components": ["skills",
-"hooks"]`, and all nine skills land in `~/.gemini/config/plugins/dude/skills/`.
-The hooks come across with them; a PreInvocation hook injects `using-dude`.
-The section below has the details. The import and plugin list were measured
-on agy 1.1.23.
-
-OpenCode:
-
-```json
-{
-  "plugin": ["dude@git+https://github.com/yowcow/dude.git"]
-}
-```
-
-Add the entry to the `plugin` array in the global
-`~/.config/opencode/opencode.json`, then restart OpenCode.
+hook, trust it, or continue without trusting. Codex's hook trust decides whether
+injection happens at all.
 
 ## Versions
 
@@ -116,11 +77,9 @@ carries a `version` at all follows from what each runtime does with one:
 
 | Runtime | Requires `version`? | Uses it to decide an update? |
 | --- | --- | --- |
+| OpenCode | yes | no, git-backed installs do not use it to decide an update |
 | Claude Code | no — `validate` only warns | **yes — a version left in place stops updates** |
 | Codex | yes, strict semver | no |
-| Gemini | yes | no, on the git install and link routes above |
-| Grok | no | no |
-| OpenCode | yes | no, git-backed installs do not use it to decide an update |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
 plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
@@ -130,14 +89,11 @@ reports is a short commit sha. An install made while those manifests still said
 has to reinstall. `claude plugin validate .` warns that no version is specified;
 that warning is the expected state here, not something to fix.
 
-`.codex-plugin/plugin.json`, `gemini-extension.json`, and `package.json` keep
-`"version": "0.1.0"` because their formats require one — and **that value is
-never bumped**, because none of these git-backed routes reads it to decide an
-update. Codex installs the marketplace snapshot's root directory itself, with no
-per-version cache in between. Gemini's git install compares the HEAD `git
-ls-remote` reports against the local one; it is the local-path install, which
-this README does not document as a route, that compares versions instead.
-OpenCode caches the commit first installed for an unchanged git spec; restarting,
+`.codex-plugin/plugin.json` and `package.json` keep `"version": "0.1.0"`
+because their formats require one — and **that value is never bumped**, because
+neither git-backed route reads it to decide an update. Codex installs the
+marketplace snapshot's root directory itself, with no per-version cache in
+between. OpenCode caches the commit first installed for an unchanged git spec; restarting,
 removing and re-adding the config entry, or rerunning `opencode plugin` with that
 spec does not refresh it. To update to HEAD, quit OpenCode, remove
 `~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
@@ -230,29 +186,11 @@ deleting the branch and worktree are yours.
 
 | Runtime | `using-dude` in context at session start? | How to reach it by hand |
 | --- | --- | --- |
+| OpenCode | yes — `experimental.chat.messages.transform` on the first user message | — |
 | Claude Code | yes — a SessionStart hook | — |
-| Gemini CLI | yes — the `GEMINI.md` `@`-import | — |
 | Codex | yes, once the hook is trusted | `dude:using-dude` |
-| Grok | no | `/using-dude`, a copy in `~/.grok/AGENTS.md`, or `--rules` |
-| Antigravity | yes — a PreInvocation hook | ask for `using-dude` by name |
-| OpenCode | yes — `messages.transform` on the first user message | — |
 
 Each row's evidence is in the prose below.
-
-`using-dude` needs no invocation in Claude Code: a SessionStart hook puts it in
-context at the start of every session. Gemini needs none either, by a different
-route: `gemini-extension.json` names `GEMINI.md` as the extension's context file,
-and that file `@`-imports `skills/using-dude/SKILL.md` rather than repeating it.
-The import was measured resolving in full — the assembled session context carries
-the skill body through its last line, not a truncated preview — and all nine
-skills resolve to the extension rather than to anything installed alongside it.
-
-Codex installs all nine skills and runs `hooks/hooks.json` once the hook is
-trusted, so `using-dude` is in context there too — the Install section above
-covers what trust involves. Grok installs all nine skills and places
-`hooks/hooks.json` in the install — `grok inspect --json` lists it as a
-recognized hook — but was never observed to run it, in an interactive session or
-headless, so `using-dude` is not in context there.
 
 OpenCode's package plugin registers all nine skills and prepends `using-dude`
 to the first user message through `experimental.chat.messages.transform`, so
@@ -261,138 +199,16 @@ and does not contain `EXTREMELY_IMPORTANT`, so Superpowers' bootstrap and
 this one do not skip each other. Two loads of the same plugin (a global git
 install plus the checkout's `.opencode/plugins/`) still inject once.
 
-Gemini reads `hooks/hooks.json` too, and **does not run it — leave it that way.**
-A Gemini lifecycle matcher is compared for equality, not as a pattern, so the
-`startup|clear|compact` this repository ships never equals the `startup` Gemini
-sends, and the hook stays inert. Measured against a control that fires: with a
-bare `startup` matcher linked alongside, Gemini registered both hooks and
-executed only the control's. Narrowing the matcher to `startup` to "fix" that
-would break Gemini rather than help it, because Gemini does not hydrate
-`${CLAUDE_PLUGIN_ROOT}` — the hook would run an empty path and fail. Gemini's
-injection is the `GEMINI.md` route above and needs no hook.
+Claude Code needs no invocation: a SessionStart hook puts `using-dude` in context
+at the start of every session.
 
-Antigravity installs all nine skills — `agy plugin import gemini` carries the
-hooks across too — and **parses the hook file, which it used to reject.** Its own
-format takes each top-level key as a hook *name*, so dude's Claude Code `hooks`
-wrapper is read as a hook named `hooks`, and each entry under it is validated as
-a handler object. A handler must carry a `command`, which the `SessionStart`
-group did not, so the file failed with `Failed to parse hooks for plugin dude:
-invalid hook "hooks": command hook must specify 'command'` and was discarded
-whole. That group now carries a no-op `"command": "true"`, which satisfies the
-check; Claude Code ignores the extra key. The warning is gone — measured against
-the installed superpowers as a positive control, since it still ships the shape
-dude used to have: in the same session Antigravity logged the parse failure for
-`superpowers` and none for `dude`. A run logging neither is one that never
-reached the parse stage, and settles nothing either way.
+Codex installs all nine skills and runs `hooks/hooks.json` once the hook is
+trusted, so `using-dude` is in context there too — the Install section above
+covers what trust involves. The `dude:using-dude` skill works whether the hook is
+trusted or not.
 
-`loaded 0 named hooks from 0 hooks.json file(s)` still appears — it is emitted
-before any plugin is parsed and reads the same before and after, so it is no
-measure of this. Whether the no-op is registered as a handler at all is
-therefore unobserved; either way it does not run. The events Antigravity's
-shipped documentation lists are `PreToolUse`, `PostToolUse`, `PreInvocation`,
-`PostInvocation`, and `Stop`, and `SessionStart` is not among them — that is read
-off the documented event list, not observed — and `true` would exit 0 with no
-effect if it ever did run.
-
-Parsing cleanly bought quiet logs, not injection. The `GEMINI.md` route does
-not carry over. A `PreInvocation` handler under the same `hooks` key now
-injects the `using-dude` body as an `ephemeralMessage`. The gate is
-`conversationId`, not `invocationNum == 0`: that counter resets at every user
-turn, so gating there would re-inject the whole body on every turn and block
-the loop. The command is `./hooks/pre-invocation`, relative to the plugin
-root — `${CLAUDE_PLUGIN_ROOT}` is not hydrated here. `userMessage` is unused
-because it renders as a user turn. Measured on agy 1.1.25: a TTY session
-quoted `Classify the task first:` from the injected body — a line that is
-not in the frontmatter `description` — and a second turn of the same
-`conversationId` got `{}` from the handler (`invocationNum` was `0` again). Before this handler, when a session was asked
-whether the rules were present, it quoted back the `description` from
-`using-dude`'s frontmatter and no line of its body. The parse result and the
-`loaded 0 named hooks` comparison were measured on agy 1.1.24 and that
-listing-only finding on 1.1.23; the `PreToolUse`/`PostToolUse`/
-`PostInvocation`/`Stop` event list is still read from the shipped
-documentation rather than measured. `PreInvocation` and the `rules/` merging
-behavior were measured directly for yowcow/dude#145, below.
-
-Measured on agy 1.1.25: `PreInvocation` fires as documented — before the
-model is called — with `invocationNum` resetting to `0` at the start of
-each user turn and incrementing only across additional model calls
-*within* that turn (a turn forcing a tool call produced two `PreInvocation`
-fires in a row, `invocationNum` `0` then `1`). The handler's `cwd` is the
-plugin root, and a `command` written relative to that root resolves
-correctly — both held across all seven fires taken in one session. An
-`ephemeralMessage` injected on the first fire reached the model in that
-same turn, and the value was still recoverable a turn later — though that
-persistence read is not conclusive on its own, since the model's own prior
-reply already states the value and could be answering from its transcript
-rather than from anything still injected. A `userMessage` injected the
-same way also reached the model, and unlike the ephemeral one it rendered
-as its own turn in the transcript, indistinguishable from something the
-user had typed — that visibility is the concrete difference between the
-two step types.
-
-`rules/AGENTS.md` does load when placed at a plugin's root, and the full
-body arrived head to tail. Whether an `@`-import inside
-it avoids duplicating body text stayed inconclusive: the fixture's
-`@./import-target.md` line came back with its relative path resolved to an
-absolute one, but the referenced file's own content was never substituted in
-its place — neither a working import nor a plain literal miss, so this
-doesn't settle the question either way. `agy plugin import gemini` does
-carry a `rules/` directory across as a real file, confirmed by placing one
-in a throwaway Gemini-CLI extension and finding it land byte-for-byte inside
-the imported plugin's own directory — even though the import manifest's
-`components` field never lists `rules` among its tracked categories, so its
-absence there is not a rejection. This only worked once the extension was
-installed for real (`gemini extensions install`); a `link`-installed
-extension gave `agy plugin import gemini` nothing to find.
-
-What the other four runtimes do with a stray `rules/` directory: Claude
-Code's `claude plugin validate` neither rejects it nor inspects it — a
-manifest check, not a runtime probe, so its runtime handling is unmeasured
-too; Grok's `plugin validate` and `inspect --json` both omit it silently, no
-warning either way; Codex is unmeasured — `codex plugin` has no
-`validate`/`inspect` equivalent (only `add`/`list`/`marketplace`/`remove`, on
-codex-cli 0.153.2), and no runtime probe was run in its place; and Gemini
-CLI's own runtime handling is not measured, because this account can no
-longer authenticate to the interactive CLI at all ("This client is no longer
-supported for Gemini Code Assist for individuals... migrate to the
-Antigravity suite of products"), independent of anything about `rules/`.
-
-Both paths reached the model, so the choice came down to what each
-costs. `rules/` is the runtime's own passive mechanism and costs nothing
-to fire, but it needs the body duplicated — and the one thing that could
-have removed that, an import resolving to file content, never came back
-as a confirmed yes. `PreInvocation` is the mirror image: it carries no
-duplication risk (it reads `SKILL.md` at the point it fires), but it
-fires on every model call rather than once per session. Duplicating the
-body runs straight into `AUTHORING.md`'s rule against leaving duplicated
-text behind; the firing cost is the `conversationId` gate above. So
-`PreInvocation` is what shipped, and dude still ships no `rules/`
-directory.
-
-Where `using-dude` is not in context, it has to be reached by hand, and there
-are three shapes of that. **Ask for it by name** — Grok exposes each skill as a
-slash command named after it (`/using-dude`), and Codex namespaces skills
-`dude:using-dude`, which works trusted hook or not. Antigravity needs no
-syntax at all: asked to use the skill named `using-dude`, a session opened the
-installed `SKILL.md` and quoted a line of the body back. This is why `using-dude`
-is a skill rather than plain Markdown, and it is the route that needs no setup.
-**Put the body where the runtime already looks** — `grok inspect --json`, run
-outside any project, reports `~/.grok/AGENTS.md` with `"scope": "global"`, and a
-headless session started outside any project quoted a line of that file back, so
-what it holds reaches the session and not just the inspector. That distinction is
-the one the hook above fails: `grok inspect` lists the hook too. Put a copy of
-`skills/using-dude/SKILL.md` there and the rules arrive with it — a copy, because
-`AGENTS.md` has no import mechanism to point at the installed skill instead, and
-a copy goes stale when the skill moves on. **Or pass it at launch** —
-`grok --help` documents `--rules <RULES>` as "Extra rules to append to the system
-prompt", so handing it the skill body appends the rules for that session. The
-first two were measured here; the third is the flag's documented behavior, which
-this repository has not observed.
-
-The skill bodies themselves use bare names (`plan-work`), because the `dude:`
-prefix is a plugin namespace the host adds — Claude Code and Codex both do,
-while Gemini and Grok expose the bare name — and a body that hard-coded one
-host's prefix would read wrongly on the others.
+The skill bodies use bare names (`plan-work`), because the `dude:` prefix is a
+plugin namespace the host adds.
 
 ### What tier a marked worker runs at
 
@@ -482,7 +298,7 @@ offset by having to write more often, and separating the two needs the same work
 replayed
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995)).
 
-All three were measured on Claude Code alone; what the other four runtimes do
+All three were measured on Claude Code alone; what the other two runtimes do
 with a subagent default, a session's effort, or a cache TTL has not been
 measured here, which is not a claim that they have no tier lever. Where a
 runtime turns out to have none, `using-dude`'s **Worker tier** leaves it
@@ -532,16 +348,9 @@ Point a marketplace at a local clone instead of the remote:
 /plugin marketplace add ~/repos/dude
 /plugin install dude@dude
 
-gemini extensions link --consent ~/repos/dude
-
 codex plugin marketplace add ~/repos/dude
 codex plugin add dude@dude
-
-grok plugin install ~/repos/dude --trust
 ```
-
-`gemini extensions link` tracks the clone rather than copying it, so an edit to a
-skill shows up in the next Gemini session without reinstalling.
 
 Starting OpenCode from the repository checkout loads
 `.opencode/plugins/dude.js` as a project plugin. Temporarily remove any globally
@@ -560,8 +369,7 @@ environment — ask whoever owns it.
 
 The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
-Codex install injects twice as well has not been measured here. Gemini is not
-on this route at all — it does not run the hook.
+Codex install injects twice as well has not been measured here.
 
 Check the manifests before installing — the validators name the offending
 field:
@@ -569,22 +377,15 @@ field:
 ```
 claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
-grok plugin validate .
-gemini extensions validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
-`grok plugin validate` reads `.claude-plugin/plugin.json`. `claude plugin
-validate` starts from `.claude-plugin/marketplace.json` and reaches that same
+`claude plugin validate` starts from `.claude-plugin/marketplace.json` and reaches that same
 `plugin.json` through the entry's `"source": "./"`, which is where its `No version
 specified` warning comes from — expected here, per the Versions section above.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
-as well, so it catches malformed frontmatter at the same time. `gemini extensions
-validate` reads `gemini-extension.json` only, and what it checks there is narrow
-— that `version` parses as semver, and that the file `contextFileName` names
-exists. Point that key at a file that is not there and it names the missing file;
-it will not tell you the context file is empty, or that an `@` import inside it
-went nowhere. None of the manifest validators named above looks at
+as well, so it catches malformed frontmatter at the same time. Neither manifest
+validator named above looks at
 `.agents/plugins/marketplace.json` — each still passes with that file
 deliberately corrupted — so `python3 -m json.tool` is what covers it, syntax
 only. `make lint test` checks none of them: it covers shell and the test suite.
