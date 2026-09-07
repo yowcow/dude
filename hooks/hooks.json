@@ -3,7 +3,6 @@
     "SessionStart": [
       {
         "matcher": "startup|clear|compact",
-        "command": "true",
         "hooks": [
           {
             "type": "command",
