@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multi-runtime AI-workflow plugin (Claude Code, Codex, Gemini, Grok, Antigravity, OpenCode), not an application. Default branch is `master`. dude is unversioned: every runtime is meant to track this branch's HEAD.
+Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex), not an application. Default branch is `master`. dude is unversioned: every runtime is meant to track this branch's HEAD.
 
 Skill bodies, `AUTHORING.md`, and `README.md` stay English. Commit messages in this repo are standard Japanese (標準語). Branches follow `<issue-number>-<slug>`.
 
@@ -22,12 +22,10 @@ Manifests, before an install-path change (each validator names the field it reje
 ```
 claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
-grok plugin validate .
-gemini extensions validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
 
-`claude plugin validate .` warning `No version specified` is expected. Do not add `version` to `.claude-plugin/plugin.json` or the marketplace plugin entry — Claude treats a pinned version as “already up to date”. `.codex-plugin/plugin.json` and `gemini-extension.json` keep `"version": "0.1.0"` and that value is never bumped.
+`claude plugin validate .` warning `No version specified` is expected. Do not add `version` to `.claude-plugin/plugin.json` or the marketplace plugin entry — Claude treats a pinned version as “already up to date”. `.codex-plugin/plugin.json` keeps `"version": "0.1.0"` and that value is never bumped.
 
 Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/workflows/ci.yml`.
 
@@ -47,10 +45,9 @@ Skill scripts must run on bash 3.2 (`${x,,}` is out; use `tr`).
 
 Load-bearing bits an editor otherwise guesses wrong:
 
-- `using-dude` owns workflow rules; other skills cite it by name. Do not copy it. `GEMINI.md` is only `@./skills/using-dude/SKILL.md`.
+- `using-dude` owns workflow rules; other skills cite it by name. Do not copy it.
 - A `SKILL.md` has **no command blocks**. Policy/procedure there; mechanism in `scripts/`; rationale in `references/` (a skill gets that directory only once the rationale is its own document). Frontmatter `description`: when to use it, nothing else.
 - Name Superpowers procedures (`superpowers:…`); never reimplement them; never name the host runtime. Skill bodies use bare names (`plan-work`), not `dude:plan-work`.
-- Do not “fix” `hooks/hooks.json` matcher `startup|clear|compact` for Gemini. Gemini does not run this hook; narrowing it plus unhydrated `${CLAUDE_PLUGIN_ROOT}` would break Gemini. The extra `"command": "true"` is so Antigravity can parse the file, not so the hook injects.
 - `hooks/session-start` must not grow a `jq` dependency (not guaranteed at install) and must not be rewritten to a heredoc (bash 5.3+ hangs there).
 - Do not install a second copy of dude to try hook changes — both SessionStart hooks fire into the same session.
 
