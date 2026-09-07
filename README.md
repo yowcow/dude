@@ -186,7 +186,7 @@ deleting the branch and worktree are yours.
 
 | Runtime | `using-dude` in context at session start? | How to reach it by hand |
 | --- | --- | --- |
-| OpenCode | yes — `messages.transform` on the first user message | — |
+| OpenCode | yes — `experimental.chat.messages.transform` on the first user message | — |
 | Claude Code | yes — a SessionStart hook | — |
 | Codex | yes, once the hook is trusted | `dude:using-dude` |
 
