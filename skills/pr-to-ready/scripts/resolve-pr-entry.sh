@@ -27,10 +27,9 @@
 #
 # ./retarget-pr.sh's `STOP checkout-required` and `STOP dirty-worktree` are NOT
 # evidence for either failure above, and a reviewer applying AUTHORING.md's
-# rule 2 should not read them as one. Those guards fire before that script's
-# own first mutation, so they are the deletion test's (b) — the run stops and
-# asks a person. They also guard only retarget-pr.sh's own merge: Step 1's fix
-# and 2-3's fixes pass through no such gate, which is where the (c) lives.
+# rule 2 should not read them as one. They also guard only retarget-pr.sh's
+# own merge: Step 1's fix and 2-3's fixes pass through no such gate, which is
+# where the (c) lives.
 #
 # The lookup is `gh api graphql` rather than `gh pr view` because three answers
 # have to stay apart and `gh pr view` collapses two of them: it exits non-zero
