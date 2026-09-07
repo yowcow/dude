@@ -36,14 +36,18 @@ dude requires [Superpowers](https://github.com/obra/superpowers#installation). I
 
 OpenCode:
 
-```json
+```jsonc
 {
-  "plugin": ["dude@git+https://github.com/yowcow/dude.git"]
+  "$schema": "https://opencode.ai/config.json",
+  "plugin": [
+    "dude@git+https://github.com/yowcow/dude.git",
+    "superpowers@git+https://github.com/obra/superpowers.git"
+  ]
 }
 ```
 
 Add the entry to the `plugin` array in the global
-`~/.config/opencode/opencode.json`, then restart OpenCode.
+`~/.config/opencode/opencode.jsonc`, then restart OpenCode.
 
 Claude Code:
 
