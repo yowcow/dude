@@ -25,17 +25,18 @@
 # sibling's default-branch resolution never reads this symref, so no row's
 # answer depends on the call; see fixture()'s own comment for why it stays.
 #
-# RED verification (see tests/README.md):
+# RED verification (see tests/README.md). The tree has to be copied with its
+# shape intact: resolve-pr-base.sh reaches
+# skills/implement-work/scripts/resolve-default-branch.sh through
+# dirname "$0", so a flat copy answers STOP ask-default-branch on every row
+# regardless of this file's own mutation.
 #   tmp="$(mktemp -d)"
-#   cp skills/pr-to-ready/scripts/resolve-pr-base.sh "$tmp/"
-#   A copy of the *current* resolve-pr-base.sh needs its sibling laid out as
-#   skills/implement-work/scripts/resolve-default-branch.sh relative to
-#   skills/pr-to-ready/scripts/, resolved through dirname "$0" -- a flat copy
-#   answers STOP ask-default-branch on every row regardless of this file's own
-#   mutation.
-#   cp skills/pr-to-ready/scripts/ensure-draft-pr.sh "$tmp/mut.sh"
-#   # apply exactly one edit to "$tmp/mut.sh"
-#   SUT="$tmp/mut.sh" tests/run.sh tests/pr-to-ready/ensure-draft-pr_test.sh
+#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/skills/implement-work/scripts"
+#   cp skills/pr-to-ready/scripts/resolve-pr-base.sh "$tmp/skills/pr-to-ready/scripts/"
+#   cp skills/implement-work/scripts/resolve-default-branch.sh "$tmp/skills/implement-work/scripts/"
+#   cp skills/pr-to-ready/scripts/ensure-draft-pr.sh "$tmp/skills/pr-to-ready/scripts/mut.sh"
+#   # apply exactly one edit to "$tmp/skills/pr-to-ready/scripts/mut.sh"
+#   SUT="$tmp/skills/pr-to-ready/scripts/mut.sh" tests/run.sh tests/pr-to-ready/ensure-draft-pr_test.sh
 #
 # Limitations:
 #   - `STOP fetch-failed` from the sibling is unreachable through this SUT:

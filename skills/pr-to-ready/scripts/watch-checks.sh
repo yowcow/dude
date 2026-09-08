@@ -89,7 +89,7 @@ EMPTY_GRACE=3
 # base-resolving scripts call. That script answers for the
 # *current checkout*, and this script takes <owner> <repo> on the argv precisely
 # so it can watch a repository it is not standing in; run from inside another
-# checkout, that helper would resolve a different repository's default branch
+# checkout, that script would resolve a different repository's default branch
 # and this function would answer about that one.
 #
 # The default branch rather than the PR's base, because the error direction is
