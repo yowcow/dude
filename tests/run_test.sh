@@ -57,44 +57,43 @@ marker_state() {
   if [ -e "$MARKER" ]; then printf 'ran\n'; else printf 'did-not-run\n'; fi
 }
 
+# assert_refused <label> <child-sut> -- one rejection case's whole verdict: the
+# runner exited 1, no test file ran, and stderr named both `SUT` and the
+# offending path. Advances the caller's `total` once and `failed` once if any
+# of the four fails, so `ok N/N` counts a rejection case exactly as it did when
+# each case spelled the block out.
+#
+# File-local rather than in harness.sh: nothing else in the suite has a
+# rejection case to assert, and the harness is sourced by every test file.
+assert_refused() {
+  local label="$1" child_sut="$2" fails=0
+  total=$((total + 1))
+  run_case "$child_sut"
+  if ! check_eq "${label}: exit" 1 "$SUT_STATUS"; then fails=1; fi
+  if ! check_eq "${label}: no test file ran" 'did-not-run' "$(marker_state)"; then fails=1; fi
+  if ! grep -q 'SUT' "$SUT_STDERR"; then
+    printf 'FAIL %s: stderr does not name SUT: %s\n' "$label" "$(head -c 400 "$SUT_STDERR")"
+    fails=1
+  fi
+  if ! grep -qF -- "$child_sut" "$SUT_STDERR"; then
+    printf 'FAIL %s: stderr does not name the path: %s\n' "$label" "$(head -c 400 "$SUT_STDERR")"
+    fails=1
+  fi
+  if [ "$fails" -ne 0 ]; then failed=$((failed + 1)); fi
+}
+
 # --- case 1: a SUT that does not exist stops the run --------------------------
-total=$((total + 1))
-fails_here=0
 missing="${HARNESS_TMP}/no-such-script.sh"
 rm -f "$missing"
-run_case "$missing"
-if ! check_eq 'missing SUT: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_eq 'missing SUT: no test file ran' 'did-not-run' "$(marker_state)"; then fails_here=1; fi
-if ! grep -q 'SUT' "$SUT_STDERR"; then
-  printf 'FAIL missing SUT: stderr does not name SUT: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fails_here=1
-fi
-if ! grep -qF -- "$missing" "$SUT_STDERR"; then
-  printf 'FAIL missing SUT: stderr does not name the path: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fails_here=1
-fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+assert_refused 'missing SUT' "$missing"
 
 # --- case 2: an empty SUT file stops the run ---------------------------------
 # An empty file exists, so an existence-only guard would let it through, and
 # `bash <empty>` exits 0 — the script under test would appear to succeed at
 # everything, which is a *green* RED verification: even more misleading.
-total=$((total + 1))
-fails_here=0
 empty="${HARNESS_TMP}/empty-script.sh"
 : >"$empty"
-run_case "$empty"
-if ! check_eq 'empty SUT: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_eq 'empty SUT: no test file ran' 'did-not-run' "$(marker_state)"; then fails_here=1; fi
-if ! grep -q 'SUT' "$SUT_STDERR"; then
-  printf 'FAIL empty SUT: stderr does not name SUT: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fails_here=1
-fi
-if ! grep -qF -- "$empty" "$SUT_STDERR"; then
-  printf 'FAIL empty SUT: stderr does not name the path: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fails_here=1
-fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+assert_refused 'empty SUT' "$empty"
 
 # --- case 3: a real SUT still runs the selected file -------------------------
 # The guard must not cost the mechanism it protects, and this is what would
@@ -134,20 +133,7 @@ if [ -r "$unreadable" ]; then
   # what says why.
   printf 'skip unreadable SUT: chmod 000 left it readable as uid %s — the guard is right to accept it here\n' "$(id -u)"
 else
-  total=$((total + 1))
-  fails_here=0
-  run_case "$unreadable"
-  if ! check_eq 'unreadable SUT: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-  if ! check_eq 'unreadable SUT: no test file ran' 'did-not-run' "$(marker_state)"; then fails_here=1; fi
-  if ! grep -q 'SUT' "$SUT_STDERR"; then
-    printf 'FAIL unreadable SUT: stderr does not name SUT: %s\n' "$(head -c 400 "$SUT_STDERR")"
-    fails_here=1
-  fi
-  if ! grep -qF -- "$unreadable" "$SUT_STDERR"; then
-    printf 'FAIL unreadable SUT: stderr does not name the path: %s\n' "$(head -c 400 "$SUT_STDERR")"
-    fails_here=1
-  fi
-  if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+  assert_refused 'unreadable SUT' "$unreadable"
 fi
 
 harness_exit "$failed" "$total"
