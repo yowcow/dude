@@ -152,11 +152,8 @@ W="$(build_case lsremotefail 201-alpha)"
 git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/absent.git"
 run_in "$W" 201
 assert_row 'ls-remote-itself-failed' 128 '' 0
-total=$((total + 1))
-if ! check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
-  "$(grep -q 'git ls-remote failed' "$SUT_STDERR" && echo yes || echo no)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
+  "$(grep -q 'git ls-remote failed' "$SUT_STDERR" && echo yes || echo no)"
 
 # ---- argument validation -----------------------------------------------
 

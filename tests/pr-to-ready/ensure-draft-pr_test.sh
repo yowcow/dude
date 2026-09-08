@@ -243,15 +243,9 @@ printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'local-only-branch-is-pushed-before-the-base-is-resolved' 0 'PR 7 created draft=true base=main\n' 4
 
-total=$((total + 1))
-if ! check_eq 'push-precedes-every-gh-call' 0 "$(push_order_stamp)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'push-precedes-every-gh-call' 0 "$(push_order_stamp)"
 
-total=$((total + 1))
-if ! check_eq 'ordering-row-landed-on-the-remote' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'ordering-row-landed-on-the-remote' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # A rejecting hook cannot be used to prove this row's point: `fixture ...
 # remote` leaves the work repo's branch byte-identical to the remote's copy,
@@ -270,10 +264,7 @@ printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'a-branch-already-on-the-remote-is-not-pushed-again' 0 'PR 12 found draft=true\n' 1
 
-total=$((total + 1))
-if ! check_eq 'no-redundant-push-moved-the-remote' "$NOPUSH_TIP" "$(git -C "$FIXTURE_BARE" rev-parse "refs/heads/feature")"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'no-redundant-push-moved-the-remote' "$NOPUSH_TIP" "$(git -C "$FIXTURE_BARE" rev-parse "refs/heads/feature")"
 
 row_start
 fixture othercheckout feature local
@@ -285,10 +276,7 @@ printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'PR 7 created draft=true base=main\n' 4
 
-total=$((total + 1))
-if ! check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # ---- step 2: does a PR already exist? ------------------------------------
 

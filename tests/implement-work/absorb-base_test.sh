@@ -72,6 +72,7 @@ build_case() {
 }
 
 # check_unmerged <label> <work-dir> <want> -- the unmerged paths, space-joined
+# shellcheck disable=SC2317 # invoked indirectly, as `tally check_unmerged ...`
 check_unmerged() {
   local got
   got="$(git -C "$2" diff --name-only --diff-filter=U | tr '\n' ' ')"
@@ -79,6 +80,7 @@ check_unmerged() {
 }
 
 # check_contains <label> <work-dir> <sha> -- is <sha> an ancestor of HEAD?
+# shellcheck disable=SC2317 # invoked indirectly, as `tally check_contains ...`
 check_contains() {
   local got=yes
   git -C "$2" merge-base --is-ancestor "$3" HEAD || got=no
@@ -97,10 +99,7 @@ W="$(build_case uptodate none)"
 BEFORE="$(git -C "$W" rev-parse HEAD)"
 run_in "$W" task main
 assert_row 'already-contains-the-base' 0 'UP-TO-DATE\n' 0
-total=$((total + 1))
-if ! check_eq 'already-contains-the-base: HEAD unmoved' "$BEFORE" "$(git -C "$W" rev-parse HEAD)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'already-contains-the-base: HEAD unmoved' "$BEFORE" "$(git -C "$W" rev-parse HEAD)"
 
 # ---- a clean absorb ----------------------------------------------------
 
@@ -109,19 +108,10 @@ W="$(build_case clean clean)"
 MAIN_SHA="$(git -C "$W" rev-parse main)"
 run_in "$W" task main
 assert_row 'absorbs-a-moved-base' 0 "MERGED ${MAIN_SHA}\n" 0
-total=$((total + 1))
-if ! check_contains 'absorbs-a-moved-base: the base tip is now an ancestor' "$W" "$MAIN_SHA"; then
-  failed=$((failed + 1))
-fi
-total=$((total + 1))
-if ! check_eq 'absorbs-a-moved-base: base file is present' 'from base' \
-  "$(cat "${W}/base.txt" 2>&1)"; then
-  failed=$((failed + 1))
-fi
-total=$((total + 1))
-if ! check_eq 'absorbs-a-moved-base: tree is clean' '' "$(git -C "$W" status --porcelain)"; then
-  failed=$((failed + 1))
-fi
+tally check_contains 'absorbs-a-moved-base: the base tip is now an ancestor' "$W" "$MAIN_SHA"
+tally check_eq 'absorbs-a-moved-base: base file is present' 'from base' \
+  "$(cat "${W}/base.txt" 2>&1)"
+tally check_eq 'absorbs-a-moved-base: tree is clean' '' "$(git -C "$W" status --porcelain)"
 
 # ---- a conflict, left in the tree --------------------------------------
 
@@ -129,15 +119,9 @@ row_start
 W="$(build_case conflicted conflict)"
 run_in "$W" task main
 assert_row 'conflict-is-left-in-the-tree' 0 'CONFLICTED shared.txt\n' 0
-total=$((total + 1))
-if ! check_eq 'conflict-is-left-in-the-tree: merge is still in progress' 'yes' \
-  "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"; then
-  failed=$((failed + 1))
-fi
-total=$((total + 1))
-if ! check_unmerged 'conflict-is-left-in-the-tree: path is unmerged' "$W" 'shared.txt'; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'conflict-is-left-in-the-tree: merge is still in progress' 'yes' \
+  "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"
+tally check_unmerged 'conflict-is-left-in-the-tree: path is unmerged' "$W" 'shared.txt'
 
 # ---- a merge that fails without leaving a conflict ---------------------
 #
@@ -162,10 +146,7 @@ git_repo_commit "$W" task.txt 'task\n' 'task root'
 git_repo_remote "$W" origin "$BARE"
 run_in "$W" task main
 assert_row 'unrelated-histories-is-not-a-conflict' 0 'STOP merge-failed\n' 0
-total=$((total + 1))
-if ! check_unmerged 'unrelated-histories-is-not-a-conflict: nothing unmerged' "$W" ''; then
-  failed=$((failed + 1))
-fi
+tally check_unmerged 'unrelated-histories-is-not-a-conflict: nothing unmerged' "$W" ''
 
 row_start
 W="$(build_case hookfail clean)"
@@ -174,10 +155,7 @@ printf '#!/bin/sh\nexit 1\n' >"${W}/.git/hooks/commit-msg"
 chmod +x "${W}/.git/hooks/commit-msg"
 run_in "$W" task main
 assert_row 'merge-failed-leaves-no-conflict' 0 'STOP merge-failed\n' 0
-total=$((total + 1))
-if ! check_unmerged 'merge-failed-leaves-no-conflict: nothing unmerged' "$W" ''; then
-  failed=$((failed + 1))
-fi
+tally check_unmerged 'merge-failed-leaves-no-conflict: nothing unmerged' "$W" ''
 
 # ---- the tip absorbed is the one this script's own fetch resolved ------
 #
@@ -202,11 +180,8 @@ if [ "$(git -C "$W" rev-parse FETCH_HEAD)" != "$DECOY_SHA" ]; then
 fi
 run_in "$W" task main
 assert_row 'inherited-fetch-head-is-not-trusted' 0 "MERGED ${MAIN_SHA}\n" 0
-total=$((total + 1))
-if ! check_eq 'inherited-fetch-head-is-not-trusted: the decoy was not absorbed' 'no' \
-  "$([ -e "${W}/decoy.txt" ] && echo yes || echo no)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'inherited-fetch-head-is-not-trusted: the decoy was not absorbed' 'no' \
+  "$([ -e "${W}/decoy.txt" ] && echo yes || echo no)"
 
 row_start
 W="$(build_case stalref clean)"
@@ -237,11 +212,8 @@ W="$(build_case dirty clean)"
 printf 'uncommitted\n' >"${W}/shared.txt"
 run_in "$W" task main
 assert_row 'dirty-tree' 0 'STOP dirty-tree\n' 0
-total=$((total + 1))
-if ! check_eq 'dirty-tree: no merge was started' 'no' \
-  "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'dirty-tree: no merge was started' 'no' \
+  "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"
 
 row_start
 W="$(build_case nobase clean)"

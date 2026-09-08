@@ -69,11 +69,8 @@ build_conflict() {
 # HEAD has not moved.
 check_not_committed() {
   local name="$1" w="$2"
-  total=$((total + 1))
-  if ! check_eq "${name}: merge still in progress" 'yes' \
-    "$([ -e "${w}/.git/MERGE_HEAD" ] && echo yes || echo no)"; then
-    failed=$((failed + 1))
-  fi
+  tally check_eq "${name}: merge still in progress" 'yes' \
+    "$([ -e "${w}/.git/MERGE_HEAD" ] && echo yes || echo no)"
 }
 
 # ---- a resolved merge is committed -------------------------------------
@@ -85,16 +82,10 @@ git -C "$W" add shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
 assert_row 'a-resolved-merge-is-committed' 0 "COMMITTED ${MERGE_SHA}\n" 0
-total=$((total + 1))
-if ! check_eq 'a-resolved-merge-is-committed: two parents' 3 \
-  "$(git -C "$W" rev-list --parents -1 HEAD | wc -w | tr -d ' ')"; then
-  failed=$((failed + 1))
-fi
-total=$((total + 1))
-if ! check_eq 'a-resolved-merge-is-committed: tree is clean' '' \
-  "$(git -C "$W" status --porcelain)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'a-resolved-merge-is-committed: two parents' 3 \
+  "$(git -C "$W" rev-list --parents -1 HEAD | wc -w | tr -d ' ')"
+tally check_eq 'a-resolved-merge-is-committed: tree is clean' '' \
+  "$(git -C "$W" status --porcelain)"
 
 # ---- a marker left behind is refused -----------------------------------
 #
@@ -155,11 +146,8 @@ git -C "$W" add shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
 assert_row 'markers-outside-the-conflict-are-ignored' 0 "COMMITTED ${MERGE_SHA}\n" 0
-total=$((total + 1))
-if ! check_eq 'markers-outside-the-conflict-are-ignored: the clean file kept its text' 2 \
-  "$(grep -c -e '^<<<<<<<' -e '^>>>>>>>' "${W}/base-marker.txt")"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'markers-outside-the-conflict-are-ignored: the clean file kept its text' 2 \
+  "$(grep -c -e '^<<<<<<<' -e '^>>>>>>>' "${W}/base-marker.txt")"
 
 # ---- unmerged paths are refused ----------------------------------------
 
