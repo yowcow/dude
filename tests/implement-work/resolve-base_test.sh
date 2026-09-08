@@ -176,19 +176,6 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout> <want-gh-calls>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" want_calls="$4" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # check_row <label> -- fold an extra assertion into the row count
 check_row() {
   total=$((total + 1))
