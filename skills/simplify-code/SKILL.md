@@ -17,7 +17,7 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 
 - The orchestrator owns this pass: it dispatches proposers, judges what they return, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
 - Proposers are read-only workers, following the contract stated in `review-code`'s **Orchestration model** and bought for the same reason. Each gets the diff, the paths it touches, and its assigned lenses. A proposer returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean.
-- Proposers stay read-only for two reasons beyond that contract: it matches how the other local skills treat workers (`pr-to-ready` keeps every code change, commit, and push in the orchestrator), and `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
+- Proposers stay read-only for one reason beyond that contract: `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
 ## Scope
 
