@@ -71,11 +71,11 @@ mk_allowlist() {
 }
 
 # check_stderr_has <label> <needle>
-# A file-local assertion, the way absorb-base_test.sh has assert_row and
-# check_contains: thirteen rows here hold the gate to something it must say on
-# stderr, and inlining the grep-and-report at each of them buried the needle —
-# the one part that differs — in boilerplate. The needle stays at the call site,
-# so what a row asserts is still read there rather than here.
+# A file-local assertion, the way absorb-base_test.sh has check_contains:
+# thirteen rows here hold the gate to something it must say on stderr, and
+# inlining the grep-and-report at each of them buried the needle — the one
+# part that differs — in boilerplate. The needle stays at the call site, so
+# what a row asserts is still read there rather than here.
 #
 # -F because every needle is a literal path or message fragment, and -- because
 # a needle is free to begin with a dash.
