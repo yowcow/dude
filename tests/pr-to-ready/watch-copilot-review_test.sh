@@ -128,8 +128,7 @@ total=0
 
 while IFS='|' read -r name responses baseline args want_exit want_calls want_out; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # Each entry answers one call; the last also answers every later call, which
   # is what lets a row hold a poll loop at one state until the cap runs out.

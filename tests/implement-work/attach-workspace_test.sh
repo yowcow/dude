@@ -141,8 +141,7 @@ tally() {
 # path printed has to be the existing worktree's, not the one asked for: the
 # caller works in whatever this names.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo reuse)"
 git_repo_checkout "$W" task main
 git_repo_checkout "$W" main
@@ -157,8 +156,7 @@ tally check_absent 'existing-worktree-is-reused: the asked-for path was not crea
 # first, and a run from a checkout that is already on the branch must not cut a
 # second workspace for it.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo reusemain)"
 git_repo_checkout "$W" task main
 WT_NEW="$(wt_path reusemain-new)"
@@ -168,8 +166,7 @@ tally check_absent 'main-working-tree-is-reused: the asked-for path was not crea
 
 # ---- ATTACHED: the branch exists locally, with no worktree -------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo localonly)"
 git_repo_checkout "$W" task main
 git_repo_commit "$W" task.txt 'local work\n' 'task work'
@@ -186,8 +183,7 @@ tally check_on_branch 'local-branch-is-attached: the workspace is on the branch'
 # pointed at a path that does not exist, so any remote access would exit 128
 # and this row would stop being an ATTACHED.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo localnoremote)"
 git_repo_checkout "$W" task main
 git_repo_checkout "$W" main
@@ -204,8 +200,7 @@ tally check_on_branch 'local-branch-does-not-consult-the-remote: on the branch' 
 # remote" arm, and the fetch fails instead of the caller being told to create
 # the branch.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo nowhere)"
 WT_NEW="$(wt_path nowhere-new)"
 run_in "$W" task "$WT_NEW"
@@ -220,8 +215,7 @@ tally check_local_branch 'nowhere-is-create: no branch was created' "$W" task no
 # `build_repo` is not used, because the remote has to hold `task` before the
 # clone is taken.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 BARE="$(git_repo_bare acme remoteonly)"
 SEED="$(git_repo_scratch remoteonly-seed)"
 git_repo_init "$SEED" main
@@ -252,8 +246,7 @@ tally check_eq 'remote-only-is-attached: the branch tracks the remote' 'origin/t
 # refused as non-fast-forward (or, worse, the missing commits re-derived by
 # hand).
 
-total=$((total + 1))
-stub_dir_new
+row_start
 BARE="$(git_repo_bare acme staleref)"
 SEED="$(git_repo_scratch staleref-seed)"
 git_repo_init "$SEED" main
@@ -289,8 +282,7 @@ tally check_eq 'remote-only-attach-is-at-the-remote-tip: the newer commit is pre
 # history that force-push is banned from fixing. `ls-remote` exits 128 for
 # both, against 2 for a name it really did not match (measured, git 2.43.0).
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo unreachable)"
 git_repo_remote "$W" origin "${HARNESS_TMP}/remotes/acme/absent.git"
 WT_NEW="$(wt_path unreachable-new)"
@@ -300,8 +292,7 @@ tally check_stderr_has 'unreachable-remote-is-not-absent: the failure is named' 
 tally check_absent 'unreachable-remote-is-not-absent: no workspace was created' "$WT_NEW"
 tally check_local_branch 'unreachable-remote-is-not-absent: no branch was created' "$W" task no
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo noorigin)"
 git -C "$W" remote remove origin
 WT_NEW="$(wt_path noorigin-new)"
@@ -312,22 +303,19 @@ tally check_absent 'no-origin-remote-is-not-absent: no workspace was created' "$
 
 # ---- argument validation ----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo argsnone)"
 run_in "$W"
 assert_row 'no-arguments' 1 ''
 tally check_stderr_has 'no-arguments: usage is printed' 'Usage:'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo argsone)"
 run_in "$W" task
 assert_row 'one-argument' 1 ''
 tally check_stderr_has 'one-argument: usage is printed' 'Usage:'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo argsthree)"
 run_in "$W" task "$(wt_path argsthree-new)" extra
 assert_row 'three-arguments' 1 ''
@@ -341,8 +329,7 @@ assert_row 'three-arguments' 1 ''
 # prints REUSE naming a *different* task's workspace, and the caller commits
 # its work on top of that branch.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo dotname)"
 git_repo_checkout "$W" feat-x main
 git_repo_checkout "$W" main
@@ -356,8 +343,7 @@ assert_row 'dot-in-name-does-not-grab-another-worktree' 0 "ATTACHED ${WT_NEW}\n"
 tally check_on_branch 'dot-in-name-does-not-grab-another-worktree: on the asked-for branch' \
   "$WT_NEW" 'feat.x'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo prefixname)"
 git_repo_checkout "$W" task-extra main
 git_repo_checkout "$W" main

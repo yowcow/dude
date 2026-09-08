@@ -78,8 +78,7 @@ while IFS='|' read -r name args response want_exit want_calls want_stdout want_p
       ;;
   esac
 
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   if [ "$response" != '-' ]; then
     fixture="${response%%:*}"

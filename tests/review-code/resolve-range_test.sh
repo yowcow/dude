@@ -261,29 +261,25 @@ stub_pr_list() {
 # only have come from the PR record. The oids are deliberately not shas of
 # anything in the fixture, for the same reason.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '{"headRefOid":"hhh222","baseRefOid":"bbb111"}\n' | stub_pr_view 42 0
 NOREPO="$(git_repo_scratch pr-shape-norepo)"
 run_in "$NOREPO" 42
 assert_row 'pr-shape-uses-the-pr-record' 0 'RANGE bbb111..hhh222\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '{"headRefOid":"same111","baseRefOid":"same111"}\n' | stub_pr_view 42 0
 NOREPO_SAME="$(git_repo_scratch pr-shape-empty)"
 run_in "$NOREPO_SAME" 42
 assert_row 'pr-shape-empty-when-ends-coincide' 0 'EMPTY\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_pr_view 42 1
 NOREPO_FAIL="$(git_repo_scratch pr-shape-lookup-fails)"
 run_in "$NOREPO_FAIL" 42
 assert_row 'pr-lookup-fails' 0 'STOP pr-lookup-failed\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 run_in "$NOREPO" 42 extra
 assert_row 'too-many-arguments' 1 '' 0
 
@@ -301,22 +297,19 @@ PLAIN_SHA="$(bare_sha "$REMOTE" plain)"
 # stale answer sitting in it cannot steer the range even when it disagrees
 # with the API.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'trunk\n' | stub_default_branch 0
 W="$(work_repo dflt-stale-symref "$REMOTE" plain task)"
 run_in "$W"
 assert_row 'stale-symref-is-ignored' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'trunk\n' | stub_default_branch 0
 W="$(work_repo dflt-gh "$REMOTE" plain -)"
 run_in "$W"
 assert_row 'no-trailer-gh-names-default' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_default_branch 1
 W="$(work_repo dflt-gh-fails "$REMOTE" plain -)"
 run_in "$W"
@@ -325,8 +318,7 @@ assert_row 'default-branch-lookup-fails' 0 'STOP ask-default-branch\n' 1
 # Status 0 with nothing on stdout is a separate case from the failure above:
 # `gh` answered, and the answer was empty. Only the SUT's `&& [ -n "$ref" ]`
 # separates them, and without this row the two are one branch.
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_default_branch 0
 W="$(work_repo dflt-gh-empty "$REMOTE" plain -)"
 run_in "$W"
@@ -338,8 +330,7 @@ assert_row 'default-branch-lookup-empty' 0 'STOP ask-default-branch\n' 1
 # collapse to EMPTY, since a caller handed `RANGE <sha>..<sha>` would dispatch
 # a reviewer over an empty diff and read the no-findings back as a clean
 # review.
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'trunk\n' | stub_default_branch 0
 W="$(work_repo empty-nopr "$REMOTE" fresh trunk)"
 run_in "$W"
@@ -350,8 +341,7 @@ TASK_SHA="$(bare_sha "$REMOTE" task)"
 
 # ---- a trailer the branch recorded itself -------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-open "$REMOTE" task trunk)"
 run_in "$W"
@@ -369,8 +359,7 @@ assert_row 'prereq-open-uses-its-branch' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 1
 # fails this row on stdout, `RANGE <trunk>..<task>` against
 # `RANGE <dep>..<task>`. The gh-call assertion holds the second entry to being
 # unused by a correct scan.
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list dep 0
 printf '[{"number":8,"state":"OPEN"}]\n' | stub_pr_list older-base 0
 W="$(work_repo shadow "$REMOTE" task trunk)"
@@ -391,8 +380,7 @@ PULL9_SHA="$(bare_sha "$REMOTE_MERGED" refs/pull/9/head)"
 MERGED_TASK_SHA="$(bare_sha "$REMOTE_MERGED" task)"
 MERGED_TRUNK_SHA="$(bare_sha "$REMOTE_MERGED" trunk)"
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"MERGED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-merged "$REMOTE_MERGED" task trunk)"
 run_in "$W"
@@ -418,36 +406,31 @@ fi
 # them; what is under test is that four different "cannot proceed" causes
 # stay four different answers rather than collapsing into one.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"CLOSED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-closed "$REMOTE" task trunk)"
 run_in "$W"
 assert_row 'prereq-closed-stops' 0 'STOP abandoned-prerequisite\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-none "$REMOTE" task trunk)"
 run_in "$W"
 assert_row 'prereq-has-no-pr' 0 'STOP no-prereq-pr\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"OPEN"},{"number":8,"state":"CLOSED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-multiple "$REMOTE" task trunk)"
 run_in "$W"
 assert_row 'prereq-has-several-prs' 0 'STOP ask-multiple-prs\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_pr_list dep 1
 W="$(work_repo prereq-unreadable "$REMOTE" task trunk)"
 run_in "$W"
 assert_row 'prereq-lookup-fails' 0 'STOP prereq-lookup-failed\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"DRAFT"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-unknown-state "$REMOTE" task trunk)"
 run_in "$W"
@@ -469,8 +452,7 @@ fi
 # sends the range to the default branch. refs/remotes/origin/HEAD is pointed
 # at `trunk` for realism only -- resolve_default_branch never reads it, so it
 # has no bearing on this row's answer.
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(git_repo_scratch trailer-unreadable)"
 git_repo_init "$W" task
 git_repo_remote "$W" origin "$REMOTE"
@@ -482,8 +464,7 @@ assert_row 'trailer-read-fails' 0 'STOP trailer-read-failed\n' 0
 # The first row's API answer names a branch the remote does not have --
 # the ladder answers `nosuch`, and the fetch behind it is what fails, after
 # reaching gh exactly once.
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'nosuch\n' | stub_default_branch 0
 W="$(work_repo fetch-dflt "$REMOTE" plain -)"
 run_in "$W"
@@ -491,8 +472,7 @@ assert_row 'default-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 
 # The second is the MERGED rung: `refs/pull/77/head` exists on no fixture
 # remote, so the spec that fails is the one the MERGED path builds itself.
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":77,"state":"MERGED"}]\n' | stub_pr_list dep 0
 W="$(work_repo fetch-pull "$REMOTE" task trunk)"
 run_in "$W"
@@ -502,8 +482,7 @@ assert_row 'merged-pull-ref-absent' 0 'STOP fetch-failed\n' 1
 # that share no history, so the fetch succeeds and `git merge-base` is what
 # fails -- exit 1 printing nothing (measured), which is indistinguishable
 # from an answer unless the exit status is read.
-total=$((total + 1))
-stub_dir_new
+row_start
 printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list unrelated 0
 LONELY="$(git_repo_bare acme lonely)"
 LSEED="$(git_repo_scratch lonely-seed)"

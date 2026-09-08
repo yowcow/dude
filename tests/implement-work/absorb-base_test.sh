@@ -115,8 +115,7 @@ check_contains() {
 # completion gate from ever converging: its "nothing changed" exit could never
 # be reached, and the loop would spin to its round ceiling.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case uptodate none)"
 BEFORE="$(git -C "$W" rev-parse HEAD)"
 run_in "$W" task main
@@ -128,8 +127,7 @@ fi
 
 # ---- a clean absorb ----------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case clean clean)"
 MAIN_SHA="$(git -C "$W" rev-parse main)"
 run_in "$W" task main
@@ -150,8 +148,7 @@ fi
 
 # ---- a conflict, left in the tree --------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case conflicted conflict)"
 run_in "$W" task main
 assert_row 'conflict-is-left-in-the-tree' 0 'CONFLICTED shared.txt\n'
@@ -176,8 +173,7 @@ fi
 # unmerged path and commits an empty resolution as though the base had been
 # absorbed.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 BARE="$(git_repo_bare acme unrelated)"
 SEED="$(git_repo_scratch unrelated-seed)"
 git_repo_init "$SEED" main
@@ -194,8 +190,7 @@ if ! check_unmerged 'unrelated-histories-is-not-a-conflict: nothing unmerged' "$
   failed=$((failed + 1))
 fi
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case hookfail clean)"
 mkdir -p "${W}/.git/hooks"
 printf '#!/bin/sh\nexit 1\n' >"${W}/.git/hooks/commit-msg"
@@ -217,8 +212,7 @@ fi
 # base's newer commits are absent and the answer is `UP-TO-DATE` for a base
 # that has in fact moved.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case inherited clean)"
 MAIN_SHA="$(git -C "$W" rev-parse main)"
 DECOY_SHA="$(git -C "$W" rev-parse decoy)"
@@ -237,8 +231,7 @@ if ! check_eq 'inherited-fetch-head-is-not-trusted: the decoy was not absorbed' 
   failed=$((failed + 1))
 fi
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case stalref clean)"
 MAIN_SHA="$(git -C "$W" rev-parse main)"
 # Roll refs/remotes/origin/main back to main's parent, as a fetch from an
@@ -250,22 +243,19 @@ assert_row 'stale-remote-ref-is-refetched' 0 "MERGED ${MAIN_SHA}\n"
 
 # ---- the guards --------------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case wrongbranch clean)"
 git_repo_checkout "$W" main
 run_in "$W" task main
 assert_row 'not-on-the-named-branch' 0 'STOP wrong-branch\n'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case detached clean)"
 git -C "$W" checkout -q --detach
 run_in "$W" task main
 assert_row 'detached-head' 0 'STOP detached-head\n'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case dirty clean)"
 printf 'uncommitted\n' >"${W}/shared.txt"
 run_in "$W" task main
@@ -276,28 +266,24 @@ if ! check_eq 'dirty-tree: no merge was started' 'no' \
   failed=$((failed + 1))
 fi
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case nobase clean)"
 run_in "$W" task nosuchbase
 assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n'
 
 # ---- argument validation -----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case argsnone clean)"
 run_in "$W"
 assert_row 'no-arguments' 1 ''
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case argsone clean)"
 run_in "$W" task
 assert_row 'one-argument' 1 ''
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case argsthree clean)"
 run_in "$W" task main extra
 assert_row 'three-arguments' 1 ''

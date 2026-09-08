@@ -68,8 +68,7 @@ assert_row() {
 
 # ---- a clean working tree ----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo clean)"
 run_in "$W"
 assert_row 'clean-tree' 0 ''
@@ -81,8 +80,7 @@ assert_row 'clean-tree' 0 ''
 # a dirty tree as clean, and the completion gate hands off a branch that omits
 # these edits.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo modified)"
 printf 'edited\n' >"${W}/tracked.txt"
 run_in "$W"
@@ -90,8 +88,7 @@ assert_row 'modified-tracked-file' 1 ' M tracked.txt\n'
 
 # ---- an untracked file -------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo untracked)"
 printf 'new\n' >"${W}/new.txt"
 run_in "$W"
@@ -104,16 +101,14 @@ assert_row 'untracked-file' 1 '?? new.txt\n'
 # file (`M ` -- index column set, worktree column clear) and a staged addition
 # of a file that is not in HEAD (`A `, which is what `?? ` becomes once added).
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo stagedmod)"
 printf 'edited\n' >"${W}/tracked.txt"
 git -C "$W" add -- tracked.txt
 run_in "$W"
 assert_row 'staged-modification' 1 'M  tracked.txt\n'
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo stagedadd)"
 printf 'new\n' >"${W}/added.txt"
 git -C "$W" add -- added.txt
@@ -122,8 +117,7 @@ assert_row 'staged-addition' 1 'A  added.txt\n'
 
 # ---- argument validation -----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_repo argsone)"
 run_in "$W" extra
 assert_row 'one-argument' 1 ''

@@ -34,6 +34,14 @@ stub_dir_new() {
   printf '%s' 0 >"${GH_STUB_DIR}/count"
 }
 
+# Row prologue: advance the caller's `total` and hand it a fresh stub dir.
+# Not folded into stub_dir_new itself: some rows reset the stub dir without
+# counting a row (see tests/README.md).
+row_start() {
+  total=$((total + 1))
+  stub_dir_new
+}
+
 # Make `sleep` instant for this test file. Opt-in: a bounded poll loop in a
 # script under test is worth asserting the *count* of, never the wall clock,
 # and check-pr-state.sh's UNKNOWN re-read alone would otherwise cost 15s a row.

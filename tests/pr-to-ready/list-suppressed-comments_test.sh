@@ -106,8 +106,7 @@ total=0
 
 while IFS='|' read -r name fixture status args want_exit want_calls want_file; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   body=/dev/null
   if [ "$fixture" != '-' ]; then body="${FIXTURES}/${fixture}.json"; fi

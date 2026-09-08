@@ -98,8 +98,7 @@ while IFS='|' read -r name args response want_exit want_calls want_stdout want_p
       ;;
   esac
 
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # `<fixture>[:<exit-status>]`, or `-` for a row that never reaches the API.
   if [ "$response" != '-' ]; then

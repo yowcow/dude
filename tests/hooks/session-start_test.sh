@@ -164,8 +164,7 @@ row_done() {
 # comparison is what makes truncation detectable: a block cut short anywhere
 # fails it, including at the last line of the fixture body.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.plain"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
@@ -180,8 +179,7 @@ row_done 'plain-tree' "$fails"
 # now. Asserted on its own so a change that started shipping the frontmatter is
 # reported as that, rather than as a byte mismatch in the row above.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.frontmatter"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
@@ -207,8 +205,7 @@ row_done 'frontmatter-dropped' "$fails"
 # their tree let a verifier read "the change is in" from one block and "nothing
 # was truncated" from the other, and report a session that verified neither.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.named"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
@@ -225,8 +222,7 @@ row_done 'names-the-install-path' "$fails"
 # characters are legal in a POSIX filename, so this is reachable, not
 # hypothetical.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.q\"uote\\slash"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
@@ -249,8 +245,7 @@ row_done 'weird-path-json-intact' "$fails"
 # them: the conversion spells its codes in octal, and a single mis-numbered
 # entry would otherwise ship green.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.ctl"$'\b\f\001\002\003\004\005\006\007\013\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037'"end"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
@@ -274,8 +269,7 @@ row_done 'control-chars-json-intact' "$fails"
 # The row reaches it the only way it is reachable: an argv whose $0 is
 # relative, so `dirname` yields a bare `hooks` for CDPATH to resolve.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.cdpath"
 build_tree "$ROOT"
 DECOY="${HARNESS_TMP}/decoy.cdpath"
@@ -297,8 +291,7 @@ row_done 'cdpath-ignored' "$fails"
 # session that lost the rules to a read failure must still be told so, and a
 # malformed payload would drop the notice along with the rules.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.noskill"
 build_tree "$ROOT"
 rm -f -- "${ROOT}/skills/using-dude/SKILL.md"
@@ -316,8 +309,7 @@ row_done 'missing-skill-file' "$fails"
 # and the wrapper embeds the plugin root. Either one unescaped breaks the JSON,
 # and this is the branch where both appear at once.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 ROOT="${HARNESS_TMP}/tree.q\"uote\\noskill"
 build_tree "$ROOT"
 rm -f -- "${ROOT}/skills/using-dude/SKILL.md"

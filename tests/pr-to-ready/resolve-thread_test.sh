@@ -111,8 +111,7 @@ total=0
 
 while IFS='|' read -r name pages mutations args want_exit want_calls want_files; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # Indices 1..P are the pages of the single --paginate lookup; the mutations
   # that follow take P+1 onward. The stub filters by exact argv before index, so

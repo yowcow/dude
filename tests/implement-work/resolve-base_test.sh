@@ -205,8 +205,7 @@ REMOTE="$(build_remote base)"
 # here is the guard's and not the fixture's. Two arguments, not three: the
 # guard is `-gt 1`, and the boundary is what a row has to sit on.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(work_repo args-extra "$REMOTE" main)"
 run_in "$W" 203 extra
 assert_row 'too-many-arguments' 1 '' 0
@@ -229,8 +228,7 @@ fi
 # that asked about an empty issue number would be answered by the stub as a
 # violation, since the argv-exact-match stub has no case for an empty number.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo no-arg "$REMOTE" main)"
 run_in "$W"
@@ -240,8 +238,7 @@ check_row x check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE
 
 # ---- blockedBy: 0 -------------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 0 | stub_blocked 203 0
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo blocked-none "$REMOTE" main)"
@@ -262,8 +259,7 @@ check_row x check_tracking 'no-prerequisite: origin/main fetched' "$W" "$REMOTE"
 # defect itself. The `gh calls` assertion is what holds the two entries to
 # being unused.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 2 77 88 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
@@ -279,8 +275,7 @@ check_row x check_tracking 'two-prerequisites: no fetch' "$W" "$REMOTE" main sta
 # propagates, which is the loud direction. The row exists to pin that it is not
 # `BASE main`.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'gh: HTTP 502\n' | stub_blocked 203 1
 W="$(work_repo blocked-fails "$REMOTE" main)"
 run_in "$W" 203
@@ -289,8 +284,7 @@ check_row x check_tracking 'blockedBy-lookup-fails: no fetch' "$W" "$REMOTE" mai
 
 # ---- the prerequisite has no PR ----------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json | stub_prereq_prs 77 0
 W="$(work_repo prs-none "$REMOTE" main)"
@@ -306,8 +300,7 @@ check_row x check_tracking 'prerequisite-has-no-pr: no fetch' "$W" "$REMOTE" mai
 # that counted emptiness then fails as `BASE feature` against
 # `STOP ask-multiple-prs` rather than as an unstubbed argv.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 66 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
@@ -318,8 +311,7 @@ check_row x check_tracking 'prerequisite-has-several-prs: no fetch' "$W" "$REMOT
 
 # ---- the PR lookup itself fails ----------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 printf 'gh: HTTP 502\n' | stub_prereq_prs 77 1
 W="$(work_repo prs-fails "$REMOTE" main)"
@@ -334,8 +326,7 @@ check_row x check_tracking 'prerequisite-pr-lookup-fails: no fetch' "$W" "$REMOT
 # of the answer -- it is what distinguishes this row from the MERGED one below
 # by something other than its stdout.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
@@ -347,8 +338,7 @@ check_row x check_tracking 'open: origin/main untouched' "$W" "$REMOTE" main sta
 
 # ---- PR state: MERGED --------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"MERGED"}\n' | stub_pr_view 55 0
@@ -361,8 +351,7 @@ check_row x check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" fea
 
 # ---- PR state: CLOSED --------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"CLOSED"}\n' | stub_pr_view 55 0
@@ -378,8 +367,7 @@ check_row x check_tracking 'closed: no fetch' "$W" "$REMOTE" main stale
 # because "exit 1 with nothing readable" would leave the caller no way to tell
 # this apart from the two lookup failures above.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"DRAFT"}\n' | stub_pr_view 55 0
@@ -397,8 +385,7 @@ fi
 
 # ---- the pr view itself fails ------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf 'gh: HTTP 502\n' | stub_pr_view 55 1
@@ -419,8 +406,7 @@ check_row x check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
 # consulted, so a stale answer sitting in it cannot steer the base even when
 # it disagrees with the API.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'feature\n' | stub_default_branch 0
 W="$(work_repo ladder-stale-symref "$REMOTE" main)"
 run_in "$W"
@@ -428,8 +414,7 @@ assert_row 'stale-symref-is-ignored' 0 'BASE feature\n' 1
 check_row x check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
 check_row x check_tracking 'stale symref: origin/main untouched' "$W" "$REMOTE" main stale
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo ladder-api "$REMOTE")"
 run_in "$W"
@@ -440,16 +425,14 @@ check_row x check_tracking 'api rung: origin/main fetched' "$W" "$REMOTE" main t
 # check the SUT would print `BASE ` and fetch nothing under that name -- a
 # guessed answer where the ladder is meant to give up.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_default_branch 0
 W="$(work_repo ladder-api-empty "$REMOTE")"
 run_in "$W"
 assert_row 'default-branch-api-answers-empty' 0 'STOP ask-default-branch\n' 1
 check_row x check_tracking 'api empty: no fetch' "$W" "$REMOTE" main stale
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'gh: HTTP 502\n' | stub_default_branch 1
 W="$(work_repo ladder-api-fails "$REMOTE")"
 run_in "$W"
@@ -461,8 +444,7 @@ check_row x check_tracking 'api fails: no fetch' "$W" "$REMOTE" main stale
 # two issue lookups there, and a version that only handled the count-0 path
 # would answer this one differently.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"feature","state":"MERGED"}\n' | stub_pr_view 55 0
@@ -479,15 +461,13 @@ check_row x check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main st
 # handling for it, so git's 128 propagates under `set -e` and nothing is
 # printed -- the loud direction, and the row pins that it is not `BASE nosuch`.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'nosuch\n' | stub_default_branch 0
 W="$(work_repo default-absent "$REMOTE")"
 run_in "$W"
 assert_row 'default-branch-absent-on-remote' 128 '' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 blocked_json 1 77 | stub_blocked 203 0
 prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"nosuch","state":"OPEN"}\n' | stub_pr_view 55 0

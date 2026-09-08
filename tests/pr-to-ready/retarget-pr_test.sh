@@ -142,15 +142,13 @@ NOT_A_REPO="$(git_repo_scratch not-a-repo)"
 
 # --- argument validation: nothing is read, nothing is called ----------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 cd "$NOT_A_REPO"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature
 cd "$REPO_ROOT"
 assert_row 'too-few-args' 1 '' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 cd "$NOT_A_REPO"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main extra
 cd "$REPO_ROOT"
@@ -158,8 +156,7 @@ assert_row 'too-many-args' 1 '' 0
 
 # --- the PR cannot be read --------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view_fails
 cd "$NOT_A_REPO"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
@@ -168,8 +165,7 @@ assert_row 'pr-read-failed' 0 'STOP pr-read-failed\n' 1
 
 # --- the PR points somewhere else: the full retarget path -------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 stub_edit main 0
 BARE="$(build_remote retarget clean)"
@@ -184,8 +180,7 @@ check_contains 'base-drift: the remote branch now carries the new base' \
 
 # The base does not exist on the remote, so the very first fetch fails. It
 # fails *before* any mutation: the call count proves `gh pr edit` never ran.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 BARE="$(build_remote fetchfail clean)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
@@ -198,8 +193,7 @@ check_one 'fetch-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # The merge needs the branch's own checkout, and this one is on another branch.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 BARE="$(build_remote checkoutreq clean)"
 W="$(git_repo_clone checkoutreq "$BARE" main)"
@@ -208,8 +202,7 @@ run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
 cd "$REPO_ROOT"
 assert_row 'wrong-branch-checked-out' 0 'STOP checkout-required\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 BARE="$(build_remote dirty clean)"
 W="$(git_repo_clone dirty "$BARE" feature)"
@@ -219,8 +212,7 @@ run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
 cd "$REPO_ROOT"
 assert_row 'dirty-worktree' 0 'STOP dirty-worktree\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 stub_edit main 1
 BARE="$(build_remote editfail clean)"
@@ -237,8 +229,7 @@ check_one 'retarget-failed: the remote branch did not move' \
 # working tree is left usable: the abort has to have run, or the next run
 # reports dirty-worktree forever and a person has to clean up by hand.
 # Resolution itself is out of scope (#111) and is not attempted here.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 stub_edit main 0
 BARE="$(build_remote conflict conflict)"
@@ -257,8 +248,7 @@ check_one 'merge-conflict: the remote branch did not move' \
 
 # The merge lands locally and the push does not. This is the state the next
 # row group has to resume from, and the one #170 mis-read.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 stub_edit main 0
 BARE="$(build_remote pushfail clean)"
@@ -282,8 +272,7 @@ check_contains 'push-failed: the merge did land locally' \
 # asserted from three directions: no `gh pr edit` stub is registered, so an
 # edit would be a violation; the remote branch's sha is unchanged, so no push
 # happened; and the local HEAD is unchanged with a clean tree, so no merge did.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view main
 BARE="$(build_remote bothgates merged)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
@@ -307,8 +296,7 @@ check_one 'both-gates-hold: the working tree was not touched' \
 #
 # This is the row #170 is about. Against 80376f3^ it reports BASE-OK main and
 # pushes nothing, so both this assertion and the next one fail.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view main
 BARE="$(build_remote resume clean)"
 MAIN_SHA="$(bare_sha "$BARE" main)"
@@ -322,8 +310,7 @@ check_contains 'resume: the remote branch now carries the base' \
 
 # The second gate needs the branch's remote tip, and this branch has never
 # been pushed. A missing tip is not "the base is not in it": the run stops.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view main
 BARE="$(build_remote branchfetch clean)"
 W="$(git_repo_clone branchfetch "$BARE" feature)"
@@ -336,8 +323,7 @@ assert_row 'branch-missing-on-the-remote' 0 'STOP branch-fetch-failed\n' 1
 # either verdict: the base ref resolves to a blob, so `git merge-base
 # --is-ancestor` exits 128. Reading that as either verdict would report
 # BASE-OK over an unmerged base, or push a merge nobody asked for.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view blobref
 BARE="$(build_remote blobref clean)"
 git_repo_blob_ref "$BARE" blobref 'not a commit\n'
@@ -367,8 +353,7 @@ FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone resumeseq "$BARE" feature)"
 
 # run 1: the remote refuses the push, so stage 1 lands and stage 2 does not.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view develop
 stub_edit main 0
 git_repo_deny_push "$BARE"
@@ -383,8 +368,7 @@ check_one 'resume-sequence: run 1 moved nothing on the remote' \
 # remote branch still lacks it, which is the only thing left to notice. No
 # `gh pr edit` stub: the base is already right, so an edit would be a
 # violation.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view main
 git_repo_allow_push "$BARE"
 cd "$W"

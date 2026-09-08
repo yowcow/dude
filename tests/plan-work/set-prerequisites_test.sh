@@ -98,15 +98,13 @@ assert_row() {
 
 # --- no prerequisites: the independent item ---------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_view 2 0
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD"
 assert_row independent-already 0 "#57 blocked-by count: 0 []\n" 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0 12
 stub_edit 2 0 --remove-blocked-by 12
 stub_view 3 0
@@ -115,16 +113,14 @@ assert_row independent-clears-a-stale-relation 0 "#57 blocked-by count: 0 []\n" 
 
 # --- one prerequisite -------------------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 0 --add-blocked-by 12
 stub_view 3 0 12
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
 assert_row one-prereq-added 0 "#57 blocked-by count: 1 [12 ]\n" 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0 12
 stub_view 2 0 12
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
@@ -132,16 +128,14 @@ assert_row one-prereq-already-set 0 "#57 blocked-by count: 1 [12 ]\n" 2
 
 # --- several prerequisites, and the lexical order the script depends on -----
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 0 --add-blocked-by 100 --add-blocked-by 12 --add-blocked-by 9
 stub_view 3 0 9 12 100
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12 9 100
 assert_row three-prereqs-lexical-order 0 "#57 blocked-by count: 3 [100 12 9 ]\n" 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 0 --add-blocked-by 12
 stub_view 3 0 12
@@ -150,8 +144,7 @@ assert_row duplicate-prereqs-collapse 0 "#57 blocked-by count: 1 [12 ]\n" 3
 
 # --- add and remove in the same run -----------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0 9 12
 stub_edit 2 0 --add-blocked-by 100 --remove-blocked-by 9
 stub_view 3 0 12 100
@@ -160,16 +153,14 @@ assert_row add-and-remove 0 "#57 blocked-by count: 2 [100 12 ]\n" 3
 
 # --- the read-back is what decides ------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 0 --add-blocked-by 12
 stub_view 3 0
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
 assert_row edit-reported-success-but-nothing-stuck 1 '' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0 12
 stub_view 2 0 9 12
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
@@ -177,21 +168,18 @@ assert_row read-back-carries-an-extra-relation 1 '' 2
 
 # --- a call that failed is not a set that is empty --------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 1
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
 assert_row first-view-fails 1 '' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 1 --add-blocked-by 12
 run_sut bash "$SUT" "$OWNER" "$REPO" "$CHILD" 12
 assert_row edit-fails 1 '' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_view 1 0
 stub_edit 2 0 --add-blocked-by 12
 stub_view 3 1
@@ -202,8 +190,7 @@ assert_row read-back-fails 1 '' 3
 
 while IFS='|' read -r name args; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
   read -ra argv <<<"$args"
   run_sut bash "$SUT" ${argv[@]+"${argv[@]}"}
   assert_row "$name" 1 '' 0

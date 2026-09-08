@@ -100,8 +100,7 @@ check_not_committed() {
 
 # ---- a resolved merge is committed -------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict resolved)"
 printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -126,8 +125,7 @@ fi
 # off** pushes it. The unmerged-path check cannot catch this: `git add` of a
 # marker-laden file clears the unmerged state while leaving the markers.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict markers)"
 printf '%b' "$MARKER_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -147,8 +145,7 @@ check_not_committed 'markers-left-behind-are-refused' "$W"
 # same silent failure `markers-left-behind-are-refused` covers, reached by a
 # more likely route.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict partial)"
 printf '%b' "$PARTIAL_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -156,8 +153,7 @@ run_in "$W"
 assert_row 'partial-marker-removal-is-refused' 0 'MARKERS shared.txt\n'
 check_not_committed 'partial-marker-removal-is-refused' "$W"
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict diff3)"
 printf '%b' "$DIFF3_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -174,8 +170,7 @@ check_not_committed 'diff3-ancestor-marker-is-refused' "$W"
 # the guard. The conflicted set -- read from MERGE_MSG -- is where a forgotten
 # marker can actually be.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict scoped base-marker.txt)"
 printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -190,8 +185,7 @@ fi
 
 # ---- unmerged paths are refused ----------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict unresolved)"
 run_in "$W"
 assert_row 'unresolved-paths-are-refused' 0 'UNRESOLVED shared.txt\n'
@@ -203,8 +197,7 @@ check_not_committed 'unresolved-paths-are-refused' "$W"
 # (measured), so the scan has to tolerate a missing file rather than fail on
 # it.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict deleted)"
 git -C "$W" rm -q -f shared.txt
 run_in "$W"
@@ -219,8 +212,7 @@ assert_row 'a-conflict-resolved-by-deletion-is-committed' 0 "COMMITTED ${MERGE_S
 # apart from the script itself being broken, and re-running blindly is the
 # wrong move in one case and the right one in the other.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict commithook)"
 printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
@@ -233,8 +225,7 @@ check_not_committed 'commit-hook-rejects-the-resolution' "$W"
 
 # ---- no merge in progress ----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(git_repo_scratch nomerge)"
 git_repo_init "$W" task
 git_repo_commit "$W" f.txt 'x\n' 'c1'
@@ -243,8 +234,7 @@ assert_row 'no-merge-in-progress' 0 'STOP no-merge-in-progress\n'
 
 # ---- argument validation -----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_conflict argsextra)"
 printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
