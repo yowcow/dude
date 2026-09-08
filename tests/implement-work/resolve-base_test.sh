@@ -97,7 +97,7 @@ stale_ref() {
 }
 
 # check_tracking <label> <work> <bare> <branch> <tip|stale|absent>
-# Called only indirectly, through check_row's positional dispatch.
+# Called only indirectly, through tally.
 # shellcheck disable=SC2317
 check_tracking() {
   local got want
@@ -166,13 +166,6 @@ prs_json() {
   printf '{"closedByPullRequestsReferences":[%s]}\n' "$out"
 }
 
-# check_row <label> -- fold an extra assertion into the row count
-check_row() {
-  total=$((total + 1))
-  if ! "${@:2}"; then
-    failed=$((failed + 1))
-  fi
-}
 
 REMOTE="$(build_remote base)"
 
@@ -186,7 +179,7 @@ row_start
 W="$(work_repo args-extra "$REMOTE" main)"
 run_in "$W" 203 extra
 assert_row 'too-many-arguments' 1 '' 0
-check_row x check_tracking 'too-many-arguments: origin/main' "$W" "$REMOTE" main stale
+tally check_tracking 'too-many-arguments: origin/main' "$W" "$REMOTE" main stale
 
 total=$((total + 1))
 if ! grep -q 'Usage:' "$SUT_STDERR"; then
@@ -210,8 +203,8 @@ printf 'main\n' | stub_default_branch 0
 W="$(work_repo no-arg "$REMOTE" main)"
 run_in "$W"
 assert_row 'no-argument-uses-default-branch' 0 'BASE main\n' 1
-check_row x check_tracking 'no-argument: origin/main fetched' "$W" "$REMOTE" main tip
-check_row x check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE" feature stale
+tally check_tracking 'no-argument: origin/main fetched' "$W" "$REMOTE" main tip
+tally check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE" feature stale
 
 # ---- blockedBy: 0 -------------------------------------------------------
 
@@ -221,7 +214,7 @@ printf 'main\n' | stub_default_branch 0
 W="$(work_repo blocked-none "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'no-prerequisite-uses-default-branch' 0 'BASE main\n' 2
-check_row x check_tracking 'no-prerequisite: origin/main fetched' "$W" "$REMOTE" main tip
+tally check_tracking 'no-prerequisite: origin/main fetched' "$W" "$REMOTE" main tip
 
 # ---- blockedBy: 2 or more ----------------------------------------------
 #
@@ -243,7 +236,7 @@ printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo blocked-two "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'two-prerequisites-stop' 0 'STOP ask-multiple-prereqs\n' 1
-check_row x check_tracking 'two-prerequisites: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'two-prerequisites: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the blockedBy lookup itself fails ---------------------------------
 #
@@ -257,7 +250,7 @@ printf 'gh: HTTP 502\n' | stub_blocked 203 1
 W="$(work_repo blocked-fails "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'blockedBy-lookup-fails-loudly' 1 '' 1
-check_row x check_tracking 'blockedBy-lookup-fails: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'blockedBy-lookup-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the prerequisite has no PR ----------------------------------------
 
@@ -267,7 +260,7 @@ prs_json | stub_prereq_prs 77 0
 W="$(work_repo prs-none "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-has-no-pr' 0 'STOP not-implemented\n' 2
-check_row x check_tracking 'prerequisite-has-no-pr: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'prerequisite-has-no-pr: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the prerequisite has two PRs --------------------------------------
 #
@@ -284,7 +277,7 @@ printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo prs-two "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
-check_row x check_tracking 'prerequisite-has-several-prs: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'prerequisite-has-several-prs: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the PR lookup itself fails ----------------------------------------
 
@@ -294,7 +287,7 @@ printf 'gh: HTTP 502\n' | stub_prereq_prs 77 1
 W="$(work_repo prs-fails "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-pr-lookup-fails-loudly' 1 '' 2
-check_row x check_tracking 'prerequisite-pr-lookup-fails: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'prerequisite-pr-lookup-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- PR state: OPEN ----------------------------------------------------
 #
@@ -310,8 +303,8 @@ printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo state-open "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-open-uses-its-head' 0 'BASE feature\n' 3
-check_row x check_tracking 'open: origin/feature fetched' "$W" "$REMOTE" feature tip
-check_row x check_tracking 'open: origin/main untouched' "$W" "$REMOTE" main stale
+tally check_tracking 'open: origin/feature fetched' "$W" "$REMOTE" feature tip
+tally check_tracking 'open: origin/main untouched' "$W" "$REMOTE" main stale
 
 # ---- PR state: MERGED --------------------------------------------------
 
@@ -323,8 +316,8 @@ printf 'main\n' | stub_default_branch 0
 W="$(work_repo state-merged "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-merged-uses-the-default-branch' 0 'BASE main\n' 4
-check_row x check_tracking 'merged: origin/main fetched' "$W" "$REMOTE" main tip
-check_row x check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" feature stale
+tally check_tracking 'merged: origin/main fetched' "$W" "$REMOTE" main tip
+tally check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" feature stale
 
 # ---- PR state: CLOSED --------------------------------------------------
 
@@ -335,7 +328,7 @@ printf '{"headRefName":"feature","state":"CLOSED"}\n' | stub_pr_view 55 0
 W="$(work_repo state-closed "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 3
-check_row x check_tracking 'closed: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'closed: no fetch' "$W" "$REMOTE" main stale
 
 # ---- PR state: something else -----------------------------------------
 #
@@ -351,7 +344,7 @@ printf '{"headRefName":"feature","state":"DRAFT"}\n' | stub_pr_view 55 0
 W="$(work_repo state-unknown "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'prerequisite-state-unrecognised' 1 '' 3
-check_row x check_tracking 'unrecognised: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'unrecognised: no fetch' "$W" "$REMOTE" main stale
 
 total=$((total + 1))
 if ! grep -q "unexpected PR state 'DRAFT' for PR 55" "$SUT_STDERR"; then
@@ -369,7 +362,7 @@ printf 'gh: HTTP 502\n' | stub_pr_view 55 1
 W="$(work_repo pr-view-fails "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'pr-view-fails-loudly' 1 '' 3
-check_row x check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the default-branch ladder ----------------------------------------
 #
@@ -388,15 +381,15 @@ printf 'feature\n' | stub_default_branch 0
 W="$(work_repo ladder-stale-symref "$REMOTE" main)"
 run_in "$W"
 assert_row 'stale-symref-is-ignored' 0 'BASE feature\n' 1
-check_row x check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
-check_row x check_tracking 'stale symref: origin/main untouched' "$W" "$REMOTE" main stale
+tally check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
+tally check_tracking 'stale symref: origin/main untouched' "$W" "$REMOTE" main stale
 
 row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo ladder-api "$REMOTE")"
 run_in "$W"
 assert_row 'default-branch-from-api' 0 'BASE main\n' 1
-check_row x check_tracking 'api rung: origin/main fetched' "$W" "$REMOTE" main tip
+tally check_tracking 'api rung: origin/main fetched' "$W" "$REMOTE" main tip
 
 # An API answer that is empty is not a branch name. Without the non-empty
 # check the SUT would print `BASE ` and fetch nothing under that name -- a
@@ -407,14 +400,14 @@ row_start
 W="$(work_repo ladder-api-empty "$REMOTE")"
 run_in "$W"
 assert_row 'default-branch-api-answers-empty' 0 'STOP ask-default-branch\n' 1
-check_row x check_tracking 'api empty: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'api empty: no fetch' "$W" "$REMOTE" main stale
 
 row_start
 printf 'gh: HTTP 502\n' | stub_default_branch 1
 W="$(work_repo ladder-api-fails "$REMOTE")"
 run_in "$W"
 assert_row 'default-branch-lookup-fails' 0 'STOP ask-default-branch\n' 1
-check_row x check_tracking 'api fails: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'api fails: no fetch' "$W" "$REMOTE" main stale
 
 # The MERGED path resolves the default branch through the same ladder, so it
 # reaches the same STOP. The row exists because that ladder call sits behind
@@ -429,7 +422,7 @@ printf 'gh: HTTP 502\n' | stub_default_branch 1
 W="$(work_repo merged-no-default "$REMOTE")"
 run_in "$W" 203
 assert_row 'merged-with-no-resolvable-default' 0 'STOP ask-default-branch\n' 4
-check_row x check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main stale
+tally check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main stale
 
 # ---- fetches that fail -------------------------------------------------
 #
@@ -451,6 +444,6 @@ printf '{"headRefName":"nosuch","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo head-absent "$REMOTE" main)"
 run_in "$W" 203
 assert_row 'open-head-absent-on-remote' 128 '' 3
-check_row x check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
+tally check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
 
 harness_exit "$failed" "$total"
