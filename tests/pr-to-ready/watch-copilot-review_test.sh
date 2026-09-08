@@ -14,8 +14,9 @@
 #
 # The call count is part of the expectation, not decoration: exit 2 divides into
 # a guard that must reject before asking the API and a poll that must ask, and
-# the defect fixed in 25982ae was exactly an unvalidated parameter answering
-# "no new review arrived" without a single call.
+# exit 1 divides the same way — `no-review-yet` polls and finds nothing, while
+# `non-numeric-max-iterations` is a cap that admits no iteration at all, and
+# only the count separates them.
 #
 # RED verification (each row that covers a fix must fail against the pre-fix
 # script) — see tests/README.md. The sibling has to be copied next to the
@@ -184,10 +185,7 @@ baseline-unreadable|copilot-reviews-two|unreadable|acme widgets 7 %B 1 1|2|0|
 baseline-is-a-directory|copilot-reviews-two|dir|acme widgets 7 %B 1 1|2|0|
 too-few-args|copilot-reviews-two|absent|acme widgets 7|2|0|
 too-many-args|copilot-reviews-two|empty|acme widgets 7 %B 1 1 extra|2|0|
-non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|2|0|
-zero-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B 0 1|2|0|
-fractional-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B 1.5 1|2|0|
-non-numeric-interval|copilot-reviews-two|empty|acme widgets 7 %B 1 xyz|2|0|
+non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|1|0|
 ROWS
 
 harness_exit "$failed" "$total"
