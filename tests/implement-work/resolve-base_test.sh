@@ -97,8 +97,7 @@ stale_ref() {
 }
 
 # check_tracking <label> <work> <bare> <branch> <tip|stale|absent>
-# Called only indirectly, through tally.
-# shellcheck disable=SC2317
+# shellcheck disable=SC2317 # invoked indirectly, as `tally check_tracking ...`
 check_tracking() {
   local got want
   got="$(git -C "$2" rev-parse --verify -q "refs/remotes/origin/$4" || printf 'absent')"
