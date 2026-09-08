@@ -67,6 +67,13 @@ Each row typically does:
    needs an assertion `assert_row` does not make, or a different comparison:
    `watch-claude-review_test.sh` compares stdout against a file and keeps a
    local `assert_row` whose third argument is that file's path.
+5. `tally <cmd> <args...>` — for a row that needs an assertion beyond
+   `assert_row`'s four. It advances `total` once and `failed` once if the
+   check fails, so an extra assertion is counted exactly like the row's
+   `assert_row`. The check is passed as a command because the checks are not
+   all `check_eq`; a check reached only through `tally` is unreachable as far
+   as ShellCheck can tell, so its definition needs a
+   `# shellcheck disable=SC2317` note saying so.
 
 ## The `gh_stub_response` / `gh_stub_raw_response` contract
 

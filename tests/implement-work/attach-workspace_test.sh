@@ -103,15 +103,6 @@ check_stderr_has() {
   check_eq "$1" 'yes' "$got"
 }
 
-# tally <label-and-check...> -- run one check and fold its verdict into the
-# counters, so a row's extra assertions are counted like its assert_row.
-tally() {
-  total=$((total + 1))
-  if ! "$@"; then
-    failed=$((failed + 1))
-  fi
-}
-
 # ---- REUSE: a worktree already carries the branch ----------------------
 #
 # The resumption case the ladder in implement-work's SKILL.md is built on. The

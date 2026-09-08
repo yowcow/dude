@@ -183,6 +183,24 @@ run_in() {
   cd "$REPO_ROOT" || exit 1
 }
 
+# tally <cmd> <args...>
+# Runs one check and folds its verdict into the caller's counters, so a row's
+# extra assertions are counted exactly like its assert_row: `total` advances
+# once per call, `failed` once if the check fails. That one-per-call property
+# is what makes an `ok N/N` count comparable across a refactor.
+#
+# It takes the check as a command rather than as bytes to compare, because the
+# checks are not all check_eq: check_absent, check_head, check_unmerged and the
+# rest each do their own comparison and print their own FAIL line. A check
+# reached only through here is invisible to ShellCheck's reachability analysis,
+# so its definition carries a `# shellcheck disable=SC2317` note.
+tally() {
+  total=$((total + 1))
+  if ! "$@"; then
+    failed=$((failed + 1))
+  fi
+}
+
 check_eq() {
   local label="$1" want="$2" got="$3"
   if [ "$want" = "$got" ]; then
