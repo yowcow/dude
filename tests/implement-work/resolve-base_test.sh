@@ -166,7 +166,6 @@ prs_json() {
   printf '{"closedByPullRequestsReferences":[%s]}\n' "$out"
 }
 
-
 REMOTE="$(build_remote base)"
 
 # ---- arguments ----------------------------------------------------------
