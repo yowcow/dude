@@ -216,9 +216,10 @@ plugin namespace the host adds.
 
 ### What tier a marked worker runs at
 
-A marked worker lands on the runtime's subagent default rather than the run's
-own tier, which only takes over when no default is set — so raising the run's
-own tier does not reach the worker where the default sits below it. On Claude
+A marked worker dispatched without a model of its own lands on the runtime's
+subagent default rather than the run's own tier, which only takes over when no
+default is set — so raising the run's own tier does not reach the worker where
+the default sits below it. On Claude
 Code the default is the environment variable `CLAUDE_CODE_SUBAGENT_MODEL`, not
 a `settings.json` key; set it to the highest tier you have and leave it there
 regardless of the run's own tier, and verify against the environment
