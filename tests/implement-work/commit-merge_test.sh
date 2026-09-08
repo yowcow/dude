@@ -74,19 +74,6 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" 0 "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # check_not_committed <name> <work-dir> -- the merge is still in progress and
 # HEAD has not moved.
 check_not_committed() {
@@ -106,7 +93,7 @@ printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
-assert_row 'a-resolved-merge-is-committed' 0 "COMMITTED ${MERGE_SHA}\n"
+assert_row 'a-resolved-merge-is-committed' 0 "COMMITTED ${MERGE_SHA}\n" 0
 total=$((total + 1))
 if ! check_eq 'a-resolved-merge-is-committed: two parents' 3 \
   "$(git -C "$W" rev-list --parents -1 HEAD | wc -w | tr -d ' ')"; then
@@ -130,7 +117,7 @@ W="$(build_conflict markers)"
 printf '%b' "$MARKER_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W"
-assert_row 'markers-left-behind-are-refused' 0 'MARKERS shared.txt\n'
+assert_row 'markers-left-behind-are-refused' 0 'MARKERS shared.txt\n' 0
 check_not_committed 'markers-left-behind-are-refused' "$W"
 
 # ---- a half-removed marker set is refused too ---------------------------
@@ -150,7 +137,7 @@ W="$(build_conflict partial)"
 printf '%b' "$PARTIAL_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W"
-assert_row 'partial-marker-removal-is-refused' 0 'MARKERS shared.txt\n'
+assert_row 'partial-marker-removal-is-refused' 0 'MARKERS shared.txt\n' 0
 check_not_committed 'partial-marker-removal-is-refused' "$W"
 
 row_start
@@ -158,7 +145,7 @@ W="$(build_conflict diff3)"
 printf '%b' "$DIFF3_BODY" >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W"
-assert_row 'diff3-ancestor-marker-is-refused' 0 'MARKERS shared.txt\n'
+assert_row 'diff3-ancestor-marker-is-refused' 0 'MARKERS shared.txt\n' 0
 check_not_committed 'diff3-ancestor-marker-is-refused' "$W"
 
 # ---- a marker outside the conflicted set is not the scan's business ----
@@ -176,7 +163,7 @@ printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
-assert_row 'markers-outside-the-conflict-are-ignored' 0 "COMMITTED ${MERGE_SHA}\n"
+assert_row 'markers-outside-the-conflict-are-ignored' 0 "COMMITTED ${MERGE_SHA}\n" 0
 total=$((total + 1))
 if ! check_eq 'markers-outside-the-conflict-are-ignored: the clean file kept its text' 2 \
   "$(grep -c -e '^<<<<<<<' -e '^>>>>>>>' "${W}/base-marker.txt")"; then
@@ -188,7 +175,7 @@ fi
 row_start
 W="$(build_conflict unresolved)"
 run_in "$W"
-assert_row 'unresolved-paths-are-refused' 0 'UNRESOLVED shared.txt\n'
+assert_row 'unresolved-paths-are-refused' 0 'UNRESOLVED shared.txt\n' 0
 check_not_committed 'unresolved-paths-are-refused' "$W"
 
 # ---- a conflict resolved by deleting the file ---------------------------
@@ -202,7 +189,7 @@ W="$(build_conflict deleted)"
 git -C "$W" rm -q -f shared.txt
 run_in "$W"
 MERGE_SHA="$(git -C "$W" rev-parse HEAD)"
-assert_row 'a-conflict-resolved-by-deletion-is-committed' 0 "COMMITTED ${MERGE_SHA}\n"
+assert_row 'a-conflict-resolved-by-deletion-is-committed' 0 "COMMITTED ${MERGE_SHA}\n" 0
 
 # ---- the commit itself is refused --------------------------------------
 #
@@ -220,7 +207,7 @@ mkdir -p "${W}/.git/hooks"
 printf '#!/bin/sh\nexit 1\n' >"${W}/.git/hooks/commit-msg"
 chmod +x "${W}/.git/hooks/commit-msg"
 run_in "$W"
-assert_row 'commit-hook-rejects-the-resolution' 0 'STOP commit-failed\n'
+assert_row 'commit-hook-rejects-the-resolution' 0 'STOP commit-failed\n' 0
 check_not_committed 'commit-hook-rejects-the-resolution' "$W"
 
 # ---- no merge in progress ----------------------------------------------
@@ -230,7 +217,7 @@ W="$(git_repo_scratch nomerge)"
 git_repo_init "$W" task
 git_repo_commit "$W" f.txt 'x\n' 'c1'
 run_in "$W"
-assert_row 'no-merge-in-progress' 0 'STOP no-merge-in-progress\n'
+assert_row 'no-merge-in-progress' 0 'STOP no-merge-in-progress\n' 0
 
 # ---- argument validation -----------------------------------------------
 
@@ -239,7 +226,7 @@ W="$(build_conflict argsextra)"
 printf 'resolved by hand\n' >"${W}/shared.txt"
 git -C "$W" add shared.txt
 run_in "$W" extra
-assert_row 'any-argument-is-refused' 1 ''
+assert_row 'any-argument-is-refused' 1 '' 0
 check_not_committed 'any-argument-is-refused' "$W"
 
 harness_exit "$failed" "$total"

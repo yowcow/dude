@@ -244,6 +244,34 @@ check_no_violations() {
   return 1
 }
 
+# assert_row <name> <want-exit> <want-stdout> <want-gh-calls>
+# One row's whole verdict: the exit status, the stdout bytes, the number of `gh`
+# calls, and that no call reached an argv with no case stubbed. On any mismatch it
+# advances the caller's `failed` and prints the head of stderr. `<want-stdout>`
+# is a printf '%b' format string, as check_bytes takes.
+#
+# The fourth argument is required, deliberately not `${4:-}`. A defaulted count
+# turns a dropped argument into a silently skipped assertion: a file whose rows
+# all expect zero `gh` calls would keep reporting green after the script under
+# test started calling `gh`. Under the `set -u` every test file carries, a
+# three-argument call aborts the file instead — the loud failure. The default
+# was dead flexibility besides: every call site passed a fourth argument.
+#
+# Not every row can use this. watch-claude-review_test.sh compares stdout
+# against a file rather than inline bytes, so it keeps a local definition whose
+# third argument means something else; see tests/README.md.
+assert_row() {
+  local name="$1" want_exit="$2" want_out="$3" want_calls="$4" fails=0
+  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
+  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
+  if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
+  if ! check_no_violations "${name}: argv"; then fails=1; fi
+  if [ "$fails" -ne 0 ]; then
+    failed=$((failed + 1))
+    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
+  fi
+}
+
 harness_exit() {
   local failed="$1" total="$2"
   if [ "$failed" -eq 0 ]; then

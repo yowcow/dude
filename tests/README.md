@@ -51,8 +51,15 @@ Each row typically does:
 3. `run_sut <cmd...>` — runs the script under test with stdin `/dev/null`,
    capturing stdout/stderr to `$SUT_STDOUT`/`$SUT_STDERR` and status to
    `$SUT_STATUS`.
-4. Assertions: `check_eq`, `check_bytes`, `check_no_violations`, `check_gh_stdin`,
-   plus a check on `$SUT_STATUS`.
+4. `assert_row <name> <want-exit> <want-stdout> <want-gh-calls>` — the row's
+   whole verdict in one call: exit status, stdout bytes, `gh` call count, and no
+   unstubbed argv, advancing `failed` on any mismatch. All four arguments are
+   required: a defaulted call count would turn a dropped argument into a
+   silently skipped assertion. Reach for the individual checks — `check_eq`,
+   `check_bytes`, `check_no_violations`, `check_gh_stdin` — for a row that
+   needs an assertion `assert_row` does not make, or a different comparison:
+   `watch-claude-review_test.sh` compares stdout against a file and keeps a
+   local `assert_row` whose third argument is that file's path.
 
 ## The `gh_stub_response` / `gh_stub_raw_response` contract
 

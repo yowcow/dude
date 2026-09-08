@@ -53,25 +53,12 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" 0 "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # ---- a clean working tree ----------------------------------------------
 
 row_start
 W="$(build_repo clean)"
 run_in "$W"
-assert_row 'clean-tree' 0 ''
+assert_row 'clean-tree' 0 '' 0
 
 # ---- a modified tracked file -------------------------------------------
 #
@@ -84,7 +71,7 @@ row_start
 W="$(build_repo modified)"
 printf 'edited\n' >"${W}/tracked.txt"
 run_in "$W"
-assert_row 'modified-tracked-file' 1 ' M tracked.txt\n'
+assert_row 'modified-tracked-file' 1 ' M tracked.txt\n' 0
 
 # ---- an untracked file -------------------------------------------------
 
@@ -92,7 +79,7 @@ row_start
 W="$(build_repo untracked)"
 printf 'new\n' >"${W}/new.txt"
 run_in "$W"
-assert_row 'untracked-file' 1 '?? new.txt\n'
+assert_row 'untracked-file' 1 '?? new.txt\n' 0
 
 # ---- staged only, nothing left in the working tree ---------------------
 #
@@ -106,20 +93,20 @@ W="$(build_repo stagedmod)"
 printf 'edited\n' >"${W}/tracked.txt"
 git -C "$W" add -- tracked.txt
 run_in "$W"
-assert_row 'staged-modification' 1 'M  tracked.txt\n'
+assert_row 'staged-modification' 1 'M  tracked.txt\n' 0
 
 row_start
 W="$(build_repo stagedadd)"
 printf 'new\n' >"${W}/added.txt"
 git -C "$W" add -- added.txt
 run_in "$W"
-assert_row 'staged-addition' 1 'A  added.txt\n'
+assert_row 'staged-addition' 1 'A  added.txt\n' 0
 
 # ---- argument validation -----------------------------------------------
 
 row_start
 W="$(build_repo argsone)"
 run_in "$W" extra
-assert_row 'one-argument' 1 ''
+assert_row 'one-argument' 1 '' 0
 
 harness_exit "$failed" "$total"

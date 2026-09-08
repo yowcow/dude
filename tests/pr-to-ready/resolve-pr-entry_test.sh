@@ -102,43 +102,29 @@ run_sut_in() {
   cd "$prev" || exit 1
 }
 
-# assert_row <name> <want-exit> <want-stdout> [<want-gh-calls>]
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" want_calls="${4:-}" fails=0
-  total=$((total + 1))
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if [ -n "$want_calls" ] && ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # --- 1/2. a bare number resolves against the current repository -----------
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'bare number, open draft' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
 
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'bare number, open ready' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=false\n' 1
 
 # --- 3/4/5. the three URL spellings are one reference ---------------------
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'url' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
 
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12/files
 assert_row 'url with trailing path' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
 
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" github.com/acme/widgets/pull/12
 assert_row 'url with no scheme' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
@@ -151,13 +137,13 @@ assert_row 'url with no scheme' 0 'PR 12 branch=feature base=main repo=acme/widg
 # `other/elsewhere`'s origin. Without the stub, a guardless script would only
 # reach an unstubbed call and answer `STOP pr-lookup-failed`, which proves
 # nothing about the guard.
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$ELSEWHERE" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'url naming another repository' 0 'STOP wrong-checkout\n' 0
 
 # --- 7. a directory with no origin is not a checkout of anything ----------
-stub_dir_new
+row_start
 run_sut_in "$NOREMOTE" bash "$SUT" 12
 assert_row 'no origin remote' 0 'STOP wrong-checkout\n' 0
 
@@ -166,7 +152,7 @@ assert_row 'no origin remote' 0 'STOP wrong-checkout\n' 0
 # only `--push` reports the repository the fixes would land in. Stubbed and
 # never called for the same reason row 6 is — drop the push comparison and this
 # row answers `PR 12 branch=feature …` with one gh call.
-stub_dir_new
+row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$PUSHAWAY" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'pushurl naming another repository' 0 'STOP wrong-checkout\n' 0
@@ -174,24 +160,24 @@ assert_row 'pushurl naming another repository' 0 'STOP wrong-checkout\n' 0
 # --- 9. a head branch living in a fork is not on this origin at all -------
 # The origin comparison above cannot see this: the reference names the base
 # repository, which is exactly the repository this checkout is.
-stub_dir_new
+row_start
 pr_body 12 main main OPEN false true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'cross-fork head' 0 'STOP cross-fork\n' 1
 
 # --- 10/11. a PR that is not open is not something this flow can drive -----
-stub_dir_new
+row_start
 pr_body 12 feature main MERGED false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'merged' 0 'STOP pr-not-open\n' 1
 
-stub_dir_new
+row_start
 pr_body 12 feature main CLOSED false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'closed' 0 'STOP pr-not-open\n' 1
 
 # --- 12. NOT_FOUND on the pullRequest node -------------------------------
-stub_dir_new
+row_start
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"message":"Could not resolve to a PullRequest with the number of 12."}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
@@ -200,41 +186,41 @@ assert_row 'no such pr' 0 'STOP no-pr\n' 1
 # --- 13. NOT_FOUND on the repository node reaches the same answer ---------
 # The repository was renamed or deleted since this clone: origin still says
 # acme/widgets, so the guard passes and GitHub is the one that says no.
-stub_dir_new
+row_start
 printf '%s\n' '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"message":"Could not resolve to a Repository with the name '"'"'acme/widgets'"'"'."}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'no such repository' 0 'STOP no-pr\n' 1
 
 # --- 14. any other GraphQL error is "couldn't tell", not "no PR" ----------
-stub_dir_new
+row_start
 printf '%s\n' '{"errors":[{"type":"RATE_LIMITED","message":"API rate limit exceeded"}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'rate limited' 0 'STOP pr-lookup-failed\n' 1
 
 # --- 15. a transport failure prints nothing at all -----------------------
-stub_dir_new
+row_start
 printf '' | stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'transport failure' 0 'STOP pr-lookup-failed\n' 1
 
 # --- 16. exit 0 with a null node, no errors array ------------------------
-stub_dir_new
+row_start
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}}}' | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'null node without errors' 0 'STOP no-pr\n' 1
 
 # --- 17/18/19. usage errors are exits, not STOP lines --------------------
-stub_dir_new
+row_start
 run_sut_in "$WIDGETS" bash "$SUT"
 assert_row 'no argument' 1 '' 0
 
-stub_dir_new
+row_start
 run_sut_in "$WIDGETS" bash "$SUT" 12 extra
 assert_row 'two arguments' 1 '' 0
 
-stub_dir_new
+row_start
 run_sut_in "$WIDGETS" bash "$SUT" 'not-a-reference'
 assert_row 'unparseable reference' 1 '' 0
 

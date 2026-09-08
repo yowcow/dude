@@ -80,19 +80,6 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" 0 "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # ---- no branch for this issue ------------------------------------------
 #
 # The decoys are what make an empty answer mean something: `199-other` and
@@ -103,7 +90,7 @@ row_start
 W="$(build_case nomatch 199-other)"
 push_remote_only "$W" 2011-later
 run_in "$W" 201
-assert_row 'no-match' 0 ''
+assert_row 'no-match' 0 '' 0
 
 # ---- local only --------------------------------------------------------
 #
@@ -114,7 +101,7 @@ assert_row 'no-match' 0 ''
 row_start
 W="$(build_case localonly 201-alpha)"
 run_in "$W" 201
-assert_row 'local-only' 0 '201-alpha\n'
+assert_row 'local-only' 0 '201-alpha\n' 0
 
 # ---- remote only -------------------------------------------------------
 #
@@ -125,7 +112,7 @@ row_start
 W="$(build_case remoteonly)"
 push_remote_only "$W" 201-beta
 run_in "$W" 201
-assert_row 'remote-only' 0 '201-beta\n'
+assert_row 'remote-only' 0 '201-beta\n' 0
 
 # ---- on both sides, deduplicated ---------------------------------------
 
@@ -133,7 +120,7 @@ row_start
 W="$(build_case both 201-gamma)"
 git_repo_push "$W" origin 201-gamma
 run_in "$W" 201
-assert_row 'both-sides-deduplicated' 0 '201-gamma\n'
+assert_row 'both-sides-deduplicated' 0 '201-gamma\n' 0
 
 # ---- more than one branch for the issue ---------------------------------
 #
@@ -145,7 +132,7 @@ W="$(build_case multi 201-a 201-c)"
 push_remote_only "$W" 201-b
 git_repo_push "$W" origin 201-c
 run_in "$W" 201
-assert_row 'multiple-matches' 0 '201-a\n201-b\n201-c\n'
+assert_row 'multiple-matches' 0 '201-a\n201-b\n201-c\n' 0
 
 # ---- a non-numeric argument --------------------------------------------
 #
@@ -157,7 +144,7 @@ assert_row 'multiple-matches' 0 '201-a\n201-b\n201-c\n'
 row_start
 W="$(build_case nonnumeric foo-x)"
 run_in "$W" foo
-assert_row 'non-numeric-argument' 1 ''
+assert_row 'non-numeric-argument' 1 '' 0
 
 # ---- ls-remote itself failed -------------------------------------------
 #
@@ -172,7 +159,7 @@ row_start
 W="$(build_case lsremotefail 201-alpha)"
 git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/absent.git"
 run_in "$W" 201
-assert_row 'ls-remote-itself-failed' 128 ''
+assert_row 'ls-remote-itself-failed' 128 '' 0
 total=$((total + 1))
 if ! check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
   "$(grep -q 'git ls-remote failed' "$SUT_STDERR" && echo yes || echo no)"; then
@@ -184,11 +171,11 @@ fi
 row_start
 W="$(build_case argsnone)"
 run_in "$W"
-assert_row 'no-arguments' 1 ''
+assert_row 'no-arguments' 1 '' 0
 
 row_start
 W="$(build_case argstwo)"
 run_in "$W" 201 extra
-assert_row 'two-arguments' 1 ''
+assert_row 'two-arguments' 1 '' 0
 
 harness_exit "$failed" "$total"
