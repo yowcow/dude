@@ -43,16 +43,6 @@ build_repo() {
   printf '%s\n' "$w"
 }
 
-# run_in <work-dir> <argv...> -- the SUT reads cwd's repository, so every row
-# runs from inside its own repository and returns to the repository root.
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # ---- a clean working tree ----------------------------------------------
 
 row_start

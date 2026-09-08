@@ -104,14 +104,6 @@ stub_pr_list() {
   gh_stub_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_JQ"
 }
 
-# run_in <work-dir> <branch> -- the SUT reads cwd's origin, so every row runs
-# from inside its own work repository and returns to the repository root.
-run_in() {
-  cd "$1"
-  run_sut bash "$SUT" "$2"
-  cd "$REPO_ROOT"
-}
-
 # `feature` records nothing; `main` records nothing either.
 REMOTE_PLAIN="$(build_remote plain - -)"
 # `main`'s single commit carries a trailer that the task branch merely

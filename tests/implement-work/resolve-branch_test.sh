@@ -72,14 +72,6 @@ push_remote_only() {
   git -C "$1" branch -q -D "tmp-$2"
 }
 
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # ---- no branch for this issue ------------------------------------------
 #
 # The decoys are what make an empty answer mean something: `199-other` and

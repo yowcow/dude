@@ -65,15 +65,6 @@ build_conflict() {
   printf '%s\n' "$w"
 }
 
-# run_in <work-dir> <argv...>
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # check_not_committed <name> <work-dir> -- the merge is still in progress and
 # HEAD has not moved.
 check_not_committed() {

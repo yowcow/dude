@@ -197,17 +197,6 @@ assert_row() {
   fi
 }
 
-# run_in <dir> <argv...> -- run the script under test with <dir> as cwd, then
-# restore it. A cd that fails would run the row against the wrong repository, so
-# it stops the file instead.
-run_in() {
-  local dir="$1"
-  shift
-  cd "$dir" || exit 1
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT" || exit 1
-}
-
 # The deep fixture has to carry the target run for the deep row to mean
 # anything; a fixture that lost it would make the row pass for the wrong reason.
 if [ "$(count_run "$DEEP")" != 1 ]; then

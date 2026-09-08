@@ -166,16 +166,6 @@ prs_json() {
   printf '{"closedByPullRequestsReferences":[%s]}\n' "$out"
 }
 
-# run_in <work> <argv...> -- the SUT reads cwd's repository, so every row runs
-# from inside its own work repository and returns to the repository root.
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # check_row <label> -- fold an extra assertion into the row count
 check_row() {
   total=$((total + 1))

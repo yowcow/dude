@@ -206,18 +206,6 @@ remote_has_branch() {
   fi
 }
 
-# run_in <work-dir> <args...> -- every row runs from inside its own work repo,
-# never from the scripts directory: the SUT reads cwd's origin, and it finds
-# its sibling through dirname "${BASH_SOURCE[0]}", so a row run from the
-# scripts directory would pass even against a cwd-relative sibling call.
-run_in() {
-  local dir="$1"
-  shift
-  cd "$dir"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # ---- step 1: is the branch on the remote at all? -------------------------
 #
 # Step 1 runs before anything else -- before any PR lookup and before any base

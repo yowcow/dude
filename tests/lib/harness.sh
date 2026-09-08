@@ -160,6 +160,29 @@ run_sut() {
   "$@" >"${SUT_STDOUT}" 2>"${SUT_STDERR}" </dev/null || SUT_STATUS=$?
 }
 
+# run_in <work-dir> <argv...>
+# Runs the script under test with <work-dir> as cwd, then returns to the
+# repository root. Almost every script under test reads cwd's repository --
+# its origin, its HEAD, its trailers -- so a row has to run from inside its
+# own fixture repository rather than from the scripts directory. A row run
+# from the wrong directory can pass for the wrong reason: a script that
+# reached its sibling through a cwd-relative path instead of
+# dirname "${BASH_SOURCE[0]}" would still be found.
+#
+# Both cd calls stop the file rather than continue. A failed cd would leave
+# the row running against whichever repository the previous row left behind,
+# and the verdict would be about the wrong tree.
+#
+# $SUT is set by the test file that sourced this, not here: each file names
+# its own script under test.
+run_in() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "$SUT" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
 check_eq() {
   local label="$1" want="$2" got="$3"
   if [ "$want" = "$got" ]; then
