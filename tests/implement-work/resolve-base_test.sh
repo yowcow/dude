@@ -19,7 +19,7 @@
 # "fetched the default branch" from "fetched the prerequisite's head" in the
 # two rows that could otherwise be told apart only by their stdout.
 #
-# Limitation: `resolve_default_branch`'s gh call is stubbed with
+# Limitation: the shared resolve-default-branch.sh's gh call is stubbed with
 # gh_stub_response, so the `--jq .defaultBranchRef.name` expression itself is
 # not executed. The two `gh issue view` calls carry no --jq, so the SUT's own
 # jq -- the counting this file's `two-prerequisites` and `several-prs` rows
@@ -31,7 +31,14 @@
 #   - blockedBy counted -> checked for emptiness: two-prerequisites-stop
 #   - closedByPullRequestsReferences counted with `length` -> checked for
 #     emptiness: prerequisite-has-several-prs
-#   - the non-empty check dropped: default-branch-api-answers-empty
+#   - the emptiness check in the shared resolve-default-branch.sh dropped:
+#     default-branch-api-answers-empty. The guard lives in that script rather
+#     than in this SUT, so the mutant is reached by copying both scripts into
+#     one directory and pointing SUT= at the copied resolve-base.sh -- a lone
+#     copy cannot find its sibling through dirname "$0" and fails every row
+#     for that reason instead (tests/README.md records the same shape for
+#     watch-copilot-review.sh). Its primary RED lives in
+#     tests/implement-work/resolve-default-branch_test.sh.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR

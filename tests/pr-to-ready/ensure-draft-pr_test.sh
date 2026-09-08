@@ -28,6 +28,11 @@
 # RED verification (see tests/README.md):
 #   tmp="$(mktemp -d)"
 #   cp skills/pr-to-ready/scripts/resolve-pr-base.sh "$tmp/"
+#   A copy of the *current* resolve-pr-base.sh needs its sibling laid out as
+#   skills/implement-work/scripts/resolve-default-branch.sh relative to
+#   skills/pr-to-ready/scripts/, resolved through dirname "$0" -- a flat copy
+#   answers STOP ask-default-branch on every row regardless of this file's own
+#   mutation.
 #   cp skills/pr-to-ready/scripts/ensure-draft-pr.sh "$tmp/mut.sh"
 #   # apply exactly one edit to "$tmp/mut.sh"
 #   SUT="$tmp/mut.sh" tests/run.sh tests/pr-to-ready/ensure-draft-pr_test.sh

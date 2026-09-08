@@ -84,10 +84,9 @@ EMPTY_GRACE=3
 # while a wrong "no" costs only the wait the caller already asked for.
 #
 # The default branch is read from `repos/{owner}/{repo}`'s default_branch field
-# rather than through the resolve_default_branch() helper the sibling scripts
-# share (skills/implement-work/scripts/resolve-base.sh:27,
-# skills/pr-to-ready/scripts/resolve-pr-base.sh:43,
-# skills/review-code/scripts/resolve-range.sh:65). All three answer for the
+# rather than through the shared
+# skills/implement-work/scripts/resolve-default-branch.sh that the three
+# base-resolving scripts call. That script answers for the
 # *current checkout*, and this script takes <owner> <repo> on the argv precisely
 # so it can watch a repository it is not standing in; run from inside another
 # checkout, that helper would resolve a different repository's default branch

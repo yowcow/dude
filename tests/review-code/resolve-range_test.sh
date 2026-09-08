@@ -24,12 +24,18 @@
 # way this suite's other table tests do. Guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
-# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Seven
-# were removed; the one that is only partly observable is recorded as such below,
-# rather than counted as covered. What each mutant actually produced,
-# measured:
+# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Five of
+# the seven mutate this script alone, so a single-file copy suffices for them;
+# the other two (records 2 and 5) mutate the shared
+# ../../implement-work/scripts/resolve-default-branch.sh this script calls as
+# a subprocess through `dirname "$0"`, so those two need the tree copied two
+# directory levels deep with both files in place -- a lone copy of this script
+# answers `STOP ask-default-branch` on every row instead, which pins nothing
+# about the mutation. Seven were removed; the one that is only partly
+# observable is recorded as such below, rather than counted as covered. What
+# each mutant actually produced, measured:
 #
-#   1. The trailer read guarded as well as captured (resolve-range.sh:74-88).
+#   1. The trailer read guarded as well as captured (resolve-range.sh:57-71).
 #      Replacing the `if ! TRAILER_LOG=...` block with
 #      `TRAILER_LOG="$(git log ... 2>/dev/null || true)"` failed
 #      `trailer-read-fails` alone: want `STOP trailer-read-failed`, got
@@ -37,14 +43,21 @@
 #      fetched `trunk` on the way. That is the widening this file exists to
 #      pin -- a read that failed, taken for a trailer that was absent, sends
 #      the range to the default branch.
-#   2. The MERGED boundary being the prerequisite's own head (:134-139).
+#   2. The MERGED boundary being the prerequisite's own head (:117-122).
 #      Replacing `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
-#      `FETCH_SPEC="$(resolve_default_branch)"` failed three rows:
-#      `prereq-merged-uses-the-pr-head`, `merged-base-is-not-the-default-branch`
-#      (which named the default branch tip it had used), and
-#      `merged-pull-ref-absent` -- the last because a MERGED path that never
-#      builds a `refs/pull/<n>/head` spec cannot fail to fetch one.
-#   3. An empty PR list being "no prerequisite PR" (:117-120). Deleting the
+#      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")"`
+#      in a copy of the two-file tree failed `prereq-merged-uses-the-pr-head`
+#      and `merged-pull-ref-absent`: both rows' `gh` fixtures stub no
+#      `repo view` call, so the mutant's extra `gh` call goes unstubbed, the
+#      failing command substitution kills the script under `set -euo
+#      pipefail` before it prints anything, and both rows fail on exit status
+#      (want 0, got 1), stdout (want their STOP/RANGE line, got none) and gh
+#      call count (want 1, got 2) together. `merged-base-is-not-the-default-branch`
+#      -- not a row of its own but a second assertion against
+#      `prereq-merged-uses-the-pr-head`'s captured stdout -- does not fail:
+#      it only flags stdout that names the default branch tip, and this
+#      mutant's stdout is empty rather than wrong.
+#   3. An empty PR list being "no prerequisite PR" (:100-103). Deleting the
 #      `[ "$LINE_COUNT" -eq 0 ]` block failed `prereq-has-no-pr` on both exit
 #      status (want 0, got 1) and stdout: the empty list fell through to the
 #      unexpected-state branch instead.
@@ -52,17 +65,26 @@
 #      with an unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
 #      `pr-shape-empty-when-ends-coincide` and
 #      `no-trailer-empty-when-head-is-the-default-tip`.
-#   5. The default branch being looked up rather than guessed (:65-72).
-#      Replacing resolve_default_branch's whole body with `printf 'main\n'`
-#      failed five rows, `stale-symref-is-ignored` among them. This is
-#      why build_remote's default branch is called `trunk`: with the
-#      conventional name, this mutant passes every row.
-#   6. OPEN fetching the branch the trailer recorded (:131-133). Replacing
+#   5. The default branch being looked up rather than guessed. That lookup now
+#      lives in the shared ../../implement-work/scripts/resolve-default-branch.sh
+#      this script calls, so the mutant is a copy of the tree with that
+#      script's whole body replaced by `printf 'main\n'` -- both files copied,
+#      two directory levels deep, because the call resolves through
+#      dirname "$0" and a lone copy of this script fails every row on the
+#      sibling's absence instead. It failed six rows -- `stale-symref-is-ignored`,
+#      `no-trailer-gh-names-default`, `default-branch-lookup-fails`,
+#      `default-branch-lookup-empty`, `no-trailer-empty-when-head-is-the-default-tip`
+#      and `default-branch-absent-on-remote` -- the last on its gh call count
+#      alone, since that row's fixture remote already lacks a `main` branch
+#      and its stdout already expects `STOP fetch-failed`. This is why
+#      build_remote's default branch is called `trunk`: with the conventional
+#      name, this mutant passes every row.
+#   6. OPEN fetching the branch the trailer recorded (:114-116). Replacing
 #      `FETCH_SPEC="${RECORDED}"` with the MERGED path's
 #      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
 #      two others. This is why `refs/pull/9/head` is a decoy under `with-dep`:
 #      pointed at dep's own commit, this mutant passes.
-#   7. The trailer scan keeping the newest trailer (:91-96). Deleting the
+#   7. The trailer scan keeping the newest trailer (:74-79). Deleting the
 #      `break` leaves the loop holding the last non-empty line -- the oldest,
 #      since the log is newest-first -- and `newest-trailer-shadows-older`
 #      then failed on the range it printed. This is why `older-base` exists as
@@ -71,7 +93,7 @@
 #      scan's order.
 #
 # Partly covered, and measured to be no more coverable than this: reading
-# FETCH_HEAD rather than a remote-tracking ref (:151-158). Replacing
+# FETCH_HEAD rather than a remote-tracking ref (:134-141). Replacing
 # `git merge-base FETCH_HEAD HEAD` with
 # `git merge-base "origin/${FETCH_SPEC}" HEAD` failed exactly one row,
 # `prereq-merged-uses-the-pr-head` -- `refs/pull/<n>/head` lies outside every
@@ -413,7 +435,7 @@ fi
 # argument 'HEAD'"), which is the trailer read *failing* rather than the
 # trailer being absent -- two causes that must not collapse, because "absent"
 # sends the range to the default branch. refs/remotes/origin/HEAD is pointed
-# at `trunk` for realism only -- resolve_default_branch never reads it, so it
+# at `trunk` for realism only -- the default-branch lookup never reads it, so it
 # has no bearing on this row's answer.
 row_start
 W="$(git_repo_scratch trailer-unreadable)"

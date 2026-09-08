@@ -29,6 +29,13 @@
 #   tmp="$(mktemp -d)"
 #   git show bb8d8b8^:skills/pr-to-ready/scripts/resolve-pr-base.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/resolve-pr-base_test.sh
+#
+#   A copy of the *current* script needs the sibling it calls beside it, laid
+#   out as skills/implement-work/scripts/resolve-default-branch.sh relative to
+#   skills/pr-to-ready/scripts/: it resolves that path through dirname "$0",
+#   so a lone copy answers STOP ask-default-branch on every row and the
+#   failures say nothing about the mutation. The bb8d8b8^ version above
+#   predates the extraction and needs no sibling.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
