@@ -224,7 +224,7 @@ Code the default is the environment variable `CLAUDE_CODE_SUBAGENT_MODEL`, not
 a `settings.json` key; set it to the highest tier you have and leave it there
 regardless of the run's own tier, and verify against the environment
 (`env | grep CLAUDE_CODE_SUBAGENT_MODEL`) rather than `settings.json` alone.
-Read what a dispatched worker actually ran on back from its transcript rather
+Read back from its transcript what a dispatched worker actually ran on rather
 than asking it — a self-report is the worker's own account, not the runtime's
 record of the call
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
