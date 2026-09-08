@@ -18,7 +18,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - **Never touch the working tree** — no worktree, no branch, no commit, no code edit, throughout rather than only at the end. This flow has no worktree, so a design document committed here lands on whatever branch the session is on, usually `master`. A sub-skill that assumes it should write a file and commit it does neither: redirect that output into the comment.
 - The canonical record is the tracking issue's comment — chat only when no issue tracks the work, and **Output contract** binds that version just the same, not as a lesser one.
 - `<skill-dir>/scripts/` holds the GitHub mechanism — `<skill-dir>` being this skill's own directory inside the installed plugin, `skills/plan-work/` — one script per operation, each closing a way of getting it silently wrong: `<skill-dir>/scripts/post-plan-comment.sh` for anything this flow posts, the design comment and the findings report alike, and `<skill-dir>/scripts/edit-plan-comment.sh` for revising it, taking the numeric id the first prints; `<skill-dir>/scripts/set-prerequisites.sh` for the native relation. Use them rather than hand-built calls — a body passed as a flag string hands its backticks to the shell.
-- **Creating a child and attaching it to its parent is one native `gh` operation**, so no script wraps it: create the child with `gh issue create --parent`, reading its body from a file, and attach one that already exists with `gh issue edit --add-sub-issue`. Never attach through the raw `sub_issues` endpoint — it identifies the child by database id rather than by issue number, so a number passed there attaches whichever issue happens to hold that id, silently and from whatever repository.
+- **Creating a child and attaching it to its parent is one native `gh` operation**, so no script wraps it, and its body goes in a file rather than a flag string. Never attach through the raw `sub_issues` endpoint — it identifies the child by database id rather than by issue number, so a number passed there attaches whichever issue happens to hold that id, silently and from whatever repository.
 
 ## Entry
 
@@ -72,7 +72,7 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 2. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
 3. Reach **Design agreement**.
 4. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 5.
-5. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason — so it doesn't re-litigate what was already rejected. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
+5. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
 6. Don't leave step 5 while a blocking finding remains.
 7. **Publish**.
 
