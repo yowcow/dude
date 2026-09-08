@@ -129,11 +129,23 @@ if [ -r "$unreadable" ]; then
   # no equivalent of the pre-receive hook gitrepo.sh uses to reach "the push was
   # refused" without a mode bit, so there is nothing to substitute. The line is
   # printed because a case that passes while testing nothing is the exact state
-  # this suite exists to catch; the count below drops to 3/3, and this line is
+  # this suite exists to catch; the count below drops to 4/4, and this line is
   # what says why.
   printf 'skip unreadable SUT: chmod 000 left it readable as uid %s — the guard is right to accept it here\n' "$(id -u)"
 else
   assert_refused 'unreadable SUT' "$unreadable"
 fi
+
+# --- case 5: a SUT that names a directory stops the run -----------------------
+# `-s` is true for a directory — a directory's size is non-zero (measured) — so
+# an emptiness check alone lets one through, and `bash <dir>` then exits 126 on
+# every row. That is the same false RED a missing path produces: it reads as
+# "this test cannot detect the defect", and a test with real detection power is
+# retired on the strength of it. `-f` in run.sh's guard is what refuses it, and
+# this row is what keeps `-f` from being dropped as redundant.
+dir_sut="${HARNESS_TMP}/dir-script.sh"
+rm -rf "$dir_sut"
+mkdir -p "$dir_sut"
+assert_refused 'directory SUT' "$dir_sut"
 
 harness_exit "$failed" "$total"
