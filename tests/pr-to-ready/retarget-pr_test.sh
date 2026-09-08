@@ -70,12 +70,6 @@ stub_edit() {
 
 # --- assertions ------------------------------------------------------------
 
-# check_one <label> <want> <got>   a standalone check that keeps the tally
-check_one() {
-  total=$((total + 1))
-  if ! check_eq "$1" "$2" "$3"; then failed=$((failed + 1)); fi
-}
-
 bare_sha() {
   git -C "$1" rev-parse "refs/heads/$2"
 }
@@ -84,7 +78,7 @@ bare_sha() {
 check_contains() {
   local label="$1" repo="$2" ref="$3" sha="$4" status=0
   git -C "$repo" merge-base --is-ancestor "$sha" "$ref" 2>/dev/null || status=$?
-  check_one "$label" '0' "$status"
+  tally check_eq "$label" '0' "$status"
 }
 
 # --- topology --------------------------------------------------------------
@@ -166,7 +160,7 @@ FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone fetchfail "$BARE" feature)"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature nosuchbase
 assert_row 'base-missing-on-the-remote' 0 'STOP fetch-failed\n' 1
-check_one 'fetch-failed: the remote branch did not move' \
+tally check_eq 'fetch-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # The merge needs the branch's own checkout, and this one is on another branch.
@@ -193,7 +187,7 @@ FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone editfail "$BARE" feature)"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'gh-pr-edit-fails' 0 'STOP retarget-failed\n' 2
-check_one 'retarget-failed: the remote branch did not move' \
+tally check_eq 'retarget-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # A conflict stops for a person. What matters beyond the token is that the
@@ -208,11 +202,11 @@ FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone conflict "$BARE" feature)"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'merge-conflict-aborts-and-stops' 0 'STOP merge-conflict\n' 2
-check_one 'merge-conflict: the merge was aborted' \
+tally check_eq 'merge-conflict: the merge was aborted' \
   'no' "$([ -f "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"
-check_one 'merge-conflict: the working tree is clean again' \
+tally check_eq 'merge-conflict: the working tree is clean again' \
   '' "$(git -C "$W" status --porcelain)"
-check_one 'merge-conflict: the remote branch did not move' \
+tally check_eq 'merge-conflict: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # The merge lands locally and the push does not. This is the state the next
@@ -227,7 +221,7 @@ W="$(git_repo_clone pushfail "$BARE" feature)"
 git_repo_deny_push "$BARE"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'push-fails' 0 'STOP push-failed\n' 2
-check_one 'push-failed: the remote branch did not move' \
+tally check_eq 'push-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 check_contains 'push-failed: the merge did land locally' \
   "$W" HEAD "$MAIN_SHA"
@@ -247,11 +241,11 @@ W="$(git_repo_clone bothgates "$BARE" feature)"
 LOCAL_BEFORE="$(git -C "$W" rev-parse HEAD)"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'both-gates-hold' 0 'BASE-OK main\n' 1
-check_one 'both-gates-hold: the remote branch did not move' \
+tally check_eq 'both-gates-hold: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
-check_one 'both-gates-hold: the local branch did not move' \
+tally check_eq 'both-gates-hold: the local branch did not move' \
   "$LOCAL_BEFORE" "$(git -C "$W" rev-parse HEAD)"
-check_one 'both-gates-hold: the working tree was not touched' \
+tally check_eq 'both-gates-hold: the working tree was not touched' \
   '' "$(git -C "$W" status --porcelain)"
 
 # The pointer matches but the base is not in the remote branch: stage 1 is
@@ -292,7 +286,7 @@ FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone blobref "$BARE" feature)"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature blobref
 assert_row 'ancestor-check-errors' 0 'STOP ancestor-check-failed\n' 1
-check_one 'ancestor-check-failed: the remote branch did not move' \
+tally check_eq 'ancestor-check-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # --- a failed push, then a re-run: #170 end to end --------------------------
@@ -318,7 +312,7 @@ stub_edit main 0
 git_repo_deny_push "$BARE"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'resume-sequence: run 1 stops at the push' 0 'STOP push-failed\n' 2
-check_one 'resume-sequence: run 1 moved nothing on the remote' \
+tally check_eq 'resume-sequence: run 1 moved nothing on the remote' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # run 2: GitHub now reports the new base, so the first gate holds -- and the
