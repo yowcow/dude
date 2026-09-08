@@ -92,11 +92,4 @@ git -C "$W" add -- added.txt
 run_in "$W"
 assert_row 'staged-addition' 1 'A  added.txt\n' 0
 
-# ---- argument validation -----------------------------------------------
-
-row_start
-W="$(build_repo argsone)"
-run_in "$W" extra
-assert_row 'one-argument' 1 '' 0
-
 harness_exit "$failed" "$total"

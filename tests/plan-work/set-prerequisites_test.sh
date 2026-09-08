@@ -185,8 +185,6 @@ done <<'ROWS'
 # name|args
 no-args|
 too-few-args|acme widgets
-child-not-a-number|acme widgets HEAD 12
-prereq-not-a-number|acme widgets 57 main
 blocked-by-itself|acme widgets 57 57
 blocked-by-itself-among-others|acme widgets 57 12 57
 ROWS

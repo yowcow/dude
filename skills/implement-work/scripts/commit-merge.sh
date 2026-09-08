@@ -4,11 +4,6 @@
 # Usage: commit-merge.sh
 set -euo pipefail
 
-if [ "$#" -ne 0 ]; then
-  echo "Usage: $0" >&2
-  exit 1
-fi
-
 GIT_DIR_PATH="$(git rev-parse --absolute-git-dir)"
 
 # Repo-root-relative throughout: MERGE_MSG records the conflicted paths that

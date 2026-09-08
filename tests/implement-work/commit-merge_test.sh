@@ -198,14 +198,4 @@ git_repo_commit "$W" f.txt 'x\n' 'c1'
 run_in "$W"
 assert_row 'no-merge-in-progress' 0 'STOP no-merge-in-progress\n' 0
 
-# ---- argument validation -----------------------------------------------
-
-row_start
-W="$(build_conflict argsextra)"
-printf 'resolved by hand\n' >"${W}/shared.txt"
-git -C "$W" add shared.txt
-run_in "$W" extra
-assert_row 'any-argument-is-refused' 1 '' 0
-check_not_committed 'any-argument-is-refused' "$W"
-
 harness_exit "$failed" "$total"
