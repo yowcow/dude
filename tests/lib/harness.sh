@@ -201,6 +201,19 @@ tally() {
   fi
 }
 
+# commit_msg <subject> <base-branch|->   a message for git_repo_commit
+# Carries a Base-Branch trailer unless the second argument is `-`. The trailer
+# goes in a paragraph of its own because that is where git's trailer parser
+# looks: appended to the subject line it is not a trailer at all, and a script
+# reading it with `git interpret-trailers` would see none.
+commit_msg() {
+  if [ "$2" = '-' ]; then
+    printf '%s\n' "$1"
+  else
+    printf '%s\n\nBase-Branch: %s\n' "$1" "$2"
+  fi
+}
+
 check_eq() {
   local label="$1" want="$2" got="$3"
   if [ "$want" = "$got" ]; then

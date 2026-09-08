@@ -47,17 +47,6 @@ PR_JQ='.[] | "\(.number) \(.state)"'
 failed=0
 total=0
 
-# commit_msg <subject> <base-branch|-> -- a commit message, carrying a
-# Base-Branch trailer unless the second argument is `-`. The trailer goes in a
-# paragraph of its own because that is where git's trailer parser looks.
-commit_msg() {
-  if [ "$2" = '-' ]; then
-    printf '%s\n' "$1"
-  else
-    printf '%s\n\nBase-Branch: %s\n' "$1" "$2"
-  fi
-}
-
 # build_remote <name> <main-trailer> <feature-trailer>... -- prints the path of
 # a new bare repo holding `main` (one commit) and `feature` (one commit per
 # feature-trailer, branched off main). Each trailer argument is a branch name,

@@ -24,34 +24,34 @@ FIRST_JQ='"\(.baseRefName) \(.mergeable)"'
 failed=0
 total=0
 
-# stub_first <repo> <mergeable> [<base-ref>]  -- the opening `gh pr view`
+# stub_first <mergeable> [<base-ref>]  -- the opening `gh pr view`
 stub_first() {
-  local repo="$1" mergeable="$2" base="${3:-main}"
+  local mergeable="$1" base="${2:-main}"
   printf '%s %s\n' "$base" "$mergeable" |
-    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${repo}" \
+    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${REPO}" \
       --json baseRefName,mergeable --jq "$FIRST_JQ"
 }
 
-# stub_reread <repo> <mergeable> -- every re-read answers the same
+# stub_reread <mergeable> -- every re-read answers the same
 stub_reread() {
-  local repo="$1" mergeable="$2"
+  local mergeable="$1"
   printf '%s\n' "$mergeable" |
-    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${repo}" \
+    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${REPO}" \
       --json mergeable --jq .mergeable
 }
 
 row_start
-stub_first "$REPO" MERGEABLE
+stub_first MERGEABLE
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'mergeable-base-ok' 0 'BASE-OK main MERGEABLE\n' 1
 
 row_start
-stub_first "$REPO" CONFLICTING
+stub_first CONFLICTING
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'conflicting-base-ok' 0 'BASE-OK main CONFLICTING\n' 1
 
 row_start
-stub_first "$REPO" MERGEABLE develop
+stub_first MERGEABLE develop
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'base-drift-reports-current-base' 0 'BASE-DRIFT develop MERGEABLE\n' 1
 
@@ -62,15 +62,15 @@ run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'first-read-fails' 0 'STOP pr-read-failed\n' 1
 
 row_start
-stub_first "$REPO" UNKNOWN
+stub_first UNKNOWN
 : | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
   --json mergeable --jq .mergeable
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 're-read-fails' 0 'STOP pr-read-failed\n' 2
 
 row_start
-stub_first "$REPO" UNKNOWN
-stub_reread "$REPO" MERGEABLE
+stub_first UNKNOWN
+stub_reread MERGEABLE
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'unknown-then-resolves-on-re-read' 0 'BASE-OK main MERGEABLE\n' 2
 
@@ -89,8 +89,8 @@ assert_row 'too-many-args' 1 '' 0
 # instant, so the row costs no wall clock.
 
 row_start
-stub_first "$REPO" UNKNOWN
-stub_reread "$REPO" UNKNOWN
+stub_first UNKNOWN
+stub_reread UNKNOWN
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'unknown-outlasts-re-read' 0 'BASE-OK main UNKNOWN\n' 6
 tally check_eq 'unknown-outlasts-re-read: sleeps' '5' "$(sleep_call_count)"
