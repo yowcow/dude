@@ -52,7 +52,7 @@ fi
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Capture the trailer scan into a variable before testing it, rather than
 # piping into `grep`. A pipe reports only grep's exit status, and grep exits 1

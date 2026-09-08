@@ -34,7 +34,7 @@ fetch_ref() {
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Resolve the default branch before the scan below rather than at the two
 # places that print it: the scan's range is expressed against it, so it has

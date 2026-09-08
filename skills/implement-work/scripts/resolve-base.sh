@@ -16,7 +16,7 @@ ISSUE="${1:-}"
 
 # The default branch is resolved by resolve-default-branch.sh beside this
 # script -- see its header for the rationale.
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Fetch the branch, so the caller can cut from origin/<name>.
 fetch_ref() {
