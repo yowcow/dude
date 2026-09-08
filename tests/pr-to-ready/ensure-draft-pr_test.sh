@@ -69,16 +69,6 @@ printf 'a body\n' >"$BODY_FILE"
 failed=0
 total=0
 
-# commit_msg <subject> <base-branch|-> -- the trailer goes in a paragraph of
-# its own, which is where git's trailer parser looks.
-commit_msg() {
-  if [ "$2" = '-' ]; then
-    printf '%s\n' "$1"
-  else
-    printf '%s\n\nBase-Branch: %s\n' "$1" "$2"
-  fi
-}
-
 # fixture <name> <branch> <where> [<trailer>] -- sets FIXTURE_WORK to the work
 # repo's path and FIXTURE_BARE to its remote's. It prints nothing, and it must
 # be called as a plain statement: `W="$(fixture ...)"` would run it in a
