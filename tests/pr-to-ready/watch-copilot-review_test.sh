@@ -35,6 +35,8 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
+stub_sleep_instant
+
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/watch-copilot-review.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
 TWO="${FIXTURES}/copilot-reviews-two.jsonl"
