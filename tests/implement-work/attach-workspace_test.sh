@@ -74,19 +74,6 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" 0 "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # real_path <path> -- the path as git itself reports it in `worktree list`.
 # Compared as bytes, so a symlinked $TMPDIR would otherwise fail every REUSE
 # row for a reason that has nothing to do with the script.
@@ -149,7 +136,7 @@ WT_EXISTING="$(wt_path reuse-existing)"
 git -C "$W" worktree add -q "$WT_EXISTING" task
 WT_NEW="$(wt_path reuse-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'existing-worktree-is-reused' 0 "REUSE $(real_path "$WT_EXISTING")\n"
+assert_row 'existing-worktree-is-reused' 0 "REUSE $(real_path "$WT_EXISTING")\n" 0
 tally check_absent 'existing-worktree-is-reused: the asked-for path was not created' "$WT_NEW"
 
 # The main working tree counts as a worktree: `git worktree list` lists it
@@ -161,7 +148,7 @@ W="$(build_repo reusemain)"
 git_repo_checkout "$W" task main
 WT_NEW="$(wt_path reusemain-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'main-working-tree-is-reused' 0 "REUSE $(real_path "$W")\n"
+assert_row 'main-working-tree-is-reused' 0 "REUSE $(real_path "$W")\n" 0
 tally check_absent 'main-working-tree-is-reused: the asked-for path was not created' "$WT_NEW"
 
 # ---- ATTACHED: the branch exists locally, with no worktree -------------
@@ -174,7 +161,7 @@ TASK_SHA="$(git -C "$W" rev-parse task)"
 git_repo_checkout "$W" main
 WT_NEW="$(wt_path localonly-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'local-branch-is-attached' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'local-branch-is-attached' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_head 'local-branch-is-attached: the workspace is at the branch tip' "$WT_NEW" "$TASK_SHA"
 tally check_on_branch 'local-branch-is-attached: the workspace is on the branch' "$WT_NEW" task
 
@@ -190,7 +177,7 @@ git_repo_checkout "$W" main
 git_repo_remote "$W" origin "${HARNESS_TMP}/remotes/acme/absent.git"
 WT_NEW="$(wt_path localnoremote-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'local-branch-does-not-consult-the-remote' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'local-branch-does-not-consult-the-remote' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_on_branch 'local-branch-does-not-consult-the-remote: on the branch' "$WT_NEW" task
 
 # ---- CREATE: the branch exists nowhere --------------------------------
@@ -204,7 +191,7 @@ row_start
 W="$(build_repo nowhere)"
 WT_NEW="$(wt_path nowhere-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'nowhere-is-create' 0 'CREATE\n'
+assert_row 'nowhere-is-create' 0 'CREATE\n' 0
 tally check_absent 'nowhere-is-create: no workspace was created' "$WT_NEW"
 tally check_local_branch 'nowhere-is-create: no branch was created' "$W" task no
 
@@ -229,7 +216,7 @@ W="$(git_repo_clone remoteonly "$BARE" main)"
 tally check_local_branch 'remote-only-is-attached: fixture has no local branch' "$W" task no
 WT_NEW="$(wt_path remoteonly-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'remote-only-is-attached' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'remote-only-is-attached' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_head 'remote-only-is-attached: the workspace is at the remote tip' "$WT_NEW" "$REMOTE_TIP"
 tally check_on_branch 'remote-only-is-attached: the workspace is on the branch' "$WT_NEW" task
 tally check_local_branch 'remote-only-is-attached: the branch now exists locally' "$W" task yes
@@ -267,7 +254,7 @@ tally check_eq 'remote-only-attach-is-at-the-remote-tip: fixture ref is stale' \
   "$OLD_TIP" "$(git -C "$W" rev-parse refs/remotes/origin/task)"
 WT_NEW="$(wt_path staleref-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'remote-only-attach-is-at-the-remote-tip' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'remote-only-attach-is-at-the-remote-tip' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_head 'remote-only-attach-is-at-the-remote-tip: at the current remote tip' \
   "$WT_NEW" "$NEW_TIP"
 tally check_eq 'remote-only-attach-is-at-the-remote-tip: the newer commit is present' \
@@ -287,7 +274,7 @@ W="$(build_repo unreachable)"
 git_repo_remote "$W" origin "${HARNESS_TMP}/remotes/acme/absent.git"
 WT_NEW="$(wt_path unreachable-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'unreachable-remote-is-not-absent' 128 ''
+assert_row 'unreachable-remote-is-not-absent' 128 '' 0
 tally check_stderr_has 'unreachable-remote-is-not-absent: the failure is named' 'ls-remote failed'
 tally check_absent 'unreachable-remote-is-not-absent: no workspace was created' "$WT_NEW"
 tally check_local_branch 'unreachable-remote-is-not-absent: no branch was created' "$W" task no
@@ -297,7 +284,7 @@ W="$(build_repo noorigin)"
 git -C "$W" remote remove origin
 WT_NEW="$(wt_path noorigin-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'no-origin-remote-is-not-absent' 128 ''
+assert_row 'no-origin-remote-is-not-absent' 128 '' 0
 tally check_stderr_has 'no-origin-remote-is-not-absent: the failure is named' 'ls-remote failed'
 tally check_absent 'no-origin-remote-is-not-absent: no workspace was created' "$WT_NEW"
 
@@ -306,19 +293,19 @@ tally check_absent 'no-origin-remote-is-not-absent: no workspace was created' "$
 row_start
 W="$(build_repo argsnone)"
 run_in "$W"
-assert_row 'no-arguments' 1 ''
+assert_row 'no-arguments' 1 '' 0
 tally check_stderr_has 'no-arguments: usage is printed' 'Usage:'
 
 row_start
 W="$(build_repo argsone)"
 run_in "$W" task
-assert_row 'one-argument' 1 ''
+assert_row 'one-argument' 1 '' 0
 tally check_stderr_has 'one-argument: usage is printed' 'Usage:'
 
 row_start
 W="$(build_repo argsthree)"
 run_in "$W" task "$(wt_path argsthree-new)" extra
-assert_row 'three-arguments' 1 ''
+assert_row 'three-arguments' 1 '' 0
 
 # ---- the worktree lookup matches one exact line ------------------------
 #
@@ -339,7 +326,7 @@ git_repo_checkout "$W" 'feat.x' main
 git_repo_checkout "$W" main
 WT_NEW="$(wt_path dotname-new)"
 run_in "$W" 'feat.x' "$WT_NEW"
-assert_row 'dot-in-name-does-not-grab-another-worktree' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'dot-in-name-does-not-grab-another-worktree' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_on_branch 'dot-in-name-does-not-grab-another-worktree: on the asked-for branch' \
   "$WT_NEW" 'feat.x'
 
@@ -353,7 +340,7 @@ git_repo_checkout "$W" task main
 git_repo_checkout "$W" main
 WT_NEW="$(wt_path prefixname-new)"
 run_in "$W" task "$WT_NEW"
-assert_row 'longer-name-does-not-grab-another-worktree' 0 "ATTACHED ${WT_NEW}\n"
+assert_row 'longer-name-does-not-grab-another-worktree' 0 "ATTACHED ${WT_NEW}\n" 0
 tally check_on_branch 'longer-name-does-not-grab-another-worktree: on the asked-for branch' \
   "$WT_NEW" task
 

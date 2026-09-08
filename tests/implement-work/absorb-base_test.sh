@@ -81,19 +81,6 @@ run_in() {
   cd "$REPO_ROOT"
 }
 
-# assert_row <name> <want-exit> <want-stdout>
-assert_row() {
-  local name="$1" want_exit="$2" want_out="$3" fails=0
-  if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
-  if ! check_bytes "${name}: stdout" "$want_out"; then fails=1; fi
-  if ! check_eq "${name}: gh calls" 0 "$(gh_call_count)"; then fails=1; fi
-  if ! check_no_violations "${name}: argv"; then fails=1; fi
-  if [ "$fails" -ne 0 ]; then
-    failed=$((failed + 1))
-    printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
-  fi
-}
-
 # check_unmerged <label> <work-dir> <want> -- the unmerged paths, space-joined
 check_unmerged() {
   local got
@@ -119,7 +106,7 @@ row_start
 W="$(build_case uptodate none)"
 BEFORE="$(git -C "$W" rev-parse HEAD)"
 run_in "$W" task main
-assert_row 'already-contains-the-base' 0 'UP-TO-DATE\n'
+assert_row 'already-contains-the-base' 0 'UP-TO-DATE\n' 0
 total=$((total + 1))
 if ! check_eq 'already-contains-the-base: HEAD unmoved' "$BEFORE" "$(git -C "$W" rev-parse HEAD)"; then
   failed=$((failed + 1))
@@ -131,7 +118,7 @@ row_start
 W="$(build_case clean clean)"
 MAIN_SHA="$(git -C "$W" rev-parse main)"
 run_in "$W" task main
-assert_row 'absorbs-a-moved-base' 0 "MERGED ${MAIN_SHA}\n"
+assert_row 'absorbs-a-moved-base' 0 "MERGED ${MAIN_SHA}\n" 0
 total=$((total + 1))
 if ! check_contains 'absorbs-a-moved-base: the base tip is now an ancestor' "$W" "$MAIN_SHA"; then
   failed=$((failed + 1))
@@ -151,7 +138,7 @@ fi
 row_start
 W="$(build_case conflicted conflict)"
 run_in "$W" task main
-assert_row 'conflict-is-left-in-the-tree' 0 'CONFLICTED shared.txt\n'
+assert_row 'conflict-is-left-in-the-tree' 0 'CONFLICTED shared.txt\n' 0
 total=$((total + 1))
 if ! check_eq 'conflict-is-left-in-the-tree: merge is still in progress' 'yes' \
   "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"; then
@@ -184,7 +171,7 @@ git_repo_init "$W" task
 git_repo_commit "$W" task.txt 'task\n' 'task root'
 git_repo_remote "$W" origin "$BARE"
 run_in "$W" task main
-assert_row 'unrelated-histories-is-not-a-conflict' 0 'STOP merge-failed\n'
+assert_row 'unrelated-histories-is-not-a-conflict' 0 'STOP merge-failed\n' 0
 total=$((total + 1))
 if ! check_unmerged 'unrelated-histories-is-not-a-conflict: nothing unmerged' "$W" ''; then
   failed=$((failed + 1))
@@ -196,7 +183,7 @@ mkdir -p "${W}/.git/hooks"
 printf '#!/bin/sh\nexit 1\n' >"${W}/.git/hooks/commit-msg"
 chmod +x "${W}/.git/hooks/commit-msg"
 run_in "$W" task main
-assert_row 'merge-failed-leaves-no-conflict' 0 'STOP merge-failed\n'
+assert_row 'merge-failed-leaves-no-conflict' 0 'STOP merge-failed\n' 0
 total=$((total + 1))
 if ! check_unmerged 'merge-failed-leaves-no-conflict: nothing unmerged' "$W" ''; then
   failed=$((failed + 1))
@@ -224,7 +211,7 @@ if [ "$(git -C "$W" rev-parse FETCH_HEAD)" != "$DECOY_SHA" ]; then
   exit 1
 fi
 run_in "$W" task main
-assert_row 'inherited-fetch-head-is-not-trusted' 0 "MERGED ${MAIN_SHA}\n"
+assert_row 'inherited-fetch-head-is-not-trusted' 0 "MERGED ${MAIN_SHA}\n" 0
 total=$((total + 1))
 if ! check_eq 'inherited-fetch-head-is-not-trusted: the decoy was not absorbed' 'no' \
   "$([ -e "${W}/decoy.txt" ] && echo yes || echo no)"; then
@@ -239,7 +226,7 @@ MAIN_SHA="$(git -C "$W" rev-parse main)"
 # that ref answers UP-TO-DATE, because the parent *is* an ancestor of task.
 git -C "$W" update-ref refs/remotes/origin/main "${MAIN_SHA}^"
 run_in "$W" task main
-assert_row 'stale-remote-ref-is-refetched' 0 "MERGED ${MAIN_SHA}\n"
+assert_row 'stale-remote-ref-is-refetched' 0 "MERGED ${MAIN_SHA}\n" 0
 
 # ---- the guards --------------------------------------------------------
 
@@ -247,19 +234,19 @@ row_start
 W="$(build_case wrongbranch clean)"
 git_repo_checkout "$W" main
 run_in "$W" task main
-assert_row 'not-on-the-named-branch' 0 'STOP wrong-branch\n'
+assert_row 'not-on-the-named-branch' 0 'STOP wrong-branch\n' 0
 
 row_start
 W="$(build_case detached clean)"
 git -C "$W" checkout -q --detach
 run_in "$W" task main
-assert_row 'detached-head' 0 'STOP detached-head\n'
+assert_row 'detached-head' 0 'STOP detached-head\n' 0
 
 row_start
 W="$(build_case dirty clean)"
 printf 'uncommitted\n' >"${W}/shared.txt"
 run_in "$W" task main
-assert_row 'dirty-tree' 0 'STOP dirty-tree\n'
+assert_row 'dirty-tree' 0 'STOP dirty-tree\n' 0
 total=$((total + 1))
 if ! check_eq 'dirty-tree: no merge was started' 'no' \
   "$([ -e "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"; then
@@ -269,23 +256,23 @@ fi
 row_start
 W="$(build_case nobase clean)"
 run_in "$W" task nosuchbase
-assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n'
+assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n' 0
 
 # ---- argument validation -----------------------------------------------
 
 row_start
 W="$(build_case argsnone clean)"
 run_in "$W"
-assert_row 'no-arguments' 1 ''
+assert_row 'no-arguments' 1 '' 0
 
 row_start
 W="$(build_case argsone clean)"
 run_in "$W" task
-assert_row 'one-argument' 1 ''
+assert_row 'one-argument' 1 '' 0
 
 row_start
 W="$(build_case argsthree clean)"
 run_in "$W" task main extra
-assert_row 'three-arguments' 1 ''
+assert_row 'three-arguments' 1 '' 0
 
 harness_exit "$failed" "$total"
