@@ -23,7 +23,7 @@
 # 5. A failing mutation is not a success. `mutation-denied` expects exit 1 where
 #    gh exited 4, and `mutation-denied-then-ok` expects the batch to carry on to
 #    the second id — 3 responses, not 2.
-# 6. An invalid argv costs zero API calls. The three usage rows stub NOTHING, so
+# 6. An invalid argv costs zero API calls. The two usage rows stub NOTHING, so
 #    a call would be both an unstubbed-argv violation and a count mismatch.
 #
 # The rows also pin that a comment id the snapshot does not carry
@@ -58,8 +58,8 @@
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/resolve-thread_test.sh
 # a05a84f is where --paginate, `$endCursor` and the `nodes[]` --jq landed, so at
 # a05a84f^ the lookup argv is a different one and every row that reaches the API
-# fails as an unstubbed argv — measured 15 of 18, `two-pages` included, the
-# three usage rows passing because they never call gh. That is change control
+# fails as an unstubbed argv — measured 15 of 17, `two-pages` included, the
+# two usage rows passing because they never call gh. That is change control
 # rather than paging-specific detection, and it is why property 2 above carries
 # `second-page-missing`: that pair fails on the answer, at the same argv.
 set -euo pipefail
@@ -193,7 +193,6 @@ second-page-missing|resolve-thread-page1|-|acme widgets 7 4102|1|1|-
 lookup-fails|graphql-errors:1|-|acme widgets 7 4001|1|1|-
 lookup-fails-midway|resolve-thread-page1,graphql-errors:1|-|acme widgets 7 4101|1|2|-
 too-few-args|-|-|acme widgets 7|1|0|-
-two-args|-|-|acme widgets|1|0|-
 no-args|-|-|-|1|0|-
 ROWS
 

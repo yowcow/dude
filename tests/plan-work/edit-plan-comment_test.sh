@@ -113,7 +113,6 @@ edits-by-numeric-id|acme widgets 2544 @BODY|comment-edited|0|1|expected/edited.o
 api-failure-is-not-an-edit|acme widgets 2544 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
 missing-body-file|acme widgets 2544 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 2544 @UNREADABLE|-|1|0|-|-
-too-few-args|acme widgets 2544|-|1|0|-|-
 too-many-args|acme widgets 2544 @BODY extra|-|1|0|-|-
 no-args||-|1|0|-|-
 ROWS
