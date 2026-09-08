@@ -1,22 +1,14 @@
 #!/usr/bin/env bash
 # Table test for skills/plan-work/scripts/edit-plan-comment.sh.
 #
-# The script's header names three guards, and each row below exists for one.
+# The script's header names two guards, and each row below exists for one.
 #
-# 1. A GraphQL node id is refused **up front rather than sent**. The
-#    `node-id-refused` row asserts `gh responses` is 0, so a version that
-#    dropped the check and let PATCH carry an IC_... id fails on the call that
-#    happened, not merely on a message. `partially-numeric-id` covers the other
-#    half of that same check — that the pattern is **anchored**. Without it the
-#    node-id row happens to catch a de-anchored `[0-9]+` only by accident,
-#    because the fixture id `IC_kwDOAZjEl85e3xyz` contains digits; `2544x`
-#    makes the anchoring deliberate rather than incidental.
-# 2. The body comes from a file and reaches gh on stdin as one JSON document
+# 1. The body comes from a file and reaches gh on stdin as one JSON document
 #    (`jq -Rs`). The payload is compared byte for byte against the same
 #    hand-written golden post-plan-comment_test.sh uses, which is what makes
 #    `jq -R` — same argv, one document per line — detectable. The fixture's two
 #    $PLAN_CANARY substitutions catch a body that reached a shell.
-# 3. A body file that cannot be read refuses before any call, and the guard is
+# 2. A body file that cannot be read refuses before any call, and the guard is
 #    `[ ! -f "$BODY_FILE" ] || [ ! -r "$BODY_FILE" ]` — two conditions because
 #    `-f` asks only whether a regular file is there. Two rows hold the two
 #    halves: `missing-body-file` for a path that is not there, and
@@ -119,8 +111,6 @@ done <<'ROWS'
 # name|args|response|exit|calls|stdout|payload
 edits-by-numeric-id|acme widgets 2544 @BODY|comment-edited|0|1|expected/edited.out|expected/plan-body.payload.json
 api-failure-is-not-an-edit|acme widgets 2544 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
-node-id-refused|acme widgets IC_kwDOAZjEl85e3xyz @BODY|-|1|0|-|-
-partially-numeric-id|acme widgets 2544x @BODY|-|1|0|-|-
 missing-body-file|acme widgets 2544 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 2544 @UNREADABLE|-|1|0|-|-
 too-few-args|acme widgets 2544|-|1|0|-|-

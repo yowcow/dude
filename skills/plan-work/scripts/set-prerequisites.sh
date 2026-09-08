@@ -30,13 +30,6 @@ REPO="$2"
 CHILD="$3"
 shift 3
 
-for n in "$CHILD" "$@"; do
-  if ! [[ "$n" =~ ^[0-9]+$ ]]; then
-    echo "error: invalid issue number '$n' (must be an integer)" >&2
-    exit 1
-  fi
-done
-
 for n in "$@"; do
   if [ "$n" = "$CHILD" ]; then
     echo "error: #$CHILD cannot be blocked by itself" >&2

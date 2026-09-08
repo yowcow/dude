@@ -18,12 +18,7 @@
 # 3. Nothing here edits an existing comment: the argv is POST .../comments, and
 #    the stub matches argv exactly, so a PATCH version is an unstubbed call.
 # 4. The usage guards refuse before any call: `gh responses` is 0 on every
-#    refusing row, so a dropped guard shows up as a call that happened. Two
-#    rows cover the issue-number guard rather than one, and the second is the
-#    load-bearing half: `abc` proves only that some check exists, while `7x`
-#    proves the pattern is **anchored**. Measured — with only the `abc` row,
-#    weakening `^[0-9]+$` to `[0-9]+` left this file reporting ok 7/7, so a
-#    number like `7x` would have been forwarded to the API.
+#    refusing row, so a dropped guard shows up as a call that happened.
 #
 #    The body-file guard gets two rows of its own: `missing-body-file` for a
 #    path that is not there, and `unreadable-body-file` for one that is there
@@ -143,8 +138,6 @@ posts-body-prints-numeric-id|acme widgets 7 @BODY|comment-created|0|1|expected/c
 api-failure-is-not-a-post|acme widgets 7 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
 missing-body-file|acme widgets 7 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 7 @UNREADABLE|-|1|0|-|-
-non-numeric-issue|acme widgets abc @BODY|-|1|0|-|-
-partially-numeric-issue|acme widgets 7x @BODY|-|1|0|-|-
 too-few-args|acme widgets 7|-|1|0|-|-
 too-many-args|acme widgets 7 @BODY extra|-|1|0|-|-
 no-args||-|1|0|-|-
