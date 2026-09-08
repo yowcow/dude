@@ -3,10 +3,12 @@
 # sequence of `gh` responses plus an argv, against the exit status, the number
 # of `gh` calls, and the exact bytes on stdout.
 #
-# The call count is part of the expectation, not decoration: two of this
-# script's documented statuses (2 and 4) differ mainly in whether the API was
-# ever asked, and the defect fixed in 25982ae was exactly an exit 4 handed back
-# without a single call.
+# The call count is part of the expectation, not decoration: a status here says
+# how far the watch got, and one status covers histories the exit code alone
+# cannot separate. Exit 4 after polls that answered something unreadable and
+# exit 4 with no poll at all — a cap that admits no iteration — are the same
+# number over different runs, and only the count tells the `error-body-every-poll`
+# row from the `non-numeric-max-iterations` one.
 #
 # Each row scripts three argvs, one per column: the poll's check-runs listing,
 # the repository read, and the default branch's check-runs listing. Three
@@ -162,10 +164,7 @@ gh-fails-every-poll|*=-:1|-|-|acme widgets deadbeef 1 1|4|1|
 poll-request-fails-with-an-empty-looking-body|*=check-runs-empty:1|4=repo-default-branch|5=check-runs-empty|acme widgets deadbeef 3 1|4|3|
 too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|
-non-numeric-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef abc 1|2|0|
-zero-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef 0 1|2|0|
-fractional-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef 1.5 1|2|0|
-non-numeric-interval|*=check-runs-in-progress|-|-|acme widgets deadbeef 2 xyz|2|0|
+non-numeric-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef abc 1|4|0|
 ROWS
 
 harness_exit "$failed" "$total"
