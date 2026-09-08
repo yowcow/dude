@@ -239,29 +239,25 @@ mkdir -p "$SUBDIR"
 # together are what say the answer came from the guard rather than from an
 # unstubbed call the harness let through.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE"
 assert_row 'usage-no-args' 2 '-' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID" extra
 assert_row 'usage-three-args' 2 '-' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_NOCLAUDE" "$BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_NODIR" "$BRANCH"
@@ -271,8 +267,7 @@ assert_row 'no-workflows-dir' 3 '-' 0
 # availability answer, or a caller run from the wrong directory would silently
 # skip the review. 128 is what `git rev-parse --show-toplevel` exits with there,
 # and `set -e` on the assignment propagates it unchanged.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_OUTSIDE" "$BRANCH"
@@ -289,8 +284,7 @@ assert_row 'outside-a-repository' 128 '-' 0
 # discriminates on has to reach it. Run 4002 (in_progress, conclusion null) is
 # there for the same reason — an unfinished run is not hidden from the caller.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH"
@@ -298,15 +292,13 @@ assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-m
 
 # Same expectation from a subdirectory: the workflow search is anchored at the
 # repository root, so where the caller stands cannot change the answer.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$MIXED"
 run_in "$SUBDIR" "$BRANCH"
 assert_row 'from-a-subdirectory' 0 "${FIXTURES}/claude-runs-mixed.expected" 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch 1
 run_in "$REPO_CLAUDE" "$BRANCH"
 assert_row 'default-branch-read-fails' 1 '-' 1
@@ -314,8 +306,7 @@ assert_row 'default-branch-read-fails' 1 '-' 1
 # The listing call fails with an empty body; `set -o pipefail` carries gh's
 # status out through the jq pipeline, so nothing is printed and the status is
 # neither 0 nor the availability answer.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing /dev/null 100 1
 run_in "$REPO_CLAUDE" "$BRANCH"
@@ -328,8 +319,7 @@ assert_row 'listing-call-fails' 1 '-' 2
 # the RED, not dead weight: against 2bd1745^ the target run has fallen out of
 # the answer, the filter prints [], and the row fails on the real symptom
 # rather than on an unstubbed argv.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_default_branch
 stub_listing "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"
@@ -350,14 +340,12 @@ printf 'claude review run succeeded\n' >"$WATCH_OK"
 printf 'claude review run failed\n' >"$WATCH_FAIL"
 printf 'claude review run skipped\n' >"$WATCH_SKIPPED"
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_watch 0 "$WATCH_OK"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-succeeds' 0 "$WATCH_OK" 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_watch 1 "$WATCH_FAIL"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
@@ -377,16 +365,14 @@ assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
 # fixture's skipped run id would not change that: the fake `gh` matches literal
 # argv and never reads the listing fixture, so the two would share a number and
 # nothing else. Re-measure this one against real `gh` by hand, not here.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_watch 0 "$WATCH_SKIPPED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-a-skipped-run-still-exits-zero' 0 "$WATCH_SKIPPED" 1
 
 # Availability is checked before the run-id branch is taken, so watch mode
 # cannot be reached in a repository with no @claude workflow.
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_watch 0 "$WATCH_OK"
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-without-claude-workflow' 3 '-' 0

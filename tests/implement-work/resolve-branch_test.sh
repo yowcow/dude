@@ -99,8 +99,7 @@ assert_row() {
 # `2011-later` both exist, locally and on the remote, and neither is matched by
 # the glob `201-*`.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case nomatch 199-other)"
 push_remote_only "$W" 2011-later
 run_in "$W" 201
@@ -112,8 +111,7 @@ assert_row 'no-match' 0 ''
 # on no match, so a script reading that exit status as the answer reports
 # nothing here and the caller cuts a second branch for the same task.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case localonly 201-alpha)"
 run_in "$W" 201
 assert_row 'local-only' 0 '201-alpha\n'
@@ -123,8 +121,7 @@ assert_row 'local-only' 0 '201-alpha\n'
 # The branch a fresh checkout has never seen. Missing it strands pushed work
 # under a diverged history, and force-push is barred.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case remoteonly)"
 push_remote_only "$W" 201-beta
 run_in "$W" 201
@@ -132,8 +129,7 @@ assert_row 'remote-only' 0 '201-beta\n'
 
 # ---- on both sides, deduplicated ---------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case both 201-gamma)"
 git_repo_push "$W" origin 201-gamma
 run_in "$W" 201
@@ -144,8 +140,7 @@ assert_row 'both-sides-deduplicated' 0 '201-gamma\n'
 # Also the second row the local-half mutation must fail: `201-a` is local only,
 # so a mutant that loses the local half prints two lines instead of three.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case multi 201-a 201-c)"
 push_remote_only "$W" 201-b
 git_repo_push "$W" origin 201-c
@@ -159,8 +154,7 @@ assert_row 'multiple-matches' 0 '201-a\n201-b\n201-c\n'
 # branch". The guard has to refuse before either query runs, so the assertion
 # is exit 1 with nothing on stdout even though a match is sitting right there.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case nonnumeric foo-x)"
 run_in "$W" foo
 assert_row 'non-numeric-argument' 1 ''
@@ -174,8 +168,7 @@ assert_row 'non-numeric-argument' 1 ''
 # visible: the correct script refuses to answer at all, exit 128 with nothing on
 # stdout, rather than handing back a partial listing.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case lsremotefail 201-alpha)"
 git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/absent.git"
 run_in "$W" 201
@@ -188,14 +181,12 @@ fi
 
 # ---- argument validation -----------------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case argsnone)"
 run_in "$W"
 assert_row 'no-arguments' 1 ''
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(build_case argstwo)"
 run_in "$W" 201 extra
 assert_row 'two-arguments' 1 ''

@@ -41,7 +41,9 @@ installs the plugin. `tests/` at the repository root ships to none of them.
 
 Each row typically does:
 
-1. `stub_dir_new` — fresh stub directory; resets the call counter and manifest.
+1. `row_start` — advances `total` and hands out a fresh stub directory
+   (`stub_dir_new`). Use `stub_dir_new` alone only when a row needs a fresh
+   stub directory without starting a new row.
 2. One or more `gh_stub_response <index|*> <exit-status> <argv...>` calls
    (body on stdin) to script what `gh` should answer — or
    `gh_stub_raw_response`, where the call's own `--jq` is what the case is

@@ -241,28 +241,24 @@ assert_row() {
 # of the remote and reads the remote's tip directly; see that row's own
 # comment for why a hook cannot observe this case.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture nowhere-b feature nowhere
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'branch-nowhere-stops' 0 'STOP branch-nowhere\n' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture lsr feature remote
 git_repo_remote "$FIXTURE_WORK" origin "${HARNESS_TMP}/repos/no-such-remote.git"
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'ls-remote-failure-is-not-an-absent-branch' 0 'STOP ls-remote-failed\n' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture pushfail feature local
 git_repo_deny_push "$FIXTURE_BARE"
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'push-failure-stops' 0 'STOP push-failed\n' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture order feature local
 stamp_push_order "$FIXTURE_BARE"
 printf '[]\n' | stub_pr_list 1 feature 0
@@ -291,8 +287,7 @@ fi
 # is captured before the SUT runs and compared against it afterward -- a
 # direct check that no push reached the remote, rather than one that depends
 # on a hook the redundant case cannot trigger.
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture nopush feature remote
 git_repo_commit "$FIXTURE_WORK" T2.md 'ahead\n' 'a commit the remote does not have'
 NOPUSH_TIP="$(git -C "$FIXTURE_BARE" rev-parse "refs/heads/feature")"
@@ -305,8 +300,7 @@ if ! check_eq 'no-redundant-push-moved-the-remote' "$NOPUSH_TIP" "$(git -C "$FIX
   failed=$((failed + 1))
 fi
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture othercheckout feature local
 git_repo_checkout "$FIXTURE_WORK" main
 printf '[]\n' | stub_pr_list 1 feature 0
@@ -323,50 +317,43 @@ fi
 
 # ---- step 2: does a PR already exist? ------------------------------------
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture exists-draft feature remote
 printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'existing-draft-pr-is-reported' 0 'PR 12 found draft=true\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture exists-ready feature remote
 printf '[{"number":12,"isDraft":false}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'existing-ready-pr-is-reported' 0 'PR 12 found draft=false\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture lookupfail feature remote
 : | stub_pr_list_filtered 1 feature 1
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'lookup-failure-is-not-an-absent-pr' 0 'STOP pr-lookup-failed\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture multi feature remote
 printf '[{"number":12,"isDraft":true},{"number":13,"isDraft":false}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'several-prs-for-one-branch-stop' 0 'STOP ask-multiple-prs\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture numeric 1234 remote
 printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 1234 0
 run_in "$FIXTURE_WORK" 1234 "$TITLE" "$BODY_FILE"
 assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draft=true\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture nobase feature remote
 printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'an-existing-pr-needs-no-base' 0 'PR 12 found draft=true\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf '[]' | gh_stub_raw_response 1 0 pr list --head feature --json number,isDraft \
@@ -398,24 +385,21 @@ assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=
 # lookup is unconditional, so it is always call 2; its remaining gh calls, if
 # any, follow starting at call 3.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture default-unknown feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 : | stub_default_branch 2 1
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-default-branch-unknown' 0 'STOP ask-default-branch\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture default-absent feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'nosuch\n' | stub_default_branch 2 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-default-branch-named-but-absent' 0 'STOP default-fetch-failed\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-lookup-failed feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -423,8 +407,7 @@ printf 'main\n' | stub_default_branch 2 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-prerequisite-lookup-failed' 0 'STOP prereq-lookup-failed\n' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-none feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -432,8 +415,7 @@ printf '[]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-several feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -446,8 +428,7 @@ run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 # there, 3 here).
 assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-abandoned feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -455,8 +436,7 @@ printf '[{"number":9,"state":"CLOSED"}]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-unrecognised feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -475,8 +455,7 @@ if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
   failed=$((failed + 1))
 fi
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-open feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -486,8 +465,7 @@ printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 5 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep\n' 5
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture prereq-merged feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -509,8 +487,7 @@ assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 crea
 # base resolves to `main`. Call 1 is the SUT's own PR-existence lookup, call 2
 # the sibling's default-branch lookup, call 3 the create, call 4 the readback.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture create-fail feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -518,8 +495,7 @@ printf 'main\n' | stub_default_branch 2 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'create-failure-stops' 0 'STOP pr-create-failed\n' 3
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture not-created feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -528,8 +504,7 @@ printf '[]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'a-record-that-does-not-read-back-stops' 0 'STOP pr-not-created\n' 4
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture readback-fail feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -538,8 +513,7 @@ printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'readback-failure-is-not-a-missing-record' 0 'STOP pr-readback-failed\n' 4
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture several-after-create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
@@ -550,7 +524,7 @@ assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create
 
 # ---- argument validation -------------------------------------------------
 #
-# Each row builds its own fixture and calls stub_dir_new of its own, like
+# Each row builds its own fixture and calls row_start of its own, like
 # every other row in this file: gh_call_count reads ${GH_STUB_DIR}/count, and
 # only stub_dir_new resets it, so without a reset the first of these rows
 # would read the calls the previous row's fixture left behind and fail `want
@@ -559,20 +533,17 @@ assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create
 # fixture's -- the same reasoning resolve-pr-base_test.sh records for its own
 # two.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture args-none feature remote
 run_in "$FIXTURE_WORK"
 assert_row 'no-arguments' 1 '' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture args-two feature remote
 run_in "$FIXTURE_WORK" feature "$TITLE"
 assert_row 'two-arguments' 1 '' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 fixture args-four feature remote
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" extra
 assert_row 'four-arguments' 1 '' 0

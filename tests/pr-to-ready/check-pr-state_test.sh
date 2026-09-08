@@ -53,53 +53,45 @@ assert_row() {
   fi
 }
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" MERGEABLE
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'mergeable-base-ok' 0 'BASE-OK main MERGEABLE\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" CONFLICTING
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'conflicting-base-ok' 0 'BASE-OK main CONFLICTING\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" MERGEABLE develop
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'base-drift-reports-current-base' 0 'BASE-DRIFT develop MERGEABLE\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
   --json baseRefName,mergeable --jq "$FIRST_JQ"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'first-read-fails' 0 'STOP pr-read-failed\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" UNKNOWN
 : | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
   --json mergeable --jq .mergeable
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 're-read-fails' 0 'STOP pr-read-failed\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" UNKNOWN
 stub_reread "$REPO" MERGEABLE
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'unknown-then-resolves-on-re-read' 0 'BASE-OK main MERGEABLE\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR"
 assert_row 'too-few-args' 1 '' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main extra
 assert_row 'too-many-args' 1 '' 0
 
@@ -109,8 +101,7 @@ assert_row 'too-many-args' 1 '' 0
 # sleeps between them. Asserting both is what pins the bound; the sleeps are
 # instant, so the row costs no wall clock.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 stub_first "$REPO" UNKNOWN
 stub_reread "$REPO" UNKNOWN
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main

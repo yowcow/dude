@@ -43,8 +43,7 @@ failed=0
 total=0
 
 # --- property 1: an argv with no manifest entry fails the case -----------------
-total=$((total + 1))
-stub_dir_new
+row_start
 gh_stub_response '*' 0 api "repos/acme/widgets/commits/deadbeef/check-runs" </dev/null
 status=0
 gh api "repos/acme/widgets/pulls/1" >/dev/null 2>&1 || status=$?
@@ -58,8 +57,7 @@ if ! check_eq "unexpected argv: call is still counted" 1 "$(gh_call_count)"; the
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 2: the call counter selects per-call responses -------------------
-total=$((total + 1))
-stub_dir_new
+row_start
 gh_stub_response 1 0 api one <<<'first'
 gh_stub_response 2 0 api one <<<'second'
 gh_stub_response '*' 0 api one <<<'later'
@@ -73,8 +71,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 3: stdout is compared byte-for-byte -----------------------------
 # A bare newline and no output are the same number of lines and different bytes.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 run_sut printf '\n'
 if check_bytes "bytes: probe expects a mismatch" '' >/dev/null 2>&1; then
@@ -89,8 +86,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # is representable and must match. \x1f is different in kind: it is the element
 # separator, so ["a\x1fb"] and ["a","b"] join to the same bytes and one case's
 # body would be served to the other. That one stays refused.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 status=0
 gh_stub_response 1 0 api "$(printf 'a\x1fb')" </dev/null 2>/dev/null || status=$?
@@ -110,8 +106,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # call would advance the index by as many lines as it spans, and from then on an
 # exact-index entry would answer a different call than the one it was written
 # for: the poll-loop tests would silently stub the wrong iteration.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh api "$(printf 'first\nsecond')" >/dev/null 2>&1 || true
 if ! check_eq "counter: a multi-line argv counts as one call" 1 "$(gh_call_count)"; then fails_here=1; fi
@@ -123,8 +118,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # The GraphQL query list-unresolved-threads.sh passes as `-f query='...'` spans
 # 23 lines. Refusing it would leave that script untestable; matching it loosely
 # would let a different query be served this case's body.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 multi="$(printf 'query {\n  field\n}')"
 other="$(printf 'query {\n  other\n}')"
@@ -161,8 +155,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # bodies and the filter under test really runs. Getting this backwards would
 # filter every error fixture down to nothing, and the error cases would assert
 # emptiness where reality has a body.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh_stub_raw_response 1 0 api graphql --jq '.items[] | select(.keep == true)' \
   <<<'{"items":[{"keep":false,"n":1},{"keep":true,"n":2}]}'
@@ -182,8 +175,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # output concatenated. Modelling that with one response per invocation would
 # make "page 1 arrived, page 2 failed" inexpressible — and that is the state in
 # which stdout is non-empty while the listing is incomplete.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh_stub_raw_response 1 0 api graphql --paginate --jq '.n' <<<'{"n":1}'
 gh_stub_raw_response 2 0 api graphql --paginate --jq '.n' <<<'{"n":2}'
@@ -197,8 +189,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # A failure on page 2 keeps page 1's output and hands back the failing status:
 # non-empty stdout with a non-zero exit is precisely "you did not see all of
 # it", and a caller reading emptiness alone cannot tell this from success.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh_stub_raw_response 1 0 api graphql --paginate --jq '.n' <<<'{"n":1}'
 gh_stub_raw_response 2 1 api graphql --paginate --jq '.n' <<<'{"errors":[{"message":"boom"}]}'
@@ -212,8 +203,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # A `*` entry answers one page and stops. It matches every index, so continuing
 # would loop forever; a multi-page sequence needs explicit indices.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh_stub_response '*' 0 api graphql --paginate <<<'only'
 run_sut gh api graphql --paginate
@@ -239,8 +229,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # stderr is discarded on the probe call, as the surrounding properties do,
 # because the stub lets jq's own error text through and a clean test run must
 # not print it.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 gh_stub_raw_response 1 0 api graphql --jq '.n[]' <<<'{"n":1}'
 status=0
@@ -277,8 +266,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # helper is called plainly, and then an unguarded `cat` takes the whole file
 # down. The subshell keeps a regression to that behaviour reportable here
 # instead of ending the run.
-total=$((total + 1))
-stub_dir_new
+row_start
 fails_here=0
 probe_status=0
 probe_out="$( (check_stdout_files 'probe' "${HARNESS_TMP}/no-such-expected") 2>&1 )" || probe_status=$?
@@ -295,8 +283,7 @@ esac
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 11: an `--input -` call's payload is recorded --------------------
-total=$((total + 1))
-stub_dir_new
+row_start
 gh_stub_response 1 0 api --method POST "repos/acme/widgets/issues/7/comments" --input - <<<'{"id":1}'
 printf '%s' '{"body":"a `b` c\n"}' >"${HARNESS_TMP}/want.payload"
 gh api --method POST "repos/acme/widgets/issues/7/comments" --input - \

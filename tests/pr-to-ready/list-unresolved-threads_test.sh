@@ -82,8 +82,7 @@ total=0
 
 while IFS='|' read -r name responses args want_exit want_calls want_files; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # Each entry is one page of the single --paginate invocation, in order:
   # `<fixture>[:<exit-status>]`, with `-` for an empty body. The usage rows stub

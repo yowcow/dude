@@ -145,29 +145,25 @@ REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
 # symref pointed at an absent branch would fail loudly on the fetch instead, and
 # would leave that case untested.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo dflt-stale-symref "$REMOTE_PLAIN" feature)"
 run_in "$W" feature
 assert_row 'stale-symref-is-ignored' 0 'BASE main\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo dflt-gh "$REMOTE_PLAIN" -)"
 run_in "$W" feature
 assert_row 'no-trailer-gh-names-default' 0 'BASE main\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_default_branch 1
 W="$(work_repo dflt-gh-fails "$REMOTE_PLAIN" -)"
 run_in "$W" feature
 assert_row 'default-branch-lookup-fails' 0 'STOP ask-default-branch\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 : | stub_default_branch 0
 W="$(work_repo dflt-gh-empty "$REMOTE_PLAIN" -)"
 run_in "$W" feature
@@ -183,8 +179,7 @@ assert_row 'default-branch-lookup-empty' 0 'STOP ask-default-branch\n' 1
 # `BASE ancestor-base` against `BASE main` -- the range defect itself. The
 # `gh calls` assertion is what holds the entry to being unused.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list ancestor-base 0
 W="$(work_repo ancestor "$REMOTE_ANCESTOR" main)"
@@ -198,8 +193,7 @@ assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 1
 # no case stubbed. The `gh calls` assertion holds the unused entry to being
 # unused: a correct scan asks about `newer-base` and nothing else.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list newer-base 0
 printf '8 OPEN\n' | stub_pr_list older-base 0
@@ -207,56 +201,49 @@ W="$(work_repo shadow "$REMOTE_SHADOW" main)"
 run_in "$W" feature
 assert_row 'newest-trailer-shadows-older' 0 'BASE newer-base\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n' | stub_pr_list dep 0
 W="$(work_repo prereq-open "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 MERGED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-merged "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-closed "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 : | stub_pr_list dep 0
 W="$(work_repo prereq-none "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 : | stub_pr_list dep 1
 W="$(work_repo prereq-unreadable "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 OPEN\n8 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-multiple "$REMOTE_DEP" main)"
 run_in "$W" feature
 assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 printf '9 DRAFT\n' | stub_pr_list dep 0
 W="$(work_repo prereq-unknown-state "$REMOTE_DEP" main)"
@@ -282,15 +269,13 @@ fi
 # a real branch, so that fetch succeeds and it is the task branch's fetch that
 # fails instead.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'nosuch\n' | stub_default_branch 0
 W="$(work_repo default-absent "$REMOTE_PLAIN" -)"
 run_in "$W" feature
 assert_row 'default-branch-absent-on-remote' 0 'STOP default-fetch-failed\n' 1
 
-total=$((total + 1))
-stub_dir_new
+row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo branch-absent "$REMOTE_PLAIN" main)"
 run_in "$W" nosuchbranch
@@ -301,16 +286,14 @@ assert_row 'task-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 # Both rows run from a work repository that could have answered, so a failure
 # here is the guard's, not the fixture's.
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(work_repo args-none "$REMOTE_PLAIN" main)"
 cd "$W"
 run_sut bash "$SUT"
 cd "$REPO_ROOT"
 assert_row 'no-argument' 1 '' 0
 
-total=$((total + 1))
-stub_dir_new
+row_start
 W="$(work_repo args-extra "$REMOTE_PLAIN" main)"
 cd "$W"
 run_sut bash "$SUT" feature extra

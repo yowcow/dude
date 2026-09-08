@@ -139,8 +139,7 @@ total=0
 
 while IFS='|' read -r name timeline forms args want_exit want_calls want_sleeps; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # Both request forms answer every call: which of them produced the event does
   # not matter to the script, and their status is discarded on purpose. Their

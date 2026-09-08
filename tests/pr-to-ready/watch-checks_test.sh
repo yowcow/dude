@@ -102,8 +102,7 @@ total=0
 
 while IFS='|' read -r name checks repo default_checks args want_exit want_calls want_out; do
   case "$name" in '' | '#'*) continue ;; esac
-  total=$((total + 1))
-  stub_dir_new
+  row_start
 
   # A row's three columns share one global call counter, which is what lets it
   # say "call 4 is the repo read" while the poll's own calls stay on `*`. The
