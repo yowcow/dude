@@ -54,20 +54,6 @@ SHA="$3"
 MAX_ITER="${4:-60}"
 INTERVAL="${5:-20}"
 
-# Nothing downstream stops the run on a bad value here, and each parameter fails
-# its own way. `seq` reads MAX_ITER: a non-numeric one makes `for _ in $(seq 1
-# abc)` run the body zero times, so the script answers "no listing could be
-# read" without ever calling the API, while a fractional one is truncated (2.9
-# polls twice), silently shrinking the budget the caller asked for. INTERVAL
-# only reaches `sleep`, inside the loop, so a bad one dies there under `set -e`
-# with exit 1 — the status this script also uses for "still unsettled".
-for n in "$MAX_ITER" "$INTERVAL"; do
-  if ! [[ "$n" =~ ^[1-9][0-9]*$ ]]; then
-    echo "max-iterations and interval-seconds must be positive integers: $n" >&2
-    exit 2
-  fi
-done
-
 # Consecutive empty listings before the default branch is read. The window it
 # buys is (EMPTY_GRACE - 1) × interval — 40 s on the defaults, since the first
 # poll happens before any sleep and only the gaps between polls cost time — and
