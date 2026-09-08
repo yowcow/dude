@@ -51,6 +51,13 @@ Each row typically does:
 3. `run_sut <cmd...>` — runs the script under test with stdin `/dev/null`,
    capturing stdout/stderr to `$SUT_STDOUT`/`$SUT_STDERR` and status to
    `$SUT_STATUS`.
+   `run_in <work-dir> <argv...>` is the spelling for a script that reads cwd's
+   repository: it cds into the fixture repository, runs the script under test
+   there, and returns to the repository root, stopping the file if either cd
+   fails. Most of the git-touching scripts need it — a row run from the
+   scripts directory would pass even against a cwd-relative sibling call.
+   `resolve-pr-entry_test.sh` keeps a local `run_sut_in` whose signature
+   differs.
 4. `assert_row <name> <want-exit> <want-stdout> <want-gh-calls>` — the row's
    whole verdict in one call: exit status, stdout bytes, `gh` call count, and no
    unstubbed argv, advancing `failed` on any mismatch. All four arguments are
@@ -60,6 +67,13 @@ Each row typically does:
    needs an assertion `assert_row` does not make, or a different comparison:
    `watch-claude-review_test.sh` compares stdout against a file and keeps a
    local `assert_row` whose third argument is that file's path.
+5. `tally <cmd> <args...>` — for a row that needs an assertion beyond
+   `assert_row`'s four. It advances `total` once and `failed` once if the
+   check fails, so an extra assertion is counted exactly like the row's
+   `assert_row`. The check is passed as a command because the checks are not
+   all `check_eq`; a check reached only through `tally` is unreachable as far
+   as ShellCheck can tell, so its definition needs a
+   `# shellcheck disable=SC2317` note saying so.
 
 ## The `gh_stub_response` / `gh_stub_raw_response` contract
 

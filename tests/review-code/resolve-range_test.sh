@@ -199,19 +199,6 @@ work_repo() {
   printf '%s\n' "$dir"
 }
 
-# run_in <work-dir> [<pr-number>] -- the SUT reads cwd's origin, HEAD and
-# trailers, so every row runs from inside its own work repository and returns
-# to the repository root. Arguments after <work-dir> are forwarded as-is, so
-# a row can pass none, one, or two (the last of which exercises the SUT's own
-# argument-count guard).
-run_in() {
-  local dir="$1"
-  shift
-  cd "$dir"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # stub_pr_view <pr-number> <exit-status> -- the PR record lookup, raw body on
 # stdin. Raw, not filtered, so the SUT's own interpolation of the two oids
 # into one line is what runs: a pre-filtered fixture would state the answer

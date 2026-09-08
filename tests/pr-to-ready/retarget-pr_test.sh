@@ -70,12 +70,6 @@ stub_edit() {
 
 # --- assertions ------------------------------------------------------------
 
-# check_one <label> <want> <got>   a standalone check that keeps the tally
-check_one() {
-  total=$((total + 1))
-  if ! check_eq "$1" "$2" "$3"; then failed=$((failed + 1)); fi
-}
-
 bare_sha() {
   git -C "$1" rev-parse "refs/heads/$2"
 }
@@ -84,7 +78,7 @@ bare_sha() {
 check_contains() {
   local label="$1" repo="$2" ref="$3" sha="$4" status=0
   git -C "$repo" merge-base --is-ancestor "$sha" "$ref" 2>/dev/null || status=$?
-  check_one "$label" '0' "$status"
+  tally check_eq "$label" '0' "$status"
 }
 
 # --- topology --------------------------------------------------------------
@@ -130,24 +124,18 @@ NOT_A_REPO="$(git_repo_scratch not-a-repo)"
 # --- argument validation: nothing is read, nothing is called ----------------
 
 row_start
-cd "$NOT_A_REPO"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature
-cd "$REPO_ROOT"
+run_in "$NOT_A_REPO" "$OWNER" "$REPO" "$PR" feature
 assert_row 'too-few-args' 1 '' 0
 
 row_start
-cd "$NOT_A_REPO"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main extra
-cd "$REPO_ROOT"
+run_in "$NOT_A_REPO" "$OWNER" "$REPO" "$PR" feature main extra
 assert_row 'too-many-args' 1 '' 0
 
 # --- the PR cannot be read --------------------------------------------------
 
 row_start
 stub_view_fails
-cd "$NOT_A_REPO"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$NOT_A_REPO" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'pr-read-failed' 0 'STOP pr-read-failed\n' 1
 
 # --- the PR points somewhere else: the full retarget path -------------------
@@ -158,9 +146,7 @@ stub_edit main 0
 BARE="$(build_remote retarget clean)"
 MAIN_SHA="$(bare_sha "$BARE" main)"
 W="$(git_repo_clone retarget "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'base-drift-retargets-merges-and-pushes' 0 'RETARGETED develop main\n' 2
 check_contains 'base-drift: the remote branch now carries the new base' \
   "$BARE" refs/heads/feature "$MAIN_SHA"
@@ -172,11 +158,9 @@ stub_view develop
 BARE="$(build_remote fetchfail clean)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone fetchfail "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature nosuchbase
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature nosuchbase
 assert_row 'base-missing-on-the-remote' 0 'STOP fetch-failed\n' 1
-check_one 'fetch-failed: the remote branch did not move' \
+tally check_eq 'fetch-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # The merge needs the branch's own checkout, and this one is on another branch.
@@ -184,9 +168,7 @@ row_start
 stub_view develop
 BARE="$(build_remote checkoutreq clean)"
 W="$(git_repo_clone checkoutreq "$BARE" main)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'wrong-branch-checked-out' 0 'STOP checkout-required\n' 1
 
 row_start
@@ -194,9 +176,7 @@ stub_view develop
 BARE="$(build_remote dirty clean)"
 W="$(git_repo_clone dirty "$BARE" feature)"
 printf 'uncommitted\n' >>"${W}/README.md"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'dirty-worktree' 0 'STOP dirty-worktree\n' 1
 
 row_start
@@ -205,11 +185,9 @@ stub_edit main 1
 BARE="$(build_remote editfail clean)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone editfail "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'gh-pr-edit-fails' 0 'STOP retarget-failed\n' 2
-check_one 'retarget-failed: the remote branch did not move' \
+tally check_eq 'retarget-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # A conflict stops for a person. What matters beyond the token is that the
@@ -222,15 +200,13 @@ stub_edit main 0
 BARE="$(build_remote conflict conflict)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone conflict "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'merge-conflict-aborts-and-stops' 0 'STOP merge-conflict\n' 2
-check_one 'merge-conflict: the merge was aborted' \
+tally check_eq 'merge-conflict: the merge was aborted' \
   'no' "$([ -f "${W}/.git/MERGE_HEAD" ] && echo yes || echo no)"
-check_one 'merge-conflict: the working tree is clean again' \
+tally check_eq 'merge-conflict: the working tree is clean again' \
   '' "$(git -C "$W" status --porcelain)"
-check_one 'merge-conflict: the remote branch did not move' \
+tally check_eq 'merge-conflict: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # The merge lands locally and the push does not. This is the state the next
@@ -243,11 +219,9 @@ MAIN_SHA="$(bare_sha "$BARE" main)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone pushfail "$BARE" feature)"
 git_repo_deny_push "$BARE"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'push-fails' 0 'STOP push-failed\n' 2
-check_one 'push-failed: the remote branch did not move' \
+tally check_eq 'push-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 check_contains 'push-failed: the merge did land locally' \
   "$W" HEAD "$MAIN_SHA"
@@ -265,15 +239,13 @@ BARE="$(build_remote bothgates merged)"
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone bothgates "$BARE" feature)"
 LOCAL_BEFORE="$(git -C "$W" rev-parse HEAD)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'both-gates-hold' 0 'BASE-OK main\n' 1
-check_one 'both-gates-hold: the remote branch did not move' \
+tally check_eq 'both-gates-hold: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
-check_one 'both-gates-hold: the local branch did not move' \
+tally check_eq 'both-gates-hold: the local branch did not move' \
   "$LOCAL_BEFORE" "$(git -C "$W" rev-parse HEAD)"
-check_one 'both-gates-hold: the working tree was not touched' \
+tally check_eq 'both-gates-hold: the working tree was not touched' \
   '' "$(git -C "$W" status --porcelain)"
 
 # The pointer matches but the base is not in the remote branch: stage 1 is
@@ -288,9 +260,7 @@ stub_view main
 BARE="$(build_remote resume clean)"
 MAIN_SHA="$(bare_sha "$BARE" main)"
 W="$(git_repo_clone resume "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'pointer-matches-but-remote-lacks-the-base' 0 'RETARGETED main main\n' 1
 check_contains 'resume: the remote branch now carries the base' \
   "$BARE" refs/heads/feature "$MAIN_SHA"
@@ -301,9 +271,7 @@ row_start
 stub_view main
 BARE="$(build_remote branchfetch clean)"
 W="$(git_repo_clone branchfetch "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" nosuchbranch main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" nosuchbranch main
 assert_row 'branch-missing-on-the-remote' 0 'STOP branch-fetch-failed\n' 1
 
 # The ancestor check fails for a reason of its own rather than returning
@@ -316,11 +284,9 @@ BARE="$(build_remote blobref clean)"
 git_repo_blob_ref "$BARE" blobref 'not a commit\n'
 FEATURE_BEFORE="$(bare_sha "$BARE" feature)"
 W="$(git_repo_clone blobref "$BARE" feature)"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature blobref
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature blobref
 assert_row 'ancestor-check-errors' 0 'STOP ancestor-check-failed\n' 1
-check_one 'ancestor-check-failed: the remote branch did not move' \
+tally check_eq 'ancestor-check-failed: the remote branch did not move' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # --- a failed push, then a re-run: #170 end to end --------------------------
@@ -344,11 +310,9 @@ row_start
 stub_view develop
 stub_edit main 0
 git_repo_deny_push "$BARE"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'resume-sequence: run 1 stops at the push' 0 'STOP push-failed\n' 2
-check_one 'resume-sequence: run 1 moved nothing on the remote' \
+tally check_eq 'resume-sequence: run 1 moved nothing on the remote' \
   "$FEATURE_BEFORE" "$(bare_sha "$BARE" feature)"
 
 # run 2: GitHub now reports the new base, so the first gate holds -- and the
@@ -358,9 +322,7 @@ check_one 'resume-sequence: run 1 moved nothing on the remote' \
 row_start
 stub_view main
 git_repo_allow_push "$BARE"
-cd "$W"
-run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" feature main
-cd "$REPO_ROOT"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'resume-sequence: run 2 finishes the push' 0 'RETARGETED main main\n' 1
 check_contains 'resume-sequence: the remote branch finally carries the base' \
   "$BARE" refs/heads/feature "$MAIN_SHA"

@@ -104,14 +104,6 @@ stub_pr_list() {
   gh_stub_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_JQ"
 }
 
-# run_in <work-dir> <branch> -- the SUT reads cwd's origin, so every row runs
-# from inside its own work repository and returns to the repository root.
-run_in() {
-  cd "$1"
-  run_sut bash "$SUT" "$2"
-  cd "$REPO_ROOT"
-}
-
 # `feature` records nothing; `main` records nothing either.
 REMOTE_PLAIN="$(build_remote plain - -)"
 # `main`'s single commit carries a trailer that the task branch merely
@@ -275,16 +267,12 @@ assert_row 'task-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 
 row_start
 W="$(work_repo args-none "$REMOTE_PLAIN" main)"
-cd "$W"
-run_sut bash "$SUT"
-cd "$REPO_ROOT"
+run_in "$W"
 assert_row 'no-argument' 1 '' 0
 
 row_start
 W="$(work_repo args-extra "$REMOTE_PLAIN" main)"
-cd "$W"
-run_sut bash "$SUT" feature extra
-cd "$REPO_ROOT"
+run_in "$W" feature extra
 assert_row 'too-many-arguments' 1 '' 0
 
 harness_exit "$failed" "$total"

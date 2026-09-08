@@ -64,16 +64,6 @@ wt_path() {
   printf '%s\n' "${HARNESS_TMP}/wt/$1"
 }
 
-# run_in <work-dir> <argv...> -- the SUT reads cwd's repository, so every row
-# runs from inside its own work repository and returns to the repository root.
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # real_path <path> -- the path as git itself reports it in `worktree list`.
 # Compared as bytes, so a symlinked $TMPDIR would otherwise fail every REUSE
 # row for a reason that has nothing to do with the script.
@@ -111,15 +101,6 @@ check_stderr_has() {
   local got=no
   grep -q -- "$2" "$SUT_STDERR" && got=yes
   check_eq "$1" 'yes' "$got"
-}
-
-# tally <label-and-check...> -- run one check and fold its verdict into the
-# counters, so a row's extra assertions are counted like its assert_row.
-tally() {
-  total=$((total + 1))
-  if ! "$@"; then
-    failed=$((failed + 1))
-  fi
 }
 
 # ---- REUSE: a worktree already carries the branch ----------------------

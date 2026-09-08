@@ -160,6 +160,47 @@ run_sut() {
   "$@" >"${SUT_STDOUT}" 2>"${SUT_STDERR}" </dev/null || SUT_STATUS=$?
 }
 
+# run_in <work-dir> <argv...>
+# Runs the script under test with <work-dir> as cwd, then returns to the
+# repository root. Almost every script under test reads cwd's repository --
+# its origin, its HEAD, its trailers -- so a row has to run from inside its
+# own fixture repository rather than from the scripts directory. A row run
+# from the wrong directory can pass for the wrong reason: a script that
+# reached its sibling through a cwd-relative path instead of
+# dirname "${BASH_SOURCE[0]}" would still be found.
+#
+# Both cd calls stop the file rather than continue. A failed cd would leave
+# the row running against whichever repository the previous row left behind,
+# and the verdict would be about the wrong tree.
+#
+# $SUT is set by the test file that sourced this, not here: each file names
+# its own script under test.
+run_in() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "$SUT" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+# tally <cmd> <args...>
+# Runs one check and folds its verdict into the caller's counters, so a row's
+# extra assertions are counted exactly like its assert_row: `total` advances
+# once per call, `failed` once if the check fails. That one-per-call property
+# is what makes an `ok N/N` count comparable across a refactor.
+#
+# It takes the check as a command rather than as bytes to compare, because the
+# checks are not all check_eq: check_absent, check_head, check_unmerged and the
+# rest each do their own comparison and print their own FAIL line. A check
+# reached only through here is invisible to ShellCheck's reachability analysis,
+# so its definition carries a `# shellcheck disable=SC2317` note.
+tally() {
+  total=$((total + 1))
+  if ! "$@"; then
+    failed=$((failed + 1))
+  fi
+}
+
 check_eq() {
   local label="$1" want="$2" got="$3"
   if [ "$want" = "$got" ]; then

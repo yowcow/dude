@@ -72,14 +72,6 @@ push_remote_only() {
   git -C "$1" branch -q -D "tmp-$2"
 }
 
-run_in() {
-  local w="$1"
-  shift
-  cd "$w"
-  run_sut bash "$SUT" "$@"
-  cd "$REPO_ROOT"
-}
-
 # ---- no branch for this issue ------------------------------------------
 #
 # The decoys are what make an empty answer mean something: `199-other` and
@@ -160,11 +152,8 @@ W="$(build_case lsremotefail 201-alpha)"
 git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/absent.git"
 run_in "$W" 201
 assert_row 'ls-remote-itself-failed' 128 '' 0
-total=$((total + 1))
-if ! check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
-  "$(grep -q 'git ls-remote failed' "$SUT_STDERR" && echo yes || echo no)"; then
-  failed=$((failed + 1))
-fi
+tally check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
+  "$(grep -q 'git ls-remote failed' "$SUT_STDERR" && echo yes || echo no)"
 
 # ---- argument validation -----------------------------------------------
 

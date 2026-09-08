@@ -93,8 +93,6 @@ stub_first "$REPO" UNKNOWN
 stub_reread "$REPO" UNKNOWN
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'unknown-outlasts-re-read' 0 'BASE-OK main UNKNOWN\n' 6
-
-total=$((total + 1))
-if ! check_eq 'unknown-outlasts-re-read: sleeps' '5' "$(sleep_call_count)"; then failed=$((failed + 1)); fi
+tally check_eq 'unknown-outlasts-re-read: sleeps' '5' "$(sleep_call_count)"
 
 harness_exit "$failed" "$total"
