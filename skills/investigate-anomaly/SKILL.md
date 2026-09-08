@@ -7,14 +7,10 @@ description: Use when root-causing an observed anomaly — production errors, an
 
 Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core loop; this skill layers the anomaly-specific work on top of it: framing, evidence preservation, timeline reconstruction, change correlation, and blameless reporting.
 
-## Investigation rules
-
-- Preserve volatile evidence before anything else.
-- Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
-- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors.
-
 ## Rules
 
+- Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
+- Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors.
 - Blameless: name systems and conditions, never people.
 - Investigation is read-only: never mutate production state (restarts, config, data) without explicit user approval.
 
@@ -70,7 +66,7 @@ Sweep every change class across the last-good → first-bad window:
 
 ### Exit criteria
 
-- The explanation meets **Investigation rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
+- The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
 ### Report format (blameless)

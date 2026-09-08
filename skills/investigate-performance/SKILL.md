@@ -7,14 +7,11 @@ description: Use when diagnosing an observed performance shortfall — a slow en
 
 Root-cause an observed performance shortfall. `superpowers:systematic-debugging` is the core loop and runs unchanged here. This skill adds only the performance-specific layers on top: what to measure, in what order, and how to report.
 
-## Investigation rules
+## Rules
 
 - Preserve volatile evidence before anything else.
 - Record each hypothesis with its test and verdict; refuted ones stay recorded, not retried.
 - Exit when the root cause explains all observations — magnitude, timing, and scope included — or when the remaining unknowns are explicitly documented along with how to resolve them, distinguishing root cause from trigger and contributing factors.
-
-## Rules
-
 - Measure before guessing: no fix proposal without a number behind it.
 - Account for variance, warm-up, and cold caches in the measurement itself before trusting a delta — and confirm you are measuring the thing you mean to (client-observed vs server-side time).
 
