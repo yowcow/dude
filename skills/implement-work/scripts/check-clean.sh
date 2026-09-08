@@ -8,11 +8,6 @@
 # Usage: check-clean.sh
 set -euo pipefail
 
-if [ "$#" -ne 0 ]; then
-  echo "Usage: $0" >&2
-  exit 1
-fi
-
 STATUS="$(git status --porcelain)"
 
 if [ -z "$STATUS" ]; then

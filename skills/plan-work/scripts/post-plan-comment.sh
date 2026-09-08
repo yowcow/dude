@@ -38,11 +38,6 @@ REPO="$2"
 ISSUE="$3"
 BODY_FILE="$4"
 
-if ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
-  echo "error: invalid issue number '$ISSUE' (must be an integer)" >&2
-  exit 1
-fi
-
 # `-r` as well as `-f`, because `-r` asks access(2) — the same question the
 # `<"$BODY_FILE"` redirect below asks. With `-f` alone a file that exists with
 # mode 000 walks through, and only the redirect fails: the `gh` on the right of
