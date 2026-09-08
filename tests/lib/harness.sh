@@ -246,7 +246,7 @@ check_no_violations() {
 
 # assert_row <name> <want-exit> <want-stdout> <want-gh-calls>
 # One row's whole verdict: the exit status, the stdout bytes, the number of `gh`
-# calls, and that no call reached an argv no case stubbed. On any mismatch it
+# calls, and that no call reached an argv with no case stubbed. On any mismatch it
 # advances the caller's `failed` and prints the head of stderr. `<want-stdout>`
 # is a printf '%b' format string, as check_bytes takes.
 #
