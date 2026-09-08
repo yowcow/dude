@@ -50,26 +50,9 @@ if [ -n "$PR" ]; then
   exit 0
 fi
 
-# Two-rung ladder, never guessing a branch name: the GitHub API, then give up
-# and let the caller ask a person. The API answers with the bare name, which is
-# what the fetch below takes.
-#
-# refs/remotes/origin/HEAD is deliberately not consulted. A clone sets that
-# symref once and never refreshes it, so after the repository renames its
-# default branch it keeps naming the old one; while that branch still exists
-# this function would answer with it and the range would be measured from the
-# wrong base, reporting findings against code this branch never wrote, with no
-# error anywhere. Reading it saved one `gh` call and nothing else -- every path
-# that reaches here fetches immediately afterwards, so there was no offline case
-# to keep.
-resolve_default_branch() {
-  local ref
-  if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
-    printf '%s\n' "$ref"
-    return 0
-  fi
-  return 1
-}
+# The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
+# -- see its header for the rationale.
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Capture the trailer scan into a variable before testing it, rather than
 # piping into `grep`. A pipe reports only grep's exit status, and grep exits 1
@@ -96,7 +79,7 @@ while IFS= read -r line; do
 done <<<"$TRAILER_LOG"
 
 if [ -z "$RECORDED" ]; then
-  FETCH_SPEC="$(resolve_default_branch)" || { echo "STOP ask-default-branch"; exit 0; }
+  FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 else
   # Read the exit status and the line count together. A non-zero exit prints
   # nothing and looks exactly like "no PR" — auth, network, or repo-context
