@@ -188,7 +188,11 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # stdout. Gated, the one failure worth ending the watch on would be read as an
   # ordinary blip and every later iteration would ask the same wrong question
   # until the cap ran out.
-  if printf '%s' "$raw" | grep -q 'No commit found for SHA'; then
+  # Matched in-shell rather than by piping into `grep -q`: grep exits on its
+  # first hit and would SIGPIPE the left-hand side under pipefail, the same
+  # trap watch-copilot-review.sh:96-97 names. The needle carries no regex
+  # metacharacter and no newline, so a substring test is equivalent.
+  if [[ "$raw" == *'No commit found for SHA'* ]]; then
     printf '%s\n' "$raw" >&2
     exit 3
   fi
