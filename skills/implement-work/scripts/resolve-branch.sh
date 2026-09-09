@@ -39,12 +39,14 @@ elif [ "$status" -ne 0 ]; then
   exit "$status"
 fi
 
-REMOTE=""
-if [ -n "$REMOTE_RAW" ]; then
-  # ls-remote prints "<sha>\trefs/heads/<name>"; strip down to the bare name
-  # so it compares against the bare names `git branch --list` printed.
-  REMOTE="$(printf '%s\n' "$REMOTE_RAW" | cut -f2 | sed 's#^refs/heads/##')"
-fi
+# ls-remote prints "<sha>\trefs/heads/<name>"; strip down to the bare name so
+# it compares against the bare names `git branch --list` printed. `NF` keeps
+# this awk stage itself from emitting an empty record on an empty
+# REMOTE_RAW; it isn't what keeps stdout byte-empty for the no-match case —
+# that's the surviving `if [ -n "$REMOTE" ]` output guard below, since
+# command substitution already strips the lone-newline case regardless of
+# NF.
+REMOTE="$(awk -F'\t' 'NF{sub(/^refs\/heads\//, "", $2); print $2}' <<<"$REMOTE_RAW")"
 
 {
   if [ -n "$LOCAL" ]; then printf '%s\n' "$LOCAL"; fi
