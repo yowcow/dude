@@ -28,58 +28,52 @@
 #
 #   1. The exit-status half of the guarded read. Replacing the guard with
 #      `TRAILER_LOG="$(git log "$@" --format='...' 2>/dev/null || true)"` -- no
-#      `if ! ... then` -- failed all rows: the failed read prints nothing,
-#      reads as an absent trailer, and both callers then go to the default
-#      branch (a test of the row "trailer-read-fails" is unreachable when read
-#      failures look exactly like absent trailers). Failed rows: no-trailer,
-#      excluded-revs-are-not-scanned, included-revs-are-scanned,
-#      newest-trailer-shadows-older, prereq-open, prereq-merged,
-#      prereq-closed, prereq-has-no-pr, prereq-has-several-prs,
-#      prereq-lookup-fails, prereq-state-unrecognised, trailer-read-fails
-#      (the last one: that row would read a failed git log as NO-TRAILER).
+#      `if ! ... then` -- makes a failed read silent instead of stopping.
+#      Failed rows: trailer-read-fails (want "STOP trailer-read-failed", got
+#      "NO-TRAILER"). The script now reads a failed `git log` as an absent
+#      trailer because the silent assignment with `|| true` suppresses the
+#      exit status.
 #
-#   2. The loop's break. Deleting `break` made the loop keep scanning and
+#   2. The loop's break. Deleting `break` makes the loop keep scanning and
 #      record the *oldest* trailer on the stack instead of the newest.
-#      Failed rows: newest-trailer-shadows-older (want PREREQ newer-base 9
-#      OPEN, got PREREQ older-base 8 OPEN).
+#      Failed rows: newest-trailer-shadows-older (want "PREREQ newer-base 9
+#      OPEN", got "PREREQ older-base 8 OPEN").
 #
 #   3. The caller's revision range. Replacing `git log "$@"` with `git log
-#      HEAD` made the script read the whole branch instead of only the caller's
+#      HEAD` makes the script read the whole branch instead of only the caller's
 #      excluded range. Failed rows: excluded-revs-are-not-scanned (want
-#      NO-TRAILER, got PREREQ ancestor-base 9 OPEN).
+#      "NO-TRAILER", got "PREREQ ancestor-base 9 OPEN").
 #
 #   4. The empty-list check. Deleting the `[ "$LINE_COUNT" -eq 0 ]` block
-#      made the script fall through when PR_LOOKUP is empty, reaching the
+#      makes the script fall through when PR_LOOKUP is empty, reaching the
 #      STATE extraction on an empty string and then the case statement with no
-#      match (exit 1, no stdout). Failed rows: prereq-has-no-pr (want exit 0
-#      with "STOP no-prereq-pr", got exit 1 with nothing).
+#      match. Failed rows: prereq-has-no-pr (want exit 0 with "STOP
+#      no-prereq-pr", got exit 1 with stderr "error: unexpected PR state ''
+#      for 'dep'").
 #
-#   5. The multi-PR check. Deleting the `[ "$LINE_COUNT" -ge 2 ]` block made
+#   5. The multi-PR check. Deleting the `[ "$LINE_COUNT" -ge 2 ]` block makes
 #      the script try to extract STATE from a multi-line PR_LOOKUP with
-#      `${PR_LOOKUP##* }`, which gives only the last line's state. Failed rows:
-#      prereq-has-several-prs (want exit 0 with "STOP ask-multiple-prs", got
-#      exit 0 with "PREREQ dep 8 CLOSED").
+#      `${PR_LOOKUP##* }`, which gives only the last line's state (CLOSED).
+#      Failed rows: prereq-has-several-prs (want exit 0 with "STOP
+#      ask-multiple-prs", got "STOP abandoned-prerequisite").
 #
 #   6. The exit-status half of the PR lookup guard. Replacing the guard with
 #      `PR_LOOKUP="$(gh ... 2>/dev/null || true)"` -- no `if ! ... then` --
-#      failed rows that depend on the lookup: included-revs-are-scanned,
-#      newest-trailer-shadows-older, prereq-open, prereq-merged, prereq-closed,
-#      prereq-has-no-pr, prereq-has-several-prs, prereq-lookup-fails,
-#      prereq-state-unrecognised. A failing `gh` command prints nothing when
-#      guarded this way, reads as an empty list, and the script answers
-#      "no-prereq-pr" instead of "prereq-lookup-failed".
+#      makes a failed lookup silent instead of stopping. Failed rows:
+#      prereq-lookup-fails (want "STOP prereq-lookup-failed", got "STOP
+#      no-prereq-pr"). A failing `gh` command prints nothing, reads as an
+#      empty list, and the script answers "no-prereq-pr" instead.
 #
-#   7. The CLOSED state branch. Folding CLOSED into the `*)` arm (deleting
-#      the `CLOSED) ... ;;` case) made the script reach the error path instead
-#      of answering STOP abandoned-prerequisite. Failed rows: prereq-closed
-#      (want exit 0 with "STOP abandoned-prerequisite", got exit 1 with
-#      "error: unexpected PR state 'CLOSED' for 'dep'" on stderr).
+#   7. The CLOSED state branch. Deleting the `CLOSED)` case makes the script
+#      reach the error path instead of answering STOP abandoned-prerequisite.
+#      Failed rows: prereq-closed (want exit 0 with "STOP abandoned-prerequisite",
+#      got exit 1 with stderr "error: unexpected PR state 'CLOSED' for 'dep'").
 #
-#   8. The argument-count guard. Deleting the `[ "$#" -eq 0 ]` guard made the
+#   8. The argument-count guard. Deleting the `[ "$#" -eq 0 ]` guard makes the
 #      script pass no arguments to `git log`, which defaults to HEAD and scans
-#      the whole current branch. Failed rows: no-revs (want exit 1 with nothing
-#      on stdout, got exit 0 with output, because git log with no rev
-#      succeeds).
+#      the current branch instead of requiring caller-supplied revs. Failed
+#      rows: no-revs (want exit 1 with no stdout, got exit 0 with output
+#      "STOP prereq-lookup-failed", and gh was called once when it should not).
 #
 # Not coverable here: the `--jq '.[] | "\(.number) \(.state)"'` filter. The
 # fake `gh` stubs the whole invocation by argv, and changing the filter text
