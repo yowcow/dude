@@ -40,7 +40,7 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 
 Call `<skill-dir>/../implement-work/scripts/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
 
-- `REUSE <path>` — a worktree already carries `<branch>`; use it as-is.
+- `REUSE <path>` — a worktree already carries `<branch>`, and it need not be clean: this flow's third terminal state deliberately leaves a tree uncommitted, and the same tree outlives the run that left it. Measure it before binding it — run `<skill-dir>/../implement-work/scripts/check-clean.sh` **from `<path>`**, which takes no argument and reads the tree it runs in, so running it where the session started measures a tree this run will never touch. Clean: use it as-is. Anything pending — **stop.** It is work this run did not write, and Step 1's diagnosis fix and 2-3's `accept` fixes would carry it into the PR unread by anyone; report what the script printed and hand the tree back to a person to say whose it is.
 - `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
 - `CREATE` — **stop.** A PR's head branch exists on its repository's remote by definition, and 0-2 has already established that this checkout is that repository, so nothing to attach to means the branch was deleted under an open PR. Report it; don't cut a fresh branch, which would put an empty history under the name the PR points at.
 
