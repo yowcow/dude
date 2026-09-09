@@ -58,7 +58,7 @@ Each finding returns lens, severity, claim (one sentence), evidence (`path:line`
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report, for this pass: the target reviewed, the fixed fan-out of one, any lens skipped with why, the blocking findings per **Severity**, the round history carried forward, and the verdict — clean, or the blocking findings that remain, flagging any Critical separately since its remedy lives outside a report edit.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report, for this pass: the target reviewed, the fixed fan-out of one, any lens skipped with why, the blocking findings per **Severity**, the round history carried forward, and the verdict — clean, or the blocking findings that remain, flagging any Critical separately.
 
 ## Caller contract
 
