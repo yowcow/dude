@@ -33,7 +33,7 @@ Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/wo
 
 A plugin install distributes `skills/` plus hooks/manifests. `tests/` lives at the repo root so it does **not** ship. Never put tests inside a skill directory.
 
-`skills/<skill>/scripts/<name>.sh` needs `tests/<skill>/<name>_test.sh` (subdirectories mirrored) or a line in `tests/scripts-have-tests.allowlist`. The allowlist is currently empty; the gate is permanent. Test-writing contract: `tests/README.md`.
+`skills/<skill>/scripts/<name>.sh` needs `tests/<skill>/<name>_test.sh` (subdirectories mirrored); there is no exemption path, and the gate is permanent. Test-writing contract: `tests/README.md`.
 
 Skill scripts must run on bash 3.2 (`${x,,}` is out; use `tr`).
 

@@ -14,24 +14,9 @@ fi
 
 ISSUE="${1:-}"
 
-# Two-rung ladder, never guessing a branch name: the GitHub API, then give up
-# and let the caller ask a person.
-#
-# refs/remotes/origin/HEAD is deliberately not consulted. A clone sets that
-# symref once and never refreshes it, so after the repository renames its
-# default branch it keeps naming the old one; while that branch still exists
-# this function would answer with it and the task's branch would be cut from
-# the wrong base, with no error anywhere. Reading it saved one `gh` call and
-# nothing else -- every path that reaches here fetches immediately afterwards,
-# so there was no offline case to keep.
-resolve_default_branch() {
-  local ref
-  if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
-    printf '%s\n' "$ref"
-    return 0
-  fi
-  return 1
-}
+# The default branch is resolved by resolve-default-branch.sh beside this
+# script -- see its header for the rationale.
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Fetch the branch, so the caller can cut from origin/<name>.
 fetch_ref() {
@@ -50,7 +35,7 @@ else
 fi
 
 if [ "${BLOCKED_COUNT}" -eq 0 ]; then
-  DEFAULT="$(resolve_default_branch)" || { echo "STOP ask-default-branch"; exit 0; }
+  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
   fetch_ref "${DEFAULT}"
   echo "BASE ${DEFAULT}"
   exit 0
@@ -86,7 +71,7 @@ STATE="${PR_INFO##* }"
 
 case "${STATE}" in
   MERGED)
-    DEFAULT="$(resolve_default_branch)" || { echo "STOP ask-default-branch"; exit 0; }
+    DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
     fetch_ref "${DEFAULT}"
     echo "BASE ${DEFAULT}"
     ;;
