@@ -38,22 +38,28 @@ BRANCH="$1"
 TITLE="$2"
 BODY_FILE="$3"
 
-# Prints one line per matching PR ("<number> <isDraft>") on success, nothing
-# on an empty list. Exit status and output must be read together by the
-# caller — a non-zero exit here means "couldn't tell", not "no PR".
-lookup_pr() {
-  gh pr list --head "$BRANCH" --json number,isDraft --jq '.[] | "\(.number) \(.isDraft)"'
-}
-
-# Count the lines lookup_pr produced. An empty string has to count as zero:
-# `wc -l` on it would report 1, turning "no PR" into "exactly one PR" and
-# sending the caller down the found-a-PR branch with an empty number.
-count_lines() {
-  if [ -z "$1" ]; then
-    echo 0
-  else
-    printf '%s\n' "$1" | wc -l
+# Run the existence lookup and hand the caller both halves of the answer:
+# LOOKUP (one line per matching PR, "<number> <isDraft>") and LINE_COUNT.
+# Exit status and output must be read together — a non-zero exit from `gh`
+# means "couldn't tell", not "no PR", and reading it as "none found" is
+# exactly what opens a second PR on a branch that already has one. That
+# failure is answered here, with the slug the caller passes, because the two
+# call sites report it differently; everything after it (0/1/>=2, and the
+# `exit 0` itself, which must happen in the caller's own shell) stays with
+# the caller.
+#
+# `grep -c .` counts non-empty lines, so an empty LOOKUP counts as 0 rather
+# than the 1 `wc -l` would report — "no PR" must not turn into "exactly one
+# PR" with an empty number. It exits 1 on a zero count, hence `|| true`;
+# the count itself is still printed. The two differ only on *interior* blank
+# lines, which `gh pr list --jq '.[] | "\(.number) \(.isDraft)"'` cannot
+# produce.
+pr_lookup() {
+  if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft --jq '.[] | "\(.number) \(.isDraft)"')"; then
+    echo "STOP $1"
+    return 1
   fi
+  LINE_COUNT="$(grep -c . <<<"$LOOKUP" || true)"
 }
 
 # --- Step 1: the branch must be on the remote before anything else runs. ---
@@ -92,15 +98,9 @@ fi
 
 # --- Step 2: does a PR already exist for this branch? ---
 
-if ! LOOKUP="$(lookup_pr)"; then
-  # "PR none found" must not be read the same as "couldn't tell" — that
-  # misreading is exactly what opens a second PR on a branch that already
-  # has one.
-  echo "STOP pr-lookup-failed"
+if ! pr_lookup pr-lookup-failed; then
   exit 0
 fi
-
-LINE_COUNT="$(count_lines "$LOOKUP")"
 
 if [ "$LINE_COUNT" -eq 1 ]; then
   read -r NUM DRAFT <<<"$LOOKUP"
@@ -147,12 +147,9 @@ fi
 # trusting `gh pr create`'s own exit status for what the PR record actually
 # says. ---
 
-if ! LOOKUP="$(lookup_pr)"; then
-  echo "STOP pr-readback-failed"
+if ! pr_lookup pr-readback-failed; then
   exit 0
 fi
-
-LINE_COUNT="$(count_lines "$LOOKUP")"
 
 if [ "$LINE_COUNT" -eq 0 ]; then
   # Not "creation failed" — `gh pr create` may have exited 0 while the
