@@ -69,6 +69,8 @@ Sweep every change class across the last-good → first-bad window:
 - The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
+Once the report below is drafted, run `review-findings` on it; nothing reaches the canonical record before it comes back clean.
+
 ### Report format (blameless)
 
 1. **Summary** — one paragraph.

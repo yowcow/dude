@@ -3,9 +3,9 @@
 # finishes. Completion is tied to the workflow run rather than guessed from
 # comment counts, which is why this exists as a command at all.
 #
-# With no run-id: prints the workflow's recent runs as JSON, carrying event,
-# createdAt and displayTitle so the caller can match a run to its own request
-# rather than taking the newest and risking a stale one.
+# With no run-id: prints the workflow's recent runs as JSON, carrying
+# databaseId, conclusion, createdAt and displayTitle so the caller can match a
+# run to its own request rather than taking the newest and risking a stale one.
 # With a run-id: blocks on that run.
 #
 # The listing covers runs on <branch> and on the default branch, because the
@@ -15,13 +15,10 @@
 # issue-comment shape, so the caller polls until it times out and reports the
 # review as never arriving even though it completed and posted.
 #
-# headSha does not identify the push either, for the same reason: on the
-# issue-comment shape it is the default branch's tip, not the PR head. Match on
-# createdAt against the moment the request was posted.
-#
-# createdAt alone still does not identify the run: every issue-comment run in
-# the repository lands on the default branch, so a review requested on another
-# PR in the same window sits in this listing too, and matching on time alone
+# Match on createdAt against the moment the request was posted, but createdAt
+# alone still does not identify the run: every issue-comment run in the
+# repository lands on the default branch, so a review requested on another PR
+# in the same window sits in this listing too, and matching on time alone
 # blocks on that one and reads its verdict as this PR's. displayTitle carries
 # the PR title for these runs — discriminate on it as well.
 #
@@ -78,9 +75,9 @@ wf="$(basename "$wf")"
 if [ -z "$RUN_ID" ]; then
   default_branch="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)"
   gh run list --workflow="$wf" --limit 100 \
-    --json databaseId,status,conclusion,event,createdAt,displayTitle,headBranch,headSha |
+    --json databaseId,conclusion,createdAt,displayTitle,headBranch |
     jq --arg b "$BRANCH" --arg d "$default_branch" \
-      '[.[] | select(.headBranch == $b or .headBranch == $d)]'
+      '[.[] | select(.headBranch == $b or .headBranch == $d) | del(.headBranch)]'
   exit 0
 fi
 
