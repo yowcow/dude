@@ -38,7 +38,7 @@ Six, and none of them lowers the bar in **What counts as a finding**. How many r
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
 - **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly.
 
-*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: this target proposes no work, so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
+*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here (it enters `plan-work`), so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
 ## Severity
 
