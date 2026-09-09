@@ -80,7 +80,7 @@ case "${KIND}" in
     ;;
   STOP)
     # Passed through unchanged: the slugs are this script's output contract,
-    # and the three rows behind them are answered identically by both readers,
+    # and these five cases are answered identically by both readers,
     # which is why they are answered once, over there.
     printf '%s\n' "$ANSWER"
     exit 0

@@ -191,7 +191,7 @@ assert_row 'prereq-merged' 0 'PREREQ dep 9 MERGED\n' 1
 
 # ---- the three answers both callers share -------------------------------
 #
-# These are base-branch.md's stop rows: both readers print these bytes
+# These are base-branch.md's stop cases: both readers print these bytes
 # identically, which is why they live here rather than in either caller. The
 # slugs are the callers' output contract and are passed straight through.
 

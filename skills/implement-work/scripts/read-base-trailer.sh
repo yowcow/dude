@@ -7,7 +7,7 @@
 #   PREREQ <branch> <pr-number> <OPEN|MERGED>   the prerequisite and its state
 #   STOP <slug>                                 the caller stops and says so
 #
-# This implements the rows of the state-to-base table where the two readers
+# This implements the cases of the state-to-base table where the two readers
 # print the same bytes -- ../references/base-branch.md, "## Reading the trailer
 # back". The rows where they differ (no trailer, OPEN, MERGED) stay with the
 # callers: NO-TRAILER and PREREQ hand those decisions back rather than taking

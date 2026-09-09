@@ -59,7 +59,7 @@ It needs no branch to exist: the lookup is by head branch *name*, which the PR r
 ## Why the lookups are tested the way they are
 
 - **A PR's state is tested by `state`, and it has three values.** `OPEN`, `CLOSED` and `MERGED` are three cases, so "not merged" collapses the two that need opposite answers: a PR closed without merging is abandoned work, not work still in flight. This binds both sides of the mechanism — the writer reads `state` to choose what to branch from, and both readers read it to choose the base.
-- **The stop rows stop rather than falling through to the default branch.** Falling through makes an unimplemented, abandoned, or ambiguous prerequisite indistinguishable from an independent task — and that surfaces only later, as a failure whose cause is nowhere in the diff. This table's stop rows, and the writer-side rule's own stop outcomes, both exist for that one reason.
+- **The stop cases stop rather than falling through to the default branch.** Falling through makes an unimplemented, abandoned, or ambiguous prerequisite indistinguishable from an independent task — and that surfaces only later, as a failure whose cause is nowhere in the diff. This table's stop cases, and the writer-side rule's own stop outcomes, both exist for that one reason.
 
 ## Absorbing the base at the completion gate
 
