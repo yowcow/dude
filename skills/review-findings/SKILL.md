@@ -31,7 +31,7 @@ Both severities in **Severity** are blocking. There is no non-blocking tier: a f
 
 ## Lenses
 
-Six, and none of them lowers the bar in **What counts as a finding**. One pass gives the whole list to its single reviewer.
+Six, and none of them lowers the bar in **What counts as a finding**. An initial pass gives the whole list to its single reviewer; a re-run after an Important finding is scoped per **Caller contract**.
 
 - **Evidence sufficiency** — whether each claim's stated evidence actually carries it: a conclusion resting on a sample, a single occurrence, or a correlation presented as though it were the measurement; a number with no command, window, or source behind it.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met with the sweep that produced it: whether the sweep ran to completion and its whole output was read, rather than a truncated or paged view of it. A claim whose sweep cannot be pointed at is a finding.
@@ -52,7 +52,7 @@ Each finding returns lens, severity, claim (one sentence), evidence (`path:line`
 ## Pass
 
 1. Gather the inputs: the target report, the question it answers, its stated sources, the six lenses, and the record of earlier passes if the caller supplied one.
-2. Dispatch exactly one reviewer with all of the above. Confine every search to the project root or narrower.
+2. Dispatch exactly one reviewer with the lenses this pass covers — all six, except a re-run after an Important finding, which is scoped per **Caller contract**. Confine every search to the project root or narrower.
 3. The reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
 4. Report per **Report**, and stop there — revising and re-running are the caller's job.
 
