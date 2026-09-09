@@ -27,7 +27,7 @@ Ask the user: once CI is green and review is clean, should this run mark the PR 
 
 Bind the run from the caller's reference — a PR number or a PR URL. If none was given, ask; **don't guess it from the current checkout**, whose repository need not be the PR's at all.
 
-Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once — `<skill-dir>` being this skill's own directory inside the installed plugin, `skills/pr-to-ready/`. It resolves the reference against the repository the reference itself names, checks that this working tree is a checkout of that repository, and answers on one line. Branch on it:
+Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the reference against the repository the reference itself names, checks that this working tree is a checkout of that repository, and answers on one line. Branch on it:
 
 - `PR <n> branch=<head> base=<base> repo=<owner>/<repo> draft=<bool>` — bind `<PR>`, `<branch>`, and the `<owner>` and `<repo>` every later script call takes; none of those three is re-derived from the checkout again. `<base>` is the base the PR points at **now**, which is not the same question as the base it *should* sit on: Step 1 re-resolves that and may replace it.
 - `STOP <slug>` — report the stop and end the run. Nothing downstream has a repository, a branch, or a base it could work from.
