@@ -84,7 +84,7 @@ WORKFLOW_FILE=ai-review.yml
 
 MIXED="${FIXTURES}/claude-runs-mixed.json"
 DEEP="${FIXTURES}/claude-runs-deep.json"
-LISTING_FIELDS=databaseId,status,conclusion,event,createdAt,displayTitle,headBranch,headSha
+LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
 
 failed=0
 total=0
