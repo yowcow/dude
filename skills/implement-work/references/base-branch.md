@@ -31,13 +31,11 @@ The base then follows from that state:
 | no trailer | the default branch | omit |
 | `OPEN` | `git fetch origin <recorded>`, then `FETCH_HEAD` | `<recorded>` |
 | `MERGED` | `git fetch origin refs/pull/<n>/head`, then `FETCH_HEAD` | the default branch — omit `--base`, and retarget an existing PR that still points at `<recorded>` |
-| `CLOSED` without merging | **stop** | **stop** |
-| no PR found | **stop** and report it | **stop** and report it |
-| two or more PRs | **stop and ask** | **stop and ask** |
+| anything else — ask a person | **stop** | **stop** |
 
 `<n>` is the PR number the lookup printed beside the state. The no-trailer row needs no lookup.
 
-The last two rows both stop, and they differ in what they put to the person. No PR on the recorded branch leaves the base unknowable, so there is nothing to choose between and the run reports what it found — the same answer `implement-work`'s writer-side rule gives an unimplemented prerequisite. Two or more PRs leaves a genuine choice: the trailer already fixed *which* prerequisite this is, so what is open is which of that one branch's PR records the base should follow. That one asks.
+Of what the last row absorbs, no PR on the recorded branch and two or more PRs on it differ in what they put to the person. No PR on the recorded branch leaves the base unknowable, so there is nothing to choose between and the run reports what it found — the same answer `implement-work`'s writer-side rule gives an unimplemented prerequisite. Two or more PRs leaves a genuine choice: the trailer already fixed *which* prerequisite this is, so what is open is which of that one branch's PR records the base should follow. That one asks.
 
 ### Why the state is re-read and the branch is not
 
