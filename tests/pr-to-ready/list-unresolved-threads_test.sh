@@ -57,7 +57,6 @@ QUERY='
           reviewThreads(first: 100, after: $endCursor) {
             pageInfo { hasNextPage endCursor }
             nodes {
-              id
               isResolved
               comments(first: 1) {
                 nodes {
@@ -75,7 +74,7 @@ QUERY='
 JQ='.data.repository.pullRequest.reviewThreads.nodes[]
         | select(.isResolved == false)
         | .comments.nodes[0] as $c
-        | "\(.id)\t\($c.databaseId)\t\($c.author.login)\t\($c.path):\($c.line)"'
+        | "\($c.databaseId)\t\($c.author.login)\t\($c.path):\($c.line)"'
 
 failed=0
 total=0
