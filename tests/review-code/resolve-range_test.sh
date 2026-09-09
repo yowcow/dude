@@ -24,54 +24,70 @@
 # way this suite's other table tests do. Guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
-# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Five of
-# the seven mutate this script alone, so a single-file copy suffices for them;
-# the other two (records 2 and 5) mutate the shared
+# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
+# 4 alone mutates this script by itself and stays single-file both before and
+# after Task 2: it mutates emit_range, its own guard, and fails a PR-shape row
+# that returns before the trailer scan is ever reached. Every other record
+# (1-3 and 5-7) mutates a guard that either lives in, or is reached through,
+# the shared ../../implement-work/scripts/read-base-trailer.sh and/or
 # ../../implement-work/scripts/resolve-default-branch.sh this script calls as
-# a subprocess through `dirname "$0"`, so those two need the tree copied two
-# directory levels deep with both files in place -- a lone copy of this script
-# answers `STOP ask-default-branch` on every row instead, which pins nothing
-# about the mutation. Seven were removed; the one that is only partly
-# observable is recorded as such below, rather than counted as covered. What
-# each mutant actually produced, measured:
+# a subprocess through `dirname "$0"`, so those six need the tree copied with
+# every file the mutant's row needs in place -- a lone copy of this script
+# answers `STOP ask-default-branch` (or fails outright) on every row instead,
+# which pins nothing about the mutation. Seven were removed; the one that is
+# only partly observable is recorded as such below, rather than counted as
+# covered. What each mutant actually produced, measured:
 #
-#   1. The trailer read guarded as well as captured (resolve-range.sh:57-71).
-#      Replacing the `if ! TRAILER_LOG=...` block with
+#   1. The trailer read guarded as well as captured. This guard now lives in
+#      ../../implement-work/scripts/read-base-trailer.sh (its own :48-61), so
+#      the mutant is applied there, in a copy of the tree two directory levels
+#      deep with read-base-trailer.sh in place. Replacing the
+#      `if ! TRAILER_LOG=...` block with
 #      `TRAILER_LOG="$(git log ... 2>/dev/null || true)"` failed
 #      `trailer-read-fails` alone: want `STOP trailer-read-failed`, got
 #      `STOP merge-base-failed`, with the mutant's stderr showing it had
 #      fetched `trunk` on the way. That is the widening this file exists to
 #      pin -- a read that failed, taken for a trailer that was absent, sends
-#      the range to the default branch.
-#   2. The MERGED boundary being the prerequisite's own head (:117-122).
-#      Replacing `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
+#      the range to the default branch. The guard moved; this record's
+#      measurement was not re-run against the new location.
+#   2. The MERGED boundary being the prerequisite's own head
+#      (resolve-range.sh:93-98). Replacing
+#      `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
 #      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")"`
-#      in a copy of the two-file tree failed `prereq-merged-uses-the-pr-head`
-#      and `merged-pull-ref-absent`: both rows' `gh` fixtures stub no
-#      `repo view` call, so the mutant's extra `gh` call goes unstubbed, the
-#      failing command substitution kills the script under `set -euo
-#      pipefail` before it prints anything, and both rows fail on exit status
-#      (want 0, got 1), stdout (want their STOP/RANGE line, got none) and gh
-#      call count (want 1, got 2) together. `merged-base-is-not-the-default-branch`
-#      -- not a row of its own but a second assertion against
+#      in a copy of the three-file tree (resolve-range.sh, read-base-trailer.sh,
+#      resolve-default-branch.sh -- the mutation itself substitutes the
+#      resolve-default-branch.sh call, which only reaches an unstubbed
+#      `gh repo view` once read-base-trailer.sh is also in place to answer
+#      `PREREQ … MERGED` first) failed `prereq-merged-uses-the-pr-head` and
+#      `merged-pull-ref-absent`: both rows' `gh` fixtures stub no `repo view`
+#      call, so the mutant's extra `gh` call goes unstubbed, the failing
+#      command substitution kills the script under `set -euo pipefail` before
+#      it prints anything, and both rows fail on exit status (want 0, got 1),
+#      stdout (want their STOP/RANGE line, got none) and gh call count (want 1,
+#      got 2) together. `merged-base-is-not-the-default-branch` -- not a row
+#      of its own but a second assertion against
 #      `prereq-merged-uses-the-pr-head`'s captured stdout -- does not fail:
 #      it only flags stdout that names the default branch tip, and this
 #      mutant's stdout is empty rather than wrong.
-#   3. An empty PR list being "no prerequisite PR" (:100-103). Deleting the
+#   3. An empty PR list being "no prerequisite PR". This guard now lives in
+#      read-base-trailer.sh (its own :93-96), so the mutant is applied there,
+#      in the same two-file tree copy as record 1. Deleting the
 #      `[ "$LINE_COUNT" -eq 0 ]` block failed `prereq-has-no-pr` on both exit
 #      status (want 0, got 1) and stdout: the empty list fell through to the
-#      unexpected-state branch instead.
-#   4. Both shapes answering through emit_range (:32-42). Replacing its body
-#      with an unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
-#      `pr-shape-empty-when-ends-coincide` and
+#      unexpected-state branch instead. The guard moved; this record's
+#      measurement was not re-run against the new location.
+#   4. Both shapes answering through emit_range (:32-42, unmoved by Task 2).
+#      Replacing its body with an unconditional `echo "RANGE $1..$2"` failed
+#      both EMPTY rows -- `pr-shape-empty-when-ends-coincide` and
 #      `no-trailer-empty-when-head-is-the-default-tip`.
-#   5. The default branch being looked up rather than guessed. That lookup now
+#   5. The default branch being looked up rather than guessed. That lookup
 #      lives in the shared ../../implement-work/scripts/resolve-default-branch.sh
-#      this script calls, so the mutant is a copy of the tree with that
-#      script's whole body replaced by `printf 'main\n'` -- both files copied,
-#      two directory levels deep, because the call resolves through
-#      dirname "$0" and a lone copy of this script fails every row on the
-#      sibling's absence instead. It failed six rows -- `stale-symref-is-ignored`,
+#      this script reaches only via read-base-trailer.sh's `NO-TRAILER` answer,
+#      so the mutant is a copy of the three-file tree with that script's whole
+#      body replaced by `printf 'main\n'` -- all three files copied, two
+#      directory levels deep, because the call resolves through dirname "$0"
+#      and a lone copy of this script fails every row on the siblings' absence
+#      instead. It failed six rows -- `stale-symref-is-ignored`,
 #      `no-trailer-gh-names-default`, `default-branch-lookup-fails`,
 #      `default-branch-lookup-empty`, `no-trailer-empty-when-head-is-the-default-tip`
 #      and `default-branch-absent-on-remote` -- the last on its gh call count
@@ -79,22 +95,27 @@
 #      and its stdout already expects `STOP fetch-failed`. This is why
 #      build_remote's default branch is called `trunk`: with the conventional
 #      name, this mutant passes every row.
-#   6. OPEN fetching the branch the trailer recorded (:114-116). Replacing
-#      `FETCH_SPEC="${RECORDED}"` with the MERGED path's
+#   6. OPEN fetching the branch the trailer recorded (resolve-range.sh:90-92).
+#      Replacing `FETCH_SPEC="${RECORDED}"` with the MERGED path's
 #      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
-#      two others. This is why `refs/pull/9/head` is a decoy under `with-dep`:
-#      pointed at dep's own commit, this mutant passes.
-#   7. The trailer scan keeping the newest trailer (:74-79). Deleting the
+#      two others. `RECORDED` now comes from read-base-trailer.sh's answer, so
+#      this record needs the tree copy, not a single-file copy of
+#      resolve-range.sh alone. This is why `refs/pull/9/head` is a decoy under
+#      `with-dep`: pointed at dep's own commit, this mutant passes.
+#   7. The trailer scan keeping the newest trailer. This guard now lives in
+#      read-base-trailer.sh (its own :64-69), so the mutant is applied there,
+#      in the same two-file tree copy as records 1 and 3. Deleting the
 #      `break` leaves the loop holding the last non-empty line -- the oldest,
 #      since the log is newest-first -- and `newest-trailer-shadows-older`
 #      then failed on the range it printed. This is why `older-base` exists as
 #      a ref on the fixture remote: without it the mutant stops at
 #      `STOP fetch-failed`, which pins the branch's absence rather than the
-#      scan's order.
+#      scan's order. The guard moved; this record's measurement was not re-run
+#      against the new location.
 #
 # Partly covered, and measured to be no more coverable than this: reading
-# FETCH_HEAD rather than a remote-tracking ref (:134-141). Replacing
-# `git merge-base FETCH_HEAD HEAD` with
+# FETCH_HEAD rather than a remote-tracking ref (resolve-range.sh:103-110).
+# Replacing `git merge-base FETCH_HEAD HEAD` with
 # `git merge-base "origin/${FETCH_SPEC}" HEAD` failed exactly one row,
 # `prereq-merged-uses-the-pr-head` -- `refs/pull/<n>/head` lies outside every
 # clone's fetch refspec, so there is no tracking ref to read and the mutant
@@ -230,11 +251,12 @@ PR_LIST_JQ='.[] | "\(.number) \(.state)"'
 
 # stub_pr_list <head-branch> <exit-status> -- the prerequisite lookup, raw
 # body on stdin. Raw, not filtered, because the filter is itself one of the
-# guards the SUT's header names: `.[]` rather than `.[0]` is what makes an
-# empty list yield zero lines instead of one interpolated "null null", and a
-# pre-filtered fixture would decide that rather than test it. Measured
-# through this stub's own jq: `.[0] | "\(.number) \(.state)"` on `[]` prints
-# `null null`, which the SUT would read as one PR in an unknown state.
+# guards read-base-trailer.sh's header names: `.[]` rather than `.[0]` is what
+# makes an empty list yield zero lines instead of one interpolated
+# "null null", and a pre-filtered fixture would decide that rather than test
+# it. Measured through this stub's own jq: `.[0] | "\(.number) \(.state)"` on
+# `[]` prints `null null`, which the SUT would read as one PR in an unknown
+# state.
 stub_pr_list() {
   gh_stub_raw_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_LIST_JQ"
 }

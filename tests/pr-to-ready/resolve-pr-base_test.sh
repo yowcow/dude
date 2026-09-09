@@ -17,11 +17,14 @@
 # Limitation: `STOP trailer-read-failed` has no row. It needs `git log` itself
 # to fail after both fetches have succeeded, and both refs it names are the
 # ones those fetches just created -- there is no fixture that leaves them
-# unreadable without also breaking the fetch that precedes it.
+# unreadable without also breaking the fetch that precedes it. The guard now
+# lives in skills/implement-work/scripts/read-base-trailer.sh and is covered
+# by tests/implement-work/read-base-trailer_test.sh's `trailer-read-fails` row.
 #
-# Limitation: the SUT extracts fields with `gh --jq`, and the fake `gh` does not
-# run jq -- it returns the post-jq bytes a case scripted. A defect in the --jq
-# expression itself is therefore invisible here.
+# Limitation: the SUT no longer calls `gh` or `--jq` at all -- that filter now
+# lives in read-base-trailer.sh, and is covered there, raw-stubbed, by
+# tests/implement-work/read-base-trailer_test.sh (which is why that file's own
+# header carries the `--jq`-defect Limitation instead).
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
 # root, so a branch that recorded nothing picked up whatever Base-Branch it
@@ -30,12 +33,13 @@
 #   git show bb8d8b8^:skills/pr-to-ready/scripts/resolve-pr-base.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/resolve-pr-base_test.sh
 #
-#   A copy of the *current* script needs the sibling it calls beside it, laid
-#   out as skills/implement-work/scripts/resolve-default-branch.sh relative to
-#   skills/pr-to-ready/scripts/: it resolves that path through dirname "$0",
-#   so a lone copy answers STOP ask-default-branch on every row and the
-#   failures say nothing about the mutation. The bb8d8b8^ version above
-#   predates the extraction and needs no sibling.
+#   A copy of the *current* script needs two siblings beside it, laid out as
+#   skills/implement-work/scripts/resolve-default-branch.sh and
+#   skills/implement-work/scripts/read-base-trailer.sh relative to
+#   skills/pr-to-ready/scripts/: it resolves both paths through dirname "$0",
+#   so a lone copy answers STOP ask-default-branch (or fails outright) on
+#   every row and the failures say nothing about the mutation. The bb8d8b8^
+#   version above predates both extractions and needs no sibling.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -95,7 +99,8 @@ stub_default_branch() {
 }
 
 # stub_pr_list <head-branch> <exit-status> -- the prerequisite lookup, body on
-# stdin. Each line is "<number> <state>", which is what the SUT's --jq emits.
+# stdin. Each line is "<number> <state>", the shape read-base-trailer.sh's
+# --jq emits and this fixture still stubs.
 stub_pr_list() {
   gh_stub_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_JQ"
 }
