@@ -59,5 +59,5 @@ This holds for every caller, rather than being defined at each call site.
 
 - **One round is one pass plus the caller's fold-in.** This skill never re-reviews on its own; revising the report and re-running belong to the caller.
 - **Two findings are the same** when a later pass faults the same claim on the same grounds, however the wording moved — including a claim restated after an edit meant to resolve it.
-- **Stopping is `using-dude`'s **Loop convergence**.**
+- **Stopping** is `using-dude`'s **Loop convergence**.
 - **Nothing is published until the pass comes back clean.** Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
