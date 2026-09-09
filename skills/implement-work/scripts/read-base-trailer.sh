@@ -60,11 +60,10 @@ if ! TRAILER_LOG="$(git log "$@" --format='%(trailers:key=Base-Branch,valueonly,
   exit 0
 fi
 
-# The newest non-empty trailer value wins (git log's default order), so the
-# scan stops at the first one. `NF` and the loop's `[ -n "$line" ]` differ
-# only on a whitespace-only line, which this input cannot carry: git's own
-# trailer-value parsing trims whitespace-only values to empty (independent of
-# `unfold`, which only joins folded continuation lines).
+# `NF` differs from a plain `[ -n "$line" ]` check only on a whitespace-only
+# line, which this input cannot carry: git's own trailer-value parsing trims
+# whitespace-only values to empty (independent of `unfold`, which only joins
+# folded continuation lines).
 RECORDED="$(awk 'NF{print;exit}' <<<"$TRAILER_LOG")"
 
 if [ -z "$RECORDED" ]; then
@@ -84,11 +83,9 @@ if ! PR_LOOKUP="$(gh pr list --head "$RECORDED" --state all --json number,state 
   exit 0
 fi
 
-# `grep -c .` counts non-empty lines, so an empty lookup counts as 0 rather
-# than the 1 `wc -l` would report — "no PR" must not read as "exactly one".
-# It exits 1 on a zero count while still printing it, hence `|| true`. The
-# two differ only on interior blank lines, which the `--jq` above cannot
-# produce.
+# `grep -c .` counts non-empty lines, so an empty lookup is 0, not the 1
+# `wc -l` reports — "no PR" must not read as "exactly one". It exits 1 on a
+# zero count while still printing it, hence `|| true`.
 LINE_COUNT="$(grep -c . <<<"$PR_LOOKUP" || true)"
 
 if [ "$LINE_COUNT" -eq 0 ]; then

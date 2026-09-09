@@ -190,8 +190,9 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # until the cap ran out.
   # Matched in-shell rather than by piping into `grep -q`: grep exits on its
   # first hit and would SIGPIPE the left-hand side under pipefail, the same
-  # trap watch-copilot-review.sh:96-97 names. The needle carries no regex
-  # metacharacter and no newline, so a substring test is equivalent.
+  # trap watch-copilot-review.sh's baseline-id scan avoids the same way. The
+  # needle carries no regex metacharacter and no newline, so a substring test
+  # is equivalent.
   if [[ "$raw" == *'No commit found for SHA'* ]]; then
     printf '%s\n' "$raw" >&2
     exit 3

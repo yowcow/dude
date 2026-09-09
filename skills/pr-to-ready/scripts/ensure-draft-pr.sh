@@ -44,9 +44,9 @@ BODY_FILE="$3"
 # means "couldn't tell", not "no PR", and reading it as "none found" is
 # exactly what opens a second PR on a branch that already has one. That
 # failure is answered here, with the slug the caller passes, because the two
-# call sites report it differently; everything after it (0/1/>=2, and the
-# `exit 0` itself, which must happen in the caller's own shell) stays with
-# the caller.
+# call sites report it differently; everything after it (the 0/1/>=2 branching
+# and its `exit 0`) stays with the caller, since each call site takes a
+# different action per count (create-or-report vs. confirm-or-report).
 #
 # `grep -c .` counts non-empty lines, so an empty LOOKUP counts as 0 rather
 # than the 1 `wc -l` would report — "no PR" must not turn into "exactly one
@@ -55,8 +55,9 @@ BODY_FILE="$3"
 # lines, which `gh pr list --jq '.[] | "\(.number) \(.isDraft)"'` cannot
 # produce.
 pr_lookup() {
+  local stop_slug="$1"
   if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft --jq '.[] | "\(.number) \(.isDraft)"')"; then
-    echo "STOP $1"
+    echo "STOP $stop_slug"
     return 1
   fi
   LINE_COUNT="$(grep -c . <<<"$LOOKUP" || true)"
