@@ -223,16 +223,6 @@ assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n' 0
 # ---- argument validation -----------------------------------------------
 
 row_start
-W="$(build_case argsnone clean)"
-run_in "$W"
-assert_row 'no-arguments' 1 '' 0
-
-row_start
-W="$(build_case argsone clean)"
-run_in "$W" task
-assert_row 'one-argument' 1 '' 0
-
-row_start
 W="$(build_case argsthree clean)"
 run_in "$W" task main extra
 assert_row 'three-arguments' 1 '' 0

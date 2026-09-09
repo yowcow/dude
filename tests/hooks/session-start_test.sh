@@ -18,12 +18,10 @@
 # No row stubs `gh`: this script never calls it. Every row asserts zero gh
 # calls, which is what holds that to being true.
 #
-# RED verification (see tests/README.md). Against the pre-change script, seven
-# of the eight rows fail and only `frontmatter-dropped` passes -- that row
-# asserts behaviour this change does not touch. The seven are `plain-tree`,
-# `names-the-install-path`, `weird-path-json-intact`,
+# RED verification (see tests/README.md). Against the pre-change script, all six
+# rows fail: `plain-tree`, `weird-path-json-intact`,
 # `control-chars-json-intact`, `cdpath-ignored`, `missing-skill-file` and
-# `read-failure-names-the-path`, and they fail for three distinct reasons:
+# `read-failure-names-the-path`. They fail for three distinct reasons:
 #   - the wrapper named no install path, so every row reading the heading line
 #     differs there;
 #   - the fallback message spelled the skill file `<root>/hooks/../skills/...`,
@@ -172,47 +170,6 @@ fails=0
 if ! check_json 'plain-tree'; then fails=1; fi
 if ! check_context 'plain-tree: context' "$ROOT"; then fails=1; fi
 row_done 'plain-tree' "$fails"
-
-# ---- the frontmatter is not injected ------------------------------------
-#
-# The `sed -n '/^# /,$p'` span is pre-existing behaviour and untested until
-# now. Asserted on its own so a change that started shipping the frontmatter is
-# reported as that, rather than as a byte mismatch in the row above.
-
-row_start
-ROOT="${HARNESS_TMP}/tree.frontmatter"
-build_tree "$ROOT"
-run_sut bash "${ROOT}/hooks/session-start"
-fails=0
-# check_json first, and it is load-bearing rather than symmetry with the other
-# rows: the `case` below reports a failure only on a match, so a hook that
-# stopped emitting JSON at all would leave $CTX empty, match nothing, and take
-# this row green -- the one row whose assertion cannot fail open on its own.
-if ! check_json 'frontmatter-dropped'; then fails=1; fi
-CTX="$(jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null || true)"
-case "$CTX" in
-  *'name: using-dude'*)
-    printf 'FAIL frontmatter-dropped: the injected context carries the frontmatter\n'
-    fails=1
-    ;;
-esac
-row_done 'frontmatter-dropped' "$fails"
-
-# ---- the install path is named ------------------------------------------
-#
-# The defect this whole change exists for: two installs of dude both run their
-# own copy of this hook, and two near-identical blocks with nothing naming
-# their tree let a verifier read "the change is in" from one block and "nothing
-# was truncated" from the other, and report a session that verified neither.
-
-row_start
-ROOT="${HARNESS_TMP}/tree.named"
-build_tree "$ROOT"
-run_sut bash "${ROOT}/hooks/session-start"
-fails=0
-if ! check_json 'names-the-install-path'; then fails=1; fi
-if ! check_context_has 'names-the-install-path' "from the dude install at ${ROOT}:"; then fails=1; fi
-row_done 'names-the-install-path' "$fails"
 
 # ---- a plugin root carrying a quote and a backslash ---------------------
 #

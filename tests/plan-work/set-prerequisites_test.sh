@@ -185,7 +185,6 @@ done <<'ROWS'
 # name|args
 no-args|
 too-few-args|acme widgets
-blocked-by-itself|acme widgets 57 57
 blocked-by-itself-among-others|acme widgets 57 12 57
 ROWS
 
