@@ -24,6 +24,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `simplify-code`           | Recently changed code simplified, behavior preserved                               |
 | `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
 | `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
+| `investigate-question`    | A judgment on an open question, with the evidence that settles it                  |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation runs first
