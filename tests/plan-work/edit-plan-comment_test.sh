@@ -109,7 +109,7 @@ while IFS='|' read -r name args response want_exit want_calls want_stdout want_p
   fi
 done <<'ROWS'
 # name|args|response|exit|calls|stdout|payload
-edits-by-numeric-id|acme widgets 2544 @BODY|comment-edited|0|1|expected/edited.out|expected/plan-body.payload.json
+edits-by-numeric-id|acme widgets 2544 @BODY|issue-comment|0|1|expected/edited.out|expected/plan-body.payload.json
 api-failure-is-not-an-edit|acme widgets 2544 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
 missing-body-file|acme widgets 2544 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 2544 @UNREADABLE|-|1|0|-|-

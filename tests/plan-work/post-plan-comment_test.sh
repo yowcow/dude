@@ -134,7 +134,7 @@ while IFS='|' read -r name args response want_exit want_calls want_stdout want_p
   fi
 done <<'ROWS'
 # name|args|response|exit|calls|stdout|payload
-posts-body-prints-numeric-id|acme widgets 7 @BODY|comment-created|0|1|expected/created.out|expected/plan-body.payload.json
+posts-body-prints-numeric-id|acme widgets 7 @BODY|issue-comment|0|1|expected/created.out|expected/plan-body.payload.json
 api-failure-is-not-a-post|acme widgets 7 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
 missing-body-file|acme widgets 7 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 7 @UNREADABLE|-|1|0|-|-
