@@ -11,13 +11,13 @@
 # script, not the current ones.
 #
 # It is a script rather than a check inlined in scripts-have-tests_test.sh for
-# the same reason run.sh has run_test.sh: its own conditions — an empty enumeration
-# is an error, an empty test file is not coverage — are prose until something
-# runs them. As a
-# script it is drivable against synthetic trees and against a deliberately
-# broken copy through the suite's documented `SUT=` path. What run.sh collects is
-# still the *_test.sh, whose first cases run this gate against the real tree, so
-# `make test` runs it with no Makefile or workflow change.
+# the same reason run.sh has run_test.sh: its own conditions — an empty
+# enumeration is an error, an empty test file is not coverage — are prose until
+# something runs them. As a script it is drivable against synthetic trees and
+# against a deliberately broken copy through the suite's documented `SUT=` path.
+# What run.sh collects is still the *_test.sh, whose first cases run this gate
+# against the real tree, so `make test` runs it with no Makefile or workflow
+# change.
 #
 # `set -e` is deliberately absent, as in run.sh: this is an accumulating
 # reporter, and one uncovered script must not stop it from naming the rest.
@@ -120,10 +120,10 @@ for rel in "${scripts[@]}"; do
   # gate exists to prevent through the front door.
   if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))
-    continue
+  else
+    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
+    problems=$((problems + 1))
   fi
-  printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
-  problems=$((problems + 1))
 done
 
 if [ "$problems" -ne 0 ]; then

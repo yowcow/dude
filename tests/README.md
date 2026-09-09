@@ -231,10 +231,9 @@ name from the prune raises the count, which is what makes the check meaningful;
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 `tests/<skill>/<name>_test.sh`. There is no exemption path.
-`scripts-have-tests_test.sh` runs the
-gate against the real tree as its first two cases, which is how the gate reaches
-`make test` with no Makefile or workflow change — the same trick `lint.sh`
-uses to land in its own selection.
+`scripts-have-tests_test.sh` runs the gate against the real tree as its first
+two cases, which is how the gate reaches `make test` with no Makefile or
+workflow change — the same trick `lint.sh` uses to land in its own selection.
 
 The gate is **permanent**. Nothing about finishing the coverage work asks for
 the gate to be removed.

@@ -84,8 +84,8 @@ check_stderr_has() {
 
 # --- case 0: the real tree is clean ------------------------------------------
 # No argument, so the gate anchors on its own location and reads the real
-# skills and tests. This is the row that fails when a script
-# lands with no test.
+# skills and tests. This is the row that fails when a script lands with no
+# test.
 total=$((total + 1))
 run_sut bash "$SUT"
 if ! check_eq 'real tree: exit' 0 "$SUT_STATUS"; then
