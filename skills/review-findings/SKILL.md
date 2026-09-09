@@ -9,7 +9,7 @@ Use on a report whose deliverable is findings, once it is drafted and before it 
 
 ## Orchestration model
 
-**One pass dispatches exactly one reviewer and no verdict worker.** The reviewer goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, the six lenses, and the record of past rounds. The reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** before returning, and returns the final blocking findings or clean. The orchestrator gathers the inputs and reports the result and never re-judges a finding. `review-plan` is not used here; nothing here dispatches a verdict worker.
+**One pass dispatches exactly one reviewer and no verdict worker.** The reviewer goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, the six lenses, and the record of past rounds. The reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** and returns the final blocking findings or clean. The orchestrator gathers the inputs and reports the result and never re-judges a finding. `review-plan` is not used here; nothing here dispatches a verdict worker.
 
 The main loop is normally the same run that wrote the report under review, so a read by that same run rests on that run's own account of its evidence — which is precisely what a dispatched reader in a fresh context is bought to escape. An orchestrator that reads the report against the six lenses itself has not run this gate.
 
