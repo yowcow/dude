@@ -24,10 +24,13 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `simplify-code`           | Recently changed code simplified, behavior preserved                               |
 | `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
 | `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
+| `investigate-question`    | A judgment on an open question, with the evidence that settles it                  |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
-whichever stage the work has actually reached. An investigation runs first
-where the cause is unknown, and hands its findings to `plan-work`.
+whichever stage the work has actually reached. An investigation —
+`investigate-question`, `investigate-anomaly`, or `investigate-performance` —
+runs first when there's a cause to find or a question to settle, and hands
+its findings to `plan-work`.
 
 ## Requirements
 
@@ -109,6 +112,26 @@ version-less control was taken with — is recorded in
 [issue #42](https://github.com/yowcow/dude/issues/42).
 
 ## Use
+
+An investigation is optional, and runs before `plan-work` only when there's a
+cause to find or a question to settle first:
+
+```mermaid
+flowchart LR
+    issue[Issue]
+    invq[investigate-question]
+    inva[investigate-anomaly]
+    invp[investigate-performance]
+    plan[plan-work]
+    impl[implement-work]
+    pr[pr-to-ready]
+
+    issue --> plan
+    issue -. optional .-> invq --> plan
+    issue -. optional .-> inva --> plan
+    issue -. optional .-> invp --> plan
+    plan --> impl --> pr
+```
 
 ### A typical run
 
