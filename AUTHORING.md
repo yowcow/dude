@@ -18,6 +18,8 @@ Four layers, and the boundary is what keeps each one readable. The layers are no
 
 One question, asked of every sentence: **without it, what does the AI do?** The same question is asked before an issue is opened, of a script or a test row as much as of a sentence, and again when the tool it works around gains the capability itself.
 
+This question is about the text's absence. What happens when the text is present — where a guard fires, how contained the resulting damage is — is not an answer to it.
+
 - **(a) It behaves correctly** → delete it.
 - **(b) It stops and asks a person** → delete it. That is the wanted behavior, not a failure to prevent.
 - **(c) It silently returns a wrong result** → keep it — and if it is mechanism, keep it in `scripts/`.
