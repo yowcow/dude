@@ -28,35 +28,18 @@ fi
 
 BRANCH="$1"
 
-# Two-rung ladder, never guessing a branch name: the GitHub API, then give up
-# and let the caller ask a person. `.defaultBranchRef.name` gives the bare name
-# this caller needs, since it compares the result against branch names rather
-# than fetching a ref with it.
-#
-# refs/remotes/origin/HEAD is deliberately not consulted. A clone sets that
-# symref once and never refreshes it, so after the repository renames its
-# default branch it keeps naming the old one; while that branch still exists
-# this function would answer with it, the PR would be opened or retargeted
-# against the wrong base, and nothing would say so. Reading it saved one `gh`
-# call and nothing else -- every path that reaches here fetches immediately
-# afterwards, so there was no offline case to keep.
-resolve_default_branch() {
-  local ref
-  if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
-    printf '%s\n' "$ref"
-    return 0
-  fi
-  return 1
-}
-
 fetch_ref() {
   git fetch origin -- "$1" >&2
 }
 
+# The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
+# -- see its header for the rationale.
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+
 # Resolve the default branch before the scan below rather than at the two
 # places that print it: the scan's range is expressed against it, so it has
 # to be both named and fetched by then.
-DEFAULT="$(resolve_default_branch)" || { echo "STOP ask-default-branch"; exit 0; }
+DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
 # The task branch's tip is read below as FETCH_HEAD rather than from a local
 # checkout — this session may not have <branch> checked out at all. So the
