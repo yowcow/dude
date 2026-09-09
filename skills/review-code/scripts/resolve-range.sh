@@ -54,82 +54,51 @@ fi
 # -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# Capture the trailer scan into a variable before testing it, rather than
-# piping into `grep`. A pipe reports only grep's exit status, and grep exits 1
-# on empty input whether the trailer is genuinely absent or the read itself
-# failed — two causes that must not collapse into "no trailer", since that
-# answer sends the range to the default branch. The read is guarded as well as
-# captured: under `set -e` a failing `git log` inside a bare command
-# substitution would kill the script outright, and the caller would get a
-# non-zero exit with nothing on stdout instead of a STOP. Local HEAD, not a
-# fetched ref: this skill reviews the checkout it is in. Newest-first (git
-# log's default order), since a trailer on a later commit shadows an earlier
-# one in the same stack.
-if ! TRAILER_LOG="$(git log HEAD --format='%(trailers:key=Base-Branch,valueonly,unfold)')"; then
-  echo "STOP trailer-read-failed"
-  exit 0
+# The trailer scan, the prerequisite lookup, and the three answers both
+# readers print identically live in
+# ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
+# left here is base-branch.md's `review-code`'s `<base>` column: the three
+# rows where the two readers disagree.
+#
+# The rev is chosen here rather than there because it is this caller's
+# question: local HEAD, not a fetched ref, since this skill reviews the
+# checkout it is in.
+#
+# The call is guarded rather than left to `set -e` so that its exit-1 path --
+# an unrecognised PR state, whose message it has already put on stderr --
+# leaves this script exiting 1 with nothing on stdout, instead of a second
+# message about the same thing.
+if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" HEAD)"; then
+  exit 1
 fi
 
-RECORDED=""
-while IFS= read -r line; do
-  if [ -n "$line" ]; then
-    RECORDED="$line"
-    break
-  fi
-done <<<"$TRAILER_LOG"
+read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
 
-if [ -z "$RECORDED" ]; then
-  FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-else
-  # Read the exit status and the line count together. A non-zero exit prints
-  # nothing and looks exactly like "no PR" — auth, network, or repo-context
-  # failures behave the same way — so it is "couldn't tell", not "no match".
-  # `.[]` rather than `.[0]` so an empty list yields zero lines and several
-  # matches yield several, instead of one arbitrary pick or an interpolated
-  # "null".
-  if ! PR_LOOKUP="$(gh pr list --head "$RECORDED" --state all --json number,state --jq '.[] | "\(.number) \(.state)"' 2>/dev/null)"; then
-    echo "STOP prereq-lookup-failed"
+case "${KIND}" in
+  NO-TRAILER)
+    FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+    ;;
+  STOP)
+    # Passed through unchanged: the slugs are this script's output contract,
+    # and these five cases are answered identically by both readers,
+    # which is why they are answered once, over there.
+    printf '%s\n' "$ANSWER"
     exit 0
-  fi
-
-  LINE_COUNT=0
-  if [ -n "$PR_LOOKUP" ]; then
-    LINE_COUNT="$(printf '%s\n' "$PR_LOOKUP" | wc -l)"
-  fi
-
-  if [ "$LINE_COUNT" -eq 0 ]; then
-    echo "STOP no-prereq-pr"
-    exit 0
-  fi
-
-  if [ "$LINE_COUNT" -ge 2 ]; then
-    echo "STOP ask-multiple-prs"
-    exit 0
-  fi
-
-  PREREQ_PR="${PR_LOOKUP%% *}"
-  STATE="${PR_LOOKUP##* }"
-
-  case "${STATE}" in
-    OPEN)
-      FETCH_SPEC="${RECORDED}"
-      ;;
-    MERGED)
-      # The prerequisite's own head, not the default branch: it bounds the
-      # range whatever the merge strategy was, and `refs/pull/<n>/head`
-      # outlives both the merge and the branch's deletion.
-      FETCH_SPEC="refs/pull/${PREREQ_PR}/head"
-      ;;
-    CLOSED)
-      echo "STOP abandoned-prerequisite"
-      exit 0
-      ;;
-    *)
-      echo "error: unexpected PR state '${STATE}' for '${RECORDED}'" >&2
-      exit 1
-      ;;
-  esac
-fi
+    ;;
+  PREREQ)
+    case "${STATE}" in
+      OPEN)
+        FETCH_SPEC="${RECORDED}"
+        ;;
+      MERGED)
+        # The prerequisite's own head, not the default branch: it bounds the
+        # range whatever the merge strategy was, and `refs/pull/<n>/head`
+        # outlives both the merge and the branch's deletion.
+        FETCH_SPEC="refs/pull/${PREREQ_PR}/head"
+        ;;
+    esac
+    ;;
+esac
 
 # Every row fetches, and every row reads FETCH_HEAD rather than a
 # remote-tracking ref: a fetch always writes FETCH_HEAD, whereas updating

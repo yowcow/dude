@@ -63,84 +63,56 @@ if ! fetch_ref "${BRANCH}"; then
   exit 0
 fi
 
-# Capture the trailer scan into a variable before testing it, rather than
-# piping into `grep`. A pipe would report only grep's exit status, and grep
-# exits 1 on empty input whether the trailer is genuinely absent or the read
-# itself failed — two causes that must not collapse to the same answer. Scan
-# newest-first (git log's default order) since a trailer on a later commit
-# shadows an earlier one in the same stack.
-# The range stops at the default branch, and the exclusion names the
-# remote-tracking ref just fetched rather than a local branch that may be
-# absent or stale. Unbounded, the scan walks to root, so a branch that
-# recorded nothing picks up whatever Base-Branch some unrelated commit left
-# in shared history and hands that branch back as --base — which
-# ensure-draft-pr.sh then passes to `gh pr create --base`, opening the PR
-# against a branch this task never sat on.
-# The read is guarded as well as captured: under `set -e` a failing `git log`
-# inside a bare command substitution would kill the script outright, and the
-# caller would get a non-zero exit with nothing on stdout instead of a STOP.
-if ! TRAILER_LOG="$(git log FETCH_HEAD "^refs/remotes/origin/${DEFAULT}" --format='%(trailers:key=Base-Branch,valueonly,unfold)')"; then
-  echo "STOP trailer-read-failed"
-  exit 0
+# The trailer scan, the prerequisite lookup, and the three answers both
+# readers print identically live in
+# ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
+# left here is base-branch.md's `pr-to-ready`'s `--base` column: the three
+# rows where the two readers disagree.
+#
+# The revs are chosen here rather than there because they are this caller's
+# question. The scan runs from the branch tip just fetched and stops at the
+# default branch, and the exclusion names the remote-tracking ref that fetch
+# updated rather than a local branch that may be absent or stale. Unbounded,
+# the scan walks to root, so a branch that recorded nothing picks up whatever
+# Base-Branch some unrelated commit left in shared history and hands that
+# branch back as --base -- which ensure-draft-pr.sh then passes to
+# `gh pr create --base`, opening the PR against a branch this task never sat
+# on.
+#
+# The call is guarded rather than left to `set -e` so that its exit-1 path --
+# an unrecognised PR state, whose message it has already put on stderr --
+# leaves this script exiting 1 with nothing on stdout, instead of a second
+# message about the same thing.
+if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" FETCH_HEAD "^refs/remotes/origin/${DEFAULT}")"; then
+  exit 1
 fi
 
-RECORDED=""
-while IFS= read -r line; do
-  if [ -n "$line" ]; then
-    RECORDED="$line"
-    break
-  fi
-done <<<"$TRAILER_LOG"
+read -r KIND RECORDED _ STATE <<<"$ANSWER"
 
-if [ -z "$RECORDED" ]; then
-  echo "BASE ${DEFAULT}"
-  exit 0
-fi
-
-# Read the exit status and the line count together. A non-zero exit prints
-# nothing and looks exactly like "no PR" — auth, network, or repo-context
-# failures behave the same way — so it is "couldn't tell", not "no match".
-# `.[]` rather than `.[0]` so an empty list yields zero lines and several
-# matches yield several, instead of one arbitrary pick or an interpolated
-# "null".
-if ! PR_LOOKUP="$(gh pr list --head "$RECORDED" --state all --json number,state --jq '.[] | "\(.number) \(.state)"' 2>/dev/null)"; then
-  echo "STOP prereq-lookup-failed"
-  exit 0
-fi
-
-LINE_COUNT=0
-if [ -n "$PR_LOOKUP" ]; then
-  LINE_COUNT="$(printf '%s\n' "$PR_LOOKUP" | wc -l)"
-fi
-
-if [ "$LINE_COUNT" -eq 0 ]; then
-  echo "STOP no-prereq-pr"
-  exit 0
-fi
-
-if [ "$LINE_COUNT" -ge 2 ]; then
-  echo "STOP ask-multiple-prs"
-  exit 0
-fi
-
-STATE="${PR_LOOKUP##* }"
-
-case "${STATE}" in
-  OPEN)
-    echo "BASE ${RECORDED}"
-    ;;
-  MERGED)
-    # A merged prerequisite whose branch is still around must not be read as
-    # "still in flight": that would hand back --base <merged-branch>, and
-    # merging into an already-merged branch puts nothing into the default
-    # branch, so the change silently fails to land there.
+case "${KIND}" in
+  NO-TRAILER)
     echo "BASE ${DEFAULT}"
     ;;
-  CLOSED)
-    echo "STOP abandoned-prerequisite"
+  STOP)
+    # Passed through unchanged: the slugs are this script's output contract,
+    # and these five cases are answered identically by both readers,
+    # which is why they are answered once, over there.
+    printf '%s\n' "$ANSWER"
     ;;
-  *)
-    echo "error: unexpected PR state '${STATE}' for '${RECORDED}'" >&2
-    exit 1
+  PREREQ)
+    case "${STATE}" in
+      OPEN)
+        echo "BASE ${RECORDED}"
+        ;;
+      MERGED)
+        # A merged prerequisite whose branch is still around must not be read
+        # as "still in flight": that would hand back --base <merged-branch>,
+        # and merging into an already-merged branch puts nothing into the
+        # default branch, so the change silently fails to land there. The PR
+        # number the answer carries is `review-code`'s to use, not this
+        # column's -- the base here is the default branch.
+        echo "BASE ${DEFAULT}"
+        ;;
+    esac
     ;;
 esac
