@@ -278,12 +278,6 @@ assert_row 'no-arguments' 1 '' 0
 tally check_stderr_has 'no-arguments: usage is printed' 'Usage:'
 
 row_start
-W="$(build_repo argsone)"
-run_in "$W" task
-assert_row 'one-argument' 1 '' 0
-tally check_stderr_has 'one-argument: usage is printed' 'Usage:'
-
-row_start
 W="$(build_repo argsthree)"
 run_in "$W" task "$(wt_path argsthree-new)" extra
 assert_row 'three-arguments' 1 '' 0

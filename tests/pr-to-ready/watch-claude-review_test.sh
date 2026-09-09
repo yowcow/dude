@@ -23,14 +23,13 @@
 # run list --json` pages, and stdout is what jq made of them — which is why the
 # expectations are whole-file byte comparisons against `fixtures/*.expected`.
 #
-# The `skipped` contract is pinned from both sides, because the script itself
-# does not filter on conclusion — selecting the run is the caller's job
-# (SKILL.md step 2-2 wants「a conclusion that isn't skipped」):
-#   - list mode must KEEP a skipped run's `conclusion` field, which is what
-#     makes the run discriminable at all (`mixed-listing-…`, run 4003);
-#   - watch mode EXITS 0 on such a run, so a caller that failed to exclude it
-#     would read an unrun review as a completed one
-#     (`watch-a-skipped-run-still-exits-zero`).
+# The `skipped` contract is pinned in list mode, because the script itself does
+# not filter on conclusion — selecting the run is the caller's job (SKILL.md
+# step 2-2 wants「a conclusion that isn't skipped」). List mode must KEEP a
+# skipped run's `conclusion` field, which is what makes the run discriminable
+# at all (`mixed-listing-…`, run 4003). Watch mode's behaviour on such a run is
+# not asserted here: `gh` is stubbed, so any row would encode the exit status it
+# scripted rather than measure gh's. Re-measure that against real `gh` by hand.
 #
 # RED verification (see tests/README.md):
 #   tmp="$(mktemp -d)"
@@ -324,10 +323,8 @@ assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.e
 
 WATCH_OK="${HARNESS_TMP}/watch-ok"
 WATCH_FAIL="${HARNESS_TMP}/watch-fail"
-WATCH_SKIPPED="${HARNESS_TMP}/watch-skipped"
 printf 'claude review run succeeded\n' >"$WATCH_OK"
 printf 'claude review run failed\n' >"$WATCH_FAIL"
-printf 'claude review run skipped\n' >"$WATCH_SKIPPED"
 
 row_start
 stub_watch 0 "$WATCH_OK"
@@ -338,26 +335,6 @@ row_start
 stub_watch 1 "$WATCH_FAIL"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
-
-# `gh run watch --exit-status` reports a *skipped* run as a success, so watch
-# mode cannot tell「the review ran and had nothing to say」from「the workflow's
-# own if: rejected the comment」. Exit 0 here is therefore not evidence that a
-# review happened; that discrimination exists only in list mode, on the
-# conclusion field the mixed row pins. The row is here so the asymmetry stays
-# visible instead of being rediscovered as a bug in the caller.
-#
-# What this row does NOT do is prove that claim about `gh`: with `gh` stubbed,
-# the exit status is the one the row scripted, so the row *encodes* gh's
-# behaviour rather than measuring it. That is class 4 of the plan's 「承知した
-# 限界」 — a fixture freezes the API's shape, so a change on GitHub's side
-# leaves the suite green and only reality broken. Keying the stub to the mixed
-# fixture's skipped run id would not change that: the fake `gh` matches literal
-# argv and never reads the listing fixture, so the two would share a number and
-# nothing else. Re-measure this one against real `gh` by hand, not here.
-row_start
-stub_watch 0 "$WATCH_SKIPPED"
-run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
-assert_row 'watch-a-skipped-run-still-exits-zero' 0 "$WATCH_SKIPPED" 1
 
 # Availability is checked before the run-id branch is taken, so watch mode
 # cannot be reached in a repository with no @claude workflow.

@@ -35,7 +35,7 @@ Work larger than one PR, or a design not yet agreed, goes back to `plan-work`. D
 
 **A name from rung 1 or 2 is already the answer: don't search, use it verbatim.**
 
-A rung-3 name with no issue behind it isn't searched at all — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search, by that issue number, before it is used: run `<skill-dir>/scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue — local and remote, deduplicated across both — one name per line. `<skill-dir>` here and below is this skill's own directory inside the installed plugin, `skills/implement-work/`.
+A rung-3 name with no issue behind it isn't searched at all — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search, by that issue number, before it is used: run `<skill-dir>/scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue — local and remote, deduplicated across both — one name per line.
 
 Count the lines it printed: none — `<branch>` is the name just derived; exactly one — `<branch>` becomes that branch, and this is a resumed session that the ladder below attaches to; two or more — stop and ask, since which line of work to carry on is a human call.
 

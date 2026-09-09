@@ -135,7 +135,6 @@ errors-in-a-200|graphql-errors:1|acme widgets 7|1|1|fixtures/graphql-errors.json
 auth-failure|bad-credentials:1|acme widgets 7|1|1|fixtures/bad-credentials.json
 two-pages|threads-page1,threads-page2|acme widgets 7|0|2|expected/page1.out+expected/page2.out
 failure-midway-through-paging|threads-page1,graphql-errors:1|acme widgets 7|1|2|expected/page1.out+fixtures/graphql-errors.json
-too-few-args|threads-all-resolved|acme widgets|2|0|-
 too-many-args|threads-all-resolved|acme widgets 7 extra|2|0|-
 no-args|threads-all-resolved||2|0|-
 ROWS

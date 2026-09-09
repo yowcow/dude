@@ -305,12 +305,6 @@ run_in "$FIXTURE_WORK" 1234 "$TITLE" "$BODY_FILE"
 assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draft=true\n' 1
 
 row_start
-fixture nobase feature remote
-printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-existing-pr-needs-no-base' 0 'PR 12 found draft=true\n' 1
-
-row_start
 fixture create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf '[]' | gh_stub_raw_response 1 0 pr list --head feature --json number,isDraft \

@@ -9,8 +9,6 @@ Use on code in any state — a diff just written, a branch, or an uncommitted wo
 
 One invocation runs the loop to completion: review, judge, fix, verify, review again, until no blocking finding remains. What it does not own is re-entry — reviewing again after something else changes the code belongs to the caller; in the Change workflow, `implement-work`'s completion gate owns that.
 
-`<skill-dir>` below is this skill's own directory inside the installed plugin, `skills/review-code/`.
-
 ## Orchestration model
 
 **This skill dispatches two kinds of worker: a read-only reviewer, and one verdict worker per finding.** Nothing else leaves the main loop.

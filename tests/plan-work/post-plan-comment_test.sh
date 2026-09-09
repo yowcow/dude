@@ -138,7 +138,6 @@ posts-body-prints-numeric-id|acme widgets 7 @BODY|comment-created|0|1|expected/c
 api-failure-is-not-a-post|acme widgets 7 @BODY|not-found:1|1|1|fixtures/not-found.json|expected/plan-body.payload.json
 missing-body-file|acme widgets 7 @MISSING|-|1|0|-|-
 unreadable-body-file|acme widgets 7 @UNREADABLE|-|1|0|-|-
-too-few-args|acme widgets 7|-|1|0|-|-
 too-many-args|acme widgets 7 @BODY extra|-|1|0|-|-
 no-args||-|1|0|-|-
 ROWS

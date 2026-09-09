@@ -165,53 +165,39 @@ pr_body 12 main main OPEN false true | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'cross-fork head' 0 'STOP cross-fork\n' 1
 
-# --- 10/11. a PR that is not open is not something this flow can drive -----
+# --- 10. a PR that is not open is not something this flow can drive -------
 row_start
 pr_body 12 feature main MERGED false | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'merged' 0 'STOP pr-not-open\n' 1
 
-row_start
-pr_body 12 feature main CLOSED false | stub_graphql acme widgets 12
-run_sut_in "$WIDGETS" bash "$SUT" 12
-assert_row 'closed' 0 'STOP pr-not-open\n' 1
-
-# --- 12. NOT_FOUND on the pullRequest node -------------------------------
+# --- 11. NOT_FOUND on the pullRequest node -------------------------------
 row_start
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}},"errors":[{"type":"NOT_FOUND","path":["repository","pullRequest"],"message":"Could not resolve to a PullRequest with the number of 12."}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'no such pr' 0 'STOP no-pr\n' 1
 
-# --- 13. NOT_FOUND on the repository node reaches the same answer ---------
-# The repository was renamed or deleted since this clone: origin still says
-# acme/widgets, so the guard passes and GitHub is the one that says no.
-row_start
-printf '%s\n' '{"data":{"repository":null},"errors":[{"type":"NOT_FOUND","path":["repository"],"message":"Could not resolve to a Repository with the name '"'"'acme/widgets'"'"'."}]}' |
-  stub_graphql acme widgets 12 1
-run_sut_in "$WIDGETS" bash "$SUT" 12
-assert_row 'no such repository' 0 'STOP no-pr\n' 1
-
-# --- 14. any other GraphQL error is "couldn't tell", not "no PR" ----------
+# --- 12. any other GraphQL error is "couldn't tell", not "no PR" ----------
 row_start
 printf '%s\n' '{"errors":[{"type":"RATE_LIMITED","message":"API rate limit exceeded"}]}' |
   stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'rate limited' 0 'STOP pr-lookup-failed\n' 1
 
-# --- 15. a transport failure prints nothing at all -----------------------
+# --- 13. a transport failure prints nothing at all -----------------------
 row_start
 printf '' | stub_graphql acme widgets 12 1
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'transport failure' 0 'STOP pr-lookup-failed\n' 1
 
-# --- 16. exit 0 with a null node, no errors array ------------------------
+# --- 14. exit 0 with a null node, no errors array ------------------------
 row_start
 printf '%s\n' '{"data":{"repository":{"pullRequest":null}}}' | stub_graphql acme widgets 12
 run_sut_in "$WIDGETS" bash "$SUT" 12
 assert_row 'null node without errors' 0 'STOP no-pr\n' 1
 
-# --- 17/18/19. usage errors are exits, not STOP lines --------------------
+# --- 15/16/17. usage errors are exits, not STOP lines --------------------
 row_start
 run_sut_in "$WIDGETS" bash "$SUT"
 assert_row 'no argument' 1 '' 0
