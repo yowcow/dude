@@ -9,7 +9,7 @@ Use on a report whose deliverable is findings, once it is drafted and before it 
 
 ## Orchestration model
 
-**Every invocation owes exactly one clean — inline-clean by default; only a marked pass dispatches a reviewer and owes dispatched-clean instead.** Inline-clean is the default mandatory gate: the orchestrator checks the report against the six lenses in the main loop in one pass, recording the verdict in chat per **Report**, and declares clean only on what the pass actually read. A dispatched pass goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, the six lenses, and the record of past rounds; the reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** and returns the final blocking findings or clean, and the orchestrator reports the result without re-judging it. There is no skip path: one of the two cleans is required on every invocation. `review-plan` is not used here; nothing here dispatches a verdict worker.
+**Every invocation owes exactly one clean — inline-clean by default; only a marked pass dispatches a reviewer and owes dispatched-clean instead.** Inline-clean is the default mandatory gate: the orchestrator checks the report against the three default lenses in the main loop in one pass, recording the verdict in chat per **Report**, and declares clean only on what the pass actually read. A dispatched pass goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, the lenses this pass covers, the edited scope, and the record of past rounds; the reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** and returns the final blocking findings or clean, and the orchestrator reports the result without re-judging it. There is no skip path: one of the two cleans is required on every invocation. `review-plan` is not used here; nothing here dispatches a verdict worker.
 
 The main loop is normally the same run that wrote the report under review, so its inline check rests on its own account of the evidence — which is why a dispatched reader in a fresh context stays the opt-in for the high-risk cases below, where a sweep cut short reads as "nothing found" and nothing but another reader catches it.
 
@@ -29,16 +29,29 @@ This test overrides the lenses. A lens names a failure mode to look for; naming 
 
 Both severities in **Severity** are blocking. There is no non-blocking tier: a finding that passes the test is resolved before the report is published, and anything that fails it is left unsaid rather than recorded as a note.
 
+## Path types
+
+One table decides every pass. Form follows one rule only: dispatched where a dispatch case holds on that pass, inline otherwise. A round returning Critical takes a Critical row next, whether Critical stands alone or beside Important.
+
+| Path | Form | Lenses | Scope | Evidence depth |
+| --- | --- | --- | --- | --- |
+| Initial, none of (a)–(d) | inline | default three: Reality, Evidence sufficiency, Hypothesis separation | whole report | presence: each claim names its artifact |
+| Initial, (a)–(d) | dispatched, one reviewer | all six | whole report | content: the artifact carries the claim |
+| Important-only rerun, none of (a)–(d) on this pass | inline | every lens that produced an Important finding plus Reality | actual report edits | content where Evidence runs |
+| Important-only rerun, (a)–(d) on this pass | dispatched, one reviewer | every lens that produced an Important finding plus Reality | actual report edits | content where Evidence runs |
+| Critical rerun, none of (a)–(d) | inline | all six | whole report | content |
+| Critical rerun, (a)–(d) | dispatched, one reviewer | all six | whole report | content |
+
 ## Lenses
 
-Six, and none of them lowers the bar in **What counts as a finding**. An initial pass runs inline with the whole list, except where the caller declared a dispatch case (a)–(c) or the orchestrator marked (d), which gives the whole list to its single reviewer; a re-run after an Important finding is scoped per **Caller contract**.
+Six, and none of them lowers the bar in **What counts as a finding**. Which lenses run on a pass is in **Path types**.
 
-- **Evidence sufficiency** — whether each claim's stated evidence actually carries it: a conclusion resting on a sample, a single occurrence, or a correlation presented as though it were the measurement; a number with no command, window, or source behind it.
+- **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line`, a command plus its measured value, or a source/window/record per claim; where **Path types** gives content depth, whether that artifact carries the claim.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the sweep left, not by re-running the sweep itself: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at is a finding.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
 - **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met.
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
-- **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly.
+- **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly, read within the pass scope in **Path types**.
 
 *Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here (it enters `plan-work`), so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
@@ -51,8 +64,8 @@ Each finding returns lens, severity, claim (one sentence), evidence (`path:line`
 
 ## Pass
 
-1. Gather the inputs: the target report, the question it answers, its stated sources, the six lenses, and the record of earlier passes if the caller supplied one.
-2. Run the inline pass with the lenses this pass covers — all six, except a re-run after an Important finding, which is scoped per **Caller contract**. Confine every search to the project root or narrower. Where the caller declared a dispatch case (a)–(c) or the orchestrator marked (d) per **Caller contract**, dispatch exactly one reviewer with the same lens scope instead; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
+1. Gather the inputs: the target report, the question it answers, its stated sources, whether (a)–(d) holds on this pass per **Caller contract**, the edited scope as **Path types** resolves it, and the record of earlier passes if the caller supplied one.
+2. Resolve the path from the dispatch cases on this pass and the previous findings, then follow **Path types** for form, lenses, scope, and evidence depth. Confine every search to the project root or narrower. A dispatched pass gives its single reviewer the same path; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
 3. Judge an inline pass clean or blocking under **What counts as a finding** (inline-clean); report a dispatched pass as returned without re-judging it (dispatched-clean or its blocking findings).
 4. Report per **Report**, and stop there — revising and re-running are the caller's job.
 
@@ -71,10 +84,10 @@ This holds for every caller, rather than being defined at each call site. The ga
   - (d) the report feeds external publication — public changelog, postmortem, or user-facing doc, excluding issue comments and chat records. The orchestrator judges this and records it in the hand-off summary.
 
 - **One round is one pass plus the caller's fold-in.** This skill never re-reviews on its own; revising the report and re-running belong to the caller.
-- **After an Important finding**, re-run only the lens that produced it plus Reality, scoped to the edited scope.
+- **After an Important-only round**, the next pass is the matching Important-only row in **Path types**.
 - **A Critical finding returns to the evidence owner of the work that produced the target.** Every `investigate-*` caller returns to its evidence gathering / point settlement; a caller with no owning procedure asks a person where to get the missing evidence and stops.
 - **Where re-measurement is impossible**, restate the conclusion as unsettled / not measured with what would settle it, leaving no unsupported certainty.
-- **After Critical handling** — new evidence, or a revision to unsettled / not measured — the next pass is full scope, preserving the outer loop's total round count and same-finding history.
+- **After Critical handling** — new evidence, or a revision to unsettled / not measured — the next pass is the matching Critical row in **Path types**, preserving the outer loop's total round count and same-finding history.
 - **Two findings are the same** when a later pass faults the same claim on the same grounds, however the wording moved — including a claim restated after an edit meant to resolve it.
 - **Stopping** is `using-dude`'s **Loop convergence**.
 - **Nothing is published until the required clean comes back** — inline-clean, or dispatched-clean where a dispatch case above holds. Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
