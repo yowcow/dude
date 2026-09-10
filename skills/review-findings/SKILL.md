@@ -64,7 +64,7 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 
 This holds for every caller, rather than being defined at each call site. The gate always runs and is never skipped; what varies by risk is which clean it owes — inline-clean by default, dispatched-clean where one of the cases below holds. The caller declares which of (a)–(c) applies or records the inline-clean; the orchestrator marks (d) in the hand-off summary.
 
-- **Dispatch where one of these holds** — a dispatched pass returns dispatched-clean:
+- **Dispatch where one of these holds** — the required clean is dispatched-clean:
   - (a) the report claims absence, exhaustiveness, or "only" — a cut-short sweep hands back "nothing found", which neither the orchestrator nor any later reader can tell from an absence;
   - (b) the report determines an anomaly's cause — `investigate-anomaly`'s first exit criterion met (root cause explains magnitude, timing, scope, and shape). A report of unknowns only does not trigger (b) and stays inline unless (a) or (d) applies;
   - (c) the report determines a performance bottleneck — `investigate-performance`'s first exit criterion met (named bottleneck whose measured contribution explains the shortfall). A report of dead ends alone does not trigger (c), and stays inline unless (a) or (d) holds;
