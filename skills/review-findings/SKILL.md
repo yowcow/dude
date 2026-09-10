@@ -70,7 +70,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, any lens skipped with why, the union of findings per **Finding contract**, which claims no lens flagged, and that the pass finished.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, that Necessity, Executability, Risk, and Assumptions were skipped with why, the union of findings per **Finding contract**, which claims no lens flagged, and that the pass finished.
 
 ## Caller contract
 
