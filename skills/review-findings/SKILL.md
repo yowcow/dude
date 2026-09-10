@@ -70,7 +70,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no lens flagged, and that the pass finished.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished.
 
 ## Caller contract
 
@@ -78,5 +78,5 @@ This holds for every caller, rather than being defined at each call site.
 
 - **One invocation is one pass.** There is no second pass, and no path that reviews inline.
 - **The required clean is that the pass finished**, not that it returned no findings.
-- **Only a claim no lens flagged is a settled conclusion.** A flagged claim is restated by the caller as unsettled / not measured, with what would settle it. The whole report is then published. This skill is not re-run on that restatement, and it never edits the report itself.
+- **Only a claim no run lens flagged is a settled conclusion.** A flagged claim is restated by the caller as unsettled / not measured, with what would settle it. The whole report is then published. This skill is not re-run on that restatement, and it never edits the report itself.
 - **Nothing is published until the pass has finished.** Report the pass to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
