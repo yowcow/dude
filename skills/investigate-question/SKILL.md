@@ -42,7 +42,7 @@ A question, or an issue carrying the points to be settled. Closing any gap again
 - Every point has a verdict with the decisive evidence behind it; or
 - the point is recorded as unsettled, with what would settle it and who decides.
 
-Once the report below is drafted, run `review-findings` on it; nothing reaches the canonical record before it comes back clean.
+Once the report below is drafted, run `review-findings` on it, declaring whether a dispatch case there holds or recording the inline-clean; nothing reaches the canonical record before the required clean comes back.
 
 ### Report format
 
