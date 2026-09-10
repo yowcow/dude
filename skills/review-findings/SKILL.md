@@ -9,7 +9,7 @@ Use on a report whose deliverable is findings, once it is drafted and before it 
 
 ## Orchestration model
 
-**Every invocation owes exactly one clean — inline-clean by default; only a marked pass dispatches a reviewer and owes dispatched-clean instead.** Inline-clean is the default mandatory gate: the orchestrator checks the report against the six lenses in the main loop in one pass, recording the verdict in chat per **Report**, and declares clean only on what the pass actually read. A dispatched pass goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, the six lenses, and the record of past rounds; the reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** and returns the final blocking findings or clean, and the orchestrator reports the result without re-judging it. There is no skip path: one of the two cleans is required on every invocation. `review-plan` is not used here; nothing here dispatches a verdict worker.
+**Every invocation owes exactly one clean — inline-clean by default; only a marked pass dispatches a reviewer and owes dispatched-clean instead.** Inline-clean is the default mandatory gate: the orchestrator checks the report against the three default lenses in the main loop in one pass, recording the verdict in chat per **Report**, and declares clean only on what the pass actually read. A dispatched pass goes out in a fresh context at the tier `using-dude`'s **Worker tier** sets for a marked worker, carrying the report, the question it answers, its stated sources, all six lenses, and the record of past rounds; the reviewer validates each candidate finding against the target and its sources under this skill's own **What counts as a finding** and returns the final blocking findings or clean, and the orchestrator reports the result without re-judging it. There is no skip path: one of the two cleans is required on every invocation. `review-plan` is not used here; nothing here dispatches a verdict worker.
 
 The main loop is normally the same run that wrote the report under review, so its inline check rests on its own account of the evidence — which is why a dispatched reader in a fresh context stays the opt-in for the high-risk cases below, where a sweep cut short reads as "nothing found" and nothing but another reader catches it.
 
@@ -31,14 +31,14 @@ Both severities in **Severity** are blocking. There is no non-blocking tier: a f
 
 ## Lenses
 
-Six, and none of them lowers the bar in **What counts as a finding**. An initial pass runs inline with the whole list, except where the caller declared a dispatch case (a)–(c) or the orchestrator marked (d), which gives the whole list to its single reviewer; a re-run after an Important finding is scoped per **Caller contract**.
+Six in total, three by default, and none of them lowers the bar in **What counts as a finding**. The default inline pass covers Reality (edited scope only), Evidence sufficiency (artifact presence only), and Hypothesis separation; Sweep completeness, Completeness, and Consistency run only in a dispatched pass. An initial pass runs inline with the default three, except where the caller declared dispatch case (a) or the orchestrator marked (d), which gives all six to its single reviewer; a re-run after an Important finding is scoped per **Caller contract**.
 
-- **Evidence sufficiency** — whether each claim's stated evidence actually carries it: a conclusion resting on a sample, a single occurrence, or a correlation presented as though it were the measurement; a number with no command, window, or source behind it.
-- **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the sweep left, not by re-running the sweep itself: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at is a finding.
+- **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line` or a command plus its measured value per claim. Whether the artifact actually carries the claim is checked only in a dispatched pass.
+- **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the sweep left, not by re-running the sweep itself: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at is a finding. Dispatched pass only.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
-- **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met.
-- **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
-- **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly.
+- **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met. Dispatched pass only.
+- **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes. Dispatched pass only.
+- **Reality** — mismatch with the system as it is, limited to the edited scope: a version, config, code path, or constraint the report describes wrongly within what the report changed.
 
 *Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here (it enters `plan-work`), so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
@@ -51,8 +51,8 @@ Each finding returns lens, severity, claim (one sentence), evidence (`path:line`
 
 ## Pass
 
-1. Gather the inputs: the target report, the question it answers, its stated sources, the six lenses, and the record of earlier passes if the caller supplied one.
-2. Run the inline pass with the lenses this pass covers — all six, except a re-run after an Important finding, which is scoped per **Caller contract**. Confine every search to the project root or narrower. Where the caller declared a dispatch case (a)–(c) or the orchestrator marked (d) per **Caller contract**, dispatch exactly one reviewer with the same lens scope instead; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
+1. Gather the inputs: the target report, the question it answers, its stated sources, the lenses this pass covers, and the record of earlier passes if the caller supplied one.
+2. Run the inline pass with the lenses this pass covers — the default three, except a re-run after an Important finding, which is scoped per **Caller contract**. Confine every search to the project root or narrower. Where the caller declared dispatch case (a) or the orchestrator marked (d) per **Caller contract**, dispatch exactly one reviewer with all six lenses instead; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
 3. Judge an inline pass clean or blocking under **What counts as a finding** (inline-clean); report a dispatched pass as returned without re-judging it (dispatched-clean or its blocking findings).
 4. Report per **Report**, and stop there — revising and re-running are the caller's job.
 
@@ -62,13 +62,13 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 
 ## Caller contract
 
-This holds for every caller, rather than being defined at each call site. The gate always runs and is never skipped; what varies by risk is which clean it owes — inline-clean by default, dispatched-clean where one of the cases below holds. The caller declares which of (a)–(c) applies or records the inline-clean; the orchestrator marks (d) in the hand-off summary.
+This holds for every caller, rather than being defined at each call site. The gate always runs and is never skipped; what varies by risk is which clean it owes — inline-clean by default, dispatched-clean where one of the cases below holds. The caller declares whether (a) applies or records the inline-clean; the orchestrator marks (d) in the hand-off summary.
 
 - **Dispatch where one of these holds** — the required clean is dispatched-clean:
   - (a) the report claims absence, exhaustiveness, or "only" — a cut-short sweep hands back "nothing found", which neither the orchestrator nor any later reader can tell from an absence;
-  - (b) the report determines an anomaly's cause — `investigate-anomaly`'s first exit criterion met (root cause explains magnitude, timing, scope, and shape). A report of unknowns only does not trigger (b) and stays inline unless (a) or (d) applies;
-  - (c) the report determines a performance bottleneck — `investigate-performance`'s first exit criterion met (named bottleneck whose measured contribution explains the shortfall). A report of dead ends alone does not trigger (c), and stays inline unless (a) or (d) holds;
   - (d) the report feeds external publication — public changelog, postmortem, or user-facing doc, excluding issue comments and chat records. The orchestrator judges this and records it in the hand-off summary.
+
+- **An anomaly-cause determination and a performance-bottleneck determination stay inline-clean.** Reports that would previously have dispatched under (b) and (c) now owe the default three-lens inline-clean instead; this gate relaxation is accepted, trading Sweep completeness, Completeness, and Consistency coverage on those reports for speed.
 
 - **One round is one pass plus the caller's fold-in.** This skill never re-reviews on its own; revising the report and re-running belong to the caller.
 - **After an Important finding**, re-run only the lens that produced it plus Reality, scoped to the edited scope.
