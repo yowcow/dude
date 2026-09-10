@@ -66,8 +66,8 @@ This holds for every caller, rather than being defined at each call site. The ga
 
 - **Dispatch where one of these holds** — a dispatched pass returns dispatched-clean:
   - (a) the report claims absence, exhaustiveness, or "only" — a cut-short sweep hands back "nothing found", which neither the orchestrator nor any later reader can tell from an absence;
-  - (b) the report determines an anomaly's cause — `investigate-anomaly`'s first exit criterion met (root cause explains magnitude, timing, scope, and shape). A report of unknowns only stays inline;
-  - (c) the report determines a performance bottleneck — `investigate-performance`'s first exit criterion met (named bottleneck whose measured contribution explains the shortfall). A report of dead ends only stays inline;
+  - (b) the report determines an anomaly's cause — `investigate-anomaly`'s first exit criterion met (root cause explains magnitude, timing, scope, and shape). A report of unknowns only does not trigger (b) and stays inline unless (a) or (d) applies;
+  - (c) the report determines a performance bottleneck — `investigate-performance`'s first exit criterion met (named bottleneck whose measured contribution explains the shortfall). A report of dead ends alone does not trigger (c), and stays inline unless (a) or (d) holds;
   - (d) the report feeds external publication — public changelog, postmortem, or user-facing doc, excluding issue comments and chat records. The orchestrator judges this and records it in the hand-off summary.
 
 - **One round is one pass plus the caller's fold-in.** This skill never re-reviews on its own; revising the report and re-running belong to the caller.
