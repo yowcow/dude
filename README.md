@@ -279,6 +279,19 @@ worker count, which lowering the main loop's tier does not reduce
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995);
 [correction](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
 
+The subagent default also carries the four roles no skill marks —
+`implement-work`'s plan drafter, `simplify-code`'s proposer, and the execution
+method's per-task reviewer and per-task implementer. Dispatched without a
+`model` of its own, each rides the same ceiling that **What tier a marked
+worker runs at** above sets for the marked workers' sake. Across 158
+dispatches of those four roles, the 58 with no `model` argument all landed on
+Opus, at $121 over a four-day window, and the 100 with one all landed off
+Opus — the `implement-work` plan drafter alone accounted for $69 of that $121
+([measurements](https://github.com/yowcow/dude/issues/267#issuecomment-5612054475)).
+The only lever available is naming a cheaper model at the dispatch itself;
+lowering the default would pull the marked workers down with it
+([yowcow/dude#266](https://github.com/yowcow/dude/issues/266)).
+
 ## Development
 
 Point a marketplace at a local clone instead of the remote:
