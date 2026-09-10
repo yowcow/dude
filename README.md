@@ -188,9 +188,7 @@ marked workers high once the session under them is cheap,
 **What the run's own tier decides**, for the judgments that come down with the
 session instead of staying with those workers, and **What else the run's cost
 rides on**, for the session length and worker count that remain after the
-model is cheap. Effort is not split the same
-way: on Claude Code a worker runs at the session's effort, so launch even a cheap
-session at the effort you want its marked workers to have. Whether a cheap main loop still
+model is cheap. Whether a cheap main loop still
 runs `implement-work`'s gates and `pr-to-ready`'s clean judgment at the same
 fidelity is not settled here, so nothing below reports that it holds. That
 unsettled question does not reach **What the run's own tier decides**, which
@@ -243,15 +241,25 @@ plugin namespace the host adds.
 A marked worker dispatched without a model of its own lands on the runtime's
 subagent default rather than the run's own tier, which only takes over when no
 default is set — so raising the run's own tier does not reach the worker where
-the default sits below it. On Claude
-Code the default is the environment variable `CLAUDE_CODE_SUBAGENT_MODEL`, not
-a `settings.json` key; set it to the highest tier you have and leave it there
-regardless of the run's own tier, and verify against the environment
-(`env | grep CLAUDE_CODE_SUBAGENT_MODEL`) rather than `settings.json` alone.
-Read back from its transcript what a dispatched worker actually ran on rather
-than asking it — a self-report is the worker's own account, not the runtime's
-record of the call
-([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
+the default sits below it. An explicit `model` argument on the dispatch
+overrides that default outright, even to a lower tier — so the default being
+set correctly is not evidence that every marked dispatch honors it. On Claude
+Code the default is the environment variable
+`CLAUDE_CODE_SUBAGENT_MODEL`, not a `settings.json` key; set it to the highest
+tier you have and leave it there regardless of the run's own tier.
+
+Effort is a second, separate ceiling: on
+Claude Code a worker runs at the session's own effort and no dispatch can
+raise it above that, even where its model lands on the highest tier. Launch even
+a cheap main-loop session at the effort you want its marked workers to have.
+
+Confirming the ceiling actually held takes two checks, not just the first:
+the default against the environment
+(`env | grep CLAUDE_CODE_SUBAGENT_MODEL`), then each marked worker's own
+transcript for what model and effort it actually ran on — a self-report is
+the worker's own account, not the runtime's record of the call
+([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330);
+[full classification](https://github.com/yowcow/dude/issues/266#issuecomment-5611590258)).
 This was measured on Claude Code alone; where a runtime carries no such lever,
 `using-dude`'s **Worker tier** leaves it undecided, so leave the main loop's
 tier alone there.
