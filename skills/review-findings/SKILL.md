@@ -29,18 +29,29 @@ This test overrides the lenses. A lens names a failure mode to look for; naming 
 
 Both severities in **Severity** are blocking. There is no non-blocking tier: a finding that passes the test is resolved before the report is published, and anything that fails it is left unsaid rather than recorded as a note.
 
+## Path types
+
+One table decides every pass. Form follows one rule only: dispatched where a dispatch case holds on that pass, inline otherwise. A round returning Critical takes a Critical row next, whether Critical stands alone or beside Important.
+
+| Path | Form | Lenses | Scope | Evidence depth |
+| --- | --- | --- | --- | --- |
+| Initial, neither (a) nor (d) | inline | default three: Reality, Evidence sufficiency, Hypothesis separation | whole report | presence: each claim names its artifact |
+| Initial, (a) or (d) | dispatched, one reviewer | all six | whole report | content: the artifact carries the claim |
+| Important-only rerun, dispatch lapsed | inline | triggering lens plus Reality | actual report edits | content where Evidence runs |
+| Important-only rerun, dispatch continues | dispatched, one reviewer, same lens scope | triggering lens plus Reality | actual report edits | content where Evidence runs |
+| Critical rerun, neither (a) nor (d) | inline | all six | whole report | content |
+| Critical rerun, (a) or (d) | dispatched, one reviewer | all six | whole report | content |
+
 ## Lenses
 
-Six in total, three by default, and none of them lowers the bar in **What counts as a finding**. The default inline pass covers Reality (edited scope only), Evidence sufficiency (artifact presence only), and Hypothesis separation; Sweep completeness, Completeness, and Consistency run only in a dispatched pass, except a re-run after Critical handling, which covers all six lenses inline where neither (a) nor (d) applies. An initial pass runs inline with the default three, except where the caller declared dispatch case (a) or the orchestrator marked (d), which gives all six to its single reviewer; a re-run after an Important finding is scoped per **Caller contract**.
+Six, and none of them lowers the bar in **What counts as a finding**. Which lenses run on a pass is in **Path types**.
 
-- **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line` or a command plus its measured value per claim. Whether the artifact actually carries the claim is checked only in a dispatched pass, except the full-scope inline re-run after Critical handling where neither (a) nor (d) applies, which checks it inline, and the scoped re-run after an Important Evidence-sufficiency finding, which checks it inline scoped to the edited scope where neither (a) nor (d) applies, and dispatched-scoped where either still holds.
+- **Evidence sufficiency** — whether each claim names its backing artifact and whether that artifact carries the claim: a `path:line` or a command plus its measured value per claim, read to the depth **Path types** gives the pass.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the sweep left, not by re-running the sweep itself: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at is a finding.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
 - **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met.
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
-- **Reality** — mismatch with the system as it is, limited to the edited scope: a version, config, code path, or constraint the report describes wrongly within what the report changed.
-
-A re-run after Critical handling covers all six lenses inline where neither (a) nor (d) applies.
+- **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly, read within the pass scope in **Path types**.
 
 *Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here (it enters `plan-work`), so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
@@ -53,8 +64,8 @@ Each finding returns lens, severity, claim (one sentence), evidence (`path:line`
 
 ## Pass
 
-1. Gather the inputs: the target report, the question it answers, its stated sources, the lenses this pass covers, the edited scope (the whole report on an initial pass and on a re-run after Critical handling; the actual report edits on a re-run after an Important finding), and the record of earlier passes if the caller supplied one.
-2. Run the inline pass with the lenses this pass covers — the default three, except a re-run after an Important finding, which is scoped per **Caller contract**, and except a re-run after Critical handling, which covers all six lenses inline where neither (a) nor (d) applies. Confine every search to the project root or narrower. Where the caller declared dispatch case (a) or the orchestrator marked (d) per **Caller contract**, dispatch exactly one reviewer with all six lenses instead, except a re-run after an Important finding where the same round did not also return Critical, which stays scoped per **Caller contract**; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
+1. Gather the inputs: the target report, the question it answers, its stated sources, whether (a) or (d) holds on this pass per **Caller contract**, the edited scope as **Path types** resolves it, and the record of earlier passes if the caller supplied one.
+2. Resolve the path from the dispatch cases on this pass and the previous findings, then follow **Path types** for form, lenses, scope, and evidence depth. Confine every search to the project root or narrower. A dispatched pass gives its single reviewer the same path; the reviewer validates each candidate finding against the target and its sources under **What counts as a finding** and returns the final blocking findings or clean.
 3. Judge an inline pass clean or blocking under **What counts as a finding** (inline-clean); report a dispatched pass as returned without re-judging it (dispatched-clean or its blocking findings).
 4. Report per **Report**, and stop there — revising and re-running are the caller's job.
 
@@ -73,10 +84,10 @@ This holds for every caller, rather than being defined at each call site. The ga
 - **An anomaly-cause determination and a performance-bottleneck determination stay inline-clean for the retired (b)/(c) routes; where (a) or (d) holds, dispatched-clean is still required.** Reports that would previously have dispatched under (b) and (c) now owe the default three-lens inline-clean instead; this gate relaxation is accepted, trading Sweep completeness, Completeness, and Consistency coverage on those reports for speed.
 
 - **One round is one pass plus the caller's fold-in.** This skill never re-reviews on its own; revising the report and re-running belong to the caller.
-- **After an Important finding**, re-run only the lens that produced it plus Reality, scoped to the edited scope.
+- **After an Important-only round**, the next pass is the matching Important-only row in **Path types**.
 - **A Critical finding returns to the evidence owner of the work that produced the target.** Every `investigate-*` caller returns to its evidence gathering / point settlement; a caller with no owning procedure asks a person where to get the missing evidence and stops.
 - **Where re-measurement is impossible**, restate the conclusion as unsettled / not measured with what would settle it, leaving no unsupported certainty.
-- **After Critical handling** — new evidence, or a revision to unsettled / not measured — the next pass is full scope, preserving the outer loop's total round count and same-finding history. Where the same round also returned an Important finding, this rule governs the next pass.
+- **After Critical handling** — new evidence, or a revision to unsettled / not measured — the next pass is the matching Critical row in **Path types**, preserving the outer loop's total round count and same-finding history.
 - **Two findings are the same** when a later pass faults the same claim on the same grounds, however the wording moved — including a claim restated after an edit meant to resolve it.
 - **Stopping** is `using-dude`'s **Loop convergence**.
 - **Nothing is published until the required clean comes back** — inline-clean, or dispatched-clean where a dispatch case above holds. Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
