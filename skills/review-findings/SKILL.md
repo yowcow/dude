@@ -31,7 +31,7 @@ A finding that passes the test flags that claim. It does not block publication, 
 
 ## Lenses
 
-Six, and none of them lowers the bar in **What counts as a finding**. Every pass runs all six.
+Six, and none of them lowers the bar in **What counts as a finding**. Run the ones this report can fail under; skip the rest and say which and why.
 
 - **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line`, a command plus its measured value, or a source/window/record per claim; and whether that artifact carries the claim.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the report itself left, not by re-running the sweep: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at in the report is a finding.
@@ -70,7 +70,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, that Necessity, Executability, Risk, and Assumptions were skipped with why, the union of findings per **Finding contract**, which claims no lens flagged, and that the pass finished.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no lens flagged, and that the pass finished.
 
 ## Caller contract
 
