@@ -55,7 +55,7 @@ Descend the layers, measuring each one's share of the total cost; stop at the fi
 - A named bottleneck whose measured contribution explains the observed shortfall's magnitude — not just "found something slow"; or
 - documented dead ends, each with the measurement that would settle it.
 
-Once the report below is drafted, run `review-findings` on it, declaring whether its absence-claim dispatch case holds or recording the inline-clean; a bottleneck determination stays inline-clean and dispatches only on an absence claim or external publication; nothing reaches the canonical record before the required clean comes back.
+Once the report below is drafted, run `review-findings` on it, declaring whether its dispatch case (a) holds or recording the inline-clean; a bottleneck determination stays inline-clean and dispatches only where dispatch case (a) holds or on external publication; nothing reaches the canonical record before the required clean comes back.
 
 ### Report format
 
