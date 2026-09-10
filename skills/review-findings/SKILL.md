@@ -44,7 +44,7 @@ Six, and none of them lowers the bar in **What counts as a finding**. Every pass
 
 ## Dispatch
 
-Each reviewer gets its assigned lenses, the target report, the question it answers, and the sources it rests on. Every reviewer takes the same stance: try to make a claim fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
+Each reviewer gets its assigned lenses, the target report, the question it answers, the sources it rests on, **What counts as a finding**, and **Finding contract**. Every reviewer takes the same stance: try to make a claim fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
 
 Size the fan-out for shortest wall-clock. Independence is what a split buys — neither sees the other's findings, so neither anchors on them. Use `superpowers:dispatching-parallel-agents` for the dispatch itself when there is more than one worker; this is independent fact-finding, not implementation. Don't restate its prompt-construction guidance here.
 
@@ -57,7 +57,7 @@ Each reviewer returns findings only — never a rewritten report — with:
 - **lens**
 - **claim** — one sentence on what is wrong
 - **evidence** — `path:line` from the repo, or the quoted line from the artifact. No evidence, no finding
-- **suggested change** — what it should say instead
+- **suggested change** — the claim restated as unsettled / not measured, plus what would settle it — not a replacement conclusion
 
 Report "no findings" explicitly rather than inventing one.
 
