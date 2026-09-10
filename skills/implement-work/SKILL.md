@@ -133,13 +133,13 @@ Push the branch to `origin` under its own name, unconditionally. The push is wha
 
 Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints:
 
-- `PR <n> found draft=<bool>` — an earlier session on this branch already opened one. Take it as the deliverable and **leave its status as it is**: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen.
-- `PR <n> created draft=true base=<base>` — this run opened it.
+- `PR <n> found draft=<bool> url=<url>` — an earlier session on this branch already opened one. Take it as the deliverable and **leave its status as it is**: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen.
+- `PR <n> created draft=true base=<base> url=<url>` — this run opened it.
 - `STOP <slug>` — no PR was opened. Report the stop, and hand the branch over regardless.
 
 Title and body are standard Japanese (標準語), following the repo's PR template when it has one. The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository. The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
 
-Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the PR's URL — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
+Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the `url=` value from that line — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
 
 - **PR creation belongs here**, and to this one point in the flow.
 - **Integration goes through a PR.** Merging this branch into its base instead of handing it over would skip `pr-to-ready`, CI, and PR review entirely. If the user explicitly wants that, confirm they mean to skip the PR before doing it — this skill carries no merge procedure of its own.
@@ -156,7 +156,7 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**, han
 - the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
 - the concrete checks run, and any that couldn't be
 - what changed and why
-- the pushed branch and the draft PR — its URL, and whether this run opened it or found one already open — with `pr-to-ready` named as the next entry
+- the pushed branch and the draft PR — the `url=` value, and whether this run opened it or found one already open — with `pr-to-ready` named as the next entry
 - assumptions made, and areas needing manual review
 
 ## Escalation
