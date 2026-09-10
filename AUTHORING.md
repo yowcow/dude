@@ -38,7 +38,7 @@ Name the procedure, never the runtime that provides it. Everything in this repos
 
 1. **No command block in a `SKILL.md`.** This one is structural rather than a matter of will: there is nowhere in a `SKILL.md` for a command to go, so the question becomes where it *does* go — `scripts/` if it is worth keeping, nowhere if the deletion test says (a) or (b).
 2. **Adding text means naming the (c).** Every addition to anything in this repository carries its one sentence of concrete silent failure, in the change's own description. No sentence, no addition.
-3. **A table past three data rows is a case-split, and case-splits are where the built-in preparation for rare exceptions accumulates.** Try to compress it to the invariant behind its rows, with "anything else — ask a person" absorbing the tail. Keep the table only where the rows genuinely differ in kind, and say so. Where a table is built from prose, resolve every row — pure and mixed cases alike — against the prior text before pushing; rows verified against pure cases only ship drift that review then finds one round at a time.
+3. **A table past three data rows is a case-split, and case-splits are where the built-in preparation for rare exceptions accumulates.** Keep the table only where the rows genuinely differ in kind, compressing the rest to the invariant behind them with "anything else — ask a person" absorbing the tail. Where the table is built from prose, resolve every row — pure and mixed cases alike — against the prior text before pushing; pure cases alone ship drift that review finds one round at a time.
 
 ## Findings that ask for more text
 
