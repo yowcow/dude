@@ -46,7 +46,7 @@ One table decides every pass. Form follows one rule only: dispatched where a dis
 
 Six, and none of them lowers the bar in **What counts as a finding**. Which lenses run on a pass is in **Path types**.
 
-- **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line` or a command plus its measured value per claim; where **Path types** gives content depth, whether that artifact carries the claim.
+- **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line`, a command plus its measured value, or a source/window/record per claim; where **Path types** gives content depth, whether that artifact carries the claim.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the sweep left, not by re-running the sweep itself: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at is a finding.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
 - **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met.
