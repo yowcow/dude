@@ -1,22 +1,11 @@
-import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const skillsDir = fileURLToPath(new URL('../../skills', import.meta.url));
-const skillFile = fileURLToPath(new URL('../../skills/using-dude/SKILL.md', import.meta.url));
+const pluginRoot = fileURLToPath(new URL('../..', import.meta.url));
 const MARKER = 'dude-bootstrap:using-dude';
 
-let cached;
-
 function bootstrap() {
-  if (cached !== undefined) return cached;
-  let body;
-  try {
-    body = readFileSync(skillFile, 'utf8').replace(/^---\n[\s\S]*?\n---\n/, '');
-  } catch {
-    body = `Error reading the using-dude skill at ${skillFile}. dude's workflow rules are NOT in context; read the file yourself before starting any task.`;
-  }
-  cached = `<!-- ${MARKER} -->\nThe using-dude skill is already in context. Do not load it again.\n\n${body}`;
-  return cached;
+  return `<!-- ${MARKER} -->\ndude's workflow rules — summary stub (not the full ruleset) from the dude install at ${pluginRoot}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.`;
 }
 
 export const DudePlugin = async () => ({

@@ -5,6 +5,7 @@ ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
 node --input-type=module - "$ROOT" <<'JS'
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -44,9 +45,14 @@ await transform({}, first);
 const parts = injected(first);
 assert.equal(parts.length, 1);
 assert.match(parts[0].text, /^<!-- dude-bootstrap:using-dude -->/);
-assert.match(parts[0].text, /# Using dude/);
-assert.match(parts[0].text, /Workflow selection/);
+assert.match(parts[0].text, /summary stub \(not the full ruleset\)/);
+assert.match(parts[0].text, /Before any task, read the `dude:using-dude` skill and follow it/);
+assert.match(parts[0].text, /The orchestrator owns control flow and drives every transition/);
+assert.match(parts[0].text, /A sub-skill's trailing transition is cut/);
 assert.doesNotMatch(parts[0].text, /EXTREMELY_IMPORTANT/);
+assert.doesNotMatch(parts[0].text, /# Using dude/);
+assert.doesNotMatch(parts[0].text, /Workflow selection/);
+assert.doesNotMatch(parts[0].text, /in full/);
 assert.equal(first.messages[0].parts[1].text, 'hello');
 
 await transform({}, first);
@@ -69,6 +75,24 @@ const shared = makeOutput('shared');
 await transform({}, shared);
 await hooks2['experimental.chat.messages.transform']({}, shared);
 assert.equal(injected(shared).length, 1);
+
+const hookOut = execFileSync('bash', [path.join(root, 'hooks/session-start')], { encoding: 'utf8' });
+const ctx = JSON.parse(hookOut).hookSpecificOutput.additionalContext;
+const hookSentences = [
+  'Before any task, read the `dude:using-dude` skill and follow it.',
+  'The orchestrator owns control flow and drives every transition;',
+  "A sub-skill's trailing transition is cut",
+];
+for (const s of hookSentences) {
+  assert.ok(ctx.includes(s), `hook stub missing: ${s}`);
+  assert.ok(parts[0].text.includes(s), `transform diverged from hook stub: ${s}`);
+}
+const norm = (t) =>
+  t.replace(/^<!-- dude-bootstrap:using-dude -->\n/, '')
+    .replace(/^<EXTREMELY_IMPORTANT>\n/, '')
+    .replace(/\n<\/EXTREMELY_IMPORTANT>$/, '')
+    .replace(/from the dude install at .*?:\n/, 'from the dude install at <ROOT>:\n');
+assert.equal(norm(parts[0].text), norm(ctx));
 JS
 
 printf 'ok 1/1 opencode-plugin_test.sh\n'
