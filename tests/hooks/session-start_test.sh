@@ -18,16 +18,14 @@
 # No row stubs `gh`: this script never calls it. Every row asserts zero gh
 # calls, which is what holds that to being true.
 #
-# RED verification (see tests/README.md). Against the pre-change script, all six
+# RED verification (see tests/README.md). Against the pre-change script, five
 # rows fail: `plain-tree`, `weird-path-json-intact`,
-# `control-chars-json-intact`, `cdpath-ignored`, `missing-skill-file` and
-# `read-failure-names-the-path`. They fail for three distinct reasons:
-#   - the wrapper named no install path, so every row reading the heading line
-#     differs there;
-#   - the fallback message spelled the skill file `<root>/hooks/../skills/...`,
-#     because skill_file hung off hook_dir rather than off the plugin root;
-#   - `cd` was left to consult CDPATH, so `cdpath-ignored` resolved the hook
-#     into the decoy tree.
+# `control-chars-json-intact`, `cdpath-ignored` and `skill-body-ignored` --
+# the first four on the context bytes (full body vs stub),
+# `skill-body-ignored` on the leaked marker/fallback absence. `size-budget`
+# passes on this tiny fixture (pre-change stdout ~0.5KB, under 2048); the
+# 11,273-byte full-text figure is the real-install motivation noted in the
+# row below, not a RED observation.
 # Run it with:
 #   SUT=<pre-change copy> tests/run.sh tests/hooks/session-start_test.sh
 set -euo pipefail
@@ -49,18 +47,15 @@ fi
 failed=0
 total=0
 
-# The body of the fixture SKILL.md, from the first `# ` line on -- which is the
-# span the script's `sed -n '/^# /,$p'` selects. It carries a quote, a
-# backslash, a tab and a carriage return -- four of the characters
-# escape_for_json rewrites; content that exercised none of them would pass
-# through a broken escaper unharmed. The control characters it does not carry
-# are exercised through the install path, by `control-chars-json-intact`.
+# The fixture body the hook must NOT emit. The stub is static: even this
+# marker sentence must never appear in additionalContext. Content that
+# exercised the old escaper is gone with the old emission path on purpose --
+# escaping is now asserted through the install path alone (weird-path,
+# control-chars rows).
 BODY="${HARNESS_TMP}/body.md"
 {
   printf '# Using dude\n\n'
-  printf 'A quote: "q", a backslash: \\ and a tab:\there.\n'
-  printf 'A carriage return follows this word:\r end.\n\n'
-  printf '## Last section\n\nThe final line, which truncation would drop.\n'
+  printf 'MARKER-SENTENCE-THAT-MUST-NEVER-APPEAR-IN-CONTEXT\n'
 } >"$BODY"
 
 # build_tree <dir> -- a plugin tree at <dir> holding hooks/session-start (a copy
@@ -92,23 +87,23 @@ check_json() {
   check_eq "${label}: hookEventName" 'SessionStart' "$ev"
 }
 
-# check_context <label> <root> -- the parsed additionalContext against the whole
+# check_context <label> <root> -- the parsed additionalContext against the stub
 # block the hook should inject for a tree at <root>, byte for byte. Both sides
 # go through files, so a mismatch is reported by cmp on bytes rather than by
-# eyeballing two long strings.
-#
-# The body is emitted through `printf '%s' "$(cat ...)"`, which strips trailing
-# newlines exactly as the script's own `$(sed ...)` does. The final newline is
-# jq -r's line terminator, not part of the string.
+# eyeballing two long strings. The final newline is jq -r's line terminator,
+# not part of the string.
 check_context() {
   local label="$1" root="$2"
   local want="${HARNESS_TMP}/expected.ctx" got="${HARNESS_TMP}/got.ctx"
   {
     printf '<EXTREMELY_IMPORTANT>\n'
-    printf "dude's workflow rules — the %s skill, in full, from the dude install at %s:\n\n" \
-      '`dude:using-dude`' "$root"
-    printf '%s' "$(cat -- "$BODY")"
-    printf '\n</EXTREMELY_IMPORTANT>\n'
+    printf 'dude'"'"'s workflow rules — summary stub (not the full ruleset) from the dude install at %s:\n\n' "$root"
+    printf 'Before any task, read the `dude:using-dude` skill and follow it. '
+    printf 'The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\n'
+    printf 'The orchestrator owns control flow and drives every transition; '
+    printf 'a worker never declares a phase complete or advances the workflow. '
+    printf 'A sub-skill'"'"'s trailing transition is cut — what runs next is the caller'"'"'s decision, not the sub-skill'"'"'s.\n'
+    printf '</EXTREMELY_IMPORTANT>\n'
   } >"$want"
   if ! jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" >"$got" 2>/dev/null; then
     printf 'FAIL %s: stdout carries no .hookSpecificOutput.additionalContext string\n' "$label"
@@ -123,26 +118,9 @@ check_context() {
   return 1
 }
 
-# check_context_has <label> <substring> -- for the rows whose expectation is
-# "this text appears", where the rest of the block is asserted elsewhere.
-check_context_has() {
-  local label="$1" want="$2" got
-  got="$(jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null)" || {
-    printf 'FAIL %s: stdout carries no .hookSpecificOutput.additionalContext string\n' "$label"
-    return 1
-  }
-  case "$got" in
-    *"$want"*) return 0 ;;
-  esac
-  printf 'FAIL %s: the injected context does not carry [%s]\n  got: %s\n' \
-    "$label" "$want" "$(printf '%s' "$got" | head -c 400)"
-  return 1
-}
-
 # row_done <name> <fails> -- the tail every row shares. The exit status is
 # asserted here rather than per row: this script's only exit is the trailing
-# `exit 0`, and its read-failure branch is a fallback assignment rather than a
-# non-zero return -- so "it exited 0" is a property of every row alike, not a
+# `exit 0` -- so "it exited 0" is a property of every row alike, not a
 # per-row expectation.
 row_done() {
   local name="$1" fails="$2"
@@ -155,12 +133,12 @@ row_done() {
   fi
 }
 
-# ---- a plain tree: the whole block, byte for byte -----------------------
+# ---- a plain tree: the stub block, byte for byte ------------------------
 #
-# One row carries both "the output is JSON" and "the content arrived in full",
+# One row carries both "the output is JSON" and "the stub arrived whole",
 # because the second is only meaningful once the first holds. The exact
 # comparison is what makes truncation detectable: a block cut short anywhere
-# fails it, including at the last line of the fixture body.
+# fails it.
 
 row_start
 ROOT="${HARNESS_TMP}/tree.plain"
@@ -173,9 +151,9 @@ row_done 'plain-tree' "$fails"
 
 # ---- a plugin root carrying a quote and a backslash ---------------------
 #
-# The path reaches the JSON, so it has to go through the same escape the skill
-# content does. Unescaped, a single `"` in an install path closes the string
-# early and the whole ruleset -- not merely the path -- stops arriving. Both
+# The path reaches the JSON, so it has to go through the escaper. Unescaped,
+# a single `"` in an install path closes the string early and the whole stub
+# -- not merely the path -- stops arriving. Both
 # characters are legal in a POSIX filename, so this is reachable, not
 # hypothetical.
 
@@ -195,15 +173,15 @@ row_done 'weird-path-json-intact' "$fails"
 # constrain -- it is whatever directory the plugin was installed into -- so a
 # control character there is reachable the same way the quote above is. Left
 # raw it invalidates the whole object rather than merely the path: Claude Code
-# drops the block, and the hook still exits 0, so neither the ruleset nor the
-# read-failure notice arrives and nothing says so.
+# drops the block, and the hook still exits 0, so the stub never arrives
+# and nothing says so.
 #
 # The path carries every C0 control the escaper has to convert, not a sample of
 # them: the conversion spells its codes in octal, and a single mis-numbered
 # entry would otherwise ship green.
 
 row_start
-ROOT="${HARNESS_TMP}/tree.ctl"$'\b\f\001\002\003\004\005\006\007\013\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037'"end"
+ROOT="${HARNESS_TMP}/tree.ctl"$'\b\f\t\n\r\001\002\003\004\005\006\007\013\016\017\020\021\022\023\024\025\026\027\030\031\032\033\034\035\036\037'"end"
 build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
 fails=0
@@ -242,11 +220,12 @@ if ! check_json 'cdpath-ignored'; then fails=1; fi
 if ! check_context 'cdpath-ignored: context' "$ROOT"; then fails=1; fi
 row_done 'cdpath-ignored' "$fails"
 
-# ---- the skill file cannot be read --------------------------------------
+# ---- the skill body never reaches the output ---------------------------
 #
-# The script's fallback branch. The output still has to be valid JSON: a
-# session that lost the rules to a read failure must still be told so, and a
-# malformed payload would drop the notice along with the rules.
+# The stub is static: deleting the skill file changes nothing. The old
+# read-failure branch is gone (its absence surfaces loudly at skill-read
+# time, AUTHORING.md deletion-test (b)), so this row asserts the absence of
+# both the marker sentence and any fallback text.
 
 row_start
 ROOT="${HARNESS_TMP}/tree.noskill"
@@ -254,28 +233,40 @@ build_tree "$ROOT"
 rm -f -- "${ROOT}/skills/using-dude/SKILL.md"
 run_sut bash "${ROOT}/hooks/session-start"
 fails=0
-if ! check_json 'missing-skill-file'; then fails=1; fi
-if ! check_context_has 'missing-skill-file' \
-  "Error reading the using-dude skill at ${ROOT}/skills/using-dude/SKILL.md."; then fails=1; fi
-if ! check_context_has 'missing-skill-file' 'are NOT in context'; then fails=1; fi
-row_done 'missing-skill-file' "$fails"
+if ! check_json 'skill-body-ignored'; then fails=1; fi
+if ! check_context 'skill-body-ignored: context' "$ROOT"; then fails=1; fi
+if jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | grep -q 'MARKER-SENTENCE'; then
+  printf 'FAIL skill-body-ignored: skill body leaked into the stub\n'
+  fails=1
+fi
+if jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | grep -q 'in full'; then
+  printf 'FAIL skill-body-ignored: stale "in full" claim present\n'
+  fails=1
+fi
+row_done 'skill-body-ignored' "$fails"
 
-# ---- the read failure on a path needing escaping ------------------------
+# ---- size budget: the whole reason for the stub -------------------------
 #
-# The two escapes meet here: the fallback message embeds the skill file path,
-# and the wrapper embeds the plugin root. Either one unescaped breaks the JSON,
-# and this is the branch where both appear at once.
+# additionalContext (decoded) must stay at or under 1536 bytes (~1.5KB) and
+# the full stdout at or under 2048 bytes, both below the ~2KB truncation
+# threshold that demoted the 11,273-byte full-text output to a file fallback.
 
 row_start
-ROOT="${HARNESS_TMP}/tree.q\"uote\\noskill"
+ROOT="${HARNESS_TMP}/tree.plain"
 build_tree "$ROOT"
-rm -f -- "${ROOT}/skills/using-dude/SKILL.md"
 run_sut bash "${ROOT}/hooks/session-start"
 fails=0
-if ! check_json 'read-failure-names-the-path'; then fails=1; fi
-if ! check_context_has 'read-failure-names-the-path' "from the dude install at ${ROOT}:"; then fails=1; fi
-if ! check_context_has 'read-failure-names-the-path' \
-  "Error reading the using-dude skill at ${ROOT}/skills/using-dude/SKILL.md."; then fails=1; fi
-row_done 'read-failure-names-the-path' "$fails"
+if ! check_json 'size-budget'; then fails=1; fi
+ctx_bytes="$(jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
+out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
+if [ "$ctx_bytes" -gt 1536 ]; then
+  printf 'FAIL size-budget: additionalContext is %s bytes, budget is 1536\n' "$ctx_bytes"
+  fails=1
+fi
+if [ "$out_bytes" -gt 2048 ]; then
+  printf 'FAIL size-budget: stdout is %s bytes, budget is 2048\n' "$out_bytes"
+  fails=1
+fi
+row_done 'size-budget' "$fails"
 
 harness_exit "$failed" "$total"
