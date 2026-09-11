@@ -282,10 +282,13 @@ row_done 'size-budget' "$fails"
 
 row_start
 COMP="$(printf '%200s' '' | tr ' ' 'a')"
-TRICKY="q\"uote\\slash"$'\t'"é$(printf '%180s' '' | tr ' ' 'b')"
+# Its 101 bytes start with a two-byte character, so under LC_ALL=C the 100-byte
+# suffix begins on its continuation byte. The remaining characters exercise
+# JSON escaping inside the retained suffix.
+TRICKY="éq\"uote\\slash"$'\t'"$(printf '%86s' '' | tr ' ' 'b')"
 ROOT="${HARNESS_TMP}/tree.long/${COMP}/${COMP}/${COMP}/${COMP}/${TRICKY}"
 build_tree "$ROOT"
-run_sut bash "${ROOT}/hooks/session-start"
+run_sut env LC_ALL=C bash "${ROOT}/hooks/session-start"
 fails=0
 if ! check_json 'near-limit-path'; then fails=1; fi
 ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"

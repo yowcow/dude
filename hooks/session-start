@@ -73,7 +73,15 @@ escape_for_json() {
 # what tells two installs apart.
 root_len=${#plugin_root}
 if [ "$root_len" -gt 100 ]; then
-  plugin_root="...${plugin_root:$((root_len - 100))}"
+  suffix="${plugin_root:$((root_len - 100))}"
+  # A byte cut under LC_ALL=C can start mid-character: drop dangling UTF-8
+  # continuation bytes so the head is character-aligned. The tail needs
+  # nothing -- it is the string's original end. Under a UTF-8 locale the cut
+  # is already aligned and this strips nothing.
+  while [[ $suffix == [$'\200'-$'\277']* ]]; do
+    suffix="${suffix:1}"
+  done
+  plugin_root="...${suffix}"
 fi
 escaped_root=$(escape_for_json "$plugin_root")
 
