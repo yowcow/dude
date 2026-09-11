@@ -67,7 +67,7 @@ SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/ensure-draft-pr.sh}"
 
 # The two --jq filters the SUT and its sibling pass, spelled here exactly as
 # they appear in those scripts: the stub matches an argv on its exact bytes.
-LIST_JQ='.[] | "\(.number) \(.isDraft)"'
+LIST_JQ='.[] | "\(.number) \(.isDraft) \(.url)"'
 STATE_JQ='.[] | "\(.number) \(.state)"'
 
 TITLE='tests: a title'
@@ -133,17 +133,17 @@ fixture() {
 #
 # Raw, not filtered: the body is the JSON gh received, and the stub applies
 # the SUT's own --jq to it. That is what puts `.[]` under test -- a fixture
-# pre-reduced to "<number> <isDraft>" lines would decide the very answer the
+# pre-reduced to "<number> <isDraft> <url>" lines would decide the very answer the
 # row is checking, and `.[0]` would then be indistinguishable from `.[]`.
 stub_pr_list() {
-  gh_stub_raw_response "$1" "$3" pr list --head "$2" --json number,isDraft --jq "$LIST_JQ"
+  gh_stub_raw_response "$1" "$3" pr list --head "$2" --json number,isDraft,url --jq "$LIST_JQ"
 }
 
 # The failing spelling. A failing gh prints no body for --jq to reduce, so the
 # entry states "nothing on stdout" directly instead of handing the raw arm a
 # body it would not filter anyway.
 stub_pr_list_filtered() {
-  gh_stub_response "$1" "$3" pr list --head "$2" --json number,isDraft --jq "$LIST_JQ"
+  gh_stub_response "$1" "$3" pr list --head "$2" --json number,isDraft,url --jq "$LIST_JQ"
 }
 
 stub_pr_create() {
@@ -237,9 +237,9 @@ stamp_push_order "$FIXTURE_BARE"
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'local-only-branch-is-pushed-before-the-base-is-resolved' 0 'PR 7 created draft=true base=main\n' 4
+assert_row 'local-only-branch-is-pushed-before-the-base-is-resolved' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 4
 tally check_eq 'push-precedes-every-gh-call' 0 "$(push_order_stamp)"
 tally check_eq 'ordering-row-landed-on-the-remote' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
@@ -256,9 +256,9 @@ row_start
 fixture nopush feature remote
 git_repo_commit "$FIXTURE_WORK" T2.md 'ahead\n' 'a commit the remote does not have'
 NOPUSH_TIP="$(git -C "$FIXTURE_BARE" rev-parse "refs/heads/feature")"
-printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
+printf '[{"number":12,"isDraft":true,"url":"https://example.invalid/pull/12"}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'a-branch-already-on-the-remote-is-not-pushed-again' 0 'PR 12 found draft=true\n' 1
+assert_row 'a-branch-already-on-the-remote-is-not-pushed-again' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 1
 tally check_eq 'no-redundant-push-moved-the-remote' "$NOPUSH_TIP" "$(git -C "$FIXTURE_BARE" rev-parse "refs/heads/feature")"
 
 row_start
@@ -267,24 +267,24 @@ git_repo_checkout "$FIXTURE_WORK" main
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'PR 7 created draft=true base=main\n' 4
+assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 4
 tally check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # ---- step 2: does a PR already exist? ------------------------------------
 
 row_start
 fixture exists-draft feature remote
-printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 feature 0
+printf '[{"number":12,"isDraft":true,"url":"https://example.invalid/pull/12"}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'existing-draft-pr-is-reported' 0 'PR 12 found draft=true\n' 1
+assert_row 'existing-draft-pr-is-reported' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 1
 
 row_start
 fixture exists-ready feature remote
-printf '[{"number":12,"isDraft":false}]\n' | stub_pr_list 1 feature 0
+printf '[{"number":12,"isDraft":false,"url":"https://example.invalid/pull/12"}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'existing-ready-pr-is-reported' 0 'PR 12 found draft=false\n' 1
+assert_row 'existing-ready-pr-is-reported' 0 'PR 12 found draft=false url=https://example.invalid/pull/12\n' 1
 
 row_start
 fixture lookupfail feature remote
@@ -294,26 +294,26 @@ assert_row 'lookup-failure-is-not-an-absent-pr' 0 'STOP pr-lookup-failed\n' 1
 
 row_start
 fixture multi feature remote
-printf '[{"number":12,"isDraft":true},{"number":13,"isDraft":false}]\n' | stub_pr_list 1 feature 0
+printf '[{"number":12,"isDraft":true,"url":"https://example.invalid/pull/12"},{"number":13,"isDraft":false,"url":"https://example.invalid/pull/13"}]\n' | stub_pr_list 1 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'several-prs-for-one-branch-stop' 0 'STOP ask-multiple-prs\n' 1
 
 row_start
 fixture numeric 1234 remote
-printf '[{"number":12,"isDraft":true}]\n' | stub_pr_list 1 1234 0
+printf '[{"number":12,"isDraft":true,"url":"https://example.invalid/pull/12"}]\n' | stub_pr_list 1 1234 0
 run_in "$FIXTURE_WORK" 1234 "$TITLE" "$BODY_FILE"
-assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draft=true\n' 1
+assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 1
 
 row_start
 fixture create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
-printf '[]' | gh_stub_raw_response 1 0 pr list --head feature --json number,isDraft \
-  --jq '.[0] | "\(.number) \(.isDraft)"'
+printf '[]' | gh_stub_raw_response 1 0 pr list --head feature --json number,isDraft,url \
+  --jq '.[0] | "\(.number) \(.isDraft) \(.url)"'
 printf 'main\n' | stub_default_branch 2 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=true base=main\n' 4
+assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 4
 
 # ---- step 3: the base, resolved by the real sibling ----------------------
 #
@@ -412,9 +412,9 @@ printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf '[{"number":9,"state":"OPEN"}]\n' | stub_prereq_list 3 dep 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature dep 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 5 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 5 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep\n' 5
+assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep url=https://example.invalid/pull/7\n' 5
 
 row_start
 fixture prereq-merged feature remote dep
@@ -422,9 +422,9 @@ printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf '[{"number":9,"state":"MERGED"}]\n' | stub_prereq_list 3 dep 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature main 0
-printf '[{"number":7,"isDraft":true}]\n' | stub_pr_list 5 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 5 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main\n' 5
+assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 5
 
 # ---- steps 4-5: create, then read the record back -----------------------
 #
@@ -469,7 +469,7 @@ fixture several-after-create feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create 3 feature main 0
-printf '[{"number":7,"isDraft":true},{"number":8,"isDraft":true}]\n' | stub_pr_list 4 feature 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"},{"number":8,"isDraft":true,"url":"https://example.invalid/pull/8"}]\n' | stub_pr_list 4 feature 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create\n' 4
 

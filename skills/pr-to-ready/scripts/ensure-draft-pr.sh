@@ -39,7 +39,7 @@ TITLE="$2"
 BODY_FILE="$3"
 
 # Run the existence lookup and hand the caller both halves of the answer:
-# LOOKUP (one line per matching PR, "<number> <isDraft>") and LINE_COUNT.
+# LOOKUP (one line per matching PR, "<number> <isDraft> <url>") and LINE_COUNT.
 # Exit status and output must be read together — a non-zero exit from `gh`
 # means "couldn't tell", not "no PR", and reading it as "none found" is
 # exactly what opens a second PR on a branch that already has one. That
@@ -52,11 +52,11 @@ BODY_FILE="$3"
 # than the 1 `wc -l` would report — "no PR" must not turn into "exactly one
 # PR" with an empty number. It exits 1 on a zero count, hence `|| true`;
 # the count itself is still printed. The two differ only on *interior* blank
-# lines, which `gh pr list --jq '.[] | "\(.number) \(.isDraft)"'` cannot
+# lines, which `gh pr list --jq '.[] | "\(.number) \(.isDraft) \(.url)"'` cannot
 # produce.
 pr_lookup() {
   local stop_slug="$1"
-  if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft --jq '.[] | "\(.number) \(.isDraft)"')"; then
+  if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft,url --jq '.[] | "\(.number) \(.isDraft) \(.url)"')"; then
     echo "STOP $stop_slug"
     return 1
   fi
@@ -104,8 +104,8 @@ if ! pr_lookup pr-lookup-failed; then
 fi
 
 if [ "$LINE_COUNT" -eq 1 ]; then
-  read -r NUM DRAFT <<<"$LOOKUP"
-  echo "PR ${NUM} found draft=${DRAFT}"
+  read -r NUM DRAFT URL <<<"$LOOKUP"
+  echo "PR ${NUM} found draft=${DRAFT} url=${URL}"
   exit 0
 fi
 
@@ -165,5 +165,5 @@ if [ "$LINE_COUNT" -ge 2 ]; then
   exit 0
 fi
 
-read -r NUM DRAFT <<<"$LOOKUP"
-echo "PR ${NUM} created draft=${DRAFT} base=${BASE}"
+read -r NUM DRAFT URL <<<"$LOOKUP"
+echo "PR ${NUM} created draft=${DRAFT} base=${BASE} url=${URL}"
