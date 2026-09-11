@@ -210,26 +210,29 @@ deleting the branch and worktree are yours.
 
 ### How each runtime reaches the skills
 
-| Runtime     | `using-dude` in context at session start?                              | How to reach it by hand |
-| ----------- | ---------------------------------------------------------------------- | ----------------------- |
-| OpenCode    | yes — `experimental.chat.messages.transform` on the first user message | —                       |
-| Claude Code | yes — a SessionStart hook                                              | —                       |
-| Codex       | yes, once the hook is trusted                                          | `dude:using-dude`       |
+| Runtime     | `using-dude` in context at session start?                                                     | How to reach it by hand |
+| ----------- | --------------------------------------------------------------------------------------------- | ----------------------- |
+| OpenCode    | yes — a summary stub via `experimental.chat.messages.transform` on the first user message     | —                       |
+| Claude Code | yes — a summary stub via a SessionStart hook                                                  | —                       |
+| Codex       | yes, once the hook is trusted — the same stub via `hooks/hooks.json`                          | `dude:using-dude`       |
 
 Each row's evidence is in the prose below.
 
-OpenCode's package plugin registers all of dude's skills and prepends `using-dude`
-to the first user message through `experimental.chat.messages.transform`, so
-it is in context at session start. The injected text uses a dude-only marker
+OpenCode's package plugin registers all of dude's skills and prepends a summary
+stub of `using-dude` — the same stub sentences as the hook stub under a different envelope — to the first user
+message through `experimental.chat.messages.transform`, so the stub is in
+context at session start and the full rules load on a `dude:using-dude` skill
+call. The injected text uses a dude-only marker
 and does not contain `EXTREMELY_IMPORTANT`, so Superpowers' bootstrap and
 this one do not skip each other. Two loads of the same plugin (a global git
 install plus the checkout's `.opencode/plugins/`) still inject once.
 
-Claude Code needs no invocation: a SessionStart hook puts `using-dude` in context
-at the start of every session.
+Claude Code needs no invocation: a SessionStart hook injects the ~0.6KB summary
+stub inline at the start of every session; the full rules load on a
+`dude:using-dude` skill call.
 
-Codex installs all of dude's skills and runs `hooks/hooks.json` once the hook is
-trusted, so `using-dude` is in context there too — the Install section above
+Codex installs all of dude's skills and runs the shared `hooks/hooks.json` once
+the hook is trusted, receiving the same stub — the Install section above
 covers what trust involves. The `dude:using-dude` skill works whether the hook is
 trusted or not.
 
@@ -310,12 +313,16 @@ Starting OpenCode from the repository checkout loads
 configured dude plugin entry first, then use the native `skill` tool to verify
 every local skill.
 
+The checkout's transform and the hook emit the same stub: try hook changes by
+editing `hooks/session-start` and `tests/hooks/session-start_test.sh` in place,
+and keep `.opencode/plugins/dude.js` repeating those stub sentences verbatim.
+
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks
 reach the same session. Which tree each one came from is readable — the injected
 text names the install path it ran from — but the session is still carrying
-`using-dude` twice, counted twice against the context and in two versions that
-disagree wherever the branch has moved. Read the rules from the older block and
+the stub twice, counted twice against the context in two near-identical blocks
+that disagree wherever the branch has moved. Read the rules from the older block and
 the session was not checking the branch at all. Uninstalling the github-sourced
 `dude@dude` first is what avoids that, and it rewrites somebody's plugin
 environment — ask whoever owns it.
