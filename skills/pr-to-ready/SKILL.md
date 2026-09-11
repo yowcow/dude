@@ -110,13 +110,11 @@ When there is at least one finding and every finding is `reject`: do not fix, do
 
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now.
 
-When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop — from 2-1 after a push, and from 2-3 when leftover feedback on this round still needs addressing:
+When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop:
 - conditions 2 or 3 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false so 2-1 or row 6 can fire, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
 - condition 1 → per Step 1's own branch on the exit status: a failing conclusion is diagnosed and fixed there, borrowing the diagnosis and not Step 1's own loop, so it isn't counted against Step 1's rounds; a status that yielded no settled listing is the third terminal state here too;
 - condition 4 (base drift) → pull the resolved base in with `retarget-pr.sh`, per Step 1 — it pushes the merge itself, so the next round starts from 2-1 on the new tip;
 - condition 5 (mergeability) → the **third terminal state**, per Step 1's handling of `CONFLICTING`/`UNKNOWN`.
-
-An all-reject round still walks the stop list below, but only rows 2, 4, and 6: skip 1 and 5 as a procedure and do not evaluate the five clean conditions. Escalation, mergeability, and Loop convergence still can.
 
 **Stop the loop when any of these holds — read in order, and take the first that applies; otherwise keep looping:**
 
