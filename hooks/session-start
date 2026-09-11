@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
-# SessionStart hook: put using-dude in context for the whole session.
+# SessionStart hook: put a summary stub of using-dude in context.
 #
 # Claude Code reads a JSON object on stdout and injects
 # hookSpecificOutput.additionalContext. The JSON string is escaped with bash
 # parameter substitution rather than jq, because the hook has to run wherever
 # the plugin is installed and jq is not guaranteed there.
+#
+# The stub is static and small (~0.6KB decoded): only the install path is
+# dynamic. The full rules live in skills/using-dude/SKILL.md and are read on
+# demand via a skill call, outside additionalContext's truncation budget.
 
 set -euo pipefail
 
@@ -23,12 +27,6 @@ hook_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # actually ran from. `dirname` rather than ${hook_dir%/*}, which yields the
 # empty string for a hook_dir of `/hooks`.
 plugin_root="$(dirname -- "$hook_dir")"
-skill_file="${plugin_root}/skills/using-dude/SKILL.md"
-
-# On a read failure this says so in the injected context: a session that
-# silently lost its workflow rules improvises every gate and looks normal.
-skill_content=$(sed -n '/^# /,$p' "$skill_file" 2>&1) \
-  || skill_content="Error reading the using-dude skill at ${skill_file}. dude's workflow rules are NOT in context; read the file yourself before starting any task."
 
 escape_for_json() {
     local s="$1" o c u
@@ -40,12 +38,12 @@ escape_for_json() {
     # Everything below is guarded: every one of the 28 characters it rewrites
     # matches [[:cntrl:]], so a string failing the guard carried none of them and
     # each skipped pass would have been a no-op -- and unguarded that is 28
-    # further walks of a ten-kilobyte skill body. The guard also fires on DEL
+    # further walks of the short install path. The guard also fires on DEL
     # and, in a UTF-8 locale, on U+0080..U+009F, which JSON allows raw: those
     # runs make 28 no-op passes, a wasted walk rather than a wrong one. The 26
     # C0 controls with no two-character escape go out as \u00XX. One left raw
-    # invalidates the whole object: Claude Code drops the block, so neither the
-    # ruleset nor the read-failure notice arrives, and this hook still exits 0 --
+    # invalidates the whole object: Claude Code drops the block, so the stub
+    # never arrives, and this hook still exits 0 --
     # nothing says so. NUL is absent from the list because a bash string cannot
     # hold one. `printf '%b'` rather than a computed format string, which is
     # SC2059. The codes are spelled in octal, the base `\0NNN` wants, and printf
@@ -63,14 +61,33 @@ escape_for_json() {
     printf '%s' "$s"
 }
 
-escaped=$(escape_for_json "$skill_content")
-# Through the same escape as the content: `"`, `\` and the C0 controls a path
-# can hold are all legal in a POSIX filename, and an install path carrying
-# any of them would close or invalidate the JSON string early -- taking the
-# whole ruleset with it, not just the path.
+# `"`, `\` and the C0 controls a path can hold are all legal in a POSIX
+# filename, and an install path carrying any of them would close or
+# invalidate the JSON string early -- taking the whole stub with it.
+#
+# The identity is the only dynamic part of the stub, so a long install path
+# must not push it past its budget. Truncate the raw path to its last 100
+# characters before escaping: after is too late, a byte cut there can split
+# an escape or a multibyte character and invalidate the whole object. Even
+# at 6x escape expansion this stays inside both budgets. The suffix is paired
+# with a POSIX cksum of the complete root, so separate installs stay distinct.
+root_len=${#plugin_root}
+if [ "$root_len" -gt 100 ]; then
+  root_checksum="$(printf '%s' "$plugin_root" | cksum)"
+  root_checksum="${root_checksum%% *}"
+  suffix="${plugin_root:$((root_len - 100))}"
+  # A byte cut under LC_ALL=C can start mid-character: drop dangling UTF-8
+  # continuation bytes so the head is character-aligned. The tail needs
+  # nothing -- it is the string's original end. Under a UTF-8 locale the cut
+  # is already aligned and this strips nothing.
+  while [[ $suffix == [$'\200'-$'\277']* ]]; do
+    suffix="${suffix:1}"
+  done
+  plugin_root="...${root_checksum}:${suffix}"
+fi
 escaped_root=$(escape_for_json "$plugin_root")
 
-context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — the \`dude:using-dude\` skill, in full, from the dude install at ${escaped_root}:\n\n${escaped}\n</EXTREMELY_IMPORTANT>"
+context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — summary stub (not the full ruleset) from the dude install at ${escaped_root}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.\n</EXTREMELY_IMPORTANT>"
 
 # printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
