@@ -72,14 +72,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: install latest manifest validators
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           python3 -m venv "$HOME/.venv-manifest"
           "$HOME/.venv-manifest/bin/pip" install --disable-pip-version-check 'PyYAML==6.0.2'
           echo "$HOME/.venv-manifest/bin" >> "$GITHUB_PATH"
           npm install --global @anthropic-ai/claude-code@latest
-          codex_tag="$(gh api https://api.github.com/repos/openai/codex/releases/latest --jq .tag_name)"
+          codex_tag="$(GH_TOKEN="${{ github.token }}" gh api https://api.github.com/repos/openai/codex/releases/latest --jq .tag_name)"
           mkdir -p "$HOME/.codex/skills/.system/plugin-creator/scripts"
           base_url="https://raw.githubusercontent.com/openai/codex/${codex_tag}/codex-rs/skills/src/assets/samples/plugin-creator/scripts"
           curl --fail --location --output "$HOME/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" "$base_url/validate_plugin.py"
