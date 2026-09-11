@@ -16,6 +16,8 @@ latest_condition="github.event_name == 'pull_request' || github.event_name == 's
 github_token='GH_TOKEN="${{ github.token }}" gh api'
 step_token='GH_TOKEN: ${{ github.token }}'
 pinned_yaml="PyYAML==6.0.2"
+schedule_cron="cron: '17 3 * * 1'"
+latest_base='https://raw.githubusercontent.com/openai/codex/${codex_tag}/'
 fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
 
@@ -79,6 +81,18 @@ if grep -Fq '@anthropic-ai/claude-code@2.1.268' <<<"$latest_manifest"; then
 fi
 if grep -Fq '6b9826e3aa83b1a5947db50f4332cb9c65f1b340' <<<"$latest_manifest"; then
   printf 'FAIL: latest manifest must not pin Codex commit\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$latest_base" <<<"$latest_manifest"; then
+  printf 'FAIL: latest manifest downloads Codex validator from looked-up tag\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$schedule_cron" "$workflow"; then
+  printf 'FAIL: workflow schedules weekly manifest-latest run\n' >&2
+  failed=1
+fi
+if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
+  printf 'FAIL: fixed manifest must not run on schedules\n' >&2
   failed=1
 fi
 
