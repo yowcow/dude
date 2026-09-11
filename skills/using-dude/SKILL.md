@@ -11,6 +11,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 
 - Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
 - This document owns the orchestration invariants: the orchestrator owns control flow and declares which execution method it chose; a skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf, and one that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
+- SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body ever disagree, this body wins and the stub needs a fix under its own issue.
 
 ## Workflow
 
