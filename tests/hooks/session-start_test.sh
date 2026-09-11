@@ -24,7 +24,7 @@
 # the first four on the context bytes (full body vs stub),
 # `skill-body-ignored` on the leaked marker/fallback absence. `size-budget`
 # and `near-limit-path` pass on this tiny fixture (pre-change stdout ~0.5KB,
-# under 2048); the 11,273-byte full-text figure is the real-install motivation
+# under 2048); the 11,239-byte full-text figure is the real-install motivation
 # noted in the row below, not a RED observation. `near-limit-path` is RED for
 # the bound instead: against the unbounded stub it fails the budget (1563
 # decoded bytes > 1536).
@@ -251,7 +251,7 @@ row_done 'skill-body-ignored' "$fails"
 #
 # additionalContext (decoded) must stay at or under 1536 bytes (~1.5KB) and
 # the full stdout at or under 2048 bytes, both below the ~2KB truncation
-# threshold that demoted the 11,273-byte full-text output to a file fallback.
+# threshold that demoted the 11,239-byte full-text output to a file fallback.
 
 row_start
 ROOT="${HARNESS_TMP}/tree.plain"
@@ -291,6 +291,23 @@ build_tree "$ROOT"
 run_sut env LC_ALL=C bash "${ROOT}/hooks/session-start"
 fails=0
 if ! check_json 'near-limit-path'; then fails=1; fi
+context_a="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT")"
+root_checksum="$(printf '%s' "$ROOT" | cksum)"
+root_checksum="${root_checksum%% *}"
+expected_identity="...${root_checksum}:q\"uote\\slash"$'\t'"$(printf '%86s' '' | tr ' ' 'b')"
+if [[ $context_a != *"from the dude install at ${expected_identity}:"* ]]; then
+  printf 'FAIL near-limit-path: retained identity is missing\n'
+  fails=1
+fi
+ROOT_B="${HARNESS_TMP}/tree.wide/${COMP}/${COMP}/${COMP}/${COMP}/${TRICKY}"
+build_tree "$ROOT_B"
+run_sut env LC_ALL=C bash "${ROOT_B}/hooks/session-start"
+if ! check_json 'near-limit-path: distinct root'; then fails=1; fi
+context_b="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT")"
+if [ "$context_a" = "$context_b" ]; then
+  printf 'FAIL near-limit-path: distinct roots share an identity\n'
+  fails=1
+fi
 ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
 out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
 if [ "$ctx_bytes" -gt 1536 ]; then

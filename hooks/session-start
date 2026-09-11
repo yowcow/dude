@@ -69,10 +69,12 @@ escape_for_json() {
 # must not push it past its budget. Truncate the raw path to its last 100
 # characters before escaping: after is too late, a byte cut there can split
 # an escape or a multibyte character and invalidate the whole object. Even
-# at 6x escape expansion this stays inside both budgets, and the suffix is
-# what tells two installs apart.
+# at 6x escape expansion this stays inside both budgets. The suffix is paired
+# with a POSIX cksum of the complete root, so separate installs stay distinct.
 root_len=${#plugin_root}
 if [ "$root_len" -gt 100 ]; then
+  root_checksum="$(printf '%s' "$plugin_root" | cksum)"
+  root_checksum="${root_checksum%% *}"
   suffix="${plugin_root:$((root_len - 100))}"
   # A byte cut under LC_ALL=C can start mid-character: drop dangling UTF-8
   # continuation bytes so the head is character-aligned. The tail needs
@@ -81,7 +83,7 @@ if [ "$root_len" -gt 100 ]; then
   while [[ $suffix == [$'\200'-$'\277']* ]]; do
     suffix="${suffix:1}"
   done
-  plugin_root="...${suffix}"
+  plugin_root="...${root_checksum}:${suffix}"
 fi
 escaped_root=$(escape_for_json "$plugin_root")
 
