@@ -10,7 +10,7 @@
 # /path/to/dude/Makefile` from elsewhere still finds the scripts.
 HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: all lint test
+.PHONY: all lint manifest test
 
 all: lint test
 
@@ -18,6 +18,11 @@ all: lint test
 # shebang.
 lint:
 	"$(HERE)tests/lint.sh"
+
+# Official manifest validators plus JSON syntax checks for manifests outside
+# their coverage.
+manifest:
+	"$(HERE)tests/manifest.sh"
 
 # The offline test suite: every *_test.sh under tests/.
 test:

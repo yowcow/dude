@@ -38,3 +38,17 @@ jobs:
 
       - name: make test
         run: make test
+
+  manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: install manifest validators
+        run: |
+          npm install --global @anthropic-ai/claude-code@2.1.268 @openai/codex@0.154.0
+          codex --version
+          test -f "$HOME/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py"
+
+      - name: make manifest
+        run: make manifest

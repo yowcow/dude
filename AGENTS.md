@@ -8,16 +8,17 @@ Skill bodies, `AUTHORING.md`, and `README.md` stay English. Branches follow `<is
 
 ```
 make lint test
+make manifest
 ```
 
-CI runs those Makefile targets as separate jobs and nothing else. `make lint test` does **not** validate plugin manifests.
+CI runs `lint`, `test`, and `manifest` as separate Makefile jobs. `make lint test` does **not** validate plugin manifests.
 
 - lint: `tests/lint.sh` — `bash -n` + ShellCheck, selected by shebang (not `*.sh`), so the extensionless stub `tests/lib/bin/gh` is included. `.shellcheckrc` disables only SC2016 (GraphQL `$vars` in single-quoted `gh` queries must not expand).
 - test: `tests/run.sh` — offline; `gh` is stubbed and never reaches the network.
 - one file: `tests/run.sh tests/<skill>/<name>_test.sh`
 - RED against a pre-fix script: `SUT=/path/to/old.sh tests/run.sh <one-test-file>` (`SUT` refuses a missing, empty, or unreadable file, and refuses more than one test file).
 
-Manifests, before an install-path change (each validator names the field it rejects):
+`make manifest` runs the official validators below, each of which names the field it rejects. It also JSON-parses `.agents/plugins/marketplace.json`, `package.json`, and `hooks/hooks.json`, which the vendor validators do not cover:
 
 ```
 claude plugin validate .

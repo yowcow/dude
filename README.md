@@ -331,13 +331,10 @@ The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
 Codex install injects twice as well has not been measured here.
 
-Check the manifests before installing — the validators name the offending
-field:
+Check the manifests before installing:
 
 ```
-claude plugin validate .
-python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
-python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
+make manifest
 ```
 
 `claude plugin validate` starts from `.claude-plugin/marketplace.json` and reaches that same
@@ -345,10 +342,10 @@ python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 specified` warning comes from — expected here, per the Versions section above.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
 as well, so it catches malformed frontmatter at the same time. Neither manifest
-validator named above looks at
-`.agents/plugins/marketplace.json` — each still passes with that file
-deliberately corrupted — so `python3 -m json.tool` is what covers it, syntax
-only. `make lint test` checks none of them: it covers shell and the test suite.
+validator covers `.agents/plugins/marketplace.json`, `package.json`, or
+`hooks/hooks.json`, so `make manifest` JSON-parses those three files, syntax
+only. `make lint test` still does not run manifest validation: it covers shell
+and the test suite.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
