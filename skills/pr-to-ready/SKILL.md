@@ -9,7 +9,7 @@ Take an open PR to a reviewed one: resolve the run from the PR's number or URL, 
 
 ## Orchestration model
 
-Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. Steps run sequentially, never in parallel, with one exception — evaluating independent review findings, where one subagent per finding is launched together in Step 2.
+Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the five conditions, Step 2-1's Claude availability check and Copilot baseline, Step 3's re-confirmation of the five conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
 
 **Never delegate:** the clean judgment and stop conditions, including reading whether checks pass; any change that touches the worktree, together with committing and pushing it; and any write to the PR itself — comments, thread replies, thread resolution, marking it ready.
 
