@@ -66,6 +66,13 @@ escape_for_json() {
 # invalidate the JSON string early -- taking the whole stub with it.
 escaped_root=$(escape_for_json "$plugin_root")
 
+# Bound the dynamic identity by bytes so a long install path cannot push
+# stdout past its budget. Truncate after escaping (escaping expands) and
+# keep the suffix, which tells installs apart by leaf.
+if [ "$(printf '%s' "$escaped_root" | wc -c | tr -d ' ')" -gt 200 ]; then
+  escaped_root="...$(printf '%s' "$escaped_root" | tail -c 197)"
+fi
+
 context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — summary stub (not the full ruleset) from the dude install at ${escaped_root}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.\n</EXTREMELY_IMPORTANT>"
 
 # printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.

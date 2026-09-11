@@ -257,7 +257,7 @@ build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
 fails=0
 if ! check_json 'size-budget'; then fails=1; fi
-ctx_bytes="$(jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
+ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
 out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
 if [ "$ctx_bytes" -gt 1536 ]; then
   printf 'FAIL size-budget: additionalContext is %s bytes, budget is 1536\n' "$ctx_bytes"
@@ -268,5 +268,30 @@ if [ "$out_bytes" -gt 2048 ]; then
   fails=1
 fi
 row_done 'size-budget' "$fails"
+
+# ---- a long install path stays inside the budget -----------------------
+#
+# The identity is the only dynamic part of the stub, so a valid install
+# under a long directory must not push stdout past its budget. Without
+# the bound this row fails the same budget the row above passes.
+
+row_start
+COMP="$(printf '%200s' '' | tr ' ' 'a')"
+ROOT="${HARNESS_TMP}/tree.long/${COMP}/${COMP}/${COMP}/${COMP}/${COMP}"
+build_tree "$ROOT"
+run_sut bash "${ROOT}/hooks/session-start"
+fails=0
+if ! check_json 'near-limit-path'; then fails=1; fi
+ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
+out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
+if [ "$ctx_bytes" -gt 1536 ]; then
+  printf 'FAIL near-limit-path: additionalContext is %s bytes, budget is 1536\n' "$ctx_bytes"
+  fails=1
+fi
+if [ "$out_bytes" -gt 2048 ]; then
+  printf 'FAIL near-limit-path: stdout is %s bytes, budget is 2048\n' "$out_bytes"
+  fails=1
+fi
+row_done 'near-limit-path' "$fails"
 
 harness_exit "$failed" "$total"
