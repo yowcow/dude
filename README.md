@@ -218,7 +218,7 @@ deleting the branch and worktree are yours.
 
 Each row's evidence is in the prose below.
 
-OpenCode's package plugin registers all ten skills and prepends `using-dude`
+OpenCode's package plugin registers all of dude's skills and prepends `using-dude`
 to the first user message through `experimental.chat.messages.transform`, so
 it is in context at session start. The injected text uses a dude-only marker
 and does not contain `EXTREMELY_IMPORTANT`, so Superpowers' bootstrap and
@@ -228,7 +228,7 @@ install plus the checkout's `.opencode/plugins/`) still inject once.
 Claude Code needs no invocation: a SessionStart hook puts `using-dude` in context
 at the start of every session.
 
-Codex installs all ten skills and runs `hooks/hooks.json` once the hook is
+Codex installs all of dude's skills and runs `hooks/hooks.json` once the hook is
 trusted, so `using-dude` is in context there too — the Install section above
 covers what trust involves. The `dude:using-dude` skill works whether the hook is
 trusted or not.
@@ -308,7 +308,7 @@ codex plugin add dude@dude
 Starting OpenCode from the repository checkout loads
 `.opencode/plugins/dude.js` as a project plugin. Temporarily remove any globally
 configured dude plugin entry first, then use the native `skill` tool to verify
-all ten local skills.
+every local skill.
 
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks
