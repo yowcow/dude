@@ -321,9 +321,9 @@ Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks
 reach the same session. Which tree each one came from is readable — the injected
 text names the install path it ran from — but the session is still carrying
-the stub twice, counted twice against the context in two near-identical blocks
-that disagree wherever the branch has moved. Read the rules from the older block and
-the session was not checking the branch at all. Uninstalling the github-sourced
+the stub twice, counted twice against the context in two near-identical blocks.
+Neither block carries the rules — both are static summaries — so invoke
+`dude:using-dude` from the intended install for the full rules. Uninstalling the github-sourced
 `dude@dude` first is what avoids that, and it rewrites somebody's plugin
 environment — ask whoever owns it.
 
