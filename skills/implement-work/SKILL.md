@@ -137,7 +137,7 @@ Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title
 - `PR <n> created draft=true base=<base> url=<url>` — this run opened it.
 - `STOP <slug>` — no PR was opened. Report the stop, and hand the branch over regardless.
 
-Title and body are standard Japanese (標準語), following the repo's PR template when it has one. The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository. The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
+Title and body follow the repo's PR template when it has one. The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository. The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
 
 Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the `url=` value from that line — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
 

@@ -71,7 +71,7 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 
 ### 2-1. Request the reviewers
 
-- **Claude**: `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect. That exit status is the whole availability test — don't go searching the workflows yourself. When available, post a request comment in standard Japanese with a short "特に見てほしいポイント" list; every request comment includes the current HEAD SHA.
+- **Claude**: `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect. That exit status is the whole availability test — don't go searching the workflows yourself. When available, post a request comment with a short list of what to focus on; every request comment includes the current HEAD SHA.
 - **Copilot**: record the baseline first — `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline"). A re-request on the same SHA still records a fresh baseline and still requests. Then `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops.
 
 ### 2-2. Wait for the review (bound the wait)
@@ -96,7 +96,7 @@ A round's fixes take Step 1's ordinary-change discipline with two departures. **
 
 When there is at least one finding and every finding is `reject`: do not fix, do not commit, do not push. Still post as the posting paragraph below. Do not evaluate the five clean conditions. Walk only rows 2, 4, and 6 of the stop list even when the SHA did not change. If that walk does not stop, go back to 2-1.
 
-**Posting** (accept-including and all-reject alike): reply to every thread, `reject` included, explaining the pushback; resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`; record the round's verdict on every finding that has no thread — accepted and rejected alike, with the same reasoning — in one PR comment, since with no thread it reaches neither of those two calls; write each thread reply in the language and tone of the comment it replies to; neither a thread reply nor the aggregate PR comment may mention `@claude`, which would re-trigger the workflow.
+**Posting** (accept-including and all-reject alike): reply to every thread, `reject` included, explaining the pushback; resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`; record the round's verdict on every finding that has no thread — accepted and rejected alike, with the same reasoning — in one PR comment, since with no thread it reaches neither of those two calls; neither a thread reply nor the aggregate PR comment may mention `@claude`, which would re-trigger the workflow.
 
 ### Clean judgment & stop conditions
 
