@@ -11,7 +11,7 @@ make lint test
 make manifest
 ```
 
-CI runs `lint`, `test`, and `manifest` as separate Makefile jobs. `make lint test` does **not** validate plugin manifests.
+CI runs `lint`, `test`, and the fixed `manifest` merge gate on pushes and pull requests. `manifest-latest` runs only on pull requests and the weekly schedule; it is informational and not required for merging. `make lint test` does **not** validate plugin manifests.
 
 - lint: `tests/lint.sh` — `bash -n` + ShellCheck, selected by shebang (not `*.sh`), so the extensionless stub `tests/lib/bin/gh` is included. `.shellcheckrc` disables only SC2016 (GraphQL `$vars` in single-quoted `gh` queries must not expand).
 - test: `tests/run.sh` — offline; `gh` is stubbed and never reaches the network.
@@ -25,6 +25,8 @@ claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 ```
+
+`manifest-latest` resolves current vendor releases only to detect compatibility drift; a person investigates a failure, updates the fixed baseline if warranted, or intentionally leaves the baseline unchanged.
 
 `claude plugin validate .` warning `No version specified` is expected. Do not add `version` to `.claude-plugin/plugin.json` or the marketplace plugin entry — Claude treats a pinned version as “already up to date”. `.codex-plugin/plugin.json` keeps `"version": "0.1.0"` and that value is never bumped.
 

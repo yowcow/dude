@@ -347,6 +347,11 @@ validator covers `.agents/plugins/marketplace.json`, `package.json`, or
 only. `make lint test` still does not run manifest validation: it covers shell
 and the test suite.
 
+CI's pinned `manifest` job is the reproducible merge decision. `manifest-latest`
+is a non-required pull-request/weekly compatibility signal using current Claude
+Code and Codex releases; investigate upstream failures, update the fixed
+baseline when warranted, or deliberately retain it.
+
 `AUTHORING.md` holds the rules for writing and editing these skills — where
 each kind of text belongs, and the deletion test every sentence has to pass.
 
