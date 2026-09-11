@@ -13,6 +13,7 @@ fixed_identifier='https://raw.githubusercontent.com/openai/codex/6b9826e3aa83b1a
 latest_claude='npm install --global @anthropic-ai/claude-code@latest'
 latest_release='https://api.github.com/repos/openai/codex/releases/latest'
 latest_condition="github.event_name == 'pull_request' || github.event_name == 'schedule'"
+github_token='GH_TOKEN: ${{ github.token }}'
 fixed_manifest="$(sed -n '/^  manifest:/,/^  [a-z]/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,/^  [a-z]/p' "$workflow")"
 
@@ -44,6 +45,10 @@ if ! grep -Fq "$latest_claude" <<<"$latest_manifest"; then
 fi
 if ! grep -Fq "$latest_release" <<<"$latest_manifest"; then
   printf 'FAIL: latest manifest resolves latest Codex release\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$github_token" <<<"$latest_manifest"; then
+  printf 'FAIL: latest manifest authenticates latest Codex release lookup\n' >&2
   failed=1
 fi
 if ! grep -Fq "$latest_condition" <<<"$latest_manifest"; then
