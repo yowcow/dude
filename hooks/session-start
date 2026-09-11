@@ -64,6 +64,17 @@ escape_for_json() {
 # `"`, `\` and the C0 controls a path can hold are all legal in a POSIX
 # filename, and an install path carrying any of them would close or
 # invalidate the JSON string early -- taking the whole stub with it.
+#
+# The identity is the only dynamic part of the stub, so a long install path
+# must not push it past its budget. Truncate the raw path to its last 100
+# characters before escaping: after is too late, a byte cut there can split
+# an escape or a multibyte character and invalidate the whole object. Even
+# at 6x escape expansion this stays inside both budgets, and the suffix is
+# what tells two installs apart.
+root_len=${#plugin_root}
+if [ "$root_len" -gt 100 ]; then
+  plugin_root="...${plugin_root:$((root_len - 100))}"
+fi
 escaped_root=$(escape_for_json "$plugin_root")
 
 context="<EXTREMELY_IMPORTANT>\ndude's workflow rules — summary stub (not the full ruleset) from the dude install at ${escaped_root}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.\n</EXTREMELY_IMPORTANT>"

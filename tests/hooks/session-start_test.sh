@@ -23,9 +23,11 @@
 # `control-chars-json-intact`, `cdpath-ignored` and `skill-body-ignored` --
 # the first four on the context bytes (full body vs stub),
 # `skill-body-ignored` on the leaked marker/fallback absence. `size-budget`
-# passes on this tiny fixture (pre-change stdout ~0.5KB, under 2048); the
-# 11,273-byte full-text figure is the real-install motivation noted in the
-# row below, not a RED observation.
+# and `near-limit-path` pass on this tiny fixture (pre-change stdout ~0.5KB,
+# under 2048); the 11,273-byte full-text figure is the real-install motivation
+# noted in the row below, not a RED observation. `near-limit-path` is RED for
+# the bound instead: against the unbounded stub it fails the budget (1563
+# decoded bytes > 1536).
 # Run it with:
 #   SUT=<pre-change copy> tests/run.sh tests/hooks/session-start_test.sh
 set -euo pipefail
@@ -257,7 +259,7 @@ build_tree "$ROOT"
 run_sut bash "${ROOT}/hooks/session-start"
 fails=0
 if ! check_json 'size-budget'; then fails=1; fi
-ctx_bytes="$(jq -r '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
+ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
 out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
 if [ "$ctx_bytes" -gt 1536 ]; then
   printf 'FAIL size-budget: additionalContext is %s bytes, budget is 1536\n' "$ctx_bytes"
@@ -268,5 +270,34 @@ if [ "$out_bytes" -gt 2048 ]; then
   fails=1
 fi
 row_done 'size-budget' "$fails"
+
+# ---- a long install path stays inside the budget -----------------------
+#
+# The identity is the only dynamic part of the stub, so a valid install
+# under a long directory must not push stdout past its budget. Without
+# the bound this row fails the same budget the row above passes. The last
+# component carries a quote, a backslash, a tab and a multibyte character,
+# so the truncation is also exercised on an escaped path -- a raw byte cut
+# after escaping would split one of those sequences and invalidate the JSON.
+
+row_start
+COMP="$(printf '%200s' '' | tr ' ' 'a')"
+TRICKY="q\"uote\\slash"$'\t'"é$(printf '%180s' '' | tr ' ' 'b')"
+ROOT="${HARNESS_TMP}/tree.long/${COMP}/${COMP}/${COMP}/${COMP}/${TRICKY}"
+build_tree "$ROOT"
+run_sut bash "${ROOT}/hooks/session-start"
+fails=0
+if ! check_json 'near-limit-path'; then fails=1; fi
+ctx_bytes="$(jq -j '.hookSpecificOutput.additionalContext' <"$SUT_STDOUT" 2>/dev/null | wc -c | tr -d ' ')"
+out_bytes="$(wc -c <"$SUT_STDOUT" | tr -d ' ')"
+if [ "$ctx_bytes" -gt 1536 ]; then
+  printf 'FAIL near-limit-path: additionalContext is %s bytes, budget is 1536\n' "$ctx_bytes"
+  fails=1
+fi
+if [ "$out_bytes" -gt 2048 ]; then
+  printf 'FAIL near-limit-path: stdout is %s bytes, budget is 2048\n' "$out_bytes"
+  fails=1
+fi
+row_done 'near-limit-path' "$fails"
 
 harness_exit "$failed" "$total"
