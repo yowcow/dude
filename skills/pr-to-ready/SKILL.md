@@ -88,13 +88,13 @@ Delegate collection to a subagent: gather the findings from the Copilot review 2
 
 Otherwise branch on this round's findings.
 
-When there is no actionable finding: go to the clean judgment.
+When there is no finding (LGTM or empty reviews): go to the clean judgment.
 
-When there is at least one `accept` (pure accept or mixed): sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post as the posting paragraph below. Then walk the stop list; if it does not stop, go back to 2-1.
+When there is at least one `accept` (pure accept or mixed): sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post as the posting paragraph below. Do not evaluate the five clean conditions. Walk only rows 2, 4, and 6 of the stop list — skip 1 and 5 as a procedure. If that walk does not stop, go back to 2-1.
 
 A round's fixes take Step 1's ordinary-change discipline with two departures. **`review-code` is dropped outright** — whatever this round pushes goes back to 2-1 for the reviewers to read, while a Step 1 fix reaches Step 3 unread wherever neither reviewer is available. **`simplify-code` is skipped on a declared test**, the same shape as the small-change lane in `using-dude`'s **Workflow selection**: skip it where every fix in the round changed only what its own finding named — no new branch, no new helper, no logic reimplemented that already exists elsewhere — and declare the skip in one line in the round's report to the caller, per `using-dude`'s **Stage boundaries**; anything else takes the pass. The two depart on different terms because the reviewers substitute for them unequally: a strong substitute for `review-code`, and an expensive one for `simplify-code` — a "this duplicates what's already there" that one local pass catches on the spot costs a whole external round to come back through a reviewer.
 
-When there is at least one finding and every finding is `reject`: do not fix, do not commit, do not push. Still post as the posting paragraph below. Do not enter the five clean conditions or Step 3. Walk the stop list — Escalation and `using-dude`'s Loop convergence (same finding three times / five rounds in total) included — before returning to 2-1, even when the SHA did not change. If the stop list does not stop, go back to 2-1.
+When there is at least one finding and every finding is `reject`: do not fix, do not commit, do not push. Still post as the posting paragraph below. Do not evaluate the five clean conditions. Walk only rows 2, 4, and 6 of the stop list — skip 1 and 5 as a procedure — even when the SHA did not change. If that walk does not stop, go back to 2-1.
 
 **Posting** (accept-including and all-reject alike): reply to every thread, `reject` included, explaining the pushback; resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`; record the round's verdict on every finding that has no thread — accepted and rejected alike, with the same reasoning — in one PR comment, since with no thread it reaches neither of those two calls; write each thread reply in the language and tone of the comment it replies to; neither a thread reply nor the aggregate PR comment may mention `@claude`, which would re-trigger the workflow.
 
@@ -111,12 +111,12 @@ When there is at least one finding and every finding is `reject`: do not fix, do
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now.
 
 When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop — from 2-1 after a push, and from 2-3 when leftover feedback on this round still needs addressing:
-- conditions 2 or 3 (reviewer feedback) → address it, per 2-3 — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
+- conditions 2 or 3 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false so 2-1 or row 6 can fire, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
 - condition 1 → per Step 1's own branch on the exit status: a failing conclusion is diagnosed and fixed there, borrowing the diagnosis and not Step 1's own loop, so it isn't counted against Step 1's rounds; a status that yielded no settled listing is the third terminal state here too;
 - condition 4 (base drift) → pull the resolved base in with `retarget-pr.sh`, per Step 1 — it pushes the merge itself, so the next round starts from 2-1 on the new tip;
 - condition 5 (mergeability) → the **third terminal state**, per Step 1's handling of `CONFLICTING`/`UNKNOWN`.
 
-An all-reject round still walks this list: it skipped the five clean conditions and Step 3, so row 1 and row 5 cannot fire on it, but Escalation, `needs-user`, mergeability, and Loop convergence still can.
+An all-reject round still walks the stop list below, but only rows 2, 4, and 6: skip 1 and 5 as a procedure and do not evaluate the five clean conditions. Escalation, mergeability, and Loop convergence still can.
 
 **Stop the loop when any of these holds — read in order, and take the first that applies; otherwise keep looping:**
 
