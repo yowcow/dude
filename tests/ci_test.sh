@@ -14,8 +14,9 @@ latest_claude='npm install --global @anthropic-ai/claude-code@latest'
 latest_release='https://api.github.com/repos/openai/codex/releases/latest'
 latest_condition="github.event_name == 'pull_request' || github.event_name == 'schedule'"
 github_token='GH_TOKEN: ${{ github.token }}'
-fixed_manifest="$(sed -n '/^  manifest:/,/^  [a-z]/p' "$workflow")"
-latest_manifest="$(sed -n '/^  manifest-latest:/,/^  [a-z]/p' "$workflow")"
+pinned_yaml="PyYAML==6.0.2"
+fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
+latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
 
 total=1
 failed=0
@@ -53,6 +54,18 @@ if ! grep -Fq "$github_token" <<<"$latest_manifest"; then
 fi
 if ! grep -Fq "$latest_condition" <<<"$latest_manifest"; then
   printf 'FAIL: latest manifest runs only for pull requests and schedules\n' >&2
+  failed=1
+fi
+if grep -Fq "github.event_name == 'push'" <<<"$latest_manifest"; then
+  printf 'FAIL: latest manifest must not run on pushes\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$pinned_yaml" <<<"$fixed_manifest"; then
+  printf 'FAIL: fixed manifest installs pinned PyYAML\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$pinned_yaml" <<<"$latest_manifest"; then
+  printf 'FAIL: latest manifest installs pinned PyYAML\n' >&2
   failed=1
 fi
 if grep -Fq '@anthropic-ai/claude-code@2.1.268' <<<"$latest_manifest"; then

@@ -12,12 +12,12 @@ on:
 permissions:
   contents: read
 
-# Both jobs go through the Makefile rather than carrying their own commands, so
-# `make lint test` by hand runs exactly what the gate runs. The two are separate
-# jobs so a lint failure and a test failure are distinguishable at a glance
-# instead of one masking the other.
+# `make lint test` plus `make manifest` by hand runs exactly what the gate runs.
+# The jobs are separate so a lint failure and a test failure are distinguishable
+# at a glance instead of one masking the other.
 jobs:
   lint:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       # Pinned to a full commit SHA by `pinact run .github/workflows/ci.yml`;
@@ -36,6 +36,7 @@ jobs:
         run: make lint
 
   test:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -44,12 +45,16 @@ jobs:
         run: make test
 
   manifest:
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: install manifest validators
         run: |
+          python3 -m venv "$HOME/.venv-manifest"
+          "$HOME/.venv-manifest/bin/pip" install --disable-pip-version-check 'PyYAML==6.0.2'
+          echo "$HOME/.venv-manifest/bin" >> "$GITHUB_PATH"
           npm install --global @anthropic-ai/claude-code@2.1.268
           mkdir -p "$HOME/.codex/skills/.system/plugin-creator/scripts"
           curl --fail --location --output "$HOME/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" \
@@ -70,6 +75,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          python3 -m venv "$HOME/.venv-manifest"
+          "$HOME/.venv-manifest/bin/pip" install --disable-pip-version-check 'PyYAML==6.0.2'
+          echo "$HOME/.venv-manifest/bin" >> "$GITHUB_PATH"
           npm install --global @anthropic-ai/claude-code@latest
           codex_tag="$(gh api https://api.github.com/repos/openai/codex/releases/latest --jq .tag_name)"
           mkdir -p "$HOME/.codex/skills/.system/plugin-creator/scripts"

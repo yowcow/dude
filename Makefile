@@ -1,6 +1,6 @@
-# Entry point for the checks over this repository: `make lint test`. CI runs
-# these same targets, so what a person runs by hand and what the gate runs
-# cannot drift apart.
+# Entry point for the checks over this repository: `make lint test` plus
+# `make manifest`. CI runs these same targets, so what a person runs by hand
+# and what the gate runs cannot drift apart.
 #
 # The logic lives in the scripts, not in these recipes. A recipe carries no
 # shebang, so ShellCheck would never check it; tests/lint.sh is a script
