@@ -30,6 +30,14 @@ if ! grep -Fq "$fixed_identifier" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest pins Codex validator dependency download\n' >&2
   failed=1
 fi
+if grep -Fq '@anthropic-ai/claude-code@latest' <<<"$fixed_manifest"; then
+  printf 'FAIL: fixed manifest must not resolve latest Claude validator\n' >&2
+  failed=1
+fi
+if grep -Fq "$latest_release" <<<"$fixed_manifest"; then
+  printf 'FAIL: fixed manifest must not resolve latest Codex release\n' >&2
+  failed=1
+fi
 if ! grep -Fq "$latest_claude" <<<"$latest_manifest"; then
   printf 'FAIL: latest manifest resolves latest Claude validator\n' >&2
   failed=1
