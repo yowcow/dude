@@ -179,7 +179,7 @@ count_run() {
 # expectation written as a printf '%b' string would be one unreadable line. `-`
 # means stdout must be empty.
 assert_row() {
-  local name="$1" want_exit="$2" want_file="$3" want_calls="${4:-}" fails=0
+  local name="$1" want_exit="$2" want_file="$3" want_calls="$4" fails=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
   if [ "$want_file" = '-' ]; then
     if ! check_bytes "${name}: stdout" ''; then fails=1; fi
