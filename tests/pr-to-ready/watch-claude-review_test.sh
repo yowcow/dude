@@ -172,7 +172,7 @@ count_run() {
   jq --argjson id "$TARGET_RUN_ID" 'map(select(.databaseId == $id)) | length' "$1"
 }
 
-# assert_row <name> <want-exit> <want-stdout-file|-> [<want-gh-calls>]
+# assert_row <name> <want-exit> <want-stdout-file|-> <want-gh-calls>
 #
 # stdout is compared byte-for-byte against a file rather than through
 # check_bytes: this script prints a multi-line pretty JSON array, and the same
