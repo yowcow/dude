@@ -122,7 +122,7 @@ stub_pages 1 "$CLOSED_EP" 'closed-page1,closed-page2'
 stub_pages 3 "$CONV_EP" 'conv-page1,conv-page2'
 stub_pages 5 "$INLINE_EP" 'inline-page1,inline-page2'
 run_sut bash "$SUT" "$OWNER" "$REPO" "$SNAPSHOT"
-assert_case 'two-pages' 0 6 "${HERE}/expected/two-pages-summary-no-terms.json" "${HERE}/expected/two-pages.jsonl"
+assert_case 'two-pages' 0 6 "${HERE}/expected/two-pages-summary.json" "${HERE}/expected/two-pages.jsonl"
 
 row_start
 SNAPSHOT="${GH_STUB_DIR}/snapshot.jsonl"

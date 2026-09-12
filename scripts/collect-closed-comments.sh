@@ -77,24 +77,19 @@ if ! jq -n -c \
   exit 1
 fi
 
-conversation_n="$(jq -s 'map(select(.kind == "conversation")) | length' "${work}/comments.jsonl")"
-inline_n="$(jq -s 'map(select(.kind == "inline")) | length' "${work}/comments.jsonl")"
-
-if ! jq -n -c \
-  --argjson conversation "$conversation_n" \
-  --argjson inline "$inline_n" \
-  '{
-     conversation: $conversation,
-     inline: $inline,
-     terms: {
-       "未実測": [],
-       "未判定": [],
-       "未着手": [],
-       "別途": [],
-       "スコープ外": [],
-       "残す記録": []
-     }
-   }' >"${work}/summary.json"; then
+if ! jq -n -c --slurpfile all "${work}/comments.jsonl" \
+  '
+    def rec: {kind, parent, url, created_at, body};
+    def terms: ["未実測","未判定","未着手","別途","スコープ外","残す記録"];
+    {
+      conversation: [$all[] | select(.kind == "conversation")] | length,
+      inline: [$all[] | select(.kind == "inline")] | length,
+      terms: (
+        reduce terms[] as $t
+          ({}; .[$t] = [$all[] | select((.body | index($t)) != null) | rec])
+      )
+    }
+  ' >"${work}/summary.json"; then
   echo "error: could not summarize comments of ${OWNER}/${REPO}" >&2
   exit 1
 fi
