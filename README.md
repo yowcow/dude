@@ -75,7 +75,9 @@ not in context until you trust it — though the skills are still invocable
 by name. Codex asks at the start of the next interactive session instead: after
 the directory-trust prompt, a `Hooks need review` prompt offers to review the
 hook, trust it, or continue without trusting. Codex's hook trust decides whether
-injection happens at all.
+injection happens at all. Editing the hook's matcher or command invalidates its
+trust and Codex shows `Hooks need review` again on the next interactive start;
+adding a trailing newline does not.
 
 ## Versions
 
