@@ -99,9 +99,10 @@ that warning is the expected state here, not something to fix.
 
 `.codex-plugin/plugin.json` and `package.json` keep `"version": "0.1.0"`
 because their formats require one — and **that value is never bumped**, because
-neither git-backed route reads it to decide an update. Codex installs the
-marketplace snapshot's root directory itself, with no per-version cache in
-between. OpenCode caches the commit first installed for an unchanged git spec; restarting,
+neither git-backed route reads it to decide an update. Codex keeps a per-version
+cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/0.1.0/`),
+but `marketplace upgrade` plus re-adding still advances the checkout to the new
+commit, so the fixed `0.1.0` does not freeze updates on 0.154.0. OpenCode caches the commit first installed for an unchanged git spec; restarting,
 removing and re-adding the config entry, or rerunning `opencode plugin` with that
 spec does not refresh it. To update to HEAD, quit OpenCode, remove
 `~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
