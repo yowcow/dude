@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# The coverage gate: every script under skills/*/scripts/ must have a test
-# file under tests/.
+# The coverage gate: every script under skills/*/scripts/ and every file
+# under hooks/ except hooks.json must have a test file under tests/.
 # Usage: scripts-have-tests.sh [<repo-root>]
 #
-# Why this exists: without it a script can land under skills/*/scripts/ with
-# no test, nobody observes the absence, and the suite reports green — the
-# amplifier #180 identified (nobody is running the code) reappearing through a
-# door the per-script tests do not cover. The gate is permanent: it stays after
-# coverage is complete, because the property it holds is about the *next*
-# script, not the current ones.
+# Why this exists: without it a script can land under skills/*/scripts/ or
+# hooks/ with no test, nobody observes the absence, and the suite reports
+# green — the amplifier #180 identified (nobody is running the code)
+# reappearing through a door the per-script tests do not cover. The gate is
+# permanent: it stays after coverage is complete, because the property it
+# holds is about the *next* script, not the current ones.
 #
 # It is a script rather than a check inlined in scripts-have-tests_test.sh for
 # the same reason run.sh has run_test.sh: its own conditions — an empty
@@ -38,6 +38,7 @@ if [ -z "$ROOT" ]; then
 fi
 
 SKILLS_ROOT="${ROOT}/skills"
+HOOKS_ROOT="${ROOT}/hooks"
 
 # The listing is a plain foreground pipeline into a temp file, not a process
 # substitution feeding the loop. In `done < <(find ...)` the producer's exit
@@ -95,6 +96,23 @@ while IFS= read -r -d '' abs; do
   scripts+=("$rel")
 done <"$LISTING"
 
+if ! find "$HOOKS_ROOT" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
+  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$HOOKS_ROOT" >&2
+  exit 1
+fi
+
+hooks=()
+while IFS= read -r -d '' abs; do
+  rel="${abs#"${HOOKS_ROOT}/"}"
+  if [ "$rel" = "$abs" ]; then
+    continue
+  fi
+  if [ "$rel" = "hooks.json" ]; then
+    continue
+  fi
+  hooks+=("$rel")
+done <"$LISTING"
+
 # An empty enumeration can only mean the selection above broke: this repository
 # has skill scripts, and a gate that reports "nothing to check, all good" is
 # indistinguishable from a fully covered tree. That is the "absent" versus
@@ -102,6 +120,11 @@ done <"$LISTING"
 # itself.
 if [ "${#scripts[@]}" -eq 0 ]; then
   printf 'scripts-have-tests: no script found under %s/*/scripts/ — the enumeration is broken\n' "$SKILLS_ROOT" >&2
+  exit 1
+fi
+
+if [ "${#hooks[@]}" -eq 0 ]; then
+  printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$HOOKS_ROOT" >&2
   exit 1
 fi
 
@@ -126,10 +149,22 @@ for rel in "${scripts[@]}"; do
   fi
 done
 
+for rel in "${hooks[@]}"; do
+  key="hooks/${rel}"
+  want="tests/hooks/${rel%.sh}_test.sh"
+  abs_test="${ROOT}/${want}"
+  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
+    with_tests=$((with_tests + 1))
+  else
+    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
+    problems=$((problems + 1))
+  fi
+done
+
 if [ "$problems" -ne 0 ]; then
   printf 'scripts-have-tests: %s problem(s)\n' "$problems" >&2
   exit 1
 fi
 
 printf 'scripts-have-tests: %s script(s), %s with tests\n' \
-  "${#scripts[@]}" "$with_tests"
+  "$((${#scripts[@]} + ${#hooks[@]}))" "$with_tests"
