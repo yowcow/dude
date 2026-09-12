@@ -111,6 +111,8 @@ restart.
 What each runtime printed when this was measured — and the throwaway plugins the
 version-less control was taken with — is recorded in
 [issue #42](https://github.com/yowcow/dude/issues/42).
+The 0.154.0 Codex probe is recorded in
+[issue #304](https://github.com/yowcow/dude/issues/304#issuecomment-5642341428).
 
 ## Use
 
