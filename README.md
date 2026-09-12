@@ -231,8 +231,9 @@ this one do not skip each other. Two loads of the same plugin (a global git
 install plus the checkout's `.opencode/plugins/`) still inject once.
 
 Claude Code needs no invocation: a SessionStart hook injects the ~0.6KB summary
-stub inline at the start of every session; the full rules load on a
-`dude:using-dude` skill call.
+stub inline on `startup`, `clear`, and `compact` (`resume` and `fork` keep the
+prior session's stub, so the hook does not re-inject there); the full rules load
+on a `dude:using-dude` skill call.
 
 Codex installs all of dude's skills and runs the shared `hooks/hooks.json` once
 the hook is trusted, receiving the same stub — the Install section above
