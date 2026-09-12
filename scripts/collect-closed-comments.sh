@@ -44,10 +44,64 @@ fetch_list "$CLOSED_EP" "${work}/closed.jsonl" "closed issues"
 fetch_list "$CONV_EP" "${work}/conv.jsonl" "conversation comments"
 fetch_list "$INLINE_EP" "${work}/inline.jsonl" "inline comments"
 
-: >"${work}/comments.jsonl"
+if ! jq -n -c \
+  --slurpfile closed "${work}/closed.jsonl" \
+  --slurpfile conv "${work}/conv.jsonl" \
+  --slurpfile inline "${work}/inline.jsonl" \
+  '
+    def closed_nums:
+      $closed | map(if (.number | type) != "number" then error("missing number") else .number end);
+    def norm($kind; $parent_key):
+      if (.html_url | type) != "string"
+         or (.created_at | type) != "string"
+         or (.body | type) != "string"
+         or (.[$parent_key] | type) != "string" then
+        error("missing field")
+      else
+        {
+          kind: $kind,
+          parent: (.[$parent_key] | split("/") | last | tonumber),
+          url: .html_url,
+          created_at: .created_at,
+          body: .body
+        }
+      end;
+    def keep($nums):
+      select(.parent as $p | ($nums | index($p)) != null);
+    closed_nums as $nums
+    | [($conv[] | norm("conversation"; "issue_url") | keep($nums)),
+       ($inline[] | norm("inline"; "pull_request_url") | keep($nums))]
+    | .[]
+  ' >"${work}/comments.jsonl"; then
+  echo "error: could not normalize comments of ${OWNER}/${REPO}" >&2
+  exit 1
+fi
+
+conversation_n="$(jq -s 'map(select(.kind == "conversation")) | length' "${work}/comments.jsonl")"
+inline_n="$(jq -s 'map(select(.kind == "inline")) | length' "${work}/comments.jsonl")"
+
+if ! jq -n -c \
+  --argjson conversation "$conversation_n" \
+  --argjson inline "$inline_n" \
+  '{
+     conversation: $conversation,
+     inline: $inline,
+     terms: {
+       "未実測": [],
+       "未判定": [],
+       "未着手": [],
+       "別途": [],
+       "スコープ外": [],
+       "残す記録": []
+     }
+   }' >"${work}/summary.json"; then
+  echo "error: could not summarize comments of ${OWNER}/${REPO}" >&2
+  exit 1
+fi
+
 if ! mv "${work}/comments.jsonl" "$SNAPSHOT"; then
   echo "error: could not write ${SNAPSHOT}" >&2
   exit 1
 fi
 
-printf '%s\n' '{"conversation":0,"inline":0,"terms":{"未実測":[],"未判定":[],"未着手":[],"別途":[],"スコープ外":[],"残す記録":[]}}'
+cat "${work}/summary.json"

@@ -116,4 +116,27 @@ stub_pages 3 "$INLINE_EP" 'empty'
 run_sut bash "$SUT" "$OWNER" "$REPO" "$SNAPSHOT"
 assert_case 'genuine-empty' 0 3 "${HERE}/expected/empty-summary.json" /dev/null
 
+row_start
+SNAPSHOT="${GH_STUB_DIR}/snapshot.jsonl"
+stub_pages 1 "$CLOSED_EP" 'closed-page1,closed-page2'
+stub_pages 3 "$CONV_EP" 'conv-page1,conv-page2'
+stub_pages 5 "$INLINE_EP" 'inline-page1,inline-page2'
+run_sut bash "$SUT" "$OWNER" "$REPO" "$SNAPSHOT"
+assert_case 'two-pages' 0 6 "${HERE}/expected/two-pages-summary-no-terms.json" "${HERE}/expected/two-pages.jsonl"
+
+row_start
+SNAPSHOT="${GH_STUB_DIR}/snapshot.jsonl"
+stub_pages 1 "$CLOSED_EP" 'empty'
+stub_pages 2 "$CONV_EP" 'conv-page1,bad-credentials:1'
+run_sut bash "$SUT" "$OWNER" "$REPO" "$SNAPSHOT"
+assert_case 'conv-fail-mid-page' 1 3 - -
+
+row_start
+SNAPSHOT="${GH_STUB_DIR}/snapshot.jsonl"
+stub_pages 1 "$CLOSED_EP" 'closed-page1'
+stub_pages 2 "$CONV_EP" 'conv-missing-url'
+stub_pages 3 "$INLINE_EP" 'empty'
+run_sut bash "$SUT" "$OWNER" "$REPO" "$SNAPSHOT"
+assert_case 'missing-html-url' 1 3 - -
+
 harness_exit "$failed" "$total"
