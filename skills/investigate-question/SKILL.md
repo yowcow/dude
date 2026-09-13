@@ -50,7 +50,7 @@ Once the report below is drafted, run `review-findings` on it. Restate flagged c
 2. **Measurement base** — the revision, tree, or record measured, and the sweep behind each claim of absence.
 3. **Settled points** — per point, the verdict and the evidence that decided it.
 4. **Alternatives rejected** — each one considered, with why it is wrong.
-5. **Next items** — what to file. Not work to start here.
+5. **Next items** — concrete next actions in order, each with who decides: what to file, decide, or measure. Not work to start here.
 6. **Not measured** — the claims left unaudited, and what would settle each.
 
 **Verdict** and **Next items** are what `plan-work` receives — that flow's input, never work this one starts. A question-shaped run has no reproduction to carry forward.
