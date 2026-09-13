@@ -42,8 +42,7 @@ export GIT_AUTHOR_EMAIL='author@example.invalid'
 export GIT_COMMITTER_NAME='Test Committer'
 export GIT_COMMITTER_EMAIL='committer@example.invalid'
 
-# Fixed timestamps, advanced one minute per commit, so commit order is
-# deterministic and does not depend on how fast the suite runs.
+# Every stamp is the same fixed value, so SHAs do not depend on the wall clock.
 GITREPO_CLOCK=1700000000
 
 gitrepo_stamp() {
