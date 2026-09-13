@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Tests tests/scripts-have-tests.sh — the coverage gate that fails the suite
-# when a script lands under skills/*/scripts/ with no test file.
+# when a script lands under skills/*/scripts/ or hooks/ with no test file.
 #
 # Cases 0 and 1 run the gate against the *real* repository tree. They are the
 # gate: they are what turns red when an untested script lands, and they are how
@@ -8,11 +8,11 @@
 # run.sh collects this file, this file runs the gate.
 #
 # Every other case drives the gate against a synthetic miniature repository under
-# $HARNESS_TMP: <root>/skills/<skill>/scripts/... and <root>/tests/...
-# built to order. A synthetic tree rather than the real one because the
-# conditions under test — an empty enumeration, an unreadable subdirectory, an
-# empty test file — cannot be produced in the real tree without either
-# committing them or leaving the checkout dirty.
+# $HARNESS_TMP: <root>/skills/<skill>/scripts/..., <root>/hooks/..., and
+# <root>/tests/... built to order. A synthetic tree rather than the real one
+# because the conditions under test — an empty enumeration, an unreadable
+# subdirectory, an empty test file — cannot be produced in the real tree without
+# either committing them or leaving the checkout dirty.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -41,16 +41,6 @@ failed=0
 total=0
 
 # --- fixture builders --------------------------------------------------------
-# Each returns a fresh synthetic repo root. The shape mirrors the real one
-# because the gate derives skills and tests from the root it is handed; a
-# flatter fixture would test a path derivation nobody uses.
-tree_new() {
-  local root
-  root="$(mktemp -d "${HARNESS_TMP}/tree.XXXXXX")"
-  mkdir -p "${root}/skills" "${root}/tests"
-  printf '%s\n' "$root"
-}
-
 # mk_script <root> <skill> <name>
 mk_script() {
   mkdir -p "$1/skills/$2/scripts"
@@ -61,6 +51,31 @@ mk_script() {
 mk_test() {
   mkdir -p "$1/tests/$2"
   printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/$2/$3"
+}
+
+# mk_hook <root> <name>  — <name> is relative to hooks/, may contain slashes
+mk_hook() {
+  mkdir -p "$1/hooks/$(dirname -- "$2")"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/hooks/$2"
+}
+
+# mk_hook_test <root> <name>  — <name> is the test file's own basename under tests/hooks/
+mk_hook_test() {
+  mkdir -p "$1/tests/hooks/$(dirname -- "$2")"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/hooks/$2"
+}
+
+# Each returns a fresh synthetic repo root. The shape mirrors the real one
+# because the gate derives skills, hooks, and tests from the root it is handed.
+# A covered hook is planted here so existing cases do not fail the independent
+# empty-hooks guard once the gate lists hooks/.
+tree_new() {
+  local root
+  root="$(mktemp -d "${HARNESS_TMP}/tree.XXXXXX")"
+  mkdir -p "${root}/skills" "${root}/tests"
+  mk_hook "$root" session-start
+  mk_hook_test "$root" session-start_test.sh
+  printf '%s\n' "$root"
 }
 
 # check_stderr_has <label> <needle>
@@ -115,7 +130,7 @@ mk_test "$root" alpha 'a_test.sh'
 run_sut bash "$SUT" "$root"
 if ! check_eq 'covered: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'covered: stdout' \
-  'scripts-have-tests: 1 script(s), 1 with tests\n'; then fails_here=1; fi
+  'scripts-have-tests: 2 script(s), 2 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 3: an uncovered script is named -------------------------------------
@@ -218,7 +233,7 @@ printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/skills/alpha/references/scripts
 run_sut bash "$SUT" "$root"
 if ! check_eq 'non-script files: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'non-script files: stdout' \
-  'scripts-have-tests: 1 script(s), 1 with tests\n'; then fails_here=1; fi
+  'scripts-have-tests: 2 script(s), 2 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 10: a symlinked script is enumerated, not silently exempt ---------
@@ -241,6 +256,111 @@ ln -s /nonexistent/elsewhere.sh "${root}/skills/alpha/scripts/sneaky.sh"
 run_sut bash "$SUT" "$root"
 if ! check_eq 'symlinked script: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'symlinked script: names the symlink' 'no test for skills/alpha/scripts/sneaky.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 11: an uncovered hook is named ------------------------------------
+# Reproduction of yowcow/dude#326: a new hook script with no test must turn
+# the gate red. Content has no shebang and no execute bit — selection is by
+# position; a shebang or -x matcher would drop this file and the row would
+# go green. Extensionless name, same pairing as hooks/session-start.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+printf 'echo extra\n' >"${root}/hooks/extra"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'uncovered hook: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'uncovered hook: names the script' 'no test for hooks/extra'; then fails_here=1; fi
+if ! check_stderr_has 'uncovered hook: names the expected test path' 'tests/hooks/extra_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 12: an empty hooks enumeration is an error even when skills are green
+# A broken hooks selector and a fully covered skills tree are otherwise the
+# same green — the defect this change exists to close.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+rm -f "${root}/hooks/session-start"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'no hook found: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'no hook found: broken enumeration' 'the enumeration is broken'; then fails_here=1; fi
+if ! check_stderr_has 'no hook found: names hooks root' "${root}/hooks"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 13: a missing hooks/ is a listing failure, not an empty tree ------
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+rm -rf "${root}/hooks"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'no hooks dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'no hooks dir: listing failed' 'the tree was not fully read'; then fails_here=1; fi
+if ! check_stderr_has 'no hooks dir: names hooks root' "${root}/hooks"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 14: hooks.json is not enumerated ----------------------------------
+# JSON manifest, already under `make manifest`. If it were listed, the
+# expected test would be tests/hooks/hooks.json_test.sh (${rel%.sh} does not
+# strip .json) and this row would go red. Count 2 = one skill + planted
+# session-start; json must not bump it to 3.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+printf '{}\n' >"${root}/hooks/hooks.json"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'hooks.json ignored: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'hooks.json ignored: stdout' \
+  'scripts-have-tests: 2 script(s), 2 with tests\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 15: a nested hook gets a nested expected test path ----------------
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_hook "$root" 'lib/h.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'nested hook: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'nested hook: names the nested expected test path' 'tests/hooks/lib/h_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 16: a symlinked hook is enumerated, not silently exempt -----------
+# Same door as case 10. The planted session-start plus a covered skill are
+# load-bearing: if find uses -type f, the symlink is dropped, both remaining
+# files are covered, and the row goes green.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+ln -s /nonexistent/elsewhere.sh "${root}/hooks/sneaky.sh"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked hook: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked hook: names the symlink' 'no test for hooks/sneaky.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 17: an empty hook test file is not coverage -----------------------
+# Same -f/-s/-r check as skills. A hooks loop that only tests presence
+# would go green here.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_hook "$root" extra.sh
+mkdir -p "${root}/tests/hooks"
+: >"${root}/tests/hooks/extra_test.sh"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'empty hook test file: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'empty hook test file: names the script' 'no test for hooks/extra.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
