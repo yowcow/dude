@@ -18,7 +18,7 @@ all: lint test
 # The value reaches bump.sh through the environment, never interpolated into
 # the recipe: quoting $(VERSION) would not survive a value carrying a quote,
 # which make expands before the shell sees the line.
-bump: export VERSION := $(VERSION)
+bump: override export VERSION := $(value VERSION)
 bump:
 	"$(HERE)scripts/bump.sh" "$$VERSION"
 

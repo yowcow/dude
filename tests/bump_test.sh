@@ -156,4 +156,20 @@ fi
 if ! check_eq 'make injection untouched' '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+total=$((total + 1))
+fails_here=0
+root="${HARNESS_TMP}/make-fn-inject"
+make_fixture "$root" "1.0.0"
+run_sut env "BUMP_ROOT=${root}" make -C "$root" -f "${REPO_ROOT}/Makefile" bump 'VERSION=$(shell touch canary)1.2.3'
+if [ "$SUT_STATUS" -eq 0 ]; then
+  printf 'FAIL make function injection exit: want non-zero, got 0\n'
+  fails_here=1
+fi
+if [ -e "$root/canary" ]; then
+  printf 'FAIL make function injection: canary was created\n'
+  fails_here=1
+fi
+if ! check_eq 'make function injection untouched' '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
