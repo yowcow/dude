@@ -81,30 +81,27 @@ adding a trailing newline does not.
 
 ## Versions
 
-dude is not versioned. Every runtime is meant to carry the default branch's
-latest commit, so there is no release to cut and nothing to bump. Which manifest
-carries a `version` at all follows from what each runtime does with one:
+dude is versioned with semver, currently at `1.0.0`. The same value lives in
+four places: `.claude-plugin/plugin.json`, the plugin entry in
+`.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and
+`package.json`. What each runtime does with one:
 
-| Runtime     | Requires `version`?        | Uses it to decide an update?                              |
-| ----------- | -------------------------- | --------------------------------------------------------- |
-| OpenCode    | yes                        | no, git-backed installs do not use it to decide an update |
-| Claude Code | no — `validate` only warns | **yes — a version left in place stops updates**           |
-| Codex       | yes, strict semver         | no                                                        |
+| Runtime     | Requires `version`?        | Uses it to decide an update?                                   |
+| ----------- | -------------------------- | -------------------------------------------------------------- |
+| OpenCode    | yes                        | no, git-backed installs do not use it to decide an update      |
+| Claude Code | no — `validate` only warns | **yes — run `/plugin update` after a bump to pick it up**      |
+| Codex       | yes, strict semver         | no                                                             |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
-plugin entry in `.claude-plugin/marketplace.json` — carry no `version`.
-`claude plugin update dude@dude` compares commits instead, and the version it
-reports is a short commit sha. An install made while those manifests still said
-`0.1.0` moves onto sha-tracking at its first `claude plugin update`, so nobody
-has to reinstall. `claude plugin validate .` warns that no version is specified;
-that warning is the expected state here, not something to fix.
+plugin entry in `.claude-plugin/marketplace.json` — carry `"version": "1.0.0"`.
+`claude plugin update dude@dude` compares versions, so a bump reaches existing
+installs only after a manual update.
 
-`.codex-plugin/plugin.json` and `package.json` keep `"version": "0.1.0"`
-because their formats require one — and **that value is never bumped**, because
-neither git-backed route reads it to decide an update. Codex keeps a per-version
-cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/0.1.0/`),
+`.codex-plugin/plugin.json` and `package.json` read `"version": "1.0.0"`
+because their formats require one. Codex keeps a per-version
+cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/1.0.0/`),
 but `marketplace upgrade` plus re-adding still advances the checkout to the new
-commit, so the fixed `0.1.0` does not freeze updates on 0.154.0. OpenCode caches the commit first installed for an unchanged git spec; restarting,
+commit. OpenCode caches the commit first installed for an unchanged git spec; restarting,
 removing and re-adding the config entry, or rerunning `opencode plugin` with that
 spec does not refresh it. To update to HEAD, quit OpenCode, remove
 `~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
@@ -344,8 +341,8 @@ make manifest
 ```
 
 `claude plugin validate` starts from `.claude-plugin/marketplace.json` and reaches that same
-`plugin.json` through the entry's `"source": "./"`, which is where its `No version
-specified` warning comes from — expected here, per the Versions section above.
+`plugin.json` through the entry's `"source": "./"`. It passes without a version
+warning while all four version fields read `1.0.0`.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
 as well, so it catches malformed frontmatter at the same time. Neither manifest
 validator covers `.agents/plugins/marketplace.json`, `package.json`, or

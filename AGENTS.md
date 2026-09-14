@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex), not an application. Default branch is `master`. dude is unversioned: every runtime is meant to track this branch's HEAD.
+Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex), not an application. Default branch is `master`. dude is versioned with semver, currently at `1.0.0`.
 
 Skill bodies, `AUTHORING.md`, and `README.md` stay English. Branches follow `<issue-number>-<slug>`.
 
@@ -30,7 +30,7 @@ python3 -m json.tool hooks/hooks.json >/dev/null
 
 `manifest-latest` resolves current vendor releases only to detect compatibility drift; a person investigates a failure, updates the fixed baseline if warranted, or intentionally leaves the baseline unchanged.
 
-`claude plugin validate .` warning `No version specified` is expected. Do not add `version` to `.claude-plugin/plugin.json` or the marketplace plugin entry — Claude treats a pinned version as “already up to date”. `.codex-plugin/plugin.json` keeps `"version": "0.1.0"` and that value is never bumped.
+The four version fields (`.claude-plugin/plugin.json`, the marketplace plugin entry, `.codex-plugin/plugin.json`, `package.json`) all read `1.0.0` and stay equal. Claude Code decides updates by version comparison, so a bump reaches existing installs only after a manual `/plugin update`.
 
 Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/workflows/ci.yml`.
 
