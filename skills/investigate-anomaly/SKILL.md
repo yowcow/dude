@@ -1,6 +1,6 @@
 ---
 name: investigate-anomaly
-description: Use to investigate an observed anomaly — a failure, an incident, or an unexplained metric or cost change.
+description: Use to investigate an observed anomaly — a failure, an incident, or an unexplained metric or cost change other than a latency, throughput, CPU, or memory metric that moved.
 ---
 
 # Investigate Anomaly
