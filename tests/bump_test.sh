@@ -88,4 +88,48 @@ for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+total=$((total + 1))
+fails_here=0
+for v in 1.2.3-alpha 1.2.3+build 0.1.0; do
+  root="${HARNESS_TMP}/semver-ok-${v}"
+  make_fixture "$root" "1.0.0"
+  run_sut env "BUMP_ROOT=${root}" bash "$SUT" "$v"
+  if [ "$SUT_STATUS" -ne 0 ]; then
+    printf 'FAIL semver accept %s: exit %s\n' "$v" "$SUT_STATUS"
+    fails_here=1
+  fi
+  if ! check_eq "semver accept $v" "\"version\": \"$v\"" "$(version_line "$root/package.json")"; then fails_here=1; fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+total=$((total + 1))
+fails_here=0
+for v in 1.2 01.2.3 1..2; do
+  root="${HARNESS_TMP}/semver-bad-${v}"
+  make_fixture "$root" "1.0.0"
+  run_sut env "BUMP_ROOT=${root}" bash "$SUT" "$v"
+  if [ "$SUT_STATUS" -eq 0 ]; then
+    printf 'FAIL semver reject %s: exit 0\n' "$v"
+    fails_here=1
+  fi
+  if ! check_eq "semver reject untouched $v" '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+total=$((total + 1))
+fails_here=0
+root="${HARNESS_TMP}/make-inject"
+make_fixture "$root" "1.0.0"
+run_sut env "BUMP_ROOT=${root}" make -C "$root" -f "${REPO_ROOT}/Makefile" bump 'VERSION=1.2.3"; touch canary #'
+if [ "$SUT_STATUS" -eq 0 ]; then
+  printf 'FAIL make injection exit: want non-zero, got 0\n'
+  fails_here=1
+fi
+if [ -e "$root/canary" ]; then
+  printf 'FAIL make injection: canary was created\n'
+  fails_here=1
+fi
+if ! check_eq 'make injection untouched' '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
