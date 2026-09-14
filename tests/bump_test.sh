@@ -118,6 +118,17 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))
 fails_here=0
+root="${HARNESS_TMP}/make-ok"
+make_fixture "$root" "1.0.0"
+run_sut env "BUMP_ROOT=${root}" make -C "$root" -f "${REPO_ROOT}/Makefile" bump 'VERSION=2.0.0'
+if ! check_eq 'make bump exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
+  if ! check_eq "make bump $f" '"version": "2.0.0"' "$(version_line "$root/$f")"; then fails_here=1; fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+total=$((total + 1))
+fails_here=0
 root="${HARNESS_TMP}/make-inject"
 make_fixture "$root" "1.0.0"
 run_sut env "BUMP_ROOT=${root}" make -C "$root" -f "${REPO_ROOT}/Makefile" bump 'VERSION=1.2.3"; touch canary #'
