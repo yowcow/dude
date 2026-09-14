@@ -1,6 +1,6 @@
 ---
 name: review-plan
-description: Use to review planning work itself, before implementation starts or on a revision — either a TODO list breaking work into PR-sized items, or the detailed implementation plan for one PR. Reports findings; it never edits what it reviewed. Triggers on "review this plan", "review the TODO list", "is this plan ready to implement".
+description: Use to review a planning artifact.
 ---
 
 # Review Plan

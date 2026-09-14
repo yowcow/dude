@@ -1,6 +1,6 @@
 ---
 name: review-findings
-description: Use to review a findings report or a judgment report before it becomes the canonical record — an investigation's root-cause findings, a decision or ruling comment, or any report whose claims a later flow will act on. Reports findings; it never edits what it reviewed. Triggers on "review these findings", "review this report before I publish it", "is this conclusion backed", "check this before it goes on the issue".
+description: Use to review report claims.
 ---
 
 # Review Findings
