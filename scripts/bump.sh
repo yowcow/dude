@@ -9,10 +9,17 @@ if [ "$#" -ne 1 ] || [ -z "$1" ]; then
 fi
 VERSION="$1"
 
-# Strict semver (semver.org): numeric cores without leading zeros, optional
-# prerelease and build metadata. The anchored regex's charset also keeps the
-# value JSON-safe for the sed below.
-if ! printf '%s' "$VERSION" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$'; then
+# Strict semver (semver.org): numeric cores without leading zeros, nonempty
+# dot-separated prerelease and build identifiers. The case glob is
+# line-agnostic, so newlines and quotes fail it; the regex's charset then
+# keeps the value JSON-safe for the sed below.
+case "$VERSION" in
+  *[!0-9A-Za-z.+-]*)
+    echo "error: version must be semver (e.g. 1.2.3)" >&2
+    exit 1
+    ;;
+esac
+if ! printf '%s' "$VERSION" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'; then
   echo "error: version must be semver (e.g. 1.2.3)" >&2
   exit 1
 fi

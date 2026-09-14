@@ -145,4 +145,18 @@ for want in '.claude-plugin/plugin.json: 1.0.0' '.claude-plugin/marketplace.json
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+total=$((total + 1))
+fails_here=0
+make_fixture "${HARNESS_TMP}/noversion" "1.0.0"
+printf '{\n  "name": "dude"\n}\n' >"${HARNESS_TMP}/noversion/package.json"
+run_fixture "${HARNESS_TMP}/noversion"
+if ! check_eq 'missing version exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+for want in '.claude-plugin/plugin.json: 1.0.0' '.claude-plugin/marketplace.json: 1.0.0' '.codex-plugin/plugin.json: 1.0.0' 'package.json: None'; do
+  if ! grep -Fq "$want" "$SUT_STDERR"; then
+    printf 'FAIL missing version stderr: missing [%s]\n' "$want"
+    fails_here=1
+  fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

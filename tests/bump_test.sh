@@ -104,7 +104,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))
 fails_here=0
-for v in 1.2 01.2.3 1..2; do
+for v in 1.2 01.2.3 1..2 '1.2.3-' '1.2.3-.' '1.2.3-alpha..1' '1.2.3+a..b' '1.2.3+'; do
   root="${HARNESS_TMP}/semver-bad-${v}"
   make_fixture "$root" "1.0.0"
   run_sut env "BUMP_ROOT=${root}" bash "$SUT" "$v"
@@ -114,6 +114,19 @@ for v in 1.2 01.2.3 1..2; do
   fi
   if ! check_eq "semver reject untouched $v" '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
 done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+total=$((total + 1))
+fails_here=0
+root="${HARNESS_TMP}/semver-multiline"
+make_fixture "$root" "1.0.0"
+run_sut env "BUMP_ROOT=${root}" bash "$SUT" '1.2.3
+x'
+if [ "$SUT_STATUS" -eq 0 ]; then
+  printf 'FAIL multiline version exit: want non-zero, got 0\n'
+  fails_here=1
+fi
+if ! check_eq 'multiline version untouched' '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))

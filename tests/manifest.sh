@@ -23,11 +23,11 @@ def load(path):
         return json.load(f)
 
 
-plugin = load('.claude-plugin/plugin.json')['version']
+plugin = load('.claude-plugin/plugin.json').get('version')
 marketplace = load('.claude-plugin/marketplace.json')['plugins']
-entry = next(p for p in marketplace if p.get('name') == 'dude')['version']
-codex = load('.codex-plugin/plugin.json')['version']
-package = load('package.json')['version']
+entry = next((p for p in marketplace if p.get('name') == 'dude'), {}).get('version')
+codex = load('.codex-plugin/plugin.json').get('version')
+package = load('package.json').get('version')
 
 versions = {
     '.claude-plugin/plugin.json': plugin,
