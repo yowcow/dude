@@ -46,7 +46,8 @@ want_calls="$(printf '%s\n' \
   "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
   'python3 -m json.tool .agents/plugins/marketplace.json' \
   'python3 -m json.tool package.json' \
-  'python3 -m json.tool hooks/hooks.json')"
+  'python3 -m json.tool hooks/hooks.json' \
+  'python3 -')"
 
 total=$((total + 1))
 fails_here=0

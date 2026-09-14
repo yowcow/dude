@@ -10,9 +10,13 @@
 # /path/to/dude/Makefile` from elsewhere still finds the scripts.
 HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-.PHONY: all lint manifest test
+.PHONY: all bump lint manifest test
 
 all: lint test
+
+# Rewrite the four version fields to one value, e.g. `make bump VERSION=1.2.3`.
+bump:
+	"$(HERE)scripts/bump.sh" "$(VERSION)"
 
 # bash -n and ShellCheck over every shell file in the repository, selected by
 # shebang.

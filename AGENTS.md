@@ -30,7 +30,7 @@ python3 -m json.tool hooks/hooks.json >/dev/null
 
 `manifest-latest` resolves current vendor releases only to detect compatibility drift; a person investigates a failure, updates the fixed baseline if warranted, or intentionally leaves the baseline unchanged.
 
-The four version fields (`.claude-plugin/plugin.json`, the marketplace plugin entry, `.codex-plugin/plugin.json`, `package.json`) all read `1.0.0` and stay equal. Claude Code decides updates by version comparison, so a bump reaches existing installs only after a manual `/plugin update`.
+The four version fields (`.claude-plugin/plugin.json`, the marketplace plugin entry, `.codex-plugin/plugin.json`, `package.json`) all read `1.0.0` and stay equal. Bump them together with `make bump VERSION=x`; `make manifest` fails when the four disagree. Claude Code decides updates by version comparison, so a bump reaches existing installs only after a manual `/plugin update`.
 
 Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/workflows/ci.yml`.
 
