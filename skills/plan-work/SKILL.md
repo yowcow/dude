@@ -1,6 +1,6 @@
 ---
 name: plan-work
-description: Use to plan a change.
+description: Use to plan a change, including a multi-PR fix that arrives on investigation findings.
 ---
 
 # Plan Work
