@@ -1,6 +1,6 @@
 ---
 name: investigate-question
-description: Use to settle an open question whose deliverable is a judgment.
+description: Use to settle an open question whose deliverable is a judgment, with no runtime symptom to root-cause.
 ---
 
 # Investigate Question

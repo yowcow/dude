@@ -1,6 +1,6 @@
 ---
 name: investigate-anomaly
-description: Use to investigate an observed anomaly.
+description: Use to investigate an observed anomaly — a failure, an incident, or an unexplained metric or cost change.
 ---
 
 # Investigate Anomaly
