@@ -10,17 +10,25 @@ fi
 VERSION="$1"
 
 REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$REPO_ROOT"
+ROOT="${BUMP_ROOT:-$REPO_ROOT}"
+cd "$ROOT"
 
 ESCAPED="$(printf '%s' "$VERSION" | sed -e 's/[\\&|]/\\&/g')"
 
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
-  if ! grep -q '"version":' "$f"; then
-    echo "error: no version field in $f" >&2
+FILES=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json"
+
+for f in $FILES; do
+  n="$(grep -o '"version"[[:space:]]*:' "$f" | wc -l)"
+  n="$(printf '%s' "$n" | tr -d ' ')"
+  if [ "$n" -ne 1 ]; then
+    echo "error: expected 1 version field in $f, found $n" >&2
     exit 1
   fi
+done
+
+for f in $FILES; do
   tmp="$(mktemp)"
-  sed "s|\"version\": \"[^\"]*\"|\"version\": \"${ESCAPED}\"|g" "$f" >"$tmp"
+  sed "s|\"version\"[[:space:]]*:[[:space:]]*\"[^\"]*\"|\"version\": \"${ESCAPED}\"|" "$f" >"$tmp"
   cat "$tmp" >"$f"
   rm -f "$tmp"
 done

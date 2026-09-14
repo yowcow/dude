@@ -2,7 +2,8 @@
 set -euo pipefail
 
 REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$REPO_ROOT"
+ROOT="${MANIFEST_ROOT:-$REPO_ROOT}"
+cd "$ROOT"
 
 claude plugin validate .
 python3 "${HOME}/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" .
