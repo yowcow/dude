@@ -1,6 +1,6 @@
 ---
 name: implement-work
-description: Use to take one PR-sized task — a sub-issue, an issue that fits a single PR, or a request of that size — all the way to a draft PR on a pushed branch of verified commits. Triggers on "implement this sub-issue", "start implementing", "work through this task", "run the completion gate", "take this to a branch".
+description: Use to implement one PR-sized task.
 ---
 
 # Implement Work

@@ -1,6 +1,6 @@
 ---
 name: investigate-question
-description: Use when the deliverable is a judgment on an open question rather than a fix — settling which of several designs holds, whether a rule or capability already exists, what a past decision actually ruled, or whether a claim about the system is true, with no runtime symptom to root-cause. Produces a findings report, not a change. Triggers on "settle this question", "which of these is right", "does this already exist", "what did we decide", "is this claim true", "check this before I open the issue".
+description: Use to settle an open question whose deliverable is a judgment.
 ---
 
 # Investigate Question

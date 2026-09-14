@@ -1,6 +1,6 @@
 ---
 name: using-dude
-description: Use when starting any task - establishes how a task is classified, which flow it enters, what each flow hands over, when a phase is clean, and where a loop stops.
+description: Use when starting a task to classify it and select its workflow.
 ---
 
 # Using dude

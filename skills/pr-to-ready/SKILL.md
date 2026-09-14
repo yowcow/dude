@@ -1,6 +1,6 @@
 ---
 name: pr-to-ready
-description: Use to take an open PR — given its number or URL — to a PR whose CI passes and whose review is clean, left at ready or draft; it sets up its own workspace, so a fresh session needs nothing but the reference. A branch with no PR on it yet is the fallback entry. Triggers on "take this PR to ready", "drive this PR", a PR URL on its own, "what next after opening the PR", "CI is failing", "run the review loop", "take it out of draft", "handle the review feedback".
+description: Use to review an open PR and take it to ready, or a branch with no PR yet.
 ---
 
 # pr-to-ready
