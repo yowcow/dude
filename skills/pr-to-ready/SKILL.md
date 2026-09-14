@@ -1,6 +1,6 @@
 ---
 name: pr-to-ready
-description: Use to take an open PR to ready, or a branch with no PR yet to ready.
+description: Use to take an open PR to ready, or to take a branch with no PR yet to ready.
 ---
 
 # pr-to-ready
