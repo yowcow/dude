@@ -35,7 +35,8 @@ versions = {
     '.codex-plugin/plugin.json': codex,
     'package.json': package,
 }
-if len(set(versions.values())) != 1:
+vals = list(versions.values())
+if not all(isinstance(v, str) for v in vals) or any(v != vals[0] for v in vals):
     for name, value in versions.items():
         print("{}: {}".format(name, value), file=sys.stderr)
     sys.exit(1)
