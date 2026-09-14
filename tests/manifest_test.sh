@@ -123,6 +123,12 @@ fails_here=0
 make_fixture "${HARNESS_TMP}/drifted" "9.9.9"
 run_fixture "${HARNESS_TMP}/drifted"
 if ! check_eq 'drifted versions exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+for want in '.claude-plugin/plugin.json: 1.0.0' '.claude-plugin/marketplace.json: 1.0.0' '.codex-plugin/plugin.json: 1.0.0' 'package.json: 9.9.9'; do
+  if ! grep -Fq "$want" "$SUT_STDERR"; then
+    printf 'FAIL drifted versions stderr: missing [%s]\n' "$want"
+    fails_here=1
+  fi
+done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

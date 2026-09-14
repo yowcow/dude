@@ -18,7 +18,7 @@ ESCAPED="$(printf '%s' "$VERSION" | sed -e 's/[\\&|]/\\&/g')"
 FILES=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json"
 
 for f in $FILES; do
-  n="$(grep -o '"version"[[:space:]]*:' "$f" | wc -l)"
+  n="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" | wc -l || true)"
   n="$(printf '%s' "$n" | tr -d ' ')"
   if [ "$n" -ne 1 ]; then
     echo "error: expected 1 version field in $f, found $n" >&2
