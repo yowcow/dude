@@ -81,7 +81,7 @@ adding a trailing newline does not.
 
 ## Versions
 
-dude is versioned with semver, currently at `1.0.0`. The same value lives in
+dude is versioned with semver. The same value lives in
 four places: `.claude-plugin/plugin.json`, the plugin entry in
 `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and
 `package.json`. What each runtime does with one:
@@ -93,13 +93,13 @@ four places: `.claude-plugin/plugin.json`, the plugin entry in
 | Codex       | yes, strict semver         | no                                                             |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
-plugin entry in `.claude-plugin/marketplace.json` — carry `"version": "1.0.0"`.
+plugin entry in `.claude-plugin/marketplace.json` — carry the shared `"version"` value.
 `claude plugin update dude@dude` compares versions, so a bump reaches existing
 installs only after a manual update.
 
-`.codex-plugin/plugin.json` and `package.json` read `"version": "1.0.0"`
+`.codex-plugin/plugin.json` and `package.json` read the same `"version"`
 because their formats require one. Codex keeps a per-version
-cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/1.0.0/`),
+cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`),
 but `marketplace upgrade` plus re-adding still advances the checkout to the new
 commit. OpenCode caches the commit first installed for an unchanged git spec; restarting,
 removing and re-adding the config entry, or rerunning `opencode plugin` with that
@@ -342,7 +342,7 @@ make manifest
 
 `claude plugin validate` starts from `.claude-plugin/marketplace.json` and reaches that same
 `plugin.json` through the entry's `"source": "./"`. It passes without a version
-warning while all four version fields read `1.0.0`.
+warning while all four version fields agree.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
 as well, so it catches malformed frontmatter at the same time. Neither manifest
 validator covers `.agents/plugins/marketplace.json`, `package.json`, or

@@ -9,6 +9,21 @@ if [ "$#" -ne 1 ] || [ -z "$1" ]; then
 fi
 VERSION="$1"
 
+case "$VERSION" in
+  *[!0-9A-Za-z.+-]*)
+    echo "error: version must be semver (e.g. 1.2.3)" >&2
+    exit 1
+    ;;
+esac
+case "$VERSION" in
+  [0-9]*.*[0-9])
+    ;;
+  *)
+    echo "error: version must be semver (e.g. 1.2.3)" >&2
+    exit 1
+    ;;
+esac
+
 REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT="${BUMP_ROOT:-$REPO_ROOT}"
 cd "$ROOT"

@@ -75,4 +75,17 @@ fi
 if ! check_eq 'duplicate field untouched' '"version": "1.0.0"' "$(version_line "${HARNESS_TMP}/dup/.claude-plugin/plugin.json")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+total=$((total + 1))
+fails_here=0
+make_fixture "${HARNESS_TMP}/badver" "1.0.0"
+run_sut env "BUMP_ROOT=${HARNESS_TMP}/badver" bash "$SUT" '1.2.3"broken'
+if [ "$SUT_STATUS" -eq 0 ]; then
+  printf 'FAIL unsafe version exit: want non-zero, got 0\n'
+  fails_here=1
+fi
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
+  if ! check_eq "unsafe version untouched $f" '"version": "1.0.0"' "$(version_line "${HARNESS_TMP}/badver/$f")"; then fails_here=1; fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
