@@ -1,6 +1,6 @@
 ---
 name: investigate-performance
-description: Use to investigate an observed performance shortfall.
+description: Use to investigate an observed performance shortfall — a slow endpoint, job, or query, or a latency, throughput, CPU, or memory metric that moved.
 ---
 
 # Investigate Performance
