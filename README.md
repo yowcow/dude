@@ -14,21 +14,21 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 | Skill                     | What it produces                                                                   |
 | ------------------------- | ---------------------------------------------------------------------------------- |
-| `using-dude`              | The workflow rules the other skills are wired by                                   |
-| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                       |
 | `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task           |
+| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
+| `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
+| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                       |
 | `pr-to-ready`             | A PR whose CI passes and whose review is clean                                     |
-| `review-plan`             | Findings on a TODO list or an implementation plan                                  |
 | `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
 | `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record  |
+| `review-plan`             | Findings on a TODO list or an implementation plan                                  |
+| `settle-question`         | A judgment on an open question, with the evidence that settles it                  |
 | `simplify-code`           | Recently changed code simplified, behavior preserved                               |
-| `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
-| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
-| `investigate-question`    | A judgment on an open question, with the evidence that settles it                  |
+| `using-dude`              | The workflow rules the other skills are wired by                                   |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —
-`investigate-question`, `investigate-anomaly`, or `investigate-performance` —
+`settle-question`, `investigate-anomaly`, or `investigate-performance` —
 runs first when there's a cause to find or a question to settle, and hands
 its findings to `plan-work`.
 
@@ -121,7 +121,7 @@ cause to find or a question to settle first:
 ```mermaid
 flowchart LR
     issue[Issue]
-    invq[investigate-question]
+    invq[settle-question]
     inva[investigate-anomaly]
     invp[investigate-performance]
     plan[plan-work]

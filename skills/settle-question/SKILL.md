@@ -1,9 +1,9 @@
 ---
-name: investigate-question
+name: settle-question
 description: Use to settle an open question whose deliverable is a judgment, with no runtime symptom to root-cause.
 ---
 
-# Investigate Question
+# Settle Question
 
 Settle an open question whose deliverable is a judgment. `superpowers:systematic-debugging` owns the core loop and runs unchanged here; this skill layers on only what a question-shaped run needs — splitting the question into points that can be settled, fixing what was measured, and reporting. Its Phase 4 Implementation does not run: an Investigation ends at findings.
 
