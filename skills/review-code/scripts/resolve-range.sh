@@ -54,21 +54,38 @@ fi
 # -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
+# Fetch-default-first with a bounded scan, mirroring
+# ../../pr-to-ready/scripts/resolve-pr-base.sh: the scan must stop at the
+# default-branch tip, or a branch that recorded nothing picks up whatever
+# Base-Branch trailer shared history left behind. The tip is saved as a SHA
+# because the prerequisite fetch below rewrites FETCH_HEAD; the saved SHA is
+# also the NO-TRAILER base, so that path fetches nothing further. A
+# remote-tracking ref is not named in the exclusion: it goes stale with the
+# clone's fetch history, while FETCH_HEAD is what the fetch just wrote.
+DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+
+if ! git fetch origin -- "${DEFAULT}" >&2; then
+  echo "STOP default-fetch-failed"
+  exit 0
+fi
+
+TIP_SHA="$(git rev-parse FETCH_HEAD)"
+
 # The trailer scan, the prerequisite lookup, and the three answers both
 # readers print identically live in
 # ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
 # left here is base-branch.md's `review-code`'s `<base>` column: the three
 # rows where the two readers disagree.
 #
-# The rev is chosen here rather than there because it is this caller's
-# question: local HEAD, not a fetched ref, since this skill reviews the
-# checkout it is in.
+# The revs are chosen here rather than there because it is this caller's
+# question: local HEAD, bounded by the fetched default tip, since this skill
+# reviews the checkout it is in.
 #
 # The call is guarded rather than left to `set -e` so that its exit-1 path --
 # an unrecognised PR state, whose message it has already put on stderr --
 # leaves this script exiting 1 with nothing on stdout, instead of a second
 # message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" HEAD)"; then
+if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
   exit 1
 fi
 
@@ -76,7 +93,16 @@ read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
 
 case "${KIND}" in
   NO-TRAILER)
-    FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+    # The default tip is already fetched: merge-base against the saved SHA
+    # rather than fetching again. FETCH_HEAD still holds it, but the name
+    # would not survive a later fetch, and the SHA does.
+    if ! BASE_SHA="$(git merge-base "${TIP_SHA}" HEAD)"; then
+      echo "STOP merge-base-failed"
+      exit 0
+    fi
+    HEAD_SHA="$(git rev-parse HEAD)"
+    emit_range "${BASE_SHA}" "${HEAD_SHA}"
+    exit 0
     ;;
   STOP)
     # Passed through unchanged: the slugs are this script's output contract,
@@ -100,7 +126,7 @@ case "${KIND}" in
     ;;
 esac
 
-# Every row fetches, and every row reads FETCH_HEAD rather than a
+# Every prereq row fetches, and reads FETCH_HEAD rather than a
 # remote-tracking ref: a fetch always writes FETCH_HEAD, whereas updating
 # `refs/remotes/origin/<name>` depends on the clone's remote.origin.fetch
 # refspec — which `refs/pull/<n>/head` sits outside of in every clone, and
