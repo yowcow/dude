@@ -118,15 +118,15 @@
 #      `Base-Branch: older-base`, so `plain`'s only trailer is the poisoned
 #      trunk history below its own tip. Removing `^${TIP_SHA}` from the
 #      read-base-trailer.sh call failed `trunk-history-trailer-is-ignored` on
-#      stdout (`RANGE <older-base-tip>..<plain>` against
-#      `RANGE <trunk>..<plain>`), on the `gh pr list --head older-base` call
-#      no row stubs, and on the gh call count together. PREREQ rows now stub
+#      stdout (want `RANGE <trunk>..<plain>`, got `STOP prereq-lookup-failed`),
+#      on the `gh pr list --head older-base` violation no row stubs, and on
+#      the gh call count (want 1, got 2) together. PREREQ rows now stub
 #      the default lookup first (count +1, `trailer-read-fails` 0→1); the
 #      default-fetch row is renamed `default-fetch-fails` answering
 #      `STOP default-fetch-failed`.
 #
 # Partly covered, and measured to be no more coverable than this: reading
-# FETCH_HEAD rather than a remote-tracking ref (resolve-range.sh:103-110).
+# FETCH_HEAD rather than a remote-tracking ref (resolve-range.sh:142).
 # Replacing `git merge-base FETCH_HEAD HEAD` with
 # `git merge-base "origin/${FETCH_SPEC}" HEAD` failed exactly one row,
 # `prereq-merged-uses-the-pr-head` -- `refs/pull/<n>/head` lies outside every
