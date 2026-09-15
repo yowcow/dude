@@ -60,7 +60,7 @@ Where a tracking issue backs the work, `plan-work` splits it into one sub-issue 
 
 ### Investigation workflow
 
-The deliverable is an evidence-backed explanation of an observed problem, or a judgment on an open question. `superpowers:systematic-debugging` is the core loop; local skills layer domain specifics on top — `investigate-performance`, `investigate-anomaly`, and `investigate-question`; match the observed problem against those skills' `description`s; for a plain unknown-cause bug, the core loop alone usually suffices. Keep evidence and hypotheses strictly separated: never promote a hypothesis to a conclusion without a confirming measurement or reproduction.
+The deliverable is an evidence-backed explanation of an observed problem, or a judgment on an open question. `superpowers:systematic-debugging` is the core loop; local skills layer domain specifics on top — `investigate-performance`, `investigate-anomaly`, and `settle-question`; match the observed problem against those skills' `description`s; for a plain unknown-cause bug, the core loop alone usually suffices. Keep evidence and hypotheses strictly separated: never promote a hypothesis to a conclusion without a confirming measurement or reproduction.
 
 #### Investigation → Change transition
 
