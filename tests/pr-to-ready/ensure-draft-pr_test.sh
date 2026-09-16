@@ -39,6 +39,9 @@
 #   cp skills/pr-to-ready/scripts/ensure-draft-pr.sh "$tmp/skills/pr-to-ready/scripts/mut.sh"
 #   # apply exactly one edit to "$tmp/skills/pr-to-ready/scripts/mut.sh"
 #   SUT="$tmp/skills/pr-to-ready/scripts/mut.sh" tests/run.sh tests/pr-to-ready/ensure-draft-pr_test.sh
+# Measured (#381): with the pre-fix SUT the new
+# `an-unrecognised-prerequisite-state-stops` row fails alone (1/33) -- want
+# exit 0 `STOP unrecognised-pr-state`, got exit 1 with empty stdout.
 #
 # Limitations:
 #   - `STOP fetch-failed` from the sibling is unreachable through this SUT:
