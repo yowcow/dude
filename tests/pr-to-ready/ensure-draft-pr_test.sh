@@ -393,15 +393,14 @@ printf '[]\n' | stub_pr_list 1 feature 0
 printf 'main\n' | stub_default_branch 2 0
 printf '[{"number":9,"state":"DRAFT"}]\n' | stub_prereq_list 3 dep 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-# The sibling exits 1 having printed nothing on stdout, and the SUT's
-# RESOLVED="$(...)" dies with it under set -e -- this is the SUT's one
-# non-STOP failure exit, and the fault is the sibling's, not the SUT's, so
-# this asserts exit 1 with empty stdout rather than a slug.
-assert_row 'an-unrecognised-prerequisite-state-kills-the-run' 1 '' 3
+# The sibling exits 1 with nothing on stdout on an unrecognised prerequisite
+# state, its message already on stderr -- the SUT guards the call and answers
+# STOP instead of dying bare under set -e.
+assert_row 'an-unrecognised-prerequisite-state-stops' 0 'STOP unrecognised-pr-state\n' 3
 
 total=$((total + 1))
 if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
-  printf 'FAIL an-unrecognised-prerequisite-state-kills-the-run: stderr does not name the state:\n%s\n' \
+  printf 'FAIL an-unrecognised-prerequisite-state-stops: stderr does not name the state:\n%s\n' \
     "$(head -c 400 "$SUT_STDERR")"
   failed=$((failed + 1))
 fi

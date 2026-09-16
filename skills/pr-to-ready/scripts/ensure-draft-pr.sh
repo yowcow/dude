@@ -117,7 +117,12 @@ fi
 # --- Step 3: no PR exists. Only now is a base resolved, and only by asking
 # the sibling script — never guessed here. ---
 
-RESOLVED="$("$(dirname "${BASH_SOURCE[0]}")/resolve-pr-base.sh" "$BRANCH")"
+# Guarded rather than left to `set -e`: the sibling exits 1 with nothing on
+# stdout on an unrecognised prerequisite state, its message already on stderr.
+if ! RESOLVED="$("$(dirname "${BASH_SOURCE[0]}")/resolve-pr-base.sh" "$BRANCH")"; then
+  echo "STOP unrecognised-pr-state"
+  exit 0
+fi
 
 case "$RESOLVED" in
   STOP*)
