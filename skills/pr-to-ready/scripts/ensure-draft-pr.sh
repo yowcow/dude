@@ -119,9 +119,16 @@ fi
 
 # Guarded rather than left to `set -e`: the sibling exits 1 with nothing on
 # stdout on an unrecognised prerequisite state, its message already on stderr.
-if ! RESOLVED="$("$(dirname "${BASH_SOURCE[0]}")/resolve-pr-base.sh" "$BRANCH")"; then
+# Only that exit-1 path becomes STOP -- any other non-zero status is a real
+# failure (bad invocation, runtime error) and is propagated unchanged so it is
+# not misreported as an unrecognised state.
+sibling_status=0
+RESOLVED="$("$(dirname "${BASH_SOURCE[0]}")/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
+if [ "$sibling_status" -eq 1 ]; then
   echo "STOP unrecognised-pr-state"
   exit 0
+elif [ "$sibling_status" -ne 0 ]; then
+  exit "$sibling_status"
 fi
 
 case "$RESOLVED" in
