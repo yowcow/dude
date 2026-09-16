@@ -188,4 +188,40 @@ too-many-args|copilot-reviews-two|empty|acme widgets 7 %B 1 1 extra|2|0|
 non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|1|0|
 ROWS
 
+# CDPATH decoy (yowcow/dude#382): an exported CDPATH plus a relative-path call
+# must still resolve the sibling in this tree. `cd` searches CDPATH for a
+# relative operand, so the pre-fix `cd "$(dirname "$0")"` lands in the decoy
+# and the listing reads as "no review yet" (exit 1, zero gh calls). Not a ROWS
+# row: rows invoke the absolute $SUT, and `cd` never consults CDPATH for an
+# absolute operand, so only a relative-path call reproduces it. The SUT is
+# staged into a shadow tree (a copy, so a `SUT=` override is honoured) and
+# called through its relative path, after tests/hooks/session-start_test.sh.
+row_start
+cdpath_shadow="${HARNESS_TMP}/tree.cdpath"
+rm -rf -- "$cdpath_shadow"
+mkdir -p -- "${cdpath_shadow}/skills/pr-to-ready/scripts"
+cp -- "$SUT" "${cdpath_shadow}/skills/pr-to-ready/scripts/watch-copilot-review.sh"
+chmod +x -- "${cdpath_shadow}/skills/pr-to-ready/scripts/watch-copilot-review.sh"
+cp -- "${REPO_ROOT}/skills/pr-to-ready/scripts/list-copilot-reviews.sh" "${cdpath_shadow}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
+cdpath_decoy="$(mktemp -d "${HARNESS_TMP}/cdpath-decoy.XXXXXX")"
+mkdir -p "${cdpath_decoy}/skills/pr-to-ready/scripts"
+printf '#!/usr/bin/env bash\nexit 99\n' >"${cdpath_decoy}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
+chmod +x "${cdpath_decoy}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
+gh_stub_response '*' 0 pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$TWO"
+cdpath_baseline="$(make_baseline empty)"
+cd -- "$cdpath_shadow" || exit 1
+# Set for this one call rather than exported and unset afterwards, which would
+# destroy a CDPATH the parent had set.
+CDPATH="$cdpath_decoy" run_sut bash skills/pr-to-ready/scripts/watch-copilot-review.sh acme widgets 7 "$cdpath_baseline" 1 1
+cd -- "$REPO_ROOT" || exit 1
+cdpath_fails=0
+if ! check_eq "cdpath-decoy-relative-call: exit" 0 "$SUT_STATUS"; then cdpath_fails=1; fi
+if ! check_eq "cdpath-decoy-relative-call: gh calls" 1 "$(gh_call_count)"; then cdpath_fails=1; fi
+if ! check_bytes "cdpath-decoy-relative-call: stdout" '{"author":"copilot-pull-request-reviewer","id":"PRR_kwDOAZjEl88AAAABKNbcig","state":"COMMENTED","submittedAt":"2026-08-20T07:29:15Z"}\n{"author":"copilot-pull-request-reviewer","id":"PRR_kwDOAZjEl88AAAABKNnbbA","state":"COMMENTED","submittedAt":"2026-08-20T07:54:06Z"}\n'; then cdpath_fails=1; fi
+if ! check_no_violations "cdpath-decoy-relative-call: argv"; then cdpath_fails=1; fi
+if [ "$cdpath_fails" -ne 0 ]; then
+  failed=$((failed + 1))
+  printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
+fi
+
 harness_exit "$failed" "$total"
