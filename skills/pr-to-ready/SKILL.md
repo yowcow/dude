@@ -129,7 +129,7 @@ A round here is one 2-1 → 2-2 → 2-3 cycle, whether or not it entered the cle
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing — and post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing — and post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
