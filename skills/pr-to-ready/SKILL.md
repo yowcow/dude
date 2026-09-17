@@ -98,8 +98,7 @@ When there is at least one finding and every finding is `reject`: do not fix, do
 
 **Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
 
-- On a needs-user round, skip thread replies and resolution; otherwise post as **Where to write** (second and third bullets only, recording every finding's verdict threaded-or-not in that single PR comment), **What to write**, **What not to write**, and the two paragraphs after them below.
-- Otherwise, post as **Where to write**, **What to write**, **What not to write**, and the two paragraphs after them below.
+- Post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, so only the second and third bullets of **Where to write** apply, and every finding's verdict (threaded or not) goes in that single PR comment.
 
 Where to write
 
