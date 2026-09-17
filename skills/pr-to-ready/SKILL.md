@@ -96,7 +96,36 @@ A round's fixes take Step 1's ordinary-change discipline with two departures. **
 
 When there is at least one finding and every finding is `reject`: do not fix, do not commit, do not push. Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is. If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only; hold the aggregate PR comment). Do not evaluate the five clean conditions. Walk row 4 of the stop list even when the SHA did not change. Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test. Only when both exited 0: post the aggregate PR comment per the posting paragraph below with the listing exit codes/outputs just read; then, if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1; if those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
 
-**Posting** (every round, accept-including, all-reject, no-finding, and needs-user alike): on a needs-user round skip thread replies and resolution and record every finding's verdict (threaded or not) in the PR comment; otherwise, where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none); record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one PR comment per round — when Claude was requested this round, by editing the recorded trigger comment to append the verdict plus telemetry; otherwise by posting one new comment — carrying the request/skip decision per reviewer (with the exit behind it), the request-mark SHA, the measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and this round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls; neither a thread reply nor a newly posted aggregate PR comment may mention `@claude`, which would re-trigger the workflow; the edit path carries no such risk whatever it appends — the reused trigger comment's own already-fired request text likewise stays as it is — since an edit never fires the workflow. Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies or the aggregate comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow. The round's single comment keeps its human-readable verdict to one line and folds machine telemetry (request/skip decisions, SHAs, exit codes, listing outputs) inside a `<details>` block, so the timeline stays scannable.
+**Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
+
+- On a needs-user round, skip thread replies and resolution and record every finding's verdict (threaded or not) in the PR comment.
+- Otherwise, post as **Where to write**, **What to write**, and **What not to write** below.
+
+Where to write
+
+- Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
+- Record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one PR comment per round.
+- When Claude was requested this round, post it by editing the recorded trigger comment to append the verdict plus telemetry; otherwise by posting one new comment. The trigger comment's own already-fired request text stays as it is — there is no duty to split it.
+
+What to write
+
+| Payload | Contents |
+|---|---|
+| Request identity | Request/skip decision per reviewer (with the exit behind it), and the request-mark SHA. |
+| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
+| Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
+
+What not to write
+
+| Route | Rule |
+|---|---|
+| Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
+| Newly posted aggregate PR comment | May not mention `@claude`, which would re-trigger the workflow. |
+| Edit of the recorded trigger comment | Carries no such risk whatever it appends — the reused trigger comment's own already-fired request text likewise stays as it is — since an edit never fires the workflow. |
+
+Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies or the aggregate comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+
+The round's single comment keeps its human-readable verdict to one line and folds machine telemetry (request/skip decisions, SHAs, exit codes, listing outputs) inside a `<details>` block, so the timeline stays scannable.
 
 ### Clean judgment & stop conditions
 
