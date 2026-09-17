@@ -100,13 +100,13 @@ When there is at least one finding and every finding is `reject`: do not fix, do
 
 - Post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, so only the second and third bullets of **Where to write** apply, and every finding's verdict (threaded or not) goes in that single PR comment.
 
-Where to write
+#### Where to write
 
 - Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
 - Record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one PR comment per round.
 - When Claude was requested this round, post it by editing the recorded trigger comment to append the verdict plus telemetry; otherwise by posting one new comment. The trigger comment's own already-fired request text stays as it is — there is no duty to split it.
 
-What to write
+#### What to write
 
 | Payload | Contents |
 |---|---|
@@ -114,7 +114,7 @@ What to write
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
-What not to write
+#### What not to write
 
 | Route | Rule |
 |---|---|
