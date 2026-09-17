@@ -187,7 +187,7 @@ When there is at least one finding and every finding is `reject`:
 
 Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies or the aggregate comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
-The round's single comment keeps its human-readable verdict to one line and folds machine telemetry (request/skip decisions, SHAs, exit codes, listing outputs) inside a `<details>` block, so the timeline stays scannable.
+The round's single comment shows only the human-readable verdict outside the fold — one line per finding, or LGTM where there was no finding — and puts everything else (request/skip decisions, SHAs, exit codes, listing outputs, and any SKILL-internal words such as round numbers or step names) inside a single `<details>` block labelled exactly `Details`, so the timeline stays scannable to a reader who never saw this skill.
 
 ### Clean judgment & stop conditions
 
@@ -226,7 +226,7 @@ A round here is one 2-1 → 2-2 → 2-3 cycle, whether or not it entered the cle
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing — and post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing — and post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below. The final comment follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
