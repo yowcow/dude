@@ -47,7 +47,13 @@ The published artifact is the design plus a numbered list of PR-sized items, and
 Two entries add to that list:
 
 - **From investigation findings** — the reproduction goes into the completion criteria of the item that owns the fix, per `using-dude`'s **Investigation → Change transition**. It takes one of two forms: a regression test that fails before the fix and passes after, or, for a symptom observable only in production, the observation window and the metric that shows it. The steps behind either stay in the findings report, so cite that report here by URL — a sub-issue carries this comment's URL and nothing else, so an uncited report is one it cannot reach.
-- **From a design invalidated downstream** — every item accounts for the existing branch: **reuse** it and the item names it, or **discard** it and the item names a **new** one. `implement-work`'s isolation ladder reuses whatever branch it finds and has no rung that discards one, so an item carrying the old name would quietly resume work on top of the very commits the invalidated design produced. Name the discarded branch in the artifact as a person's cleanup, with the worktree checked out on it — identified by that branch rather than by a path, since this flow is never handed one — and any open PR by number: its body still holds the closing keyword, so merging it later would land the invalidated commits *and* close the child behind them. Each item also names, by number, the existing child it corresponds to, so **Publish** acts on a match that was visible in the list under review rather than re-derived afterwards. Work already finished before the invalidation stays out of the numbered list and goes in the split policy instead, each entry carrying its child's number and the fact that its PR merged — recorded either way, because work dropped from the record gets rebuilt.
+- **From a design invalidated downstream** — every item accounts for the existing branch.
+  - **Reuse** it and the item names it, or **discard** it and the item names a **new** one.
+  - `implement-work`'s isolation ladder reuses whatever branch it finds and has no rung that discards one, so an item carrying the old name would quietly resume work on top of the very commits the invalidated design produced.
+  - Name the discarded branch in the artifact as a person's cleanup, with the worktree checked out on it — identified by that branch rather than by a path, since this flow is never handed one.
+  - Name any open PR by number: its body still holds the closing keyword, so merging it later would land the invalidated commits *and* close the child behind them.
+  - Each item also names, by number, the existing child it corresponds to, so **Publish** acts on a match that was visible in the list under review rather than re-derived afterwards.
+  - Work already finished before the invalidation stays out of the numbered list and goes in the split policy instead, each entry carrying its child's number and the fact that its PR merged — recorded either way, because work dropped from the record gets rebuilt.
 
 ## Splitting into sub-issues
 
@@ -56,8 +62,19 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 - **The parent comment** carries the design, the split policy, and the list of sub-issues. **Each child** carries its purpose, its scope boundary, its completion criteria, its prerequisites and why (or that it has none), the parent design comment's URL, and — only where the item carries a branch name — that name. Nothing more: a PR-sized plan in the child puts the detail back where it was and defeats the split.
 - **A prerequisite is also a native relation, and an independent item gets none at all.** The relation is what `implement-work` reads, so it never has to parse prose. Confirm the resulting count is the one intended — 0 for an independent item.
 - Converge the `review-plan` loop against the whole, undivided TODO list before splitting.
-- **On re-entry, children from the previous approval already exist, and one child per item still holds.** Enumerate them from the native relation, never from the parent comment's prose: that prose records what was published, so a child added after the last edit is missing from it and the item it belongs to would be given a second one. Match them by each item's **substance**, never its wording: items are renumbered and rephrased freely, so a rephrased one would otherwise read as an item dropped plus an item added. Match before `review-plan` sees the list, since the list has to already account for what is finished, and re-match any item a fold-in changed — those only.
-- A surviving item's child has its body brought up to date and its relations rewired in both directions; an item with no child gets one, as on a first publish; and a child whose item is gone from the list is named in the artifact as a person's cleanup — the close is theirs, and the sub-issue link stays as the record that the item was dropped. **A closed child that matches a live item stops the run, whatever it was closed for**: the native relation carries no close reason, so a child closed as dropped and one whose PR merged arrive at this rule identical, and reading either as the other either drops the item silently or rebuilds work that is already merged. Ask a person which it is.
+- **On re-entry, children from the previous approval already exist, and one child per item still holds.**
+  - Enumerate them from the native relation, never from the parent comment's prose.
+  - That prose records what was published, so a child added after the last edit is missing from it and the item it belongs to would be given a second one.
+  - Match them by each item's **substance**, never its wording: items are renumbered and rephrased freely, so a rephrased one would otherwise read as an item dropped plus an item added.
+  - Match before `review-plan` sees the list, since the list has to already account for what is finished.
+  - Re-match any item a fold-in changed — those only.
+- Update the children to match the list.
+  - A surviving item's child has its body brought up to date and its relations rewired in both directions.
+  - An item with no child gets one, as on a first publish.
+  - A child whose item is gone from the list is named in the artifact as a person's cleanup — the close is theirs, and the sub-issue link stays as the record that the item was dropped.
+  - **A closed child that matches a live item stops the run, whatever it was closed for.**
+  - The native relation carries no close reason, so a child closed as dropped and one whose PR merged arrive at this rule identical, and reading either as the other either drops the item silently or rebuilds work that is already merged.
+  - Ask a person which it is.
 
 ## Publish
 
