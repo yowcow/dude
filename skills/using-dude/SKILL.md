@@ -10,14 +10,20 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 </SUBAGENT-STOP>
 
 - Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
-- This document owns the orchestration invariants: the orchestrator owns control flow and declares which execution method it chose; a skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf, and one that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
+- This document owns the orchestration invariants.
+  - The orchestrator owns control flow and declares which execution method it chose.
+  - A skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf.
+  - One that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
 - SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body ever disagree, this body wins and the stub needs a fix under its own issue.
 
 ## Workflow
 
 The orchestrator decides when each phase is complete and drives every transition; a worker never gets an objective spanning multiple phases, and never declares a phase complete or advances the workflow itself.
 
-The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site too. What this cuts is the transition only — a sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
+The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site too.
+
+- What this cuts is the transition only.
+- A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
 
 ### Workflow selection
 
@@ -31,13 +37,24 @@ Classify the task first:
 
 A named deliverable settles the classification, even where running the skill produces a diff.
 
-Change and Investigation both begin with **Understand**; a bug whose cause is unknown is an investigation first, and its fix enters the Change workflow only through the transition below. General research (library comparisons, "how does X work") is none of these — answer it directly, with `superpowers:brainstorming` when it is design-shaped.
+Change and Investigation both begin with **Understand**.
+
+- A bug whose cause is unknown is an investigation first, and its fix enters the Change workflow only through the transition below.
+- General research (library comparisons, "how does X work") is none of these — answer it directly, with `superpowers:brainstorming` when it is design-shaped.
 
 Match a named deliverable against the skills' `description`s, and where two could fit, let the deliverable named decide rather than the topic. Where the run turns up work beyond that deliverable, report it and let the user pick the flow instead of widening the run.
 
-For a Change, enter at the flow the work has actually reached: no agreed design or PR-sized split yet → `plan-work`; one PR-sized task in hand → `implement-work`; an open PR of verified commits → `pr-to-ready`, given its number or URL, with a branch carrying no PR yet as that flow's own fallback entry.
+For a Change, enter at the flow the work has actually reached:
 
-A Change that carries no design decision has a lane of its own, not an exemption from the flows: the test is that the change is determined once stated, with no interface, structure, or trade-off left open — declare that in one line and carry it into the run's report so the skipped gate stays checkable. This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution, while the completion gate and `pr-to-ready` still run in full — integration goes through a PR at any size. The moment a design decision surfaces, the lane is over: take **Escalation**.
+- No agreed design or PR-sized split yet → `plan-work`.
+- One PR-sized task in hand → `implement-work`.
+- An open PR of verified commits → `pr-to-ready`, given its number or URL, with a branch carrying no PR yet as that flow's own fallback entry.
+
+A Change that carries no design decision has a lane of its own, not an exemption from the flows.
+
+- The test is that the change is determined once stated, with no interface, structure, or trade-off left open — declare that in one line and carry it into the run's report so the skipped gate stays checkable.
+- This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution, while the completion gate and `pr-to-ready` still run in full — integration goes through a PR at any size.
+- The moment a design decision surfaces, the lane is over: take **Escalation**.
 
 ### Understand
 
@@ -52,15 +69,28 @@ Three flows, each of which can be entered on its own, and each with its own deli
 - **`implement-work`** — deliverable: a draft PR on a pushed branch of verified commits.
 - **`pr-to-ready`** — deliverable: a PR whose CI passes and whose review is clean, left at ready or draft.
 
-A phase is *clean* when its checks pass: verification (the relevant test, lint, build, typecheck, smoke test, or manual check passes, and the deliverable meets the requirements the task itself states), simplification with `simplify-code` (no behavior-preserving cleanup is left), and review with `review-code` (no blocking findings remain). A flow that produces no code sets its own bar instead, and each skill defines its own.
+A phase is *clean* when its checks pass.
 
-Where a tracking issue backs the work, `plan-work` splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order. Each turn takes one sub-issue through `implement-work`'s own entry and gates — a later PR is never a continuation of the previous turn, and never inherits its verification.
+- Verification: the relevant test, lint, build, typecheck, smoke test, or manual check passes, and the deliverable meets the requirements the task itself states.
+- Simplification with `simplify-code` (no behavior-preserving cleanup is left).
+- Review with `review-code` (no blocking findings remain).
+
+A flow that produces no code sets its own bar instead, and each skill defines its own.
+
+Where a tracking issue backs the work, `plan-work` splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
+
+- Each turn takes one sub-issue through `implement-work`'s own entry and gates.
+- A later PR is never a continuation of the previous turn, and never inherits its verification.
 
 **Merging is a person's responsibility, and so is everything that depends on it** — `pr-to-ready` ends at ready or draft, and the merge itself, the parent issue's closure, and cleaning up the branch and worktree all belong to a human afterward, so a remaining sub-issue starts a separate session.
 
 ### Investigation workflow
 
-The deliverable is an evidence-backed explanation of an observed problem, or a judgment on an open question. `superpowers:systematic-debugging` is the core loop; local skills layer domain specifics on top — `investigate-performance`, `investigate-anomaly`, and `settle-question`; match the observed problem against those skills' `description`s; for a plain unknown-cause bug, the core loop alone usually suffices. Keep evidence and hypotheses strictly separated: never promote a hypothesis to a conclusion without a confirming measurement or reproduction.
+The deliverable is an evidence-backed explanation of an observed problem, or a judgment on an open question.
+
+- `superpowers:systematic-debugging` is the core loop; local skills layer domain specifics on top — `investigate-performance`, `investigate-anomaly`, and `settle-question`.
+- Match the observed problem against those skills' `description`s; for a plain unknown-cause bug, the core loop alone usually suffices.
+- Keep evidence and hypotheses strictly separated: never promote a hypothesis to a conclusion without a confirming measurement or reproduction.
 
 #### Investigation → Change transition
 
@@ -71,7 +101,11 @@ The deliverable is an evidence-backed explanation of an observed problem, or a j
 
 **Tier** is whatever the runtime has for putting more capability on one task — a stronger model, a higher reasoning effort, or both.
 
-The orchestrator can re-judge what a worker returned, but never what it didn't return: a worker whose miss passes as "nothing found" is dispatched at the highest tier the runtime can put on a worker — a ceiling the run's own tier does not lower, so a run started cheaply dispatches such a worker above the tier it is itself on. The run's default is fine for every other worker, and this rule constrains nothing about them. Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
+The orchestrator can re-judge what a worker returned, but never what it didn't return.
+
+- A worker whose miss passes as "nothing found" is dispatched at the highest tier the runtime can put on a worker — a ceiling the run's own tier does not lower, so a run started cheaply dispatches such a worker above the tier it is itself on.
+- The run's default is fine for every other worker, and this rule constrains nothing about them.
+- Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
 
 Where the runtime has no means of choosing a tier, this rule settles nothing and the run proceeds unchanged.
 
@@ -79,9 +113,16 @@ Where the runtime has no means of choosing a tier, this rule settles nothing and
 
 - At each phase transition and gate iteration, write a concise hand-off summary, dropping exploratory dumps and stale tool output while keeping the substance.
 - You own this summary even when your runtime can't compact context on its own — when context is heavy and only the user can trigger compaction, prompt them to. Never let a summary or compaction relax a gate.
-- A hand-off between flows may land in a different session. The canonical record is the tracking issue's comment — chat only when no issue tracks the work. At each flow's end, name the artifact the next flow picks up. The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
+- A hand-off between flows may land in a different session. The canonical record is the tracking issue's comment — chat only when no issue tracks the work.
+- At each flow's end, name the artifact the next flow picks up. The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
 - **A loop's intermediate state is orchestrator-facing.** Report each round to the caller in chat, and never to GitHub. Only the converged result reaches the canonical record above.
-- **A deliverable whose substance is findings, a judgment, or a claim of absence goes through `review-findings` before it reaches that record** — an Investigation's report on any of its three routes, and equally a named-deliverable run that reaches a conclusion with no flow's procedure to place the step for it. Run one pass, restate flagged claims as unsettled / not measured. The required clean is that the pass finished, not that it returned no findings. Where `review-plan` or `review-code` already gates the artifact, this adds nothing on top. For an Investigation, the tracking issue is the issue named as that run's requester — a background mention is not. When more than one issue URL is in play, list the candidates and name the target #N before asking. Present the report in chat and ask whether to post that content to #N; post it as a comment on that issue only on yes; a declined ask leaves the report unpublished — settle with a person where its record lives before the run ends. With no tracking issue, chat is the record. Any other such deliverable publishes to the canonical record above.
+- **A deliverable whose substance is findings, a judgment, or a claim of absence goes through `review-findings` before it reaches that record.**
+  - This covers an Investigation's report on any of its three routes, and equally a named-deliverable run that reaches a conclusion with no flow's procedure to place the step for it.
+  - Run one pass, restate flagged claims as unsettled / not measured. The required clean is that the pass finished, not that it returned no findings.
+  - Where `review-plan` or `review-code` already gates the artifact, this adds nothing on top.
+  - For an Investigation, the tracking issue is the issue named as that run's requester — a background mention is not. When more than one issue URL is in play, list the candidates and name the target #N before asking.
+  - Present the report in chat and ask whether to post that content to #N; post it as a comment on that issue only on yes; a declined ask leaves the report unpublished — settle with a person where its record lives before the run ends.
+  - With no tracking issue, chat is the record. Any other such deliverable publishes to the canonical record above.
 
 ### Loop convergence
 
@@ -94,10 +135,17 @@ Every loop that checks work and fixes what came back stops on the same condition
 
 **Each loop defines two things for itself**: what one of its rounds is, and what makes two findings the same one. Nothing else about stopping is a skill's to set. A skill may add a **stricter** condition on top of *clean* where its own inputs warrant it; it may not loosen one.
 
-**A bounded inner pass does not bound the loop around it** — these conditions are counted per loop, and "the skill I call is bounded" is never evidence that this loop terminates. A wait bounded by clock time — polling for an answer that has not arrived yet — is a timeout owned by the skill that waits, not one of these loops.
+**A bounded inner pass does not bound the loop around it** — these conditions are counted per loop, and "the skill I call is bounded" is never evidence that this loop terminates.
+
+- A wait bounded by clock time — polling for an answer that has not arrived yet — is a timeout owned by the skill that waits, not one of these loops.
 
 ### Escalation
 
-- When uncertainty is high, requirements conflict, multiple viable designs exist, or new facts invalidate the current plan, stop and go back to where the framing is owned — `plan-work` for a Change (from `implement-work` or `pr-to-ready` alike), the Investigation workflow's framing for an Investigation, or Workflow selection if the task's type changed.
-- **A Critical finding that invalidates the agreed design is never fixed in place, and never worked around.** It goes back to `plan-work` for re-approval wherever it surfaces. Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
+- When uncertainty is high, requirements conflict, multiple viable designs exist, or new facts invalidate the current plan, stop and go back to where the framing is owned:
+  - `plan-work` for a Change (from `implement-work` or `pr-to-ready` alike)
+  - the Investigation workflow's framing for an Investigation
+  - Workflow selection if the task's type changed.
+- **A Critical finding that invalidates the agreed design is never fixed in place, and never worked around.**
+  - It goes back to `plan-work` for re-approval wherever it surfaces.
+  - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
 - Report what's uncertain, the options and trade-offs, and your recommendation. What a flow hands over on this exit belongs to that skill's own **Escalation** section; the contract for receiving it is `plan-work`'s **Entry**.
