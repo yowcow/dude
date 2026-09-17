@@ -77,12 +77,11 @@ Size the fan-out to the target. Both targets here are small artifacts — a list
 
 Use `superpowers:dispatching-parallel-agents` for the dispatch itself when there is more than one; this is independent fact-finding, not implementation. Don't restate its prompt-construction guidance here.
 
-On a revision — the caller hands over the record of an earlier pass — dispatch only the lenses that produced an accepted finding, plus Reality, since the artifact changed under it.
-
-- They review the edits that resolved those findings; that is the scope for every lens dispatched, Reality included.
-- An edit made for another reason that leaves what the plan instructs unchanged — a rewording, a tidy-up — is not part of that scope and does not earn a fresh look.
-- Pass the record along so rejected findings are not re-litigated.
-- Skip a lens only when it cannot apply, and say which and why.
+- On a revision — the caller hands over the record of an earlier pass — dispatch only the lenses that produced an accepted finding, plus Reality, since the artifact changed under it.
+  - They review the edits that resolved those findings; that is the scope for every lens dispatched, Reality included.
+  - An edit made for another reason that leaves what the plan instructs unchanged — a rewording, a tidy-up — is not part of that scope and does not earn a fresh look.
+  - Pass the record along so rejected findings are not re-litigated.
+  - Skip a lens only when it cannot apply, and say which and why.
 
 ## Finding contract
 
