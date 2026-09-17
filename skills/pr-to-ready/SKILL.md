@@ -72,7 +72,7 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 ### 2-1. Request the reviewers
 
 - **Claude**: `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect. That exit status is the whole availability test — don't go searching the workflows yourself. When available, post a request comment with a short list of what to focus on; every request comment includes the current HEAD SHA.
-- **Copilot**: record the baseline first — `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline"). A re-request on the same SHA still records a fresh baseline and still requests. Then `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops.
+- **Copilot**: record the baseline first — `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline"). A re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it; the all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1. Then `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops.
 
 ### 2-2. Wait for the review (bound the wait)
 
@@ -100,7 +100,7 @@ When there is at least one finding and every finding is `reject`: do not fix, do
 
 ### Clean judgment & stop conditions
 
-**Clean** holds when all five of these are true **on the same commit** — the tip of `<branch>` at the moment you judge:
+**Clean** holds when all five of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, that commit's SHA:
 
 1. the checks came back clean in Step 1's sense — exit 0 with every conclusion passing, or the exit 5 that says this repository runs none;
 2. this round's Claude run leaves no actionable finding — every comment on it is "looks good"/LGTM-equivalent. Do not re-read comments from an earlier round this run already resolved;
@@ -118,18 +118,18 @@ When it isn't clean, what to do follows from which condition failed, and every r
 
 **Stop the loop when any of these holds — read in order, and take the first that applies; otherwise keep looping:**
 
-1. Clean, per above → Step 3.
+1. Clean, per above — the first measured full Clean on that SHA — → Step 3. Do not request again on a SHA once Clean held on it.
 2. **A finding invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round.
 3. **Any finding came back `needs-user`** → the third terminal state, per 2-3.
 4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does.
-5. **LGTM-equivalent twice in a row, with the other four conditions true on the HEAD it leaves from** → Step 3. This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
+5. **LGTM-equivalent twice in a row on the SHA it leaves from, with conditions (1, 4, 5) true on that same SHA** → Step 3. LGTM-equivalent here means the round left no accepted finding — no findings, or every finding `reject` — not that condition 3's suppressed listing is empty. This exit applies only where full Clean was never measured on that SHA — e.g. a rejected suppressed finding remains in condition 3's listing, a reject history exists, or a prior round was non-clean — and never authorizes a second request after a measured full Clean. This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
 6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision.
 
 A round here is one 2-1 → 2-2 → 2-3 cycle, whether or not it entered the clean judgment; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the same five conditions on the HEAD it leaves from — measuring only, fixing nothing. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
