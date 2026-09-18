@@ -109,7 +109,7 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 - **Claude**: `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect.
   - That exit status is the whole availability test — don't go searching the workflows yourself.
   - When available, post a request comment with a short list of what to focus on; every request comment includes the round-request SHA captured once before either request goes out.
-  - That trigger comment doubles as this round's request mark. Record its id/URL at post time as this round's comment id.
+  - That trigger comment is the reference for a Claude-requested round. Record its id/URL at post time for the Request identity row.
 - **Copilot**: record the baseline first, then request.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
@@ -161,19 +161,18 @@ When there is at least one finding and every finding is `reject`:
 
 **Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
 
-- Post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, so only the second and third bullets of **Where to write** apply, and every finding's verdict (threaded or not) goes in that single PR comment.
+- Post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment.
 
 #### Where to write
 
 - Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
-- Record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one PR comment per round.
-- When Claude was requested this round, post it by editing the recorded trigger comment to append the verdict plus telemetry; otherwise by posting one new comment. The trigger comment's own already-fired request text stays as it is — there is no duty to split it.
+- Record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one new PR comment per round.
 
 #### What to write
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it), and the request-mark SHA. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
@@ -183,7 +182,6 @@ When there is at least one finding and every finding is `reject`:
 |---|---|
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
 | Newly posted aggregate PR comment | May not mention `@claude`, which would re-trigger the workflow. |
-| Edit of the recorded trigger comment | Carries no such risk whatever it appends — the reused trigger comment's own already-fired request text likewise stays as it is — since an edit never fires the workflow. |
 
 Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies or the aggregate comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
