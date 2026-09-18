@@ -28,11 +28,11 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 ## Step 0: Set up the run
 
-### 0-1. Ask ready-on-clean and verbose
+### 0-1. Ask ready-on-clean, bind verbose
 
-Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on the ready-on-clean flag. Both flags are fixed for the rest of the run, not re-asked mid-loop.
+Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on the ready-on-clean flag. Both hold for the rest of the run — ready-on-clean is not re-asked and verbose is not re-bound mid-loop.
 
-Ask the user as well: should this run post its observability comments, or stay quiet and keep it in the round's report to the caller instead? Record the answer as the **verbose** flag. Quiet is the ordinary choice; verbose is for when a later attribution may need the full record.
+Bind **verbose** from the caller's invocation instead of asking: on when it carries `verbose`, `verbose=on`, or `verbose=true` (case-insensitive); off otherwise, including an explicit `verbose=off`. Off keeps observability output in the round's report to the caller instead of posting it. Quiet is the ordinary path; verbose is for when a later attribution may need the full record.
 
 ### 0-2. Resolve the run from the PR reference
 
