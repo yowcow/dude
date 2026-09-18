@@ -11,7 +11,8 @@
 # A non-zero check exit means "not yet", whatever the code: a failing `gh`
 # call is a blip the next poll may ride out (watch-checks.sh precedent). A
 # check command that can never succeed burns the whole cap to exit 1 rather
-# than failing fast — the documented ceiling of this helper. On
+# than failing fast — the documented ceiling of this helper. On success
+# prints the attempt's stdout (nothing if empty) and exits 0; on
 # cap-exhausted prints the last attempt's stdout (nothing if empty) and
 # exits 1.
 #
