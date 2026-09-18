@@ -18,11 +18,6 @@ ISSUE="${1:-}"
 # script -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# Fetch the branch, so the caller can cut from origin/<name>.
-fetch_ref() {
-  git fetch origin -- "$1" >&2
-}
-
 # blockedBy and closedByPullRequestsReferences must be counted, never merely
 # checked for emptiness — "is it empty" cannot tell one prerequisite from
 # three, and both need the opposite answer here. A task with no issue behind
@@ -36,7 +31,9 @@ fi
 
 if [ "${BLOCKED_COUNT}" -eq 0 ]; then
   DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-  fetch_ref "${DEFAULT}"
+  if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+    exit 1
+  fi
   echo "BASE ${DEFAULT}"
   exit 0
 fi
@@ -72,11 +69,15 @@ STATE="${PR_INFO##* }"
 case "${STATE}" in
   MERGED)
     DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-    fetch_ref "${DEFAULT}"
+    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+      exit 1
+    fi
     echo "BASE ${DEFAULT}"
     ;;
   OPEN)
-    fetch_ref "${HEAD_REF}"
+    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${HEAD_REF}" >/dev/null; then
+      exit 1
+    fi
     echo "BASE ${HEAD_REF}"
     ;;
   CLOSED)
