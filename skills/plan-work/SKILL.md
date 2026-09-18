@@ -93,7 +93,7 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 6. Don't leave step 5 while a blocking finding remains.
 7. **Publish**.
 
-This is clean when the published artifact satisfies **Output contract** and the last `review-plan` pass returned no blocking finding.
+This is clean per `using-dude`'s **Loop convergence** loop-clean when the published artifact satisfies **Output contract** and the last `review-plan` pass returned no blocking finding.
 
 ## Escalation
 

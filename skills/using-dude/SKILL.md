@@ -69,7 +69,7 @@ Three flows, each of which can be entered on its own, and each with its own deli
 - **`implement-work`** — deliverable: a draft PR on a pushed branch of verified commits.
 - **`pr-to-ready`** — deliverable: a PR whose CI passes and whose review is clean, left at ready or draft.
 
-A phase is *clean* when its checks pass.
+A phase is *clean* when its checks pass (phase-clean — the gate sense, distinct from the Loop convergence loop-clean below).
 
 - Verification: the relevant test, lint, build, typecheck, smoke test, or manual check passes, and the deliverable meets the requirements the task itself states.
 - Simplification with `simplify-code` (no behavior-preserving cleanup is left).
@@ -128,7 +128,7 @@ Where the runtime has no means of choosing a tier, this rule settles nothing and
 
 Every loop that checks work and fixes what came back stops on the same conditions. The rule binds a skill's own check-fix loop and the loop that re-invokes it alike:
 
-- **Clean** — a round comes back with nothing blocking: no blocking finding, or a failing check that now passes. This is the normal exit.
+- **Clean** — a round comes back with nothing blocking: no blocking finding, or a failing check that now passes. This is the normal exit (loop-clean — the Loop convergence sense, distinct from the phase-clean gate sense above).
 - **The same finding survives three rounds** of fixes without resolving.
 - **Five rounds in total.**
 - **Either non-clean condition above stops the loop and hands the user the decision**, with the findings still open and where the disagreement stands. Never report clean on the strength of fixes nothing has re-checked.
