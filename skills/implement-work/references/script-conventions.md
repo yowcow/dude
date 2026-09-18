@@ -57,3 +57,5 @@ remote-tracking ref a narrowed clone need not update.
 
 Call `implement-work/scripts/resolve-default-branch.sh`. Never guess a
 name, never read `refs/remotes/origin/HEAD` (stale after a rename).
+`watch-claude-review.sh` still reads `.defaultBranchRef.name` inline;
+item 3 (yowcow/dude#421) converges it.
