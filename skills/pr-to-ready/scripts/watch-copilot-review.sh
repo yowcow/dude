@@ -73,6 +73,8 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # One filter, used for the baseline and for the listing, so the two can never be
 # judged by different rules.
+# shellcheck disable=SC2089 # a jq program, not shell: the quotes are literal
+# and exported verbatim for the poll.sh child below, never re-parsed as shell.
 ID_FILTER='if (.id | type) == "string" then .id else error("not a listing line") end'
 
 # Read once, before the first poll: a baseline that is not a listing is a usage
@@ -83,38 +85,54 @@ if ! BASELINE_IDS="$(jq -r "$ID_FILTER" <"$BASELINE_FILE" 2>/dev/null)"; then
   exit 2
 fi
 
-for _ in $(seq 1 "$MAX_ITER"); do
-  # A failing listing is transient more often than fatal, and it prints nothing on
-  # stdout either way, so it is indistinguishable here from "no review yet" — both
-  # just wait for the next iteration.
+# Reached as the poll.sh check command below (by name, in a child process),
+# which ShellCheck cannot see — same pattern as tests/README.md's tally-only checks.
+# shellcheck disable=SC2317
+check_new_review() {
+  local cur line id unreadable
   cur="$(bash "${SCRIPT_DIR}/list-copilot-reviews.sh" "$OWNER" "$REPO" "$PR" 2>/dev/null || true)"
 
-  if [ -n "$cur" ]; then
-    # One line at a time, so the line printed is the line that was read: stdout
-    # has to carry the bytes list-copilot-reviews.sh produced, and rebuilding the
-    # object through jq would put that equality at the mercy of key order and
-    # escaping. A here-string rather than a pipe into grep, because `grep -q`
-    # exits on its first hit and would SIGPIPE the left-hand side under pipefail.
-    new=()
-    unreadable=""
-    while IFS= read -r line; do
-      if ! id="$(jq -r "$ID_FILTER" <<<"$line" 2>/dev/null)" || [ -z "$id" ]; then
-        unreadable=1
-        break
-      fi
-      if ! grep -qxF -- "$id" <<<"$BASELINE_IDS"; then
-        new+=("$line")
-      fi
-    done <<<"$cur"
-
-    if [ -z "$unreadable" ] && [ "${#new[@]}" -gt 0 ]; then
-      printf '%s\n' "${new[@]}"
-      exit 0
-    fi
+  if [ -z "$cur" ]; then
+    return 1
   fi
 
-  sleep "$INTERVAL"
-done
+  # One line at a time, so the line printed is the line that was read: stdout
+  # has to carry the bytes list-copilot-reviews.sh produced, and rebuilding the
+  # object through jq would put that equality at the mercy of key order and
+  # escaping. A here-string rather than a pipe into grep, because `grep -q`
+  # exits on its first hit and would SIGPIPE the left-hand side under pipefail.
+  new=()
+  unreadable=""
+  while IFS= read -r line; do
+    if ! id="$(jq -r "$ID_FILTER" <<<"$line" 2>/dev/null)" || [ -z "$id" ]; then
+      unreadable=1
+      break
+    fi
+    if ! grep -qxF -- "$id" <<<"$BASELINE_IDS"; then
+      new+=("$line")
+    fi
+  done <<<"$cur"
+
+  if [ -z "$unreadable" ] && [ "${#new[@]}" -gt 0 ]; then
+    printf '%s\n' "${new[@]}"
+    return 0
+  fi
+  return 1
+}
+export -f check_new_review
+# shellcheck disable=SC2090 # ID_FILTER carries a jq program whose quotes are
+# literal; the child reads the value verbatim, never as shell code.
+export OWNER REPO PR BASELINE_IDS ID_FILTER SCRIPT_DIR
+
+set +e
+bash "${SCRIPT_DIR}/../../implement-work/scripts/poll.sh" "${MAX_ITER}" "${INTERVAL}" check_new_review
+poll_status=$?
+set -e
+if [ "$poll_status" -eq 0 ]; then
+  exit 0
+elif [ "$poll_status" -eq 2 ]; then
+  exit 2
+fi
 
 echo "no new Copilot review on ${OWNER}/${REPO}#${PR} within the poll bound" >&2
 exit 1
