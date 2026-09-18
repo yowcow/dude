@@ -68,3 +68,7 @@ Once the report below is drafted, run `review-findings` on it and publish per `u
 7. **Open questions**
 
 What a fix carries into `plan-work` is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to that flow, never work started from here.
+
+## Escalation
+
+This run's stopping conditions are `using-dude`'s **Loop convergence**. One round is one core-loop measurement pass, and a finding repeats when a later pass faults the same layer for the same reason. Evidence that invalidates the framed shortfall is never re-diagnosed in place: stop and return to **Step 1** for re-framing.
