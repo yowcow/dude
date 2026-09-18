@@ -90,7 +90,7 @@ On that failing conclusion, delegate the diagnosis to a subagent: hand it the fa
 - All three exits commit nothing and push nothing, so the tree is left uncommitted. It carries the diagnosis fix and whatever accepted fixes `review-code` applied and verified before it stopped. What differs between the exits is only that last round's own accepted fixes, held unapplied on a `needs-user`.
 - Name what the uncommitted tree holds, keeping the diagnosis fix and the applied fixes apart, and hand over with it. On a `needs-user`, hand over the open findings, the question the worker put to a person, and that round's unapplied verdicts. On a **Loop convergence** stop, hand over the open findings and where the disagreement stands, as that rule requires. On the Critical, hand over the diagnosis and the tree's contents, inside the account of where the review had got to that **Escalation** below already asks for.
 
-**Clean per `using-dude`'s Loop convergence loop-clean = exit 0 with every conclusion passing, or exit 5.** A failing conclusion is the one non-clean answer that loops, subject to `using-dude`'s **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
+**Clean** per `using-dude`'s **Loop convergence** loop-clean = exit 0 with every conclusion passing, or exit 5. A failing conclusion is the one non-clean answer that loops, subject to `using-dude`'s **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
 
 ## Step 2: Request review, then loop on feedback
 
