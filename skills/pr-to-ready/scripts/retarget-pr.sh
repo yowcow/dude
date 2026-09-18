@@ -40,6 +40,7 @@ REPO="$2"
 PR="$3"
 BRANCH="$4"
 BASE="$5"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 if ! CURRENT_BASE="$(gh pr view "$PR" -R "${OWNER}/${REPO}" --json baseRefName --jq '.baseRefName' 2>/dev/null)"; then
   echo "STOP pr-read-failed"
@@ -52,11 +53,10 @@ fi
 # second fetch overwrites FETCH_HEAD, and the gate below runs one
 # (../references/gh-mechanics.md, "Capture the two tips as shas, one per
 # fetch").
-if ! git fetch origin -- "$BASE" >&2; then
+if ! BASE_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "$BASE")"; then
   echo "STOP fetch-failed"
   exit 0
 fi
-BASE_SHA="$(git rev-parse FETCH_HEAD)"
 
 # Retargeting is a job of two stages — the base moves on GitHub, then that
 # base is merged in and pushed — and `baseRefName` reports only the first.
@@ -67,11 +67,10 @@ BASE_SHA="$(git rev-parse FETCH_HEAD)"
 # as this retarget's verification.
 RETARGET_ON_GITHUB=yes
 if [ "$CURRENT_BASE" = "$BASE" ]; then
-  if ! git fetch origin -- "$BRANCH" >&2; then
+  if ! BRANCH_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "$BRANCH")"; then
     echo "STOP branch-fetch-failed"
     exit 0
   fi
-  BRANCH_SHA="$(git rev-parse FETCH_HEAD)"
 
   # 0 and 1 are the two verdicts; anything else is the command failing for a
   # reason of its own. Reading such a failure as either verdict would either
