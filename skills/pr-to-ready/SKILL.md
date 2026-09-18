@@ -28,9 +28,11 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 ## Step 0: Set up the run
 
-### 0-1. Ask whether to mark ready on clean
+### 0-1. Ask ready-on-clean, bind verbose
 
-Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag — fixed for the rest of the run, not re-asked mid-loop. Step 3 branches on it.
+Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on the ready-on-clean flag. Both hold for the rest of the run — ready-on-clean is not re-asked and verbose is not re-bound mid-loop.
+
+Bind **verbose** from the caller's invocation instead of asking: on when it carries `verbose`, `verbose=on`, or `verbose=true` (case-insensitive); off otherwise, including an explicit `verbose=off`. Off keeps observability output in the round's report to the caller instead of posting it. Quiet is the ordinary path; verbose is for when a later attribution may need the full record.
 
 ### 0-2. Resolve the run from the PR reference
 
@@ -133,7 +135,7 @@ Delegate collection to a subagent:
 
 **Count the `needs-user` verdicts back in the orchestrator before anything else.** One or more ends the round before anything is applied: it takes the **third terminal state**.
 
-- Nothing is fixed, nothing is committed or pushed, and no thread is replied to or resolved; still post as the posting paragraph below (values actually read plus needs-user verdicts) before handing over.
+- Nothing is fixed, nothing is committed or pushed, and no thread is replied to or resolved; record the values actually read plus needs-user verdicts per the Posting gate below before handing over.
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
@@ -161,12 +163,13 @@ When there is at least one finding and every finding is `reject`:
 
 **Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
 
-- Post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment.
+- When **verbose** is off, skip the aggregate PR comment: thread replies and resolution still run except on a needs-user round, where they are skipped per above, and the verdict travels in the round's report to the caller instead — on a needs-user round, that report is the handover itself.
+- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment.
 
 #### Where to write
 
-- Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
-- Record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one new PR comment per round.
+- On every round except a needs-user one, where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
+- When verbose is on, record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one new PR comment per round.
 
 #### What to write
 
@@ -200,7 +203,7 @@ The round's single comment shows only the human-readable verdict outside the fol
 4. the PR's base is the one Step 1 most recently resolved;
 5. mergeability came back **`MERGEABLE`** — the field `gh-mechanics.md`'s "## Mergeability" says to trust. `UNKNOWN` is not a pass: it means the remote couldn't settle it even after the bounded re-read, so nothing is known yet.
 
-**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting), so Clean on that SHA can be re-derived later.
+**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting) when verbose is on — in the round's report to the caller when off — so Clean on that SHA can be re-derived later.
 
 When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop:
 - conditions 2 or 3 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
@@ -224,9 +227,9 @@ A round here is one 2-1 → 2-2 → 2-3 cycle, whether or not it entered the cle
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean. Post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below. The final comment follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+Once Step 2 exits clean, re-confirm the same five conditions on the SHA it leaves from — measuring only, fixing nothing. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean. When **verbose** is on, post the re-confirmed measured-tip SHA and values with the listing exit codes and outputs as a final comment before branching below; when off, keep them in the round's report to the caller instead. The final comment, when posted, follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
-Otherwise branch on the flag Step 0 recorded:
+Otherwise branch on the ready-on-clean flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
 - **ready-on-clean = no**: report that CI and review are clean.
 
