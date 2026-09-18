@@ -27,6 +27,11 @@
 # executes a call into another directory.
 #
 # Usage: ensure-draft-pr.sh <branch> <title> <body-file>
+#
+# Output contract (single source; skills/implement-work/SKILL.md cites this):
+#   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
+#   PR <n> created draft=<bool> base=<base> url=<url> -- this run opened it.
+#   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then

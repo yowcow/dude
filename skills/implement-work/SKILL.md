@@ -186,11 +186,7 @@ Push the branch to `origin` under its own name, unconditionally.
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
-Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints:
-
-- `PR <n> found draft=<bool> url=<url>` — an earlier session on this branch already opened one. Take it as the deliverable and **leave its status as it is**: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen.
-- `PR <n> created draft=true base=<base> url=<url>` — this run opened it.
-- `STOP <slug>` — no PR was opened. Report the stop, and hand the branch over regardless.
+Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints — the output contract in that script's header is the single source. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
 
 Title and body follow the repo's PR template when it has one.
 
