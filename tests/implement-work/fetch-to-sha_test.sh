@@ -56,6 +56,10 @@ run_in "$W"
 assert_row 'no-arguments' 2 '' 0
 
 row_start
+run_in "$W" ""
+assert_row 'empty-ref-is-usage-error' 2 '' 0
+
+row_start
 run_in "$W" trunk extra
 assert_row 'too-many-arguments' 2 '' 0
 

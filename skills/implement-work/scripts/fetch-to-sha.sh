@@ -18,7 +18,7 @@
 # Usage: fetch-to-sha.sh <ref>
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 1 ] || [ -z "$1" ]; then
   echo "Usage: $0 <ref>" >&2
   exit 2
 fi
