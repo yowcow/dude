@@ -43,7 +43,9 @@ i=0
 while [ "$i" -lt "$MAX" ]; do
   i=$((i + 1))
   if output="$("$@" 2>/dev/null)"; then
-    printf '%s\n' "$output"
+    if [ -n "$output" ]; then
+      printf '%s\n' "$output"
+    fi
     exit 0
   fi
   LAST_OUTPUT="$output"

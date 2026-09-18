@@ -67,6 +67,10 @@ SUCCEED_AT=99 run_sut bash "$SUT" 2 0 false
 assert_row 'exhausted-empty-output' 1 '' 0
 
 row_start
+run_sut bash "$SUT" 3 0 true
+assert_row 'succeeds-empty-output' 0 '' 0
+
+row_start
 run_sut bash "$SUT" 10 0
 assert_row 'no-command' 2 '' 0
 

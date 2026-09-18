@@ -14,7 +14,7 @@ fi
 
 Shape, not just number: `Usage: ...` on stderr, nothing on stdout, exit 2.
 Numeric arguments are validated with `[[ "$X" =~ ^[0-9]+$ ]]`
-(`resolve-thread.sh` precedent); a non-numeric value is a usage error.
+(`resolve-thread.sh` regex-shape precedent; its own exit stays 1); a non-numeric value is a usage error.
 Existing scripts `resolve-range.sh`, `resolve-pr-base.sh`, `retarget-pr.sh`,
 `resolve-thread.sh`, `resolve-pr-entry.sh`, `resolve-base.sh`,
 `read-base-trailer.sh`, `resolve-branch.sh`, `absorb-base.sh`,
