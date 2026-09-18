@@ -94,7 +94,7 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
    - Fold every accepted finding in yourself — except one that invalidates the agreed design, which is not folded in at all: stop and take the **Design invalidated** exit below.
    - Then re-run `review-plan`, handing over the record of the previous pass.
 4. Leave by exactly one of three exits:
-   - **Clean** — no blocking finding → **Execution**.
+   - **Clean** per `using-dude`'s **Loop convergence** loop-clean — no blocking finding → **Execution**.
    - **Design invalidated** — a Critical finding that undoes the agreed design → take **Escalation**.
    - **Stalled** — one of `using-dude`'s **Loop convergence** non-clean stopping conditions fired while a blocking finding that doesn't invalidate the design survives → stop and let the user decide, per that rule.
      - A round is one `review-plan` pass on this plan and the fold-in that follows it.
@@ -172,7 +172,7 @@ Add only what the execution method left undone.
    | 2 | **`review-code` stopped short of clean with blocking findings open**, per `using-dude`'s **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
    | 3 | **This gate's own rounds hit one of those non-clean conditions** — the gate as an ordinary loop, rather than as the receiver of `review-code`'s stop | Stop and hand the decision over the same way |
    | 4 | **Any step of this round changed something** — code, or a base absorbed by step 5 | Back to step 1 — verification and simplification have to run against the tree as it now stands |
-   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per `using-dude`'s **Loop convergence** |
+   | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per `using-dude`'s **Loop convergence** loop-clean |
 
    The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward.
 
