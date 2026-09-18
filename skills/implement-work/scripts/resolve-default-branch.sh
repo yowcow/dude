@@ -17,6 +17,13 @@
 # slug printed from here would land in the caller's command substitution and
 # be read back as a branch name.
 #
+# Canonical source: this script is the one implementation of "default branch
+# name" other scripts call (`watch-claude-review.sh` still reads
+# `.defaultBranchRef.name` inline; item 3 converges it); conventions and the
+# STOP registry live beside it at references/script-conventions.md and
+# references/stop-registry.md. Do not add rungs here and do not print a
+# slug here — both stay with the caller per the paragraphs above.
+#
 # Two rungs, never guessing a branch name: the GitHub API, then give up and let
 # the caller ask a person. `.defaultBranchRef.name` is the bare name, which is
 # what every caller takes -- one compares it against branch names, two hand it
