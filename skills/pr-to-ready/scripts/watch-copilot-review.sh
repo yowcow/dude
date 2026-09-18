@@ -87,7 +87,7 @@ for _ in $(seq 1 "$MAX_ITER"); do
   # A failing listing is transient more often than fatal, and it prints nothing on
   # stdout either way, so it is indistinguishable here from "no review yet" — both
   # just wait for the next iteration.
-  cur="$(bash "$SCRIPT_DIR/list-copilot-reviews.sh" "$OWNER" "$REPO" "$PR" 2>/dev/null || true)"
+  cur="$(bash "${SCRIPT_DIR}/list-copilot-reviews.sh" "$OWNER" "$REPO" "$PR" 2>/dev/null || true)"
 
   if [ -n "$cur" ]; then
     # One line at a time, so the line printed is the line that was read: stdout
