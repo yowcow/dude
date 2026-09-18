@@ -269,11 +269,11 @@ assert_row 'task-branch-absent-on-remote' 0 'STOP fetch-failed\n' 1
 row_start
 W="$(work_repo args-none "$REMOTE_PLAIN" main)"
 run_in "$W"
-assert_row 'no-argument' 1 '' 0
+assert_row 'no-argument' 2 '' 0
 
 row_start
 W="$(work_repo args-extra "$REMOTE_PLAIN" main)"
 run_in "$W" feature extra
-assert_row 'too-many-arguments' 1 '' 0
+assert_row 'too-many-arguments' 2 '' 0
 
 harness_exit "$failed" "$total"

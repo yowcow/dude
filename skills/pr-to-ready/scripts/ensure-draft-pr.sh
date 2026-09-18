@@ -36,7 +36,7 @@ set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <branch> <title> <body-file>" >&2
-  exit 1
+  exit 2
 fi
 
 BRANCH="$1"

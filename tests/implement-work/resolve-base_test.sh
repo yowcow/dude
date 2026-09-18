@@ -183,7 +183,7 @@ REMOTE="$(build_remote base)"
 row_start
 W="$(work_repo args-extra "$REMOTE" main)"
 run_in "$W" 203 extra
-assert_row 'too-many-arguments' 1 '' 0
+assert_row 'too-many-arguments' 2 '' 0
 tally check_tracking 'too-many-arguments: origin/main' "$W" "$REMOTE" main stale
 
 total=$((total + 1))

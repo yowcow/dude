@@ -225,6 +225,6 @@ assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n' 0
 row_start
 W="$(build_case argsthree clean)"
 run_in "$W" task main extra
-assert_row 'three-arguments' 1 '' 0
+assert_row 'three-arguments' 2 '' 0
 
 harness_exit "$failed" "$total"

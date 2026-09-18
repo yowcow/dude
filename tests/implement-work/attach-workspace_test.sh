@@ -274,13 +274,13 @@ tally check_absent 'no-origin-remote-is-not-absent: no workspace was created' "$
 row_start
 W="$(build_repo argsnone)"
 run_in "$W"
-assert_row 'no-arguments' 1 '' 0
+assert_row 'no-arguments' 2 '' 0
 tally check_stderr_has 'no-arguments: usage is printed' 'Usage:'
 
 row_start
 W="$(build_repo argsthree)"
 run_in "$W" task "$(wt_path argsthree-new)" extra
-assert_row 'three-arguments' 1 '' 0
+assert_row 'three-arguments' 2 '' 0
 
 # ---- the worktree lookup matches one exact line ------------------------
 #

@@ -24,7 +24,7 @@ set -euo pipefail
 
 if [ "$#" -gt 1 ]; then
   echo "Usage: $0 [pr-number]" >&2
-  exit 1
+  exit 2
 fi
 
 PR="${1:-}"

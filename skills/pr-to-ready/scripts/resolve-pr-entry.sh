@@ -47,7 +47,7 @@ set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <pr-number-or-url>" >&2
-  exit 1
+  exit 2
 fi
 
 REF="$1"
@@ -139,7 +139,7 @@ elif [[ "$REF" =~ ^(https?://)?[^/]+/([^/]+)/([^/]+)/pull/([0-9]+)([/?#].*)?$ ]]
   fi
 else
   echo "error: unrecognized PR reference '${REF}'" >&2
-  exit 1
+  exit 2
 fi
 
 # --- Step 3: one lookup, read as three answers. ---

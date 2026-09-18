@@ -9,7 +9,7 @@ set -euo pipefail
 
 if [ "$#" -gt 1 ]; then
   echo "Usage: $0 [issue-number]" >&2
-  exit 1
+  exit 2
 fi
 
 ISSUE="${1:-}"

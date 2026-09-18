@@ -303,7 +303,7 @@ assert_row 'pr-lookup-fails' 0 'STOP pr-lookup-failed\n' 1
 
 row_start
 run_in "$NOREPO" 42 extra
-assert_row 'too-many-arguments' 1 '' 0
+assert_row 'too-many-arguments' 2 '' 0
 
 REMOTE="$(build_remote ranged with-dep)"
 TRUNK_SHA="$(bare_sha "$REMOTE" trunk)"

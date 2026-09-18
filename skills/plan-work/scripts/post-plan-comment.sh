@@ -30,7 +30,7 @@ set -euo pipefail
 
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <owner> <repo> <issue-number> <body-file>" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"

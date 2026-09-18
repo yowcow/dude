@@ -23,7 +23,7 @@ set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <branch>" >&2
-  exit 1
+  exit 2
 fi
 
 BRANCH="$1"

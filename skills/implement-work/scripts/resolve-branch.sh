@@ -8,7 +8,7 @@ set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <issue-number>" >&2
-  exit 1
+  exit 2
 fi
 
 ISSUE="$1"
@@ -19,7 +19,7 @@ ISSUE="$1"
 # the caller to attach to another task's work.
 if ! [[ "${ISSUE}" =~ ^[0-9]+$ ]]; then
   echo "error: issue number must be numeric, got '${ISSUE}'" >&2
-  exit 1
+  exit 2
 fi
 
 LOCAL="$(git branch --list "${ISSUE}-*" --format='%(refname:short)')"

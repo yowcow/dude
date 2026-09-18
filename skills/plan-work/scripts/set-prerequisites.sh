@@ -22,7 +22,7 @@ set -euo pipefail
 if [ "$#" -lt 3 ]; then
   echo "Usage: $0 <owner> <repo> <child-number> [<prereq-number>...]" >&2
   echo "       pass no prerequisite numbers to make the item independent" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"

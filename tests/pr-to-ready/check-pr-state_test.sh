@@ -76,11 +76,11 @@ assert_row 'unknown-then-resolves-on-re-read' 0 'BASE-OK main MERGEABLE\n' 2
 
 row_start
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR"
-assert_row 'too-few-args' 1 '' 0
+assert_row 'too-few-args' 2 '' 0
 
 row_start
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main extra
-assert_row 'too-many-args' 1 '' 0
+assert_row 'too-many-args' 2 '' 0
 
 # ---- exhausting the re-read leaves UNKNOWN as the terminal answer ---------
 #

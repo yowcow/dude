@@ -200,14 +200,14 @@ assert_row 'null node without errors' 0 'STOP no-pr\n' 1
 # --- 15/16/17. usage errors are exits, not STOP lines --------------------
 row_start
 run_sut_in "$WIDGETS" bash "$SUT"
-assert_row 'no argument' 1 '' 0
+assert_row 'no argument' 2 '' 0
 
 row_start
 run_sut_in "$WIDGETS" bash "$SUT" 12 extra
-assert_row 'two arguments' 1 '' 0
+assert_row 'two arguments' 2 '' 0
 
 row_start
 run_sut_in "$WIDGETS" bash "$SUT" 'not-a-reference'
-assert_row 'unparseable reference' 1 '' 0
+assert_row 'unparseable reference' 2 '' 0
 
 harness_exit "$failed" "$total"

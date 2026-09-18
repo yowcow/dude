@@ -32,7 +32,7 @@ set -euo pipefail
 
 if [ "$#" -ne 5 ]; then
   echo "Usage: $0 <owner> <repo> <pr-number> <branch> <base>" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"
