@@ -82,7 +82,7 @@ One invocation is one pass, and a pass is as many rounds as it takes:
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**. A pass whose step 4 ended on a `needs-user` does not come back here.
 7. Report per **Report**.
 
-A round is one review → judge → fix → verify cycle. The pass is clean when a round's review produces no Critical or Important finding and no verdict came back `needs-user`. Minor findings are recorded, not blocking — except one whose verdict came back `needs-user`, per **Escalation**.
+A round is one review → judge → fix → verify cycle. The pass is clean per `using-dude`'s **Loop convergence** loop-clean when a round's review produces no Critical or Important finding and no verdict came back `needs-user`. Minor findings are recorded, not blocking — except one whose verdict came back `needs-user`, per **Escalation**.
 
 ## Escalation
 

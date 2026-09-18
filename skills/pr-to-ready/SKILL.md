@@ -90,7 +90,7 @@ On that failing conclusion, delegate the diagnosis to a subagent: hand it the fa
 - All three exits commit nothing and push nothing, so the tree is left uncommitted. It carries the diagnosis fix and whatever accepted fixes `review-code` applied and verified before it stopped. What differs between the exits is only that last round's own accepted fixes, held unapplied on a `needs-user`.
 - Name what the uncommitted tree holds, keeping the diagnosis fix and the applied fixes apart, and hand over with it. On a `needs-user`, hand over the open findings, the question the worker put to a person, and that round's unapplied verdicts. On a **Loop convergence** stop, hand over the open findings and where the disagreement stands, as that rule requires. On the Critical, hand over the diagnosis and the tree's contents, inside the account of where the review had got to that **Escalation** below already asks for.
 
-**Clean = exit 0 with every conclusion passing, or exit 5.** A failing conclusion is the one non-clean answer that loops, subject to `using-dude`'s **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
+**Clean** per `using-dude`'s **Loop convergence** loop-clean = exit 0 with every conclusion passing, or exit 5. A failing conclusion is the one non-clean answer that loops, subject to `using-dude`'s **Loop convergence**. A round here is one watch → diagnose → fix → push cycle; a failure is the same one when the same check fails for the same reason a previous round's fix targeted.
 
 ## Step 2: Request review, then loop on feedback
 
@@ -192,7 +192,7 @@ The round's single comment shows only the human-readable verdict outside the fol
 
 ### Clean judgment & stop conditions
 
-**Clean** holds when all five of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, recorded as that judgment's measured-tip SHA:
+**Clean** per `using-dude`'s **Loop convergence** loop-clean holds when all five of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, recorded as that judgment's measured-tip SHA:
 
 1. the checks came back clean in Step 1's sense — exit 0 with every conclusion passing, or the exit 5 that says this repository runs none;
 2. this round's Claude run leaves no actionable finding — every comment on it is "looks good"/LGTM-equivalent. Do not re-read comments from an earlier round this run already resolved;
@@ -223,7 +223,7 @@ When it isn't clean, what to do follows from which condition failed, and every r
    - This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
 6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision.
 
-A round here is one 2-1 → 2-2 → 2-3 cycle, whether or not it entered the clean judgment; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
+A round here is one 2-1 → 2-2 → 2-3 cycle per `using-dude`'s **Loop convergence**, whether or not it entered the clean judgment; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
 
 ## Step 3: Finish
 
