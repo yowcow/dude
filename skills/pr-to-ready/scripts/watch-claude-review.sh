@@ -55,6 +55,7 @@ fi
 
 BRANCH="$1"
 RUN_ID="${2:-}"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # grep exits 1 when nothing matches, which set -e would turn into an abort, so
 # the substitution is guarded and the emptiness of wf is what gets tested.
@@ -73,7 +74,7 @@ fi
 wf="$(basename "$wf")"
 
 if [ -z "$RUN_ID" ]; then
-  default_branch="$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)"
+  default_branch="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")"
   gh run list --workflow="$wf" --limit 100 \
     --json databaseId,conclusion,createdAt,displayTitle,headBranch |
     jq --arg b "$BRANCH" --arg d "$default_branch" \

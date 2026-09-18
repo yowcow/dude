@@ -92,7 +92,7 @@ total=0
 # stub_default_branch [<exit-status>] -- the opening `gh repo view`
 stub_default_branch() {
   printf '%s\n' "$DEFAULT_BRANCH" |
-    gh_stub_response '*' "${1:-0}" repo view --json defaultBranchRef -q .defaultBranchRef.name
+    gh_stub_response '*' "${1:-0}" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
 # stub_listing <body-file> [<limit>] [<exit-status>] -- one `gh run list` page.
