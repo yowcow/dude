@@ -30,7 +30,7 @@ fi
 # gate above, so a whole-file grep would fail on text this gate does not own.
 total=$((total + 1))
 HANDOFF="$(sed -n '/^## Hand off/,/^## Report/p' "$SKILL")"
-if printf '%s' "$HANDOFF" | grep -qF 'PR <n> found' || printf '%s' "$HANDOFF" | grep -qF 'PR <n> created' || printf '%s' "$HANDOFF" | grep -qF 'STOP <slug>'; then
+if printf '%s' "$HANDOFF" | grep -qF -e 'PR <n> found' -e 'PR <n> created' -e 'STOP <slug>'; then
   printf 'FAIL literal: Hand off restates the script output contract\n'
   failed=$((failed + 1))
 else
