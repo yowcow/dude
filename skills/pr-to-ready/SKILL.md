@@ -115,7 +115,7 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 
 If the reviewers set is empty, skip this step and 2-2; go to Step 3.
 
-Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts.
+Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts or dispatch its subagent.
 
 Capture the round-request SHA once before any selected request goes out.
 
@@ -127,6 +127,7 @@ Capture the round-request SHA once before any selected request goes out.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the round's single comment (Posting below). That record, not a separate mark, is what tells a later reader the request from a manual click on the timeline, so post no mark here.
+- **Requesting**: only if requesting is in the set. Dispatch one read-only advisory subagent applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
 
 If this step requested nobody, skip 2-2 and go to Step 3.
 
