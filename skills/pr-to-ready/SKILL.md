@@ -14,11 +14,11 @@ Take an open PR to a reviewed one: resolve the run from the PR's number or URL, 
 
 ## Orchestration model
 
-Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the five conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, Step 3's re-confirmation of the five conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
+Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the six conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, plus the requesting dispatch where selected, Step 3's re-confirmation of the six conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
 
 **Never delegate:** the clean judgment and stop conditions, including reading whether checks pass; any change that touches the worktree, together with committing and pushing it; and any write to the PR itself — comments, thread replies, thread resolution, marking it ready.
 
-**Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; collecting reviewer comments into a structured list of findings; and evaluating each finding. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
+**Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; running the requesting review where selected; collecting reviewer comments into a structured list of findings; and evaluating each finding. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
 **Evaluating a finding never happens in the main loop**, on any round, and goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
 
@@ -33,7 +33,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 Ask the user two things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
-- Which of Copilot and Claude should this run request, from none to both? Default both. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+- Which of Copilot, Claude, and requesting should this run request, from none to all three? Default Copilot and Claude; requesting is opt-in. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
 All three hold for the rest of the run — ready-on-clean is not re-asked, the reviewers set is not re-asked, and verbose is not re-bound mid-loop.
 
