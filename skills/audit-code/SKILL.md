@@ -18,9 +18,9 @@ A repository, or a path within one. Closing any gap against `using-dude`'s **Und
 
 ## Explore
 
-### Step 1: Propose axes, have a person confirm them
+### Step 1: Select axes
 
-- Propose 3–5 axes from the repository's shape, spread across defects, contradictions, security, and whatever else the tree suggests rather than skewing toward one field; a person confirms. With no answer, proceed with the proposal as is.
+- Select 3–5 axes from the repository's shape, spread across defects, contradictions, security, and whatever else the tree suggests rather than skewing toward one field; sweep what the caller named, if any, otherwise the selection. Record axes considered but not swept under Not measured.
 - An axis nothing can measure is not an axis. It is a question to hand back to a person.
 
 ### Step 2: Fix the measurement base
@@ -30,7 +30,7 @@ A repository, or a path within one. Closing any gap against `using-dude`'s **Und
 
 ### Step 3: Sweep each axis
 
-- Sweep each confirmed axis against the tree from Step 2. Separate evidence that establishes a finding from evidence that only suggests one.
+- Sweep each selected axis against the tree from Step 2. Separate evidence that establishes a finding from evidence that only suggests one.
 
 ## Synthesize
 
