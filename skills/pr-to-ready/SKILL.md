@@ -180,7 +180,7 @@ When there is at least one finding and every finding is `reject`:
 **Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
 
 - When **verbose** is off, skip the aggregate PR comment: thread replies and resolution still run except on a needs-user round, where they are skipped per above, and the verdict travels in the round's report to the caller instead — on a needs-user round, that report is the handover itself.
-- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment.
+- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment. Requesting verdicts aggregate the same way as the other reviewers' — the round's report to the caller when verbose is off, the single aggregate PR comment when on.
 
 #### Where to write
 
@@ -191,8 +191,8 @@ When there is at least one finding and every finding is `reject`:
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
-| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting round the subagent return reference plus the posted comment id/URL. |
+| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting round the posted requesting-comment id. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
 #### What not to write
@@ -202,9 +202,9 @@ When there is at least one finding and every finding is `reject`:
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
 | Newly posted aggregate PR comment | May not mention `@claude`, which would re-trigger the workflow. |
 
-Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies or the aggregate comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the aggregate comment, or the 2-2 requesting post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
-The round's single comment shows only the human-readable verdict outside the fold — one line per finding, or LGTM where there was no finding — and puts everything else (request/skip decisions, SHAs, exit codes, listing outputs, and any SKILL-internal words such as round numbers or step names) inside a single `<details>` block labelled exactly `Details`, so the timeline stays scannable to a reader who never saw this skill.
+The round's single comment shows only the human-readable verdict outside the fold — one line per finding, or LGTM where there was no finding — and puts everything else (request/skip decisions, SHAs, exit codes, listing outputs, requesting comment id, and any SKILL-internal words such as round numbers or step names) inside a single `<details>` block labelled exactly `Details`, so the timeline stays scannable to a reader who never saw this skill.
 
 ### Clean judgment & stop conditions
 
