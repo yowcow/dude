@@ -11,7 +11,7 @@ set -euo pipefail
 
 if [ "$#" -lt 4 ]; then
   echo "Usage: $0 <owner> <repo> <pr-number> <comment-id> [comment-id...]" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"

@@ -18,9 +18,9 @@
 # in short, exit status and line count must be read together, and a numeric
 # branch name would otherwise be misread by `gh pr view` as a PR number.
 #
-# The sibling script is invoked through "$(dirname "${BASH_SOURCE[0]}")" —
-# never a bare name or a cwd-relative path — because this script is normally
-# run from somewhere other than its own directory. A bare name dies with
+# The sibling script is invoked through SCRIPT_DIR (conventions) — never a
+# bare name or a cwd-relative path — because this script is normally run from
+# somewhere other than its own directory. A bare name dies with
 # "command not found" under `set -euo pipefail`, which exits non-zero with a
 # bash error on stderr instead of the contracted `STOP <reason-slug>` on
 # stdout; that failure mode is invisible to `bash -n`, since it never
@@ -36,12 +36,14 @@ set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 <branch> <title> <body-file>" >&2
-  exit 1
+  exit 2
 fi
 
 BRANCH="$1"
 TITLE="$2"
 BODY_FILE="$3"
+
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Run the existence lookup and hand the caller both halves of the answer:
 # LOOKUP (one line per matching PR, "<number> <isDraft> <url>") and LINE_COUNT.
@@ -128,7 +130,7 @@ fi
 # failure (bad invocation, runtime error) and is propagated unchanged so it is
 # not misreported as an unrecognised state.
 sibling_status=0
-RESOLVED="$("$(dirname "${BASH_SOURCE[0]}")/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
+RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
 if [ "$sibling_status" -eq 1 ]; then
   echo "STOP unrecognised-pr-state"
   exit 0

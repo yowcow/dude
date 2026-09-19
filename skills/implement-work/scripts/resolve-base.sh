@@ -9,7 +9,7 @@ set -euo pipefail
 
 if [ "$#" -gt 1 ]; then
   echo "Usage: $0 [issue-number]" >&2
-  exit 1
+  exit 2
 fi
 
 ISSUE="${1:-}"
@@ -17,11 +17,6 @@ ISSUE="${1:-}"
 # The default branch is resolved by resolve-default-branch.sh beside this
 # script -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-
-# Fetch the branch, so the caller can cut from origin/<name>.
-fetch_ref() {
-  git fetch origin -- "$1" >&2
-}
 
 # blockedBy and closedByPullRequestsReferences must be counted, never merely
 # checked for emptiness — "is it empty" cannot tell one prerequisite from
@@ -36,7 +31,9 @@ fi
 
 if [ "${BLOCKED_COUNT}" -eq 0 ]; then
   DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-  fetch_ref "${DEFAULT}"
+  if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+    exit 1
+  fi
   echo "BASE ${DEFAULT}"
   exit 0
 fi
@@ -72,11 +69,15 @@ STATE="${PR_INFO##* }"
 case "${STATE}" in
   MERGED)
     DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-    fetch_ref "${DEFAULT}"
+    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+      exit 1
+    fi
     echo "BASE ${DEFAULT}"
     ;;
   OPEN)
-    fetch_ref "${HEAD_REF}"
+    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${HEAD_REF}" >/dev/null; then
+      exit 1
+    fi
     echo "BASE ${HEAD_REF}"
     ;;
   CLOSED)

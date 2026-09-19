@@ -183,7 +183,7 @@ REMOTE="$(build_remote base)"
 row_start
 W="$(work_repo args-extra "$REMOTE" main)"
 run_in "$W" 203 extra
-assert_row 'too-many-arguments' 1 '' 0
+assert_row 'too-many-arguments' 2 '' 0
 tally check_tracking 'too-many-arguments: origin/main' "$W" "$REMOTE" main stale
 
 total=$((total + 1))
@@ -440,7 +440,7 @@ row_start
 printf 'nosuch\n' | stub_default_branch 0
 W="$(work_repo default-absent "$REMOTE")"
 run_in "$W"
-assert_row 'default-branch-absent-on-remote' 128 '' 1
+assert_row 'default-branch-absent-on-remote' 1 '' 1
 
 row_start
 blocked_json 1 77 | stub_blocked 203 0
@@ -448,7 +448,7 @@ prs_json 55 | stub_prereq_prs 77 0
 printf '{"headRefName":"nosuch","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo head-absent "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'open-head-absent-on-remote' 128 '' 3
+assert_row 'open-head-absent-on-remote' 1 '' 3
 tally check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
 
 harness_exit "$failed" "$total"

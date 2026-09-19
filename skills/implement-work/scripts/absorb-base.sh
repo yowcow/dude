@@ -8,11 +8,12 @@ set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
   echo "Usage: $0 <branch> <base>" >&2
-  exit 1
+  exit 2
 fi
 
 BRANCH="$1"
 BASE="$2"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # Everything below is repo-root-relative -- the paths printed for a conflict,
 # and the merge itself -- so the script works from the top level rather than
@@ -51,16 +52,11 @@ fi
 # FETCH_HEAD on every call, and within one round of the completion gate
 # `review-code`'s own range resolution fetches too -- so an inherited
 # FETCH_HEAD names whichever ref was fetched last, and merging that absorbs
-# some other branch entirely while still printing MERGED. A
-# refs/remotes/origin/<base> left by an earlier round is the same defect one
-# step quieter: it is stale, so the base's newer commits are absent and the
-# answer is UP-TO-DATE for a base that has moved.
-if ! git fetch origin -- "${BASE}" >&2; then
+# some other branch entirely while still printing MERGED. The tip comes from fetch-to-sha.sh rather than refs/remotes/origin/<base>, which goes stale with the clone's fetch history.
+if ! BASE_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BASE}")"; then
   echo "STOP base-fetch-failed"
   exit 0
 fi
-
-BASE_SHA="$(git rev-parse "refs/remotes/origin/${BASE}")"
 
 # The pre-check is what lets the completion gate terminate. `git merge` exits
 # 0 for a base already contained in the branch, so without it every round

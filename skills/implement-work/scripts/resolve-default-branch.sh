@@ -48,6 +48,11 @@
 # Usage: resolve-default-branch.sh
 set -euo pipefail
 
+if [ "$#" -gt 0 ]; then
+  echo "Usage: $0" >&2
+  exit 2
+fi
+
 if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
   printf '%s\n' "$ref"
   exit 0

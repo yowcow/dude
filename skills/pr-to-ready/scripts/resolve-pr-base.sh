@@ -23,14 +23,10 @@ set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <branch>" >&2
-  exit 1
+  exit 2
 fi
 
 BRANCH="$1"
-
-fetch_ref() {
-  git fetch origin -- "$1" >&2
-}
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
@@ -53,12 +49,12 @@ DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-bran
 # fetch-failed, the caller could not tell a missing task branch from a
 # missing default branch, and the two want different answers from the person
 # they stop for.
-if ! fetch_ref "${DEFAULT}"; then
+if ! DEFAULT_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${DEFAULT}")"; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
 
-if ! fetch_ref "${BRANCH}"; then
+if ! bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BRANCH}" >/dev/null; then
   echo "STOP fetch-failed"
   exit 0
 fi
@@ -71,8 +67,7 @@ fi
 #
 # The revs are chosen here rather than there because they are this caller's
 # question. The scan runs from the branch tip just fetched and stops at the
-# default branch, and the exclusion names the remote-tracking ref that fetch
-# updated rather than a local branch that may be absent or stale. Unbounded,
+# default branch, and the exclusion names the saved default-branch SHA rather than a remote-tracking ref a narrowed clone need not have updated. Unbounded,
 # the scan walks to root, so a branch that recorded nothing picks up whatever
 # Base-Branch some unrelated commit left in shared history and hands that
 # branch back as --base -- which ensure-draft-pr.sh then passes to
@@ -83,7 +78,7 @@ fi
 # an unrecognised PR state, whose message it has already put on stderr --
 # leaves this script exiting 1 with nothing on stdout, instead of a second
 # message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" FETCH_HEAD "^refs/remotes/origin/${DEFAULT}")"; then
+if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"; then
   exit 1
 fi
 

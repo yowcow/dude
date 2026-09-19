@@ -16,7 +16,7 @@ set -euo pipefail
 
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <owner> <repo> <comment-id> <body-file>" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"
@@ -24,16 +24,12 @@ REPO="$2"
 COMMENT_ID="$3"
 BODY_FILE="$4"
 
-# `-r` as well as `-f`: with `-f` alone a file that exists with mode 000 walks
-# through and only the `<"$BODY_FILE"` redirect fails, while the `gh` on the
-# right of the pipeline is forked and runs regardless — one API call after all,
-# which is what this guard exists to prevent. post-plan-comment.sh's identical
-# guard carries the longer form of the reason.
-if [ ! -f "$BODY_FILE" ] || [ ! -r "$BODY_FILE" ]; then
-  echo "error: body file is not readable: $BODY_FILE" >&2
+# Body guard and `jq -Rs` wrap live in plan-comment-payload.sh.
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+if ! PAYLOAD="$(bash "${SCRIPT_DIR}/plan-comment-payload.sh" "$BODY_FILE")"; then
   exit 1
 fi
 
-jq -Rs '{body: .}' <"$BODY_FILE" \
+printf '%s\n' "$PAYLOAD" \
   | gh api --method PATCH "repos/$OWNER/$REPO/issues/comments/$COMMENT_ID" --input - \
     --jq '.html_url'

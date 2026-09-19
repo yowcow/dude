@@ -136,7 +136,7 @@ assert_row 'multiple-matches' 0 '201-a\n201-b\n201-c\n' 0
 row_start
 W="$(build_case nonnumeric foo-x)"
 run_in "$W" foo
-assert_row 'non-numeric-argument' 1 '' 0
+assert_row 'non-numeric-argument' 2 '' 0
 
 # ---- ls-remote itself failed -------------------------------------------
 #
@@ -160,11 +160,11 @@ tally check_eq 'ls-remote-itself-failed: names the failure on stderr' 'yes' \
 row_start
 W="$(build_case argsnone)"
 run_in "$W"
-assert_row 'no-arguments' 1 '' 0
+assert_row 'no-arguments' 2 '' 0
 
 row_start
 W="$(build_case argstwo)"
 run_in "$W" 201 extra
-assert_row 'two-arguments' 1 '' 0
+assert_row 'two-arguments' 2 '' 0
 
 harness_exit "$failed" "$total"

@@ -24,7 +24,7 @@ set -euo pipefail
 
 if [ "$#" -gt 1 ]; then
   echo "Usage: $0 [pr-number]" >&2
-  exit 1
+  exit 2
 fi
 
 PR="${1:-}"
@@ -64,12 +64,10 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # clone's fetch history, while FETCH_HEAD is what the fetch just wrote.
 DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
-if ! git fetch origin -- "${DEFAULT}" >&2; then
+if ! TIP_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${DEFAULT}")"; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
-
-TIP_SHA="$(git rev-parse FETCH_HEAD)"
 
 # The trailer scan, the prerequisite lookup, and the three answers both
 # readers print identically live in
@@ -126,7 +124,7 @@ case "${KIND}" in
     ;;
 esac
 
-# Every prereq row fetches, and reads FETCH_HEAD rather than a
+# Every prereq row fetches, and reads the fetched SHA rather than FETCH_HEAD or a
 # remote-tracking ref: a fetch always writes FETCH_HEAD, whereas updating
 # `refs/remotes/origin/<name>` depends on the clone's remote.origin.fetch
 # refspec — which `refs/pull/<n>/head` sits outside of in every clone, and
@@ -134,12 +132,12 @@ esac
 # a tracking ref, a branch cut from a freshly fetched tip would be measured
 # against whatever an older fetch wrote, putting merge-base *below* the fork
 # point and sweeping somebody else's commits into the reviewed range.
-if ! git fetch origin -- "${FETCH_SPEC}" >&2; then
+if ! FETCH_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${FETCH_SPEC}")"; then
   echo "STOP fetch-failed"
   exit 0
 fi
 
-if ! BASE_SHA="$(git merge-base FETCH_HEAD HEAD)"; then
+if ! BASE_SHA="$(git merge-base "$FETCH_SHA" HEAD)"; then
   echo "STOP merge-base-failed"
   exit 0
 fi

@@ -42,7 +42,7 @@ set -euo pipefail
 
 if [ "$#" -eq 0 ]; then
   echo "Usage: $0 <rev>..." >&2
-  exit 1
+  exit 2
 fi
 
 # Capture the trailer scan into a variable before testing it, rather than

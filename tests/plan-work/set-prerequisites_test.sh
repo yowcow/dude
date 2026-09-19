@@ -180,7 +180,11 @@ while IFS='|' read -r name args; do
   row_start
   read -ra argv <<<"$args"
   run_sut bash "$SUT" ${argv[@]+"${argv[@]}"}
-  assert_row "$name" 1 '' 0
+  case "$name" in
+    no-args|too-few-args) want=2 ;;
+    *) want=1 ;;
+  esac
+  assert_row "$name" "$want" '' 0
 done <<'ROWS'
 # name|args
 no-args|

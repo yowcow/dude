@@ -30,7 +30,7 @@ set -euo pipefail
 
 if [ "$#" -ne 4 ]; then
   echo "Usage: $0 <owner> <repo> <issue-number> <body-file>" >&2
-  exit 1
+  exit 2
 fi
 
 OWNER="$1"
@@ -38,20 +38,13 @@ REPO="$2"
 ISSUE="$3"
 BODY_FILE="$4"
 
-# `-r` as well as `-f`, because `-r` asks access(2) — the same question the
-# `<"$BODY_FILE"` redirect below asks. With `-f` alone a file that exists with
-# mode 000 walks through, and only the redirect fails: the `gh` on the right of
-# the pipeline is forked and runs regardless, so one API call happens after all,
-# which is exactly what this guard exists to prevent. The message names
-# readability alone because `-r` is false for a path that isn't there either, so
-# one wording stays true for both refusals — the same reason run.sh's SUT guard
-# and scripts-have-tests.sh word theirs that way.
-if [ ! -f "$BODY_FILE" ] || [ ! -r "$BODY_FILE" ]; then
-  echo "error: body file is not readable: $BODY_FILE" >&2
+# Body guard and `jq -Rs` wrap live in plan-comment-payload.sh.
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+if ! PAYLOAD="$(bash "${SCRIPT_DIR}/plan-comment-payload.sh" "$BODY_FILE")"; then
   exit 1
 fi
 
 # .id is the numeric id; .html_url carries the #issuecomment-<id> fragment.
-jq -Rs '{body: .}' <"$BODY_FILE" \
+printf '%s\n' "$PAYLOAD" \
   | gh api --method POST "repos/$OWNER/$REPO/issues/$ISSUE/comments" --input - \
     --jq '.id, .html_url'

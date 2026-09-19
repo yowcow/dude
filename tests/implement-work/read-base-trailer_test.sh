@@ -253,6 +253,6 @@ assert_row 'trailer-read-fails' 0 'STOP trailer-read-failed\n' 0
 # nobody asked about.
 row_start
 run_in "$DEP"
-assert_row 'no-revs' 1 '' 0
+assert_row 'no-revs' 2 '' 0
 
 harness_exit "$failed" "$total"

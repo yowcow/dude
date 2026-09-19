@@ -192,8 +192,8 @@ two-pages|resolve-thread-page1,resolve-thread-page2|PRRT_p2a|acme widgets 7 4102
 second-page-missing|resolve-thread-page1|-|acme widgets 7 4102|1|1|-
 lookup-fails|graphql-errors:1|-|acme widgets 7 4001|1|1|-
 lookup-fails-midway|resolve-thread-page1,graphql-errors:1|-|acme widgets 7 4101|1|2|-
-too-few-args|-|-|acme widgets 7|1|0|-
-no-args|-|-|-|1|0|-
+too-few-args|-|-|acme widgets 7|2|0|-
+no-args|-|-|-|2|0|-
 ROWS
 
 harness_exit "$failed" "$total"

@@ -125,11 +125,11 @@ NOT_A_REPO="$(git_repo_scratch not-a-repo)"
 
 row_start
 run_in "$NOT_A_REPO" "$OWNER" "$REPO" "$PR" feature
-assert_row 'too-few-args' 1 '' 0
+assert_row 'too-few-args' 2 '' 0
 
 row_start
 run_in "$NOT_A_REPO" "$OWNER" "$REPO" "$PR" feature main extra
-assert_row 'too-many-args' 1 '' 0
+assert_row 'too-many-args' 2 '' 0
 
 # --- the PR cannot be read --------------------------------------------------
 

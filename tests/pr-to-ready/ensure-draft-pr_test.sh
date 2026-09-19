@@ -489,16 +489,16 @@ assert_row 'several-prs-after-create-stop' 0 'STOP ask-multiple-prs-after-create
 row_start
 fixture args-none feature remote
 run_in "$FIXTURE_WORK"
-assert_row 'no-arguments' 1 '' 0
+assert_row 'no-arguments' 2 '' 0
 
 row_start
 fixture args-two feature remote
 run_in "$FIXTURE_WORK" feature "$TITLE"
-assert_row 'two-arguments' 1 '' 0
+assert_row 'two-arguments' 2 '' 0
 
 row_start
 fixture args-four feature remote
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" extra
-assert_row 'four-arguments' 1 '' 0
+assert_row 'four-arguments' 2 '' 0
 
 harness_exit "$failed" "$total"

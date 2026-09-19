@@ -81,4 +81,8 @@ printf 'gh: HTTP 502\n' | stub_default_branch 1
 run_sut bash "$SUT"
 assert_row 'api-call-fails' 1 '' 1
 
+row_start
+run_sut bash "$SUT" extra
+assert_row 'extra-argument-is-usage-error' 2 '' 0
+
 harness_exit "$failed" "$total"
