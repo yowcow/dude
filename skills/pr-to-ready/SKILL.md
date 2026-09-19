@@ -159,7 +159,7 @@ Otherwise branch on this round's findings.
 
 When there is no finding (LGTM or empty reviews): go to the clean judgment first, then post as the posting paragraph below (LGTM verdict with the measured values).
 
-When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post as the posting paragraph below. Do not evaluate the five clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
+When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post as the posting paragraph below. Do not evaluate the six clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
 
 A round's fixes take Step 1's ordinary-change discipline with two departures.
 
@@ -172,7 +172,7 @@ When there is at least one finding and every finding is `reject`:
 
 - Do not fix, do not commit, do not push.
 - Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is.
-- If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only, hold the aggregate PR comment). Do not evaluate the five clean conditions. Walk row 4 of the stop list even when the SHA did not change.
+- If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only, hold the aggregate PR comment). Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change.
 - Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test.
 - Only when both exited 0: post the aggregate PR comment per the posting paragraph below with the listing exit codes/outputs just read; then, if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1.
 - If those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
@@ -208,7 +208,7 @@ The round's single comment shows only the human-readable verdict outside the fol
 
 ### Clean judgment & stop conditions
 
-**Clean** per `using-dude`'s **Loop convergence** loop-clean holds when all five of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, recorded as that judgment's measured-tip SHA:
+**Clean** per `using-dude`'s **Loop convergence** loop-clean holds when all six of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, recorded as that judgment's measured-tip SHA:
 
 1. the checks came back clean in Step 1's sense — exit 0 with every conclusion passing, or the exit 5 that says this repository runs none;
 2. this round's Claude run leaves no actionable finding — every comment on it is "looks good"/LGTM-equivalent. Do not re-read comments from an earlier round this run already resolved;
@@ -219,10 +219,12 @@ The round's single comment shows only the human-readable verdict outside the fol
 4. the PR's base is the one Step 1 most recently resolved;
 5. mergeability came back **`MERGEABLE`** — the field `gh-mechanics.md`'s "## Mergeability" says to trust. `UNKNOWN` is not a pass: it means the remote couldn't settle it even after the bounded re-read, so nothing is known yet.
 
-**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all five at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting) when verbose is on — in the round's report to the caller when off — so Clean on that SHA can be re-derived later.
+6. this round's requesting block leaves no actionable finding — every finding from this round's requesting identity (subagent return + posted comment id + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting passes this condition.
+
+**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting) when verbose is on — in the round's report to the caller when off — so Clean on that SHA can be re-derived later.
 
 When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop:
-- conditions 2 or 3 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
+- conditions 2, 3, or 6 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
 - condition 1 → per Step 1's own branch on the exit status: a failing conclusion is diagnosed and fixed there, borrowing the diagnosis and not Step 1's own loop, so it isn't counted against Step 1's rounds; a status that yielded no settled listing is the third terminal state here too;
 - condition 4 (base drift) → pull the resolved base in with `retarget-pr.sh`, per Step 1 — it pushes the merge itself, so the next round starts from 2-1 on the new tip;
 - condition 5 (mergeability) → the **third terminal state**, per Step 1's handling of `CONFLICTING`/`UNKNOWN`.
