@@ -117,9 +117,11 @@ If the reviewers set is empty, skip this step and 2-2; go to Step 3.
 
 Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts.
 
+Capture the round-request SHA once before any selected request goes out.
+
 - **Claude**: only if Claude is in the set. `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect.
   - That exit status is the whole availability test — don't go searching the workflows yourself.
-  - When available, post a request comment with a short list of what to focus on; every request comment includes the round-request SHA captured once before the selected requests go out.
+  - When available, post a request comment with a short list of what to focus on; every request comment includes that round-request SHA.
   - That trigger comment is the reference for a Claude-requested round. Record its id/URL at post time for the Request identity row.
 - **Copilot**: only if Copilot is in the set. Record the baseline first, then request.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
@@ -186,7 +188,7 @@ When there is at least one finding and every finding is `reject`:
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
