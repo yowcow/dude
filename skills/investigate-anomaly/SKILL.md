@@ -83,3 +83,7 @@ Once the report below is drafted, run `review-findings` on it and publish per `u
 8. **Open questions**
 
 **Reproduction or observation baseline** and **Remediation options** are what `using-dude`'s **Investigation → Change transition** hands to `plan-work` — that flow's input, not work this one starts.
+
+## Escalation
+
+This run's stopping conditions are `using-dude`'s **Loop convergence**. One round is one core-loop hypothesis test, and a finding repeats when a later pass faults the same hypothesis for the same reason. Evidence that invalidates the framed symptom is never re-diagnosed in place: stop and return to **Step 1** for re-framing.

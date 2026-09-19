@@ -54,3 +54,7 @@ Once the report below is drafted, run `review-findings` on it and publish per `u
 6. **Not measured** — the claims left unaudited, and what would settle each.
 
 **Verdict** and **Next items** are what `plan-work` receives — that flow's input, never work this one starts. A question-shaped run has no reproduction to carry forward.
+
+## Escalation
+
+This run's stopping conditions are `using-dude`'s **Loop convergence**. One round is one core-loop pass over a point, and a finding repeats when a later pass faults the same point for the same reason. A finding that invalidates the question as asked is never settled in place: hand it back to the person who asked, per **Synthesize**'s second exit criterion.
