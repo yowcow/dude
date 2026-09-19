@@ -33,7 +33,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 Ask the user two things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
-- Which of Copilot, Claude, and `superpowers:requesting-code-review` should this run request, from none to all three? Default Copilot and Claude; `superpowers:requesting-code-review` is opt-in. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+- Which of Copilot, Claude, and `superpowers:requesting-code-review` should this run request, from none to all three? Default Copilot and Claude; `superpowers:requesting-code-review` is opt-in. Record the answer as the **reviewers** set, with the full-name choice recorded as `requesting`. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
 All three hold for the rest of the run — ready-on-clean is not re-asked, the reviewers set is not re-asked, and verbose is not re-bound mid-loop.
 
