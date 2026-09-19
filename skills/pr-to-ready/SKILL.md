@@ -142,8 +142,9 @@ If this step requested nobody, skip 2-2 and go to Step 3.
 
 Delegate collection to a subagent:
 
-- Gather from the Copilot review 2-2 waited for and from the Claude run 2-2 waited for — not every comment left after the latest push — together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh --full <owner> <repo> <pr-number>` printed.
+- Gather from the Copilot review 2-2 waited for, from the Claude run 2-2 waited for, and from this round's requesting comment 2-2 posted under this round's identity — not every comment left after the latest push — together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh --full <owner> <repo> <pr-number>` printed.
 - Call that one only where 2-2 came back with a Copilot review the 2-1 baseline didn't hold, since the script reads whichever Copilot review is latest and knows nothing of rounds, so on a round where Copilot was skipped its block is an earlier round's, already dealt with and left to the clean judgment's leftover handling.
+- Requesting collection reads only the comment posted for this round's identity, never an earlier round's requesting comment.
 - Dedupe, and return a structured list of findings, each with `file:line`, the thread or comment id where it has one — a suppressed finding has none — and a one-line summary.
 - Do not re-collect a thread this run already resolved. A new review that repeats the same claim at the same place is a new finding; Loop convergence still identifies two findings as the same one by place and claim.
 - Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`.
