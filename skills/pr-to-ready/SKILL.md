@@ -232,14 +232,15 @@ When it isn't clean, what to do follows from which condition failed, and every r
 **Stop the loop when any of these holds — read in order, and take the first that applies; otherwise keep looping:**
 
 1. Clean, per above — the first measured full Clean on that SHA — → Step 3. Do not request again on a SHA once Clean held on it.
-2. **A finding invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round.
+2. **A finding from any reviewer, requesting included, invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round. Where this round's requesting leftover is still unapplied, do not take this exit yet — go back to 2-1 so the judgment reads the full round.
 3. **Any finding came back `needs-user`** → the third terminal state, per 2-3.
-4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does.
-5. **LGTM-equivalent twice in a row on the SHA it leaves from, with conditions (1, 4, 5) true on that same SHA** → Step 3.
-   - LGTM-equivalent here means the round left no accepted finding — no findings, or every finding `reject` — not that condition 3's suppressed listing is empty.
+4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does. Where this round's requesting leftover is still unapplied, do not take this exit yet — go back to 2-1.
+5. **LGTM-equivalent twice in a row on the SHA it leaves from, with conditions (1, 4, 5) true and requesting-empty on that same SHA** → Step 3.
+    - LGTM-equivalent here means the round left no accepted finding from any reviewer, requesting included — no findings, or every finding `reject` — not that condition 3's suppressed listing is empty.
+    - requesting-empty means condition 6 holds on that SHA: no requesting finding from this round's identity without an applied verdict. Unapplied requesting leftover bars this exit the same way a non-empty suppressed listing does.
    - This exit applies only where full Clean was never measured on that SHA — e.g. a rejected suppressed finding remains in condition 3's listing, a reject history exists, or a prior round was non-clean — and never authorizes a second request after a measured full Clean.
    - This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
-6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision.
+6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision. Where this round's requesting leftover is still unapplied, do not take this exit yet — go back to 2-1.
 
 A round here is one 2-1 → 2-2 → 2-3 cycle per `using-dude`'s **Loop convergence**, whether or not it entered the clean judgment; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
 
