@@ -14,7 +14,7 @@ Take an open PR to a reviewed one: resolve the run from the PR's number or URL, 
 
 ## Orchestration model
 
-Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the five conditions, Step 2-1's Claude availability check and Copilot baseline, Step 3's re-confirmation of the five conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
+Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the five conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, Step 3's re-confirmation of the five conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
 
 **Never delegate:** the clean judgment and stop conditions, including reading whether checks pass; any change that touches the worktree, together with committing and pushing it; and any write to the PR itself — comments, thread replies, thread resolution, marking it ready.
 
@@ -28,9 +28,14 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 ## Step 0: Set up the run
 
-### 0-1. Ask ready-on-clean, bind verbose
+### 0-1. Ask ready-on-clean and reviewers, bind verbose
 
-Ask the user: once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on the ready-on-clean flag. Both hold for the rest of the run — ready-on-clean is not re-asked and verbose is not re-bound mid-loop.
+Ask the user two things, once:
+
+- Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
+- Which of Copilot and Claude should this run request, from none to both? Default both. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+
+All three hold for the rest of the run — ready-on-clean is not re-asked, the reviewers set is not re-asked, and verbose is not re-bound mid-loop.
 
 Bind **verbose** from the caller's invocation instead of asking: on when it carries `verbose`, `verbose=on`, or `verbose=true` (case-insensitive); off otherwise, including an explicit `verbose=off`. Off keeps observability output in the round's report to the caller instead of posting it. Quiet is the ordinary path; verbose is for when a later attribution may need the full record.
 
@@ -94,7 +99,7 @@ On that failing conclusion, delegate the diagnosis to a subagent: hand it the fa
 
 ## Step 2: Request review, then loop on feedback
 
-Request review from both Claude and Copilot when both are available — they catch different things. Skip whichever isn't; if neither is, still run 2-0, then skip straight to Step 3 — that path pushes nothing, so the HEAD Step 1 already watched green is still the tip.
+Request review from each name in the reviewers set that is available. Skip a selected name that isn't; skip a name that isn't in the set, and do not probe it. If the set is empty, or every selected name is skipped, still run 2-0, then skip straight to Step 3 — that path pushes nothing, so the HEAD Step 1 already watched green is still the tip.
 
 ### 2-0. Verify PR body issue links
 
@@ -108,19 +113,27 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 
 ### 2-1. Request the reviewers
 
-- **Claude**: `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect.
+If the reviewers set is empty, skip this step and 2-2; go to Step 3.
+
+Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts.
+
+Capture the round-request SHA once before any selected request goes out.
+
+- **Claude**: only if Claude is in the set. `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect.
   - That exit status is the whole availability test — don't go searching the workflows yourself.
-  - When available, post a request comment with a short list of what to focus on; every request comment includes the round-request SHA captured once before either request goes out.
+  - When available, post a request comment with a short list of what to focus on; every request comment includes that round-request SHA.
   - That trigger comment is the reference for a Claude-requested round. Record its id/URL at post time for the Request identity row.
-- **Copilot**: record the baseline first, then request.
+- **Copilot**: only if Copilot is in the set. Record the baseline first, then request.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the round's single comment (Posting below). That record, not a separate mark, is what tells a later reader the request from a manual click on the timeline, so post no mark here.
 
+If this step requested nobody, skip 2-2 and go to Step 3.
+
 ### 2-2. Wait for the review (bound the wait)
 
 - **Claude**: only if 2-1 found the workflow and posted a request. Tie completion to the run itself, never to comment counts: list runs again with `<skill-dir>/scripts/watch-claude-review.sh <branch>`, match the run by `displayTitle`, a `createdAt` after the request comment was posted, and a conclusion that isn't `skipped` — branch and time alone each match the wrong run or none, per that script's own header — then block on it with `<skill-dir>/scripts/watch-claude-review.sh <branch> <run-id>` — exit 0 means it succeeded, non-zero means it didn't, or the call itself failed.
-- **Copilot**: wait for a review carrying an `id` the 2-1 baseline didn't have — `<skill-dir>/scripts/watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file>`, which polls `list-copilot-reviews.sh` and answers with the reviews that baseline didn't hold. Compare against that baseline, never against your own handling history. Identify the reviewer by author login (`gh-mechanics.md`'s "## Identifying a bot"), never by timestamp. Don't wait for a formal approval — Copilot commonly only ever returns a comment-only verdict.
+- **Copilot**: only if 2-1 requested Copilot. Wait for a review carrying an `id` the 2-1 baseline didn't have — `<skill-dir>/scripts/watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file>`, which polls `list-copilot-reviews.sh` and answers with the reviews that baseline didn't hold. Compare against that baseline, never against your own handling history. Identify the reviewer by author login (`gh-mechanics.md`'s "## Identifying a bot"), never by timestamp. Don't wait for a formal approval — Copilot commonly only ever returns a comment-only verdict.
 - **Always bound the poll**, with an iteration cap and an explicit bail-out. On timeout, stop and tell the user rather than looping forever.
 
 ### 2-3. Evaluate and address feedback
@@ -175,7 +188,7 @@ When there is at least one finding and every finding is `reject`:
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, and on a Claude-requested round the trigger comment reference. |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), and the listing exit codes and outputs actually read that round. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
