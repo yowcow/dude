@@ -10,7 +10,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 ## Orchestration model
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
-- **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the tier `using-dude`'s **Worker tier** sets for a marked worker. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
+- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the tier `using-dude`'s **Worker tier** sets for a marked worker. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
 
@@ -20,7 +20,7 @@ A repository, or a path within one. Closing any gap against `using-dude`'s **Und
 
 ### Step 1: Select axes
 
-- Select 3–5 axes from the repository's shape, spread across defects, contradictions, security, and whatever else the tree suggests rather than skewing toward one field; sweep what the caller named, if any, otherwise the selection. Record axes considered but not swept under Not measured.
+- Select 3–5 axes from the repository's shape, spread across defects, contradictions, security, and whatever else the tree suggests rather than skewing toward one field; sweep what the caller named, if any; otherwise sweep the selection. Record axes considered but not swept under Not measured.
 - An axis nothing can measure is not an axis. It is a question to hand back to a person.
 
 ### Step 2: Fix the measurement base
@@ -39,7 +39,7 @@ A repository, or a path within one. Closing any gap against `using-dude`'s **Und
 - Every axis has its findings with the decisive evidence behind each; or
 - the axis is recorded as not measured, with what would measure it and who decides.
 
-Once the report below is drafted, run `review-findings` on it for one pass, restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is the scanned repository, another repository on request, chat-only also allowed. A bare `#N` points at the scanned repository; anything else is qualified as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is chat, or the tracking issue's comment when one tracks the work; another repository on request, chat-only also allowed. A bare `#N` points at the scanned repository; anything else is qualified as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
@@ -49,7 +49,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, rest
   4. **Next items** — concrete next actions in order. Not work to start here.
   5. **Not measured** — the axes and claims left unaudited, and what would settle each.
 
-**Verdict** and **Next items** are what `plan-work` receives — that flow's input, never work this one starts. A scan has no reproduction to carry forward.
+**Verdict** and **Next items** arrive shaped for `plan-work`'s question-shaped input — never work this one starts. A scan has no reproduction to carry forward.
 
 ## Escalation
 
