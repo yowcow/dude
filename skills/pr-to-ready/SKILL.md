@@ -172,7 +172,7 @@ When there is at least one finding and every finding is `reject`:
 
 - Do not fix, do not commit, do not push.
 - Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is.
-- If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only, hold the aggregate PR comment). Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change.
+- If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only, hold the aggregate PR comment). Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change, judging mergeability alone — the requesting-leftover yield does not apply here, since requesting rejects are recorded only by the aggregate post below; row 6 guards the leftover after it is recorded.
 - Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test.
 - Only when both exited 0: post the aggregate PR comment per the posting paragraph below with the listing exit codes/outputs just read; then, if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1.
 - If those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
@@ -219,7 +219,7 @@ The round's single comment shows only the human-readable verdict outside the fol
 4. the PR's base is the one Step 1 most recently resolved;
 5. mergeability came back **`MERGEABLE`** — the field `gh-mechanics.md`'s "## Mergeability" says to trust. `UNKNOWN` is not a pass: it means the remote couldn't settle it even after the bounded re-read, so nothing is known yet.
 
-6. this round's requesting block leaves no actionable finding — every finding from this round's requesting identity (subagent return + posted comment id + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting passes this condition.
+6. this round's requesting block leaves no actionable finding — every finding from this round's requesting identity (subagent return + posted comment id + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting passes this condition. On the no-finding path this is definitional — it never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
 
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting) when verbose is on — in the round's report to the caller when off — so Clean on that SHA can be re-derived later.
 
@@ -232,7 +232,7 @@ When it isn't clean, what to do follows from which condition failed, and every r
 **Stop the loop when any of these holds — read in order, and take the first that applies; otherwise keep looping:**
 
 1. Clean, per above — the first measured full Clean on that SHA — → Step 3. Do not request again on a SHA once Clean held on it.
-2. **A finding from any reviewer, requesting included, invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round. Where this round's requesting leftover is still unapplied, do not take this exit yet — go back to 2-1 so the judgment reads the full round.
+2. **A finding from any reviewer, requesting included, invalidates the agreed design** → stop and take **Escalation**. Check this on every round, before the rest — don't fix it here, and don't carry it into another round.
 3. **Any finding came back `needs-user`** → the third terminal state, per 2-3.
 4. **Mergeability is anything but `MERGEABLE`** → the third terminal state, per above. `UNKNOWN` belongs here as much as `CONFLICTING` does. Where this round's requesting leftover is still unapplied, do not take this exit yet — go back to 2-1.
 5. **LGTM-equivalent twice in a row on the SHA it leaves from, with conditions (1, 4, 5) true and requesting-empty on that same SHA** → Step 3.
