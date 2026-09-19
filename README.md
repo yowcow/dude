@@ -14,6 +14,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 | Skill                     | What it produces                                                                   |
 | ------------------------- | ---------------------------------------------------------------------------------- |
+| `audit-code`              | A repository or path scanned, with what to fix reported and nothing changed        |
 | `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task           |
 | `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
 | `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
@@ -30,7 +31,9 @@ The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered a
 whichever stage the work has actually reached. An investigation —
 `settle-question`, `investigate-anomaly`, or `investigate-performance` —
 runs first when there's a cause to find or a question to settle, and hands
-its findings to `plan-work`.
+its findings to `plan-work`. A scan — `audit-code` — runs first when a
+repository or path needs sweeping for what to fix, and hands its report to
+`plan-work`.
 
 ## Requirements
 
@@ -124,6 +127,7 @@ flowchart LR
     invq[settle-question]
     inva[investigate-anomaly]
     invp[investigate-performance]
+    audit[audit-code]
     plan[plan-work]
     impl[implement-work]
     pr[pr-to-ready]
@@ -132,6 +136,7 @@ flowchart LR
     issue -. optional .-> invq --> plan
     issue -. optional .-> inva --> plan
     issue -. optional .-> invp --> plan
+    issue -. optional .-> audit --> plan
     plan --> impl --> pr
 ```
 
