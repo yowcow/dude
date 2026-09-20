@@ -66,17 +66,19 @@ Report "no findings" explicitly rather than inventing one.
 1. Gather the inputs: the target report, the question it answers, and its stated sources. One invocation reviews exactly one target, once.
 2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the marked tier.
 3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
-4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. Never re-invoke this skill on the restated or paraphrased report; that restatement is the caller's output, not a new target. This closure is interim until yowcow/dude#449 defines the narrow subtractive re-invocation.
+4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. This skill never re-invokes itself.
+5. The caller re-invokes for a subtractive verification pass only on the ledger: its input is the accepted entries plus rejected entries the caller routes back through intake with new evidence; it runs the Evidence sufficiency lens only, sustains or rejects each accepted entry against its evidence pointer, re-evaluates each intake-routed rejected entry under Evidence sufficiency (promoted to accepted only if the new evidence carries the claim, otherwise stays rejected), and flags nothing new. A re-flagged claim without new evidence is not a finding, and a claim with no ledger entry is never a finding even with evidence.
+6. One verification pass is one round under `using-dude`'s **Loop convergence**: a re-flag without new evidence is the same finding, and the loop is clean when no accepted entry is rejected and every accepted entry is sustained.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointer, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch.
 
 ## Caller contract
 
 This holds for every caller, rather than being defined at each call site.
 
-- **One invocation is one pass** over one declared target. There is no second pass, and no path that reviews inline. A paraphrased, restated, or lightly edited version of the same report is the same target — it does not open a second invocation. (Interim: holds until yowcow/dude#449 defines the narrow subtractive re-invocation.)
+- **One invocation is one pass** over one declared target. A paraphrased, restated, or lightly edited version of the same report is the same target — it does not open a second invocation. The only re-invocation is the subtractive verification pass in **Pass**: the caller re-invokes with the ledger's accepted entries plus intake-routed rejected-with-new-evidence entries, and nothing else.
 - **The required clean for this findings pass is that the pass finished** — every dispatched lens reported and the union was reported per **Report** — not that it returned no findings.
 - **Only a claim no run lens flagged is a settled conclusion.** A flagged claim is restated by the caller as unsettled / not measured, with what would settle it. The whole report is then published. This skill is not re-run on that restatement, and it never edits the report itself.
 - **Nothing is published until the pass has finished.** Report the pass to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
