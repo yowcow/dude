@@ -66,7 +66,8 @@ Report "no findings" explicitly rather than inventing one.
 1. Gather the inputs: the target report, the question it answers, and its stated sources. One invocation reviews exactly one target, once.
 2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the marked tier.
 3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
-4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. Never re-invoke this skill on the restated or paraphrased report; that restatement is the caller's output, not a new target. This closure is interim until yowcow/dude#449 defines the narrow subtractive re-invocation.
+4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. This skill never re-invokes itself.
+5. A subtractive verification pass re-invokes only on the ledger: its input is the accepted entries plus rejected entries the caller routes back through intake with new evidence; it runs the Evidence sufficiency lens only, sustains or rejects each accepted entry against its evidence pointer, re-evaluates each intake-routed rejected entry under Evidence sufficiency (promoted to accepted only if the new evidence carries the claim, otherwise stays rejected), and flags nothing new. A re-flagged claim without new evidence is not a finding, and a claim with no ledger entry is never a finding even with evidence.
 
 ## Report
 
