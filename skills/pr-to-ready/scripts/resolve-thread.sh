@@ -26,7 +26,7 @@ shift 3
 # long-running PR's cumulative thread count (resolved + unresolved) can exceed
 # a single page, same as list-unresolved-threads.sh. The --jq streams one
 # thread node per line, so the snapshot spans every page.
-THREADS_JSON=$(gh api graphql --paginate \
+if ! THREADS_JSON=$(gh api graphql --paginate \
   -f owner="$OWNER" \
   -f repo="$REPO" \
   -F pr="$PR" \
@@ -46,7 +46,10 @@ THREADS_JSON=$(gh api graphql --paginate \
         }
       }
     }' \
-  --jq '.data.repository.pullRequest.reviewThreads.nodes[]')
+  --jq '.data.repository.pullRequest.reviewThreads.nodes[]' 2>/dev/null); then
+  echo "error: failed to fetch review threads for PR ${PR}" >&2
+  exit 1
+fi
 
 status=0
 for COMMENT_ID in "$@"; do
@@ -58,9 +61,13 @@ for COMMENT_ID in "$@"; do
 
   # A comment id belongs to exactly one thread, so this yields 0 or 1 id — no
   # head needed (avoiding the pipe also sidesteps SIGPIPE under pipefail).
-  THREAD_ID=$(printf '%s' "$THREADS_JSON" \
+  if ! THREAD_ID=$(printf '%s' "$THREADS_JSON" \
     | jq -r --argjson cid "$COMMENT_ID" \
-        'select(any(.comments.nodes[]; .databaseId == $cid)) | .id')
+        'select(any(.comments.nodes[]; .databaseId == $cid)) | .id' 2>/dev/null); then
+    echo "error: failed to search review threads for comment id $COMMENT_ID" >&2
+    status=1
+    continue
+  fi
 
   if [ -z "$THREAD_ID" ]; then
     echo "error: review thread not found for comment id $COMMENT_ID" >&2

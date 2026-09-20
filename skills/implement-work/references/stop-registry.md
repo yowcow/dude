@@ -21,6 +21,7 @@ one (`pr-readback-failed`).
 | `ask-multiple-prs` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `pr-to-ready/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `pr-to-ready/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
+| `blocked-lookup-failed` | `implement-work/resolve-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `pr-to-ready/ensure-draft-pr.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
@@ -40,12 +41,12 @@ one (`pr-readback-failed`).
 | `no-prereq-pr` | `implement-work/read-base-trailer.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh` |
+| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh` |
 | `pr-not-created` | `pr-to-ready/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/retarget-pr.sh` |
 | `pr-readback-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `prereq-lookup-failed` | `implement-work/read-base-trailer.sh` |
+| `prereq-lookup-failed` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `push-failed` | `pr-to-ready/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `trailer-read-failed` | `implement-work/read-base-trailer.sh` |
