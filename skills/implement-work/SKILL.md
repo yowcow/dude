@@ -133,7 +133,7 @@ Add only what the execution method left undone.
 1. **Verify** — `superpowers:verification-before-completion`.
 
    - Its requirements checklist reads **the task's own entry artifact**, not the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work.
-   - Run that checklist every round, even on an unchanged tree.
+    - Run that checklist every round, even when nothing changed this round.
    - The verdict on whether each criterion is met stays in the main loop and is never dispatched, per this skill's Orchestration model (the orchestrator owns the gate decision).
    - The plan is a transcription of that artifact, so checking against it confirms only the transcription — and on the small-change lane in `using-dude`'s **Workflow selection** there is no plan to check against at all.
    - **The scope boundary is part of that source, not commentary on it.** What it excludes never becomes a checklist row, so an exclusion cannot come back as a gap.
@@ -141,8 +141,8 @@ Add only what the execution method left undone.
      - No → it is this task's work, so implement it in this round.
      - Yes → don't implement it; record it and leave by step 6's first exit.
      - Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take `using-dude`'s **Escalation** by that route, recorded and exited the same way.
-2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job. When it applied nothing, skip its check run — the step-1 result already covers the unchanged tree.
-3. **Review** — run `review-code`. When it applied no fix, skip its check run — the tree is already covered: by step-2's check run where Simplify changed the tree this round, otherwise by step-1's Verify on the unchanged tree. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
+2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job. When it applied nothing, skip its check run — this round's step-1 Verify result already covers the tree.
+3. **Review** — run `review-code`. When it applied nothing, skip its check run — the tree is already covered: by step-2's check run where Simplify changed the tree this round, otherwise by this round's step-1 Verify result on the unchanged tree. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
    - **Hand off** pushes it, and a push carries only commits, while **Escalation** hands `plan-work` a branch name that re-approval judges by what it contains; either way, anything left uncommitted is simply absent from what the next flow reads.
