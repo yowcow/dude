@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests scripts/bump.sh: a trial bump rewrites the four version fields while
 # leaving the rest of each file alone, and a failure leaves the tree untouched.
+# The four exclude `.agents/plugins/marketplace.json` (versionless mirror).
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -15,6 +16,7 @@ total=0
 make_fixture() {
   root="$1"
   ver="$2"
+  # No `.agents` fixture: that mirror carries no `version`, so bump leaves it alone.
   mkdir -p "$root/.claude-plugin" "$root/.codex-plugin"
   printf '{\n  "name": "dude",\n  "version": "%s"\n}\n' "$ver" >"$root/.claude-plugin/plugin.json"
   printf '{\n  "plugins": [\n    {\n      "name": "dude",\n      "version": "%s"\n    }\n  ]\n}\n' "$ver" >"$root/.claude-plugin/marketplace.json"

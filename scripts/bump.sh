@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # Bump the four version fields to one value (jq-free).
+# The four exclude `.agents/plugins/marketplace.json`, a versionless mirror
+# whose schema carries no `version`.
 # Usage: bump.sh <version>
 set -euo pipefail
 
