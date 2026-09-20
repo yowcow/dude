@@ -13,6 +13,8 @@ for manifest in .agents/plugins/marketplace.json package.json hooks/hooks.json; 
 done
 
 # The four version fields stay equal; `scripts/bump.sh` is what moves them.
+# The four exclude `.agents/plugins/marketplace.json`, a versionless mirror
+# with no `version` field (syntax-checked above).
 python3 - <<'PY'
 import json
 import sys

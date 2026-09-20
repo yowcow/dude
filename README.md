@@ -87,7 +87,9 @@ adding a trailing newline does not.
 dude is versioned with semver. The same value lives in
 four places: `.claude-plugin/plugin.json`, the plugin entry in
 `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and
-`package.json`. What each runtime does with one:
+`package.json`. `.agents/plugins/marketplace.json` is a versionless mirror:
+its schema carries no `version`, so `bump` and the version check leave it
+alone (syntax-checked only). What each runtime does with one:
 
 | Runtime     | Requires `version`?        | Uses it to decide an update?                                   |
 | ----------- | -------------------------- | -------------------------------------------------------------- |
@@ -350,9 +352,9 @@ make manifest
 warning while all four version fields agree.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
 as well, so it catches malformed frontmatter at the same time. Neither manifest
-validator covers `.agents/plugins/marketplace.json`, `package.json`, or
-`hooks/hooks.json`, so `make manifest` JSON-parses those three files, syntax
-only. `make lint test` still does not run manifest validation: it covers shell
+validator covers `.agents/plugins/marketplace.json` (versionless mirror, no
+`version`), `package.json`, or `hooks/hooks.json`, so `make manifest`
+JSON-parses those three files, syntax only. `make lint test` still does not run manifest validation: it covers shell
 and the test suite.
 
 CI's pinned `manifest` job is the reproducible merge decision. `manifest-latest`

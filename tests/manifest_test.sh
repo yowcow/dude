@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests the shared manifest gate: every validator runs in order and the first
 # failure stops the gate before later validators can hide it.
+# The version check covers four fields; `.agents` is a versionless mirror.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -91,6 +92,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 make_fixture() {
   root="$1"
   pkg_ver="$2"
+  # No `.agents` fixture: that mirror carries no `version`, syntax-checked only.
   mkdir -p "$root/.claude-plugin" "$root/.codex-plugin"
   printf '{\n  "name": "dude",\n  "version": "1.0.0"\n}\n' >"$root/.claude-plugin/plugin.json"
   printf '{\n  "plugins": [\n    {\n      "name": "dude",\n      "version": "1.0.0"\n    }\n  ]\n}\n' >"$root/.claude-plugin/marketplace.json"
