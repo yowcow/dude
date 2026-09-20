@@ -78,7 +78,7 @@ One invocation is one pass, and a pass is as many rounds as it takes:
   - Otherwise apply the accepted Critical and Important findings yourself — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**.
   - When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
   - Record Minor findings; don't fix them.
-5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output.
+5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output. When step 4 applied nothing, skip this check run only when invoked from `implement-work`'s completion gate — the covering result is step-2's check run where Simplify changed the tree this round, otherwise this round's step-1 Verify on the unchanged tree.
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**. A pass whose step 4 ended on a `needs-user` does not come back here.
 7. Report per **Report**.
 
@@ -102,5 +102,5 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
 - rejected findings, with the reason
 - on a `needs-user` stop, the stopped round's verdicts as they stand unapplied — each `accept` with its proposed fix, each `reject` with its reason, and each `needs-user` finding with why the worker put the decision to a person. Earlier rounds report in the applied form above.
 - the remaining Minor findings
-- what verification ran, and its actual result
+- what verification ran, and its actual result — or that verification was skipped as unchanged and which prior result covers the tree (step-2's check run or step-1's Verify)
 - the verdict: clean, or the blocking findings that remain — flagging separately any Critical finding that invalidates the approved design, per **Escalation**
