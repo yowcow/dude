@@ -23,7 +23,7 @@ An `investigate-*` / `settle-question` findings report and a ruling published as
 
 ## What counts as a finding
 
-One test admits everything this skill reports: **left as it is, would a reader acting on this record reach a wrong conclusion or take a wrong fix?** The record outlives the run that wrote it and is read as settled, so the reader in that test is not the author.
+One test with two sides admits everything this skill reports. Side A: **left as it is, would a reader acting on this record reach a wrong conclusion or take a wrong fix?** Side B: **followed as stated, would a reader waste a fix or lose a settled conclusion?** A finding passes the bar on either side; reviewer preference passes on neither. The record outlives the run that wrote it and is read as settled, so the reader in that test is not the author.
 
 This test overrides the lenses. A lens names a failure mode to look for; naming one does not make every instance of it worth reporting. A caveat that could be worded more carefully, a section a reviewer would have ordered differently, a measurement reported to more precision than it warrants — none of these change what a reader does, so they are not findings, whatever lens surfaced them. Reviewer preference is never a finding here.
 
@@ -50,6 +50,8 @@ Size the fan-out for shortest wall-clock. Independence is what a split buys — 
 
 Confine every search to the project root or narrower.
 
+On receipt and before the union, the main loop applies the intake filter: an item with no evidence pointer is rejected from the union, not reported as a finding but listed as an intake decision; items sharing one exact `(lens, claim)` string pair are bundled into one finding carrying the union of their evidence pointers and the union of their suggested changes. Each rejection cites its missing-evidence reason; each bundle cites the pair it bundled under.
+
 ## Finding contract
 
 Each reviewer returns findings only — never a rewritten report — with:
@@ -67,12 +69,12 @@ Report "no findings" explicitly rather than inventing one.
 2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the marked tier.
 3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
 4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. This skill never re-invokes itself.
-5. The caller re-invokes for a subtractive verification pass only on the ledger: its input is the accepted entries plus rejected entries the caller routes back through intake with new evidence; it runs the Evidence sufficiency lens only, sustains or rejects each accepted entry against its evidence pointer, re-evaluates each intake-routed rejected entry under Evidence sufficiency (promoted to accepted only if the new evidence carries the claim, otherwise stays rejected), and flags nothing new. A re-flagged claim without new evidence is not a finding, and a claim with no ledger entry is never a finding even with evidence.
+5. The caller re-invokes for a subtractive verification pass only on the ledger: its input is the accepted entries plus rejected entries the caller routes back through intake with new evidence; it runs the Evidence sufficiency lens only, sustains or rejects each accepted entry against each of its evidence pointers (sustained if any carries the claim), re-evaluates each intake-routed rejected entry under Evidence sufficiency (promoted to accepted only if the new evidence carries the claim, otherwise stays rejected), and flags nothing new. A re-flagged claim without new evidence is not a finding, and a claim with no ledger entry is never a finding even with evidence.
 6. One verification pass is one round under `using-dude`'s **Loop convergence**: a re-flag without new evidence is the same finding, and the loop is clean when no accepted entry is rejected and every accepted entry is sustained.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointer, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointers, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch. The report also lists intake decisions: each rejected item with its missing-evidence reason, and each bundled group with its `(lens, claim)` pair.
 
 ## Caller contract
 
