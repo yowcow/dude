@@ -50,7 +50,7 @@ Size the fan-out for shortest wall-clock. Independence is what a split buys — 
 
 Confine every search to the project root or narrower.
 
-On receipt and before the union, the main loop applies the intake filter: an item with no evidence pointer is rejected from the union, not reported as a finding but listed as an intake decision; items sharing one exact `(lens, claim)` string pair are bundled into one finding carrying the union of their evidence pointers. Each rejection cites its missing-evidence reason; each bundle cites the pair it bundled under.
+On receipt and before the union, the main loop applies the intake filter: an item with no evidence pointer is rejected from the union, not reported as a finding but listed as an intake decision; items sharing one exact `(lens, claim)` string pair are bundled into one finding carrying the union of their evidence pointers and the union of their settle steps. Each rejection cites its missing-evidence reason; each bundle cites the pair it bundled under.
 
 ## Finding contract
 
@@ -74,7 +74,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointer, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch. The report also lists intake decisions: each rejected item with its missing-evidence reason, and each bundled group with its `(lens, claim)` pair.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointers, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch. The report also lists intake decisions: each rejected item with its missing-evidence reason, and each bundled group with its `(lens, claim)` pair.
 
 ## Caller contract
 
