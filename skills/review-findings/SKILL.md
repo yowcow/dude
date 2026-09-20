@@ -50,7 +50,7 @@ Size the fan-out for shortest wall-clock. Independence is what a split buys — 
 
 Confine every search to the project root or narrower.
 
-On receipt and before the union, the main loop applies the intake filter: an item with no evidence pointer is rejected from the union, not reported as a finding but listed as an intake decision; items sharing one exact `(lens, claim)` string pair are bundled into one finding carrying the union of their evidence pointers and the union of their settle steps. Each rejection cites its missing-evidence reason; each bundle cites the pair it bundled under.
+On receipt and before the union, the main loop applies the intake filter: an item with no evidence pointer is rejected from the union, not reported as a finding but listed as an intake decision; items sharing one exact `(lens, claim)` string pair are bundled into one finding carrying the union of their evidence pointers and the union of their suggested changes. Each rejection cites its missing-evidence reason; each bundle cites the pair it bundled under.
 
 ## Finding contract
 
