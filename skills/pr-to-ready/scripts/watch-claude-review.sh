@@ -74,7 +74,10 @@ fi
 wf="$(basename "$wf")"
 
 if [ -z "$RUN_ID" ]; then
-  default_branch="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")"
+  if ! default_branch="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh" 2>/dev/null)"; then
+    echo "error: failed to resolve the default branch" >&2
+    exit 1
+  fi
   gh run list --workflow="$wf" --limit 100 \
     --json databaseId,conclusion,createdAt,displayTitle,headBranch |
     jq --arg b "$BRANCH" --arg d "$default_branch" \

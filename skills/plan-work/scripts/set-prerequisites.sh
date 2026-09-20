@@ -54,10 +54,13 @@ oneline() {
 # equality check all agree.
 read_blocked_by() {
   gh issue view "$CHILD" --repo "$OWNER/$REPO" --json blockedBy \
-    --jq '.blockedBy.nodes[].number' | sort -u
+    --jq '.blockedBy.nodes[].number' 2>/dev/null | sort -u
 }
 
-CURRENT=$(read_blocked_by)
+if ! CURRENT=$(read_blocked_by); then
+  echo "error: failed to read blocked-by for #$CHILD" >&2
+  exit 1
+fi
 DESIRED=""
 if [ "$#" -gt 0 ]; then
   DESIRED=$(printf '%s\n' "$@" | sort -u)
@@ -75,10 +78,16 @@ while read -r n; do
 done <<<"$TO_REMOVE"
 
 if [ "${#EDIT_ARGS[@]}" -gt 0 ]; then
-  gh issue edit "$CHILD" --repo "$OWNER/$REPO" "${EDIT_ARGS[@]}" >/dev/null
+  if ! gh issue edit "$CHILD" --repo "$OWNER/$REPO" "${EDIT_ARGS[@]}" >/dev/null; then
+    echo "error: failed to edit blocked-by for #$CHILD" >&2
+    exit 1
+  fi
 fi
 
-FINAL=$(read_blocked_by)
+if ! FINAL=$(read_blocked_by); then
+  echo "error: failed to read back blocked-by for #$CHILD" >&2
+  exit 1
+fi
 if [ "$FINAL" != "$DESIRED" ]; then
   echo "error: #$CHILD is blocked by [$(oneline "$FINAL")]," >&2
   echo "       intended [$(oneline "$DESIRED")]" >&2

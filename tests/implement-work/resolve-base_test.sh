@@ -245,16 +245,15 @@ tally check_tracking 'two-prerequisites: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the blockedBy lookup itself fails ---------------------------------
 #
-# "Could not ask" must not be answered as "there is none". The SUT has no STOP
-# for it: the command substitution fails under `set -e` and gh's status
-# propagates, which is the loud direction. The row exists to pin that it is not
-# `BASE main`.
+# "Could not ask" must not be answered as "there is none". The failure takes
+# the controlled STOP path, not a bare non-zero exit with empty stdout, and
+# the row pins that it is not `BASE main`.
 
 row_start
 printf 'gh: HTTP 502\n' | stub_blocked 203 1
 W="$(work_repo blocked-fails "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'blockedBy-lookup-fails-loudly' 1 '' 1
+assert_row 'blockedBy-lookup-fails' 0 'STOP blocked-lookup-failed\n' 1
 tally check_tracking 'blockedBy-lookup-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the prerequisite has no PR ----------------------------------------
@@ -291,7 +290,7 @@ blocked_json 1 77 | stub_blocked 203 0
 printf 'gh: HTTP 502\n' | stub_prereq_prs 77 1
 W="$(work_repo prs-fails "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'prerequisite-pr-lookup-fails-loudly' 1 '' 2
+assert_row 'prerequisite-pr-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
 tally check_tracking 'prerequisite-pr-lookup-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- PR state: OPEN ----------------------------------------------------
@@ -366,7 +365,7 @@ prs_json 55 | stub_prereq_prs 77 0
 printf 'gh: HTTP 502\n' | stub_pr_view 55 1
 W="$(work_repo pr-view-fails "$REMOTE" main)"
 run_in "$W" 203
-assert_row 'pr-view-fails-loudly' 1 '' 3
+assert_row 'pr-view-fails' 0 'STOP pr-lookup-failed\n' 3
 tally check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
 
 # ---- the default-branch ladder ----------------------------------------

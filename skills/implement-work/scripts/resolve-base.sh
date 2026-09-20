@@ -25,8 +25,14 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 if [ -z "$ISSUE" ]; then
   BLOCKED_COUNT=0
 else
-  BLOCKED_JSON="$(gh issue view "${ISSUE}" --json blockedBy)"
-  BLOCKED_COUNT="$(printf '%s' "$BLOCKED_JSON" | jq '.blockedBy.totalCount')"
+  if ! BLOCKED_JSON="$(gh issue view "${ISSUE}" --json blockedBy 2>/dev/null)"; then
+    echo "STOP blocked-lookup-failed"
+    exit 0
+  fi
+  if ! BLOCKED_COUNT="$(printf '%s' "$BLOCKED_JSON" | jq '.blockedBy.totalCount' 2>/dev/null)"; then
+    echo "STOP blocked-lookup-failed"
+    exit 0
+  fi
 fi
 
 if [ "${BLOCKED_COUNT}" -eq 0 ]; then
@@ -43,12 +49,21 @@ if [ "${BLOCKED_COUNT}" -ge 2 ]; then
   exit 0
 fi
 
-PREREQ="$(printf '%s' "$BLOCKED_JSON" | jq -r '.blockedBy.nodes[0].number')"
+if ! PREREQ="$(printf '%s' "$BLOCKED_JSON" | jq -r '.blockedBy.nodes[0].number' 2>/dev/null)"; then
+  echo "STOP blocked-lookup-failed"
+  exit 0
+fi
 
 # closedByPullRequestsReferences comes back as a plain array here (unlike
 # blockedBy's {nodes, totalCount}), so it is counted with `length`.
-CLOSED_JSON="$(gh issue view "${PREREQ}" --json closedByPullRequestsReferences)"
-PR_COUNT="$(printf '%s' "$CLOSED_JSON" | jq '.closedByPullRequestsReferences | length')"
+if ! CLOSED_JSON="$(gh issue view "${PREREQ}" --json closedByPullRequestsReferences 2>/dev/null)"; then
+  echo "STOP prereq-lookup-failed"
+  exit 0
+fi
+if ! PR_COUNT="$(printf '%s' "$CLOSED_JSON" | jq '.closedByPullRequestsReferences | length' 2>/dev/null)"; then
+  echo "STOP prereq-lookup-failed"
+  exit 0
+fi
 
 if [ "${PR_COUNT}" -eq 0 ]; then
   echo "STOP not-implemented"
@@ -60,9 +75,15 @@ if [ "${PR_COUNT}" -ge 2 ]; then
   exit 0
 fi
 
-PR="$(printf '%s' "$CLOSED_JSON" | jq -r '.closedByPullRequestsReferences[0].number')"
+if ! PR="$(printf '%s' "$CLOSED_JSON" | jq -r '.closedByPullRequestsReferences[0].number' 2>/dev/null)"; then
+  echo "STOP prereq-lookup-failed"
+  exit 0
+fi
 
-PR_INFO="$(gh pr view "${PR}" --json headRefName,state --jq '"\(.headRefName) \(.state)"')"
+if ! PR_INFO="$(gh pr view "${PR}" --json headRefName,state --jq '"\(.headRefName) \(.state)"' 2>/dev/null)"; then
+  echo "STOP pr-lookup-failed"
+  exit 0
+fi
 HEAD_REF="${PR_INFO% *}"
 STATE="${PR_INFO##* }"
 
