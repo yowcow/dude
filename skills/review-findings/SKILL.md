@@ -70,7 +70,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished.
+Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointer, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch.
 
 ## Caller contract
 
