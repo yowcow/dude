@@ -43,9 +43,12 @@ for f in $FILES; do
   fi
 done
 
+trap 'rm -f .claude-plugin/.bump.* .codex-plugin/.bump.* .bump.*' EXIT
+
 for f in $FILES; do
-  tmp="$(mktemp)"
+  tmp="$(mktemp "$(dirname -- "$f")/.bump.XXXXXX")"
   sed "s|\"version\"[[:space:]]*:[[:space:]]*\"[^\"]*\"|\"version\": \"${ESCAPED}\"|" "$f" >"$tmp"
-  cat "$tmp" >"$f"
-  rm -f "$tmp"
+  mode="$(stat -c '%a' "$f" 2>/dev/null || stat -f '%Lp' "$f")"
+  chmod "$mode" "$tmp"
+  mv -- "$tmp" "$f"
 done

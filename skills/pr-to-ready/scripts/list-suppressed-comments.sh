@@ -61,16 +61,21 @@ OWNER="$1"
 REPO="$2"
 PR="$3"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 [--full] <owner> <repo> <pr-number>" >&2
+  exit 2
+fi
+
 # The block starts at the line carrying `Suppressed comments (N)` — a `###`
 # heading in one Copilot shape, a `<summary>` in another — and runs to the next
 # `</details>`.
 fetch_block() {
-  gh pr view "$PR" --repo "$OWNER/$REPO" --json reviews \
+  gh pr view --repo "$OWNER/$REPO" --json reviews \
     --jq '.reviews
         | map(select((.author.login // "") | ascii_downcase | contains("copilot")))
         | sort_by(.submittedAt)
         | last
-        | .body // ""' \
+        | .body // ""' -- "$PR" \
     | awk '/Suppressed comments \([0-9]+\)/ { in_block = 1 }
          in_block && /^<\/details>/ { in_block = 0 }
          in_block { print }'

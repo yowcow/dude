@@ -111,7 +111,7 @@ while IFS='|' read -r name fixture status args want_exit want_calls want_file; d
   body=/dev/null
   if [ "$fixture" != '-' ]; then body="${FIXTURES}/${fixture}.json"; fi
   gh_stub_raw_response '*' "$status" \
-    pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$body"
+    pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$body"
 
   want=/dev/null
   if [ "$want_file" != '-' ]; then want="${EXPECTED}/${want_file}"; fi

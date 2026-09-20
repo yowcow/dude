@@ -57,6 +57,21 @@ BASELINE_FILE="$4"
 MAX_ITER="${5:-40}"
 INTERVAL="${6:-30}"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number> <baseline-file> [max-iterations] [interval-seconds]" >&2
+  exit 2
+fi
+
+if ! [[ "$MAX_ITER" =~ ^[0-9]+$ ]] || [ "$MAX_ITER" -lt 1 ]; then
+  echo "Usage: $0 <owner> <repo> <pr-number> <baseline-file> [max-iterations] [interval-seconds]" >&2
+  exit 2
+fi
+
+if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number> <baseline-file> [max-iterations] [interval-seconds]" >&2
+  exit 2
+fi
+
 # A missing or unreadable baseline file is a usage error rather than an empty
 # baseline: the two are indistinguishable to the filter below, and silently
 # treating "I forgot to record it" as "there was nothing" is what makes an old

@@ -30,6 +30,11 @@ OWNER="$1"
 REPO="$2"
 PR="$3"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number>" >&2
+  exit 2
+fi
+
 # --paginate follows pageInfo.hasNextPage/endCursor automatically as long as
 # the query names the cursor variable $endCursor and threads it through
 # reviewThreads(after: $endCursor) — needed because a long-running PR's

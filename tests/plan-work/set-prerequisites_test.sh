@@ -71,8 +71,8 @@ stub_view() {
   shift 2
   blocked_by_body "$@" |
     gh_stub_raw_response "$idx" "$status" \
-      issue view "$CHILD" --repo "${OWNER}/${REPO}" --json blockedBy \
-      --jq '.blockedBy.nodes[].number'
+      issue view --repo "${OWNER}/${REPO}" --json blockedBy \
+      --jq '.blockedBy.nodes[].number' -- "$CHILD"
 }
 
 # stub_edit <index> <status> <flag>...   the edit, keyed on its exact argv
@@ -80,7 +80,7 @@ stub_edit() {
   local idx="$1" status="$2"
   shift 2
   : | gh_stub_response "$idx" "$status" \
-    issue edit "$CHILD" --repo "${OWNER}/${REPO}" "$@"
+    issue edit --repo "${OWNER}/${REPO}" "$@" -- "$CHILD"
 }
 
 # --- no prerequisites: the independent item ---------------------------------

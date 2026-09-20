@@ -14,6 +14,11 @@ fi
 
 ISSUE="${1:-}"
 
+if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 [issue-number]" >&2
+  exit 2
+fi
+
 # The default branch is resolved by resolve-default-branch.sh beside this
 # script -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
@@ -25,7 +30,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 if [ -z "$ISSUE" ]; then
   BLOCKED_COUNT=0
 else
-  if ! BLOCKED_JSON="$(gh issue view "${ISSUE}" --json blockedBy 2>/dev/null)"; then
+  if ! BLOCKED_JSON="$(gh issue view --json blockedBy -- "${ISSUE}" 2>/dev/null)"; then
     echo "STOP blocked-lookup-failed"
     exit 0
   fi
@@ -56,7 +61,7 @@ fi
 
 # closedByPullRequestsReferences comes back as a plain array here (unlike
 # blockedBy's {nodes, totalCount}), so it is counted with `length`.
-if ! CLOSED_JSON="$(gh issue view "${PREREQ}" --json closedByPullRequestsReferences 2>/dev/null)"; then
+if ! CLOSED_JSON="$(gh issue view --json closedByPullRequestsReferences -- "${PREREQ}" 2>/dev/null)"; then
   echo "STOP prereq-lookup-failed"
   exit 0
 fi
@@ -80,7 +85,7 @@ if ! PR="$(printf '%s' "$CLOSED_JSON" | jq -r '.closedByPullRequestsReferences[0
   exit 0
 fi
 
-if ! PR_INFO="$(gh pr view "${PR}" --json headRefName,state --jq '"\(.headRefName) \(.state)"' 2>/dev/null)"; then
+if ! PR_INFO="$(gh pr view --json headRefName,state --jq '"\(.headRefName) \(.state)"' -- "${PR}" 2>/dev/null)"; then
   echo "STOP pr-lookup-failed"
   exit 0
 fi

@@ -29,6 +29,11 @@ fi
 
 PR="${1:-}"
 
+if [ -n "$PR" ] && ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 [pr-number]" >&2
+  exit 2
+fi
+
 # Both shapes answer through here, so an empty range is EMPTY however it was
 # resolved. Handed `RANGE <sha>..<sha>` for a PR whose endpoints coincide, the
 # caller would dispatch a reviewer over an empty diff and read the no-findings
@@ -42,7 +47,7 @@ emit_range() {
 }
 
 if [ -n "$PR" ]; then
-  if ! ENDS="$(gh pr view "$PR" --json baseRefOid,headRefOid --jq '"\(.baseRefOid) \(.headRefOid)"' 2>/dev/null)"; then
+  if ! ENDS="$(gh pr view --json baseRefOid,headRefOid --jq '"\(.baseRefOid) \(.headRefOid)"' -- "$PR" 2>/dev/null)"; then
     echo "STOP pr-lookup-failed"
     exit 0
   fi

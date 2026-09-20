@@ -122,17 +122,17 @@ check_tracking() {
 
 # stub_blocked <issue> <exit-status> -- `gh issue view <issue> --json blockedBy`
 stub_blocked() {
-  gh_stub_response '*' "$2" issue view "$1" --json blockedBy
+  gh_stub_response '*' "$2" issue view --json blockedBy -- "$1"
 }
 
 # stub_prereq_prs <issue> <exit-status> -- the prerequisite's closing PRs
 stub_prereq_prs() {
-  gh_stub_response '*' "$2" issue view "$1" --json closedByPullRequestsReferences
+  gh_stub_response '*' "$2" issue view --json closedByPullRequestsReferences -- "$1"
 }
 
 # stub_pr_view <pr> <exit-status> -- raw, so the SUT's own --jq runs
 stub_pr_view() {
-  gh_stub_raw_response '*' "$2" pr view "$1" --json headRefName,state --jq "$PR_JQ"
+  gh_stub_raw_response '*' "$2" pr view --json headRefName,state --jq "$PR_JQ" -- "$1"
 }
 
 # stub_default_branch <exit-status> -- the `gh repo view` rung of the

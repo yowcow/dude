@@ -54,6 +54,16 @@ SHA="$3"
 MAX_ITER="${4:-60}"
 INTERVAL="${5:-20}"
 
+if ! [[ "$MAX_ITER" =~ ^[0-9]+$ ]] || [ "$MAX_ITER" -lt 1 ]; then
+  echo "Usage: $0 <owner> <repo> <sha> [max-iterations] [interval-seconds]" >&2
+  exit 2
+fi
+
+if ! [[ "$INTERVAL" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <sha> [max-iterations] [interval-seconds]" >&2
+  exit 2
+fi
+
 # Consecutive empty listings before the default branch is read. The window it
 # buys is (EMPTY_GRACE - 1) × interval — 40 s on the defaults, since the first
 # poll happens before any sleep and only the gaps between polls cost time — and

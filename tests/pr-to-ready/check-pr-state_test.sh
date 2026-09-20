@@ -28,16 +28,16 @@ total=0
 stub_first() {
   local mergeable="$1" base="${2:-main}"
   printf '%s %s\n' "$base" "$mergeable" |
-    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${REPO}" \
-      --json baseRefName,mergeable --jq "$FIRST_JQ"
+    gh_stub_response '*' 0 pr view -R "${OWNER}/${REPO}" \
+      --json baseRefName,mergeable --jq "$FIRST_JQ" -- "$PR"
 }
 
 # stub_reread <mergeable> -- every re-read answers the same
 stub_reread() {
   local mergeable="$1"
   printf '%s\n' "$mergeable" |
-    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${REPO}" \
-      --json mergeable --jq .mergeable
+    gh_stub_response '*' 0 pr view -R "${OWNER}/${REPO}" \
+      --json mergeable --jq .mergeable -- "$PR"
 }
 
 row_start
@@ -56,15 +56,15 @@ run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'base-drift-reports-current-base' 0 'BASE-DRIFT develop MERGEABLE\n' 1
 
 row_start
-: | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
-  --json baseRefName,mergeable --jq "$FIRST_JQ"
+: | gh_stub_response '*' 1 pr view -R "${OWNER}/${REPO}" \
+  --json baseRefName,mergeable --jq "$FIRST_JQ" -- "$PR"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 'first-read-fails' 0 'STOP pr-read-failed\n' 1
 
 row_start
 stub_first UNKNOWN
-: | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
-  --json mergeable --jq .mergeable
+: | gh_stub_response '*' 1 pr view -R "${OWNER}/${REPO}" \
+  --json mergeable --jq .mergeable -- "$PR"
 run_sut bash "$SUT" "$OWNER" "$REPO" "$PR" main
 assert_row 're-read-fails' 0 'STOP pr-read-failed\n' 2
 

@@ -30,6 +30,18 @@ REPO="$2"
 CHILD="$3"
 shift 3
 
+if ! [[ "$CHILD" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <child-number> [<prereq-number>...]" >&2
+  exit 2
+fi
+
+for n in "$@"; do
+  if ! [[ "$n" =~ ^[0-9]+$ ]]; then
+    echo "Usage: $0 <owner> <repo> <child-number> [<prereq-number>...]" >&2
+    exit 2
+  fi
+done
+
 for n in "$@"; do
   if [ "$n" = "$CHILD" ]; then
     echo "error: #$CHILD cannot be blocked by itself" >&2
@@ -53,8 +65,8 @@ oneline() {
 # (`9` before `12`). Both sides use the same order so the sets and the final
 # equality check all agree.
 read_blocked_by() {
-  gh issue view "$CHILD" --repo "$OWNER/$REPO" --json blockedBy \
-    --jq '.blockedBy.nodes[].number' 2>/dev/null | sort -u
+  gh issue view --repo "$OWNER/$REPO" --json blockedBy \
+    --jq '.blockedBy.nodes[].number' -- "$CHILD" 2>/dev/null | sort -u
 }
 
 if ! CURRENT=$(read_blocked_by); then
@@ -78,7 +90,7 @@ while read -r n; do
 done <<<"$TO_REMOVE"
 
 if [ "${#EDIT_ARGS[@]}" -gt 0 ]; then
-  if ! gh issue edit "$CHILD" --repo "$OWNER/$REPO" "${EDIT_ARGS[@]}" >/dev/null; then
+  if ! gh issue edit --repo "$OWNER/$REPO" "${EDIT_ARGS[@]}" -- "$CHILD" >/dev/null; then
     echo "error: failed to edit blocked-by for #$CHILD" >&2
     exit 1
   fi

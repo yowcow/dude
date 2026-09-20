@@ -38,7 +38,7 @@ fi
 # through to CREATE); any other non-zero means the command itself failed, and
 # that must stop the script rather than be read as "no match".
 set +e
-git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null
+git ls-remote --exit-code --heads origin -- "${BRANCH}" >/dev/null
 status=$?
 set -e
 

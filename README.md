@@ -228,7 +228,7 @@ deleting the branch and worktree are yours.
 Each row's evidence is in the prose below.
 
 OpenCode's package plugin registers all of dude's skills and prepends a summary
-stub of `using-dude` — the same stub sentences as the hook stub under a different envelope — to the first user
+stub of `using-dude` — the same stub sentences as the hook stub under a different envelope (compared normalized — marker, envelope, and install path stripped, per `tests/opencode-plugin_test.sh`) — to the first user
 message through `experimental.chat.messages.transform`, so the stub is in
 context at session start and the full rules load on a `dude:using-dude` skill
 call. The injected text uses a dude-only marker
@@ -325,7 +325,7 @@ every local skill.
 
 The checkout's transform and the hook emit the same stub: try hook changes by
 editing `hooks/session-start` and `tests/hooks/session-start_test.sh` in place,
-and keep `.opencode/plugins/dude.js` repeating those stub sentences verbatim.
+and keep `.opencode/plugins/dude.js` repeating those stub sentences (compared normalized, not byte-for-byte — see `tests/opencode-plugin_test.sh`).
 
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks

@@ -42,6 +42,11 @@ OWNER="$1"
 REPO="$2"
 PR="$3"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number>" >&2
+  exit 2
+fi
+
 # The event is not guaranteed to be on the timeline the instant the request call
 # returns, so the readback is retried over a few seconds — the same kind of
 # bounded re-read as gh-mechanics.md's on `mergeable`, and nothing like 2-2's
