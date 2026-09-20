@@ -20,7 +20,7 @@ schedule_cron="cron: '17 3 * * 1'"
 latest_base='https://raw.githubusercontent.com/openai/codex/${codex_tag}/'
 fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
-gated_blocks="$(sed -n '/^  lint:/,/^  manifest:/p' "$workflow")"
+gated_blocks="$(awk '/^  [A-Za-z0-9_-]+:/{job=$1} job=="lint:" || job=="test:"' "$workflow")"
 
 total=1
 failed=0

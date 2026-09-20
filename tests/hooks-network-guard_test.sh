@@ -7,21 +7,21 @@
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
-# shellcheck source=../lib/harness.sh
+# shellcheck source=lib/harness.sh
 # shellcheck disable=SC1091
-. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
+. "$(dirname -- "${BASH_SOURCE[0]}")/lib/harness.sh"
 
 failed=0
 total=1
 
 # `gh` is deliberately absent from this list: it is the kept zero-gh guard's
 # domain. `hooks.json` is exempt (JSON manifest, covered by make manifest).
-# Pattern is matched against hooks/* file contents, one FAIL per file.
+# Pattern is matched against hooks/* file contents, single FAIL for all hits combined.
 hits="$(grep -R -E -n --exclude=hooks.json \
   -e '(^|[^a-zA-Z0-9_-])(curl|wget)([^a-zA-Z0-9_-]|$)' \
   -e '(^|[^a-zA-Z0-9_-])(ssh|nc|socat)([^a-zA-Z0-9_-]|$)' \
-  -e 'urllib|HttpClient|socket\.|fetch\(|XMLHttpRequest' \
-  -e 'git[[:space:]]+(ls-remote|clone|fetch|push)[[:space:]]+[^.]*(https?://|ssh://|git@)' \
+  -e 'urllib|HttpClient|socket\.|fetch[[:space:]]*\(|XMLHttpRequest' \
+  -e 'git[[:space:]]+(ls-remote|clone|fetch|pull|push)[[:space:]]+[^.]*(https?://|ssh://|git@)' \
   -e '(^|[^a-zA-Z0-9_-])(npm|pip)[[:space:]]+install' \
   "${REPO_ROOT}/hooks" || true)"
 if [ -n "$hits" ]; then
