@@ -80,5 +80,5 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 - the fan-out used
 - what changed, and what behavior was preserved
 - proposals rejected, with the reason
-- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged and which caller Verify result covers the tree
+- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged and which prior result covers the tree (step-2's check run or step-1's Verify)
 - any simplification left undone, including anything reported instead of changed
