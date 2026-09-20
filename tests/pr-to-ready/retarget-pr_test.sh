@@ -54,13 +54,13 @@ total=0
 # stub_view <base-ref-name>   the opening `gh pr view`
 stub_view() {
   printf '%s\n' "$1" |
-    gh_stub_response '*' 0 pr view "$PR" -R "${OWNER}/${REPO}" \
-      --json baseRefName --jq .baseRefName
+    gh_stub_response '*' 0 pr view -R "${OWNER}/${REPO}" \
+      --json baseRefName --jq .baseRefName -- "$PR"
 }
 
 stub_view_fails() {
-  : | gh_stub_response '*' 1 pr view "$PR" -R "${OWNER}/${REPO}" \
-    --json baseRefName --jq .baseRefName
+  : | gh_stub_response '*' 1 pr view -R "${OWNER}/${REPO}" \
+    --json baseRefName --jq .baseRefName -- "$PR"
 }
 
 # stub_edit <base> <exit-status>   the retarget itself

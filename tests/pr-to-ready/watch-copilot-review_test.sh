@@ -144,9 +144,9 @@ while IFS='|' read -r name responses baseline args want_exit want_calls want_out
     body=/dev/null
     if [ "$fixture" != '-' ]; then body="${FIXTURES}/${fixture}.jsonl"; fi
     if [ "$i" -eq "${#resp_seq[@]}" ]; then
-      gh_stub_response '*' "$status" pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$body"
+      gh_stub_response '*' "$status" pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$body"
     else
-      gh_stub_response "$i" "$status" pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$body"
+      gh_stub_response "$i" "$status" pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$body"
     fi
     i=$((i + 1))
   done
@@ -212,7 +212,7 @@ cdpath_decoy="$(mktemp -d "${HARNESS_TMP}/cdpath-decoy.XXXXXX")"
 mkdir -p "${cdpath_decoy}/skills/pr-to-ready/scripts"
 printf '#!/usr/bin/env bash\nexit 99\n' >"${cdpath_decoy}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
 chmod +x "${cdpath_decoy}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
-gh_stub_response '*' 0 pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$TWO"
+gh_stub_response '*' 0 pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$TWO"
 cdpath_baseline="$(make_baseline empty)"
 cd -- "$cdpath_shadow" || exit 1
 # Set for this one call rather than exported and unset afterwards, which would

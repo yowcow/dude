@@ -26,6 +26,11 @@ REPO="$2"
 PR="$3"
 EXPECTED_BASE="$4"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number> <expected-base>" >&2
+  exit 2
+fi
+
 # Bounded re-read for `mergeable == UNKNOWN`. GitHub computes it lazily in a
 # background job that finishes in seconds, so this bound is deliberately
 # short and has nothing in common with the review-wait timeouts elsewhere in
@@ -34,9 +39,9 @@ EXPECTED_BASE="$4"
 MERGEABLE_RETRY_MAX=5
 MERGEABLE_RETRY_SECONDS=3
 
-if ! PR_INFO="$(gh pr view "$PR" -R "${OWNER}/${REPO}" \
+if ! PR_INFO="$(gh pr view -R "${OWNER}/${REPO}" \
   --json baseRefName,mergeable \
-  --jq '"\(.baseRefName) \(.mergeable)"' 2>/dev/null)"; then
+  --jq '"\(.baseRefName) \(.mergeable)"' -- "$PR" 2>/dev/null)"; then
   echo "STOP pr-read-failed"
   exit 0
 fi
@@ -53,7 +58,7 @@ ATTEMPTS=0
 while [ "$MERGEABLE" = "UNKNOWN" ] && [ "$ATTEMPTS" -lt "$MERGEABLE_RETRY_MAX" ]; do
   sleep "$MERGEABLE_RETRY_SECONDS"
   ATTEMPTS=$((ATTEMPTS + 1))
-  if ! MERGEABLE="$(gh pr view "$PR" -R "${OWNER}/${REPO}" --json mergeable --jq '.mergeable' 2>/dev/null)"; then
+  if ! MERGEABLE="$(gh pr view -R "${OWNER}/${REPO}" --json mergeable --jq '.mergeable' -- "$PR" 2>/dev/null)"; then
     echo "STOP pr-read-failed"
     exit 0
   fi

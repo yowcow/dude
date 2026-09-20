@@ -72,7 +72,7 @@ while IFS='|' read -r name fixture status args want_exit want_calls want_out; do
   body=/dev/null
   if [ "$fixture" != '-' ]; then body="${FIXTURES}/${fixture}.json"; fi
   gh_stub_raw_response '*' "$status" \
-    pr view 7 --repo acme/widgets --json reviews --jq "$JQ_FILTER" <"$body"
+    pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$body"
 
   fails_here=0
   read -ra argv <<<"$args"

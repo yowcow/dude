@@ -31,13 +31,18 @@ OWNER="$1"
 REPO="$2"
 PR="$3"
 
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number>" >&2
+  exit 2
+fi
+
 # The login falls back to "" rather than being indexed directly: this surface is
 # GraphQL, where a review left by a since-deleted account comes back with
 # author: null, and `null | ascii_downcase` aborts the whole filter. One such
 # review anywhere on the PR would otherwise take this script down with it, and
 # the caller would read that as "the gh call failed" while Copilot's review sat
 # right there.
-gh pr view "$PR" --repo "$OWNER/$REPO" --json reviews \
+gh pr view --repo "$OWNER/$REPO" --json reviews \
   --jq '.reviews[]
         | select((.author.login // "") | ascii_downcase | contains("copilot"))
-        | {id, author: (.author.login // ""), state, submittedAt}'
+        | {id, author: (.author.login // ""), state, submittedAt}' -- "$PR"

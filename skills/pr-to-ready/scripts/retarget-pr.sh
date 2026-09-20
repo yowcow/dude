@@ -40,9 +40,14 @@ REPO="$2"
 PR="$3"
 BRANCH="$4"
 BASE="$5"
+
+if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <owner> <repo> <pr-number> <branch> <base>" >&2
+  exit 2
+fi
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-if ! CURRENT_BASE="$(gh pr view "$PR" -R "${OWNER}/${REPO}" --json baseRefName --jq '.baseRefName' 2>/dev/null)"; then
+if ! CURRENT_BASE="$(gh pr view -R "${OWNER}/${REPO}" --json baseRefName --jq '.baseRefName' -- "$PR" 2>/dev/null)"; then
   echo "STOP pr-read-failed"
   exit 0
 fi

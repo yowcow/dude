@@ -251,7 +251,7 @@ work_repo() {
 # into one line is what runs: a pre-filtered fixture would state the answer
 # the row is checking.
 stub_pr_view() {
-  gh_stub_raw_response '*' "$2" pr view "$1" --json baseRefOid,headRefOid --jq "$PR_VIEW_JQ"
+  gh_stub_raw_response '*' "$2" pr view --json baseRefOid,headRefOid --jq "$PR_VIEW_JQ" -- "$1"
 }
 
 # stub_default_branch <exit-status> -- the `gh repo view` rung of the

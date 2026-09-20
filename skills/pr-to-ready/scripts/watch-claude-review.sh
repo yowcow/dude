@@ -55,6 +55,11 @@ fi
 
 BRANCH="$1"
 RUN_ID="${2:-}"
+
+if [ -n "$RUN_ID" ] && ! [[ "$RUN_ID" =~ ^[0-9]+$ ]]; then
+  echo "Usage: $0 <branch> [run-id]" >&2
+  exit 2
+fi
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # grep exits 1 when nothing matches, which set -e would turn into an abort, so
