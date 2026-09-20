@@ -63,10 +63,10 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Pass
 
-1. Gather the inputs: the target report, the question it answers, and its stated sources.
+1. Gather the inputs: the target report, the question it answers, and its stated sources. One invocation reviews exactly one target, once.
 2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the marked tier.
-3. Take the union of the findings they return. Re-judge none of them.
-4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job.
+3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
+4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. Never re-invoke this skill on the restated or paraphrased report; that restatement is the caller's output, not a new target. This closure is interim until yowcow/dude#449 defines the narrow subtractive re-invocation.
 
 ## Report
 
@@ -76,7 +76,7 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 
 This holds for every caller, rather than being defined at each call site.
 
-- **One invocation is one pass.** There is no second pass, and no path that reviews inline.
-- **The required clean for this findings pass is that the pass finished**, not that it returned no findings.
+- **One invocation is one pass** over one declared target. There is no second pass, and no path that reviews inline. A paraphrased, restated, or lightly edited version of the same report is the same target — it does not open a second invocation. (Interim: holds until yowcow/dude#449 defines the narrow subtractive re-invocation.)
+- **The required clean for this findings pass is that the pass finished** — every dispatched lens reported and the union was reported per **Report** — not that it returned no findings.
 - **Only a claim no run lens flagged is a settled conclusion.** A flagged claim is restated by the caller as unsettled / not measured, with what would settle it. The whole report is then published. This skill is not re-run on that restatement, and it never edits the report itself.
 - **Nothing is published until the pass has finished.** Report the pass to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
