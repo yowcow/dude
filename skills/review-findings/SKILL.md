@@ -76,6 +76,15 @@ Report "no findings" explicitly rather than inventing one.
 
 Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**. Report: the target reviewed, the fan-out used, which lenses ran, which skipped with why, the union of findings per **Finding contract**, which claims no run lens flagged, and that the pass finished. The report is the ledger for any re-invocation: each flagged claim is an entry marked accepted with its evidence pointers, each unflagged-but-checked claim is an entry marked rejected with the reason it failed **What counts as a finding** plus the artifact pointer checked. The caller keeps this ledger; a later pass reads it instead of re-reading the report from scratch. The report also lists intake decisions: each rejected item with its missing-evidence reason, and each bundled group with its `(lens, claim)` pair.
 
+## Measure
+
+Record per-lens accepted/rejected counts against the tracking issue, citing the ledger entries and intake decisions the pass produced.
+Counts reuse the Report ledger's accepted entries, rejected-but-checked entries, and intake decisions; no separate log is kept.
+Rejected: flagging the `AUTHORING.md` `byte-for-byte` wording overstatement as a finding — left as is, no reader reaches a wrong conclusion or wrong fix because the mechanism is correct and only the wording overstates (Side A not met; real yowcow/dude#442 axis-2 nit).
+Rejected: flagging excess measurement precision (or section ordering) as a finding — followed as stated, the reader spends a fix that changes no conclusion, which is reviewer preference, never a finding (Side B not met; the preference class named above).
+Replay the corpus — the yowcow/dude#442 audit report plus the yowcow/dude#443 design-comment review-plan rounds (Pass 1, Revision 1, Revision 2 clean) — once under the current single additive pass and once under the new additive-plus-subtractive design.
+Report the accepted-entry sustain rate (accepted entries sustained under the Evidence-only verification pass divided by total accepted entries) with per-lens counts for both arms.
+
 ## Caller contract
 
 This holds for every caller, rather than being defined at each call site.
