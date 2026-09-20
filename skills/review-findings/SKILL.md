@@ -78,7 +78,7 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 
 This holds for every caller, rather than being defined at each call site.
 
-- **One invocation is one pass** over one declared target. There is no second pass, and no path that reviews inline. A paraphrased, restated, or lightly edited version of the same report is the same target — it does not open a second invocation. (Interim: holds until yowcow/dude#449 defines the narrow subtractive re-invocation.)
+- **One invocation is one pass** over one declared target. A paraphrased, restated, or lightly edited version of the same report is the same target — it does not open a second invocation. The only re-invocation is the subtractive verification pass in **Pass**: the caller re-invokes with the ledger's accepted entries plus intake-routed rejected-with-new-evidence entries, and nothing else.
 - **The required clean for this findings pass is that the pass finished** — every dispatched lens reported and the union was reported per **Report** — not that it returned no findings.
 - **Only a claim no run lens flagged is a settled conclusion.** A flagged claim is restated by the caller as unsettled / not measured, with what would settle it. The whole report is then published. This skill is not re-run on that restatement, and it never edits the report itself.
 - **Nothing is published until the pass has finished.** Report the pass to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
