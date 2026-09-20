@@ -142,7 +142,7 @@ Add only what the execution method left undone.
      - Yes → don't implement it; record it and leave by step 6's first exit.
      - Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take `using-dude`'s **Escalation** by that route, recorded and exited the same way.
 2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job. When it applied nothing, skip its post-apply check run — the step-1 result already covers the unchanged tree.
-3. **Review** — run `review-code`. When it applied no fix, skip its verification check run for the same reason. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
+3. **Review** — run `review-code`. When it applied no fix, skip its verification check run — the step-1 result already covers the unchanged tree. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
    - **Hand off** pushes it, and a push carries only commits, while **Escalation** hands `plan-work` a branch name that re-approval judges by what it contains; either way, anything left uncommitted is simply absent from what the next flow reads.

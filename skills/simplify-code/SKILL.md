@@ -67,7 +67,7 @@ Report "no proposals" explicitly rather than inventing one.
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
 3. Evaluate every proposal with `superpowers:receiving-code-review`: reject — with a stated reason — anything that changes behavior, that needs a measurement to justify it (see **Don't over-simplify**), that reaches outside the diff (see **Scope**), or that only reflects proposer preference.
-4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When no proposal was applied, skip that check run — the caller's Verify result already covers the unchanged tree.
+4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When no proposal was applied, skip that check run only when invoked from `implement-work`'s completion gate — its step-1 Verify already covers the unchanged tree in this round.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
 
@@ -80,5 +80,5 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 - the fan-out used
 - what changed, and what behavior was preserved
 - proposals rejected, with the reason
-- the checks that ran, and what they actually printed
+- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged and which caller Verify result covers the tree
 - any simplification left undone, including anything reported instead of changed
