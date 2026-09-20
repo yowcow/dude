@@ -20,6 +20,7 @@ schedule_cron="cron: '17 3 * * 1'"
 latest_base='https://raw.githubusercontent.com/openai/codex/${codex_tag}/'
 fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
+gated_blocks="$(sed -n '/^  lint:/,/^  manifest:/p' "$workflow")"
 
 total=1
 failed=0
@@ -93,6 +94,20 @@ if ! grep -Fq "$schedule_cron" "$workflow"; then
 fi
 if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not run on schedules\n' >&2
+  failed=1
+fi
+uses_lines="$(grep -c 'uses:' <<<"$gated_blocks" || true)"
+pinned_lines="$(grep -cE 'uses: [^[:space:]]+@[0-9a-f]{40} # ' <<<"$gated_blocks" || true)"
+if [ "$uses_lines" -eq 0 ]; then
+  printf 'FAIL: lint/test jobs declare no uses: lines — the selection is broken\n' >&2
+  failed=1
+fi
+if [ "$uses_lines" != "$pinned_lines" ]; then
+  printf 'FAIL: lint/test uses: must be SHA-pinned with tag comment (uses=%s pinned=%s)\n' "$uses_lines" "$pinned_lines" >&2
+  failed=1
+fi
+if grep -E -q 'uses: [^[:space:]]+@(v[0-9]|main|master|latest)' <<<"$gated_blocks"; then
+  printf 'FAIL: lint/test uses: must not float on a mutable tag\n' >&2
   failed=1
 fi
 
