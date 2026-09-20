@@ -78,7 +78,7 @@ One invocation is one pass, and a pass is as many rounds as it takes:
   - Otherwise apply the accepted Critical and Important findings yourself — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**.
   - When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
   - Record Minor findings; don't fix them.
-5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output.
+5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output. When step 4 applied no fix, skip this verification — the caller's Verify result already covers the unchanged tree.
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**. A pass whose step 4 ended on a `needs-user` does not come back here.
 7. Report per **Report**.
 
