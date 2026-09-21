@@ -18,8 +18,7 @@
 # be read back as a branch name.
 #
 # Canonical source: this script is the one implementation of "default branch
-# name" other scripts call (`watch-claude-review.sh` still reads
-# `.defaultBranchRef.name` inline; item 3 converges it); conventions and the
+# name" other scripts call; conventions and the
 # STOP registry live beside it at references/script-conventions.md and
 # references/stop-registry.md. Do not add rungs here and do not print a
 # slug here — both stay with the caller per the paragraphs above.
