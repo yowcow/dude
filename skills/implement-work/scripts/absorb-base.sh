@@ -18,7 +18,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # Everything below is repo-root-relative -- the paths printed for a conflict,
 # and the merge itself -- so the script works from the top level rather than
 # from wherever it was invoked.
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 # The guard is on the branch the caller *believes* it is on, not merely on
 # "some branch". Run from a sibling worktree carrying another task's branch,

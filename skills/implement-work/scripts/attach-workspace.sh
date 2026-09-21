@@ -28,7 +28,7 @@ if EXISTING="$(printf '%s\n' "$WORKTREES" | grep -Fx -B2 "branch refs/heads/${BR
 fi
 
 if git show-ref --verify --quiet "refs/heads/${BRANCH}"; then
-  git worktree add "${WORKTREE_PATH}" "${BRANCH}" >&2
+  git worktree add -- "${WORKTREE_PATH}" "${BRANCH}" >&2
   echo "ATTACHED ${WORKTREE_PATH}"
   exit 0
 fi
@@ -45,7 +45,7 @@ set -e
 if [ "${status}" -eq 0 ]; then
   git fetch origin -- "${BRANCH}" >&2
   git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"
-  git worktree add --track -b "${BRANCH}" "${WORKTREE_PATH}" "origin/${BRANCH}" >&2
+  git worktree add --track -b "${BRANCH}" -- "${WORKTREE_PATH}" "origin/${BRANCH}" >&2
   echo "ATTACHED ${WORKTREE_PATH}"
   exit 0
 elif [ "${status}" -ne 2 ]; then

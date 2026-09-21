@@ -28,7 +28,7 @@ fi
 
 REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 ROOT="${BUMP_ROOT:-$REPO_ROOT}"
-cd "$ROOT"
+cd "$ROOT" || exit 1
 
 ESCAPED="$(printf '%s' "$VERSION" | sed -e 's/[\\&|]/\\&/g')"
 
