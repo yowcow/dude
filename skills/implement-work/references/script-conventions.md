@@ -15,14 +15,8 @@ fi
 Shape, not just number: `Usage: ...` on stderr, nothing on stdout, exit 2.
 Numeric arguments are validated with `[[ "$X" =~ ^[0-9]+$ ]]`
 (`resolve-thread.sh` regex-shape precedent; its own exit stays 1); a non-numeric value is a usage error.
-Existing scripts `resolve-range.sh`, `resolve-pr-base.sh`, `retarget-pr.sh`,
-`resolve-thread.sh`, `resolve-pr-entry.sh`, `resolve-base.sh`,
-`read-base-trailer.sh`, `resolve-branch.sh`, `absorb-base.sh`,
-`attach-workspace.sh`, `check-pr-state.sh`, `ensure-draft-pr.sh`,
-`post-plan-comment.sh`, `set-prerequisites.sh`, `edit-plan-comment.sh` still
-exit 1 on usage; item 3 (yowcow/dude#421) migrates them to exit 2.
-`resolve-default-branch.sh` takes no arguments and checks none — extra args
-are silently ignored; item 3 decides whether it gains an arity guard.
+Remaining `exit 1` paths are runtime failures, not usage.
+`resolve-default-branch.sh` takes no arguments — extra args are a usage error.
 
 ## SCRIPT_DIR
 
@@ -34,8 +28,6 @@ This exact line. Cross-skill calls go through it as
 `bash "${SCRIPT_DIR}/../../<skill>/scripts/<name>.sh"`
 (`resolve-range.sh`, `resolve-pr-base.sh` precedent); same-directory calls
 as `bash "${SCRIPT_DIR}/<name>.sh"` (`resolve-base.sh` precedent).
-`BASH_SOURCE[0]` spellings converge to this line (item 3 migrates the one
-in `ensure-draft-pr.sh`).
 
 ## STOP contract
 
@@ -57,5 +49,3 @@ remote-tracking ref a narrowed clone need not update.
 
 Call `implement-work/scripts/resolve-default-branch.sh`. Never guess a
 name, never read `refs/remotes/origin/HEAD` (stale after a rename).
-`watch-claude-review.sh` still reads `.defaultBranchRef.name` inline;
-item 3 (yowcow/dude#421) converges it.
