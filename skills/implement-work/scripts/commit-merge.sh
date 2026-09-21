@@ -8,7 +8,7 @@ GIT_DIR_PATH="$(git rev-parse --absolute-git-dir)"
 
 # Repo-root-relative throughout: MERGE_MSG records the conflicted paths that
 # way, and the scan below opens them.
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)" || exit 1
 
 # Not an error worth a non-zero exit: it is what the caller sees when the
 # merge was already committed, or when it is run from the wrong workspace.
