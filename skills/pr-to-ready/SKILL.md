@@ -33,7 +33,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 Ask the user two things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
-- Which of Copilot, Claude, and `requesting-code-review` should this run request, from none to all three? Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+- Which of Copilot, Claude, and requesting-code-review should this run request, from none to all three? Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
 All three hold for the rest of the run — ready-on-clean is not re-asked, the reviewers set is not re-asked, and verbose is not re-bound mid-loop.
 
@@ -127,7 +127,7 @@ Capture the round-request SHA once before any selected request goes out.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the round's single comment (Posting below). That record, not a separate mark, is what tells a later reader the request from a manual click on the timeline, so post no mark here.
-- **Requesting-code-review**: only if requesting-code-review is in the set. Dispatch one read-only advisory subagent applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
+- **requesting-code-review**: only if requesting-code-review is in the set. Dispatch one read-only advisory subagent applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
 
 If this step requested nobody, skip 2-2 and go to Step 3.
 
@@ -135,7 +135,7 @@ If this step requested nobody, skip 2-2 and go to Step 3.
 
 - **Claude**: only if 2-1 found the workflow and posted a request. Tie completion to the run itself, never to comment counts: list runs again with `<skill-dir>/scripts/watch-claude-review.sh <branch>`, match the run by `displayTitle`, a `createdAt` after the request comment was posted, and a conclusion that isn't `skipped` — branch and time alone each match the wrong run or none, per that script's own header — then block on it with `<skill-dir>/scripts/watch-claude-review.sh <branch> <run-id>` — exit 0 means it succeeded, non-zero means it didn't, or the call itself failed.
 - **Copilot**: only if 2-1 requested Copilot. Wait for a review carrying an `id` the 2-1 baseline didn't have — `<skill-dir>/scripts/watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file>`, which polls `list-copilot-reviews.sh` and answers with the reviews that baseline didn't hold. Compare against that baseline, never against your own handling history. Identify the reviewer by author login (`gh-mechanics.md`'s "## Identifying a bot"), never by timestamp. Don't wait for a formal approval — Copilot commonly only ever returns a comment-only verdict.
-- **Requesting-code-review**: only if 2-1 dispatched it. Await the subagent's return inside the bound below. On return, the orchestrator posts the returned findings as one PR comment carrying that round-request SHA, then records the round identity: the subagent return + the posted comment id/URL + the request SHA. Split any `@claude` inside the returned text (`@ claude`) before posting, so quoting the findings can never re-trigger the workflow.
+- **requesting-code-review**: only if 2-1 dispatched it. Await the subagent's return inside the bound below. On return, the orchestrator posts the returned findings as one PR comment carrying that round-request SHA, then records the round identity: the subagent return + the posted comment id/URL + the request SHA. Split any `@claude` inside the returned text (`@ claude`) before posting, so quoting the findings can never re-trigger the workflow.
 - **Always bound the wait**, poll or subagent return alike, with an iteration cap and an explicit bail-out. On timeout, stop and tell the user rather than looping forever.
 
 ### 2-3. Evaluate and address feedback
@@ -144,7 +144,7 @@ Delegate collection to a subagent:
 
 - Gather from the Copilot review 2-2 waited for, from the Claude run 2-2 waited for, and from this round's requesting-code-review comment 2-2 posted under this round's identity — not every comment left after the latest push — together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh --full <owner> <repo> <pr-number>` printed.
 - Call that one only where 2-2 came back with a Copilot review the 2-1 baseline didn't hold, since the script reads whichever Copilot review is latest and knows nothing of rounds, so on a round where Copilot was skipped its block is an earlier round's, already dealt with and left to the clean judgment's leftover handling.
-- Requesting-code-review collection reads only the comment posted for this round's identity, never an earlier round's requesting-code-review comment.
+- The requesting-code-review collection reads only the comment posted for this round's identity, never an earlier round's requesting-code-review comment.
 - Dedupe, and return a structured list of findings, each with `file:line`, the thread or comment id where it has one — a suppressed finding has none — and a one-line summary.
 - Do not re-collect a thread this run already resolved. A new review that repeats the same claim at the same place is a new finding; Loop convergence still identifies two findings as the same one by place and claim.
 - Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`.
@@ -180,7 +180,7 @@ When there is at least one finding and every finding is `reject`:
 **Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
 
 - When **verbose** is off, skip the aggregate PR comment: thread replies and resolution still run except on a needs-user round, where they are skipped per above, and the verdict travels in the round's report to the caller instead — on a needs-user round, that report is the handover itself.
-- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment. Requesting-code-review verdicts aggregate the same way as the other reviewers' — the round's report to the caller when verbose is off, the single aggregate PR comment when on.
+- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment. The requesting-code-review verdicts aggregate the same way as the other reviewers' — the round's report to the caller when verbose is off, the single aggregate PR comment when on.
 
 #### Where to write
 
