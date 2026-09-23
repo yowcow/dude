@@ -9,7 +9,7 @@
     {
       "name": "dude",
       "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "source": "./",
       "author": {
         "name": "Yoko OYAMA",
