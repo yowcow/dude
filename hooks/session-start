@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SessionStart hook: put a summary stub of using-dude in context.
 #
-# Claude Code reads a JSON object on stdout and injects
+# Claude Code and Muse Code read a JSON object on stdout and inject
 # hookSpecificOutput.additionalContext. The JSON string is escaped with bash
 # parameter substitution rather than jq, because the hook has to run wherever
 # the plugin is installed and jq is not guaranteed there.
@@ -42,7 +42,7 @@ escape_for_json() {
     # and, in a UTF-8 locale, on U+0080..U+009F, which JSON allows raw: those
     # runs make 28 no-op passes, a wasted walk rather than a wrong one. The 26
     # C0 controls with no two-character escape go out as \u00XX. One left raw
-    # invalidates the whole object: Claude Code drops the block, so the stub
+    # invalidates the whole object: Claude Code and Muse Code drop the block, so the stub
     # never arrives, and this hook still exits 0 --
     # nothing says so. NUL is absent from the list because a bash string cannot
     # hold one. `printf '%b'` rather than a computed format string, which is
