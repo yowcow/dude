@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex), not an application. Default branch is `master`. dude is versioned with semver.
+Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex, Muse Code), not an application. Default branch is `master`. dude is versioned with semver.
 
 Skill bodies, `AUTHORING.md`, and `README.md` stay English. Branches follow `<issue-number>-<slug>`.
 
@@ -33,7 +33,7 @@ python3 -m json.tool .muse-plugin/marketplace.json >/dev/null
 
 `manifest-latest` resolves current vendor releases only to detect compatibility drift; a person investigates a failure, updates the fixed baseline if warranted, or intentionally leaves the baseline unchanged.
 
-The six version fields (`.claude-plugin/plugin.json`, the plugin entry in `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, `.muse-plugin/plugin.json`, the plugin entry in `.muse-plugin/marketplace.json`, `package.json`) must stay equal. Bump them together with `make bump VERSION=x`; `make manifest` fails when the six disagree. `.agents/plugins/marketplace.json` is a versionless mirror (its schema carries no `version`, syntax-checked only). Claude Code decides updates by version comparison, so a bump reaches existing installs only after a manual `/plugin update`.
+The six version fields (`.claude-plugin/plugin.json`, the plugin entry in `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, `.muse-plugin/plugin.json`, the plugin entry in `.muse-plugin/marketplace.json`, `package.json`) must stay equal. Bump them together with `make bump VERSION=x`; `make manifest` fails when the six disagree. `.agents/plugins/marketplace.json` is a versionless mirror (its schema carries no `version`, syntax-checked only). Claude Code decides updates by version comparison, so a bump reaches existing installs only after a manual `/plugin update`. Muse Code consults `version` on update, so a bump reaches existing installs only after a manual `muse plugins update`.
 
 Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/workflows/ci.yml`.
 

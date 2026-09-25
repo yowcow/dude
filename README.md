@@ -70,12 +70,23 @@ codex plugin marketplace add yowcow/dude
 codex plugin add dude@dude
 ```
 
-Muse:
+Measured primary (Muse Code 1.4.0, hermetic HOME):
 
 ```bash
 muse plugins install ./
 muse plugins approve dude
 ```
+
+Measured alternative (Muse Code 1.4.0, hermetic HOME):
+
+```bash
+muse plugins marketplace add dude-test <path-to-dude-clone>
+muse plugins install dude@dude-test
+```
+
+Measured: with the primary install present, installing the same `dude` id
+from the marketplace fails with `invalid-plugin-package` ("already installed
+from a different source"); the reverse order is unmeasured.
 
 Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
 gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
@@ -88,6 +99,17 @@ hook, trust it, or continue without trusting. Codex's hook trust decides whether
 injection happens at all. Editing the hook's matcher or command invalidates its
 trust and Codex shows `Hooks need review` again on the next interactive start;
 adding a trailing newline does not.
+
+Muse Code's help gives approve as `approve <plugin-id[[:kind]:capability-id] |
+stable-id>`; only the bare-id form is measured here: bare
+`muse plugins approve dude` flips exactly `runtime_capabilities[0].status`
+from `review_needed` to `trusted_enabled` for
+`plugin:dude:hook:session-start`.
+Trust is per capability — skills need no approval and the hook did not appear
+in the observed inspect output for `effective_capabilities`. Whether one
+bare-id approval covers multiple hooks is unmeasured. Behavior of an
+unapproved hook is unmeasured. Whether editing the hook requires re-approval
+is unmeasured.
 
 ## Versions
 
@@ -104,11 +126,18 @@ alone (syntax-checked only). What each runtime does with one:
 | OpenCode    | yes                        | no, git-backed installs do not use it to decide an update      |
 | Claude Code | no — `validate` only warns | **yes — run `/plugin update` after a bump to pick it up**      |
 | Codex       | yes, strict semver         | no                                                             |
+| Muse Code   | yes                        | yes — run `muse plugins update` after a bump to pick it up     |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
 plugin entry in `.claude-plugin/marketplace.json` — carry the shared `"version"` value.
 `claude plugin update dude@dude` compares versions, so a bump reaches existing
 installs only after a manual update.
+
+The two manifests Muse Code reads — `.muse-plugin/plugin.json` and the
+plugin entry in `.muse-plugin/marketplace.json` — carry the shared `"version"` value.
+`muse plugins validate` rejects a manifest missing `"version"` (`invalid-manifest-schema`).
+`muse plugins update dude` picked up the bumped test version, reporting
+previous/new manifest shas.
 
 `.codex-plugin/plugin.json` and `package.json` read the same `"version"`
 because their formats require one. Codex keeps a per-version
@@ -218,7 +247,7 @@ passes everything after it to the skill as free text. That is what makes
 `pr-to-ready` would otherwise stop and ask, whether a clean run should mark the
 PR ready. It is not a parsed flag; the argument text is read rather than matched
 against a grammar, and it is Claude Code's pass-through that was measured, not
-the other runtimes'.
+the other runtimes'. Muse Code pass-through is unmeasured.
 
 A fresh session per sub-issue is the shape rather than a preference: a later PR
 is never a continuation of the previous one and inherits none of its
@@ -319,11 +348,14 @@ lowering the default would pull the marked workers down with it
 Point a marketplace at a local clone instead of the remote:
 
 ```
-/plugin marketplace add ~/repos/dude
+/plugin marketplace add <path-to-dude-clone>
 /plugin install dude@dude
 
-codex plugin marketplace add ~/repos/dude
+codex plugin marketplace add <path-to-dude-clone>
 codex plugin add dude@dude
+
+muse plugins marketplace add dude-test <path-to-dude-clone>
+muse plugins install dude@dude-test
 ```
 
 Starting OpenCode from the repository checkout loads
@@ -348,6 +380,7 @@ environment — ask whoever owns it.
 The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
 Codex install injects twice as well has not been measured here.
+Whether a second Muse install injects twice is unmeasured here.
 
 Check the manifests before installing:
 
