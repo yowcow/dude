@@ -243,7 +243,7 @@ passes everything after it to the skill as free text. That is what makes
 `pr-to-ready` would otherwise stop and ask, whether a clean run should mark the
 PR ready. It is not a parsed flag; the argument text is read rather than matched
 against a grammar, and it is Claude Code's pass-through that was measured, not
-the other runtimes'.
+the other runtimes'. Muse Code pass-through is unmeasured.
 
 A fresh session per sub-issue is the shape rather than a preference: a later PR
 is never a continuation of the previous one and inherits none of its
@@ -375,7 +375,8 @@ environment — ask whoever owns it.
 
 The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
-Codex install injects twice as well has not been measured here.
+Codex install injects twice as well has not been measured here. Whether
+a second Muse install injects twice is unmeasured here.
 
 Check the manifests before installing:
 
