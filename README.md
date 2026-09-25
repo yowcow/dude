@@ -99,6 +99,14 @@ injection happens at all. Editing the hook's matcher or command invalidates its
 trust and Codex shows `Hooks need review` again on the next interactive start;
 adding a trailing newline does not.
 
+Muse approves as `<plugin-id[[:kind]:capability-id] | stable-id>`: bare
+`muse plugins approve dude` flips exactly `runtime_capabilities[0].status`
+from `review_needed` to `trusted_enabled` for `plugin:dude:hook:session-start`.
+Trust is per capability — skills need no approval and the hook never appears
+in `effective_capabilities`. Whether one bare-id approval covers multiple
+hooks is unmeasured. Behavior of an unapproved hook is unmeasured. Whether
+editing the hook requires re-approval is unmeasured.
+
 ## Versions
 
 dude is versioned with semver. The same value lives in
