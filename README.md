@@ -70,7 +70,7 @@ codex plugin marketplace add yowcow/dude
 codex plugin add dude@dude
 ```
 
-Muse:
+Measured primary:
 
 ```bash
 muse plugins install ./
@@ -80,7 +80,7 @@ muse plugins approve dude
 Measured alternative:
 
 ```bash
-muse plugins marketplace add dude-test <source>
+muse plugins marketplace add dude-test ~/repos/dude
 muse plugins install dude@dude-test
 ```
 
@@ -350,7 +350,7 @@ Point a marketplace at a local clone instead of the remote:
 codex plugin marketplace add ~/repos/dude
 codex plugin add dude@dude
 
-muse plugins marketplace add dude-test <source>
+muse plugins marketplace add dude-test ~/repos/dude
 muse plugins install dude@dude-test
 ```
 
