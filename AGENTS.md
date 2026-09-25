@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex), not an application. Default branch is `master`. dude is versioned with semver.
+Multi-runtime AI-workflow plugin (OpenCode, Claude Code, Codex, Muse Code), not an application. Default branch is `master`. dude is versioned with semver.
 
 Skill bodies, `AUTHORING.md`, and `README.md` stay English. Branches follow `<issue-number>-<slug>`.
 
