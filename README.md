@@ -70,6 +70,13 @@ codex plugin marketplace add yowcow/dude
 codex plugin add dude@dude
 ```
 
+Muse:
+
+```bash
+muse plugins install ./
+muse plugins approve dude
+```
+
 Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
 gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
 carrying a `trusted_hash`. Installing dude does not grant it: `codex plugin add`
