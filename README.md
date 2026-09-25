@@ -70,22 +70,23 @@ codex plugin marketplace add yowcow/dude
 codex plugin add dude@dude
 ```
 
-Measured primary:
+Measured primary (Muse Code 1.4.0, hermetic HOME):
 
 ```bash
 muse plugins install ./
 muse plugins approve dude
 ```
 
-Measured alternative:
+Measured alternative (Muse Code 1.4.0, hermetic HOME):
 
 ```bash
-muse plugins marketplace add dude-test ~/repos/dude
+muse plugins marketplace add dude-test <path-to-dude-clone>
 muse plugins install dude@dude-test
 ```
 
-Measured: one `dude` id cannot be installed from both sources at once — the
-second install fails with `invalid-plugin-package`.
+Measured: with the flow-A install present, installing the same `dude` id
+from the marketplace fails with `invalid-plugin-package` ("already installed
+from a different source"); the reverse order is unmeasured.
 
 Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
 gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
@@ -99,13 +100,16 @@ injection happens at all. Editing the hook's matcher or command invalidates its
 trust and Codex shows `Hooks need review` again on the next interactive start;
 adding a trailing newline does not.
 
-Muse approves as `<plugin-id[[:kind]:capability-id] | stable-id>`: bare
+Muse's help gives approve as `approve <plugin-id[[:kind]:capability-id] |
+stable-id>`; only the bare-id form is measured here: bare
 `muse plugins approve dude` flips exactly `runtime_capabilities[0].status`
-from `review_needed` to `trusted_enabled` for `plugin:dude:hook:session-start`.
+from `review_needed` to `trusted_enabled` for
+`plugin:dude:hook:session-start`.
 Trust is per capability — skills need no approval and the hook did not appear
-in the observed inspect output for `effective_capabilities`. Whether one bare-id approval covers multiple
-hooks is unmeasured. Behavior of an unapproved hook is unmeasured. Whether
-editing the hook requires re-approval is unmeasured.
+in the observed inspect output for `effective_capabilities`. Whether one
+bare-id approval covers multiple hooks is unmeasured. Behavior of an
+unapproved hook is unmeasured. Whether editing the hook requires re-approval
+is unmeasured.
 
 ## Versions
 
@@ -132,7 +136,7 @@ installs only after a manual update.
 The two manifests Muse Code reads — `.muse-plugin/plugin.json` and the
 plugin entry in `.muse-plugin/marketplace.json` — carry the shared `"version"` value.
 `muse plugins validate` rejects a manifest missing `"version"` (`invalid-manifest-schema`).
-`muse plugins update dude` picked up the bumped `9.9.9-test` version, reporting
+`muse plugins update dude` picked up the bumped test version, reporting
 previous/new manifest shas.
 
 `.codex-plugin/plugin.json` and `package.json` read the same `"version"`
@@ -344,13 +348,13 @@ lowering the default would pull the marked workers down with it
 Point a marketplace at a local clone instead of the remote:
 
 ```
-/plugin marketplace add ~/repos/dude
+/plugin marketplace add <path-to-dude-clone>
 /plugin install dude@dude
 
-codex plugin marketplace add ~/repos/dude
+codex plugin marketplace add <path-to-dude-clone>
 codex plugin add dude@dude
 
-muse plugins marketplace add dude-test ~/repos/dude
+muse plugins marketplace add dude-test <path-to-dude-clone>
 muse plugins install dude@dude-test
 ```
 
