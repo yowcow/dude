@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Bump the four version fields to one value (jq-free).
-# The four exclude `.agents/plugins/marketplace.json`, a versionless mirror
+# Bump the six version fields to one value (jq-free).
+# The six exclude `.agents/plugins/marketplace.json`, a versionless mirror
 # whose schema carries no `version`.
 # Usage: bump.sh <version>
 set -euo pipefail
@@ -32,7 +32,7 @@ cd "$ROOT" || exit 1
 
 ESCAPED="$(printf '%s' "$VERSION" | sed -e 's/[\\&|]/\\&/g')"
 
-FILES=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json"
+FILES=".claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json"
 
 for f in $FILES; do
   n="$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$f" | wc -l || true)"
@@ -43,7 +43,7 @@ for f in $FILES; do
   fi
 done
 
-trap 'rm -f .claude-plugin/.bump.* .codex-plugin/.bump.* .bump.*' EXIT
+trap 'rm -f .claude-plugin/.bump.* .codex-plugin/.bump.* .muse-plugin/.bump.* .bump.*' EXIT
 
 for f in $FILES; do
   tmp="$(mktemp "$(dirname -- "$f")/.bump.XXXXXX")"

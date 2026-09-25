@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Tests scripts/bump.sh: a trial bump rewrites the four version fields while
+# Tests scripts/bump.sh: a trial bump rewrites the six version fields while
 # leaving the rest of each file alone, and a failure leaves the tree untouched.
-# The four exclude `.agents/plugins/marketplace.json` (versionless mirror).
+# The six exclude `.agents/plugins/marketplace.json` (versionless mirror).
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -17,10 +17,12 @@ make_fixture() {
   root="$1"
   ver="$2"
   # No `.agents` fixture: that mirror carries no `version`, so bump leaves it alone.
-  mkdir -p "$root/.claude-plugin" "$root/.codex-plugin"
+  mkdir -p "$root/.claude-plugin" "$root/.codex-plugin" "$root/.muse-plugin"
   printf '{\n  "name": "dude",\n  "version": "%s"\n}\n' "$ver" >"$root/.claude-plugin/plugin.json"
   printf '{\n  "plugins": [\n    {\n      "name": "dude",\n      "version": "%s"\n    }\n  ]\n}\n' "$ver" >"$root/.claude-plugin/marketplace.json"
   printf '{\n  "name": "dude",\n  "version": "%s"\n}\n' "$ver" >"$root/.codex-plugin/plugin.json"
+  printf '{\n  "name": "dude",\n  "version": "%s"\n}\n' "$ver" >"$root/.muse-plugin/plugin.json"
+  printf '{\n  "plugins": [\n    {\n      "name": "dude",\n      "version": "%s"\n    }\n  ]\n}\n' "$ver" >"$root/.muse-plugin/marketplace.json"
   printf '{\n  "name": "dude",\n  "version": "%s"\n}\n' "$ver" >"$root/package.json"
 }
 
@@ -33,7 +35,7 @@ fails_here=0
 make_fixture "${HARNESS_TMP}/bump" "1.0.0"
 run_sut env "BUMP_ROOT=${HARNESS_TMP}/bump" bash "$SUT" "2.0.0"
 if ! check_eq 'trial bump exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json; do
   if ! check_eq "trial bump $f" '"version": "2.0.0"' "$(version_line "${HARNESS_TMP}/bump/$f")"; then fails_here=1; fi
   if ! grep -q '"name": "dude"' "${HARNESS_TMP}/bump/$f"; then
     printf 'FAIL trial bump %s: surrounding content changed\n' "$f"
@@ -60,7 +62,7 @@ if [ "$SUT_STATUS" -eq 0 ]; then
   printf 'FAIL missing field exit: want non-zero, got 0\n'
   fails_here=1
 fi
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json; do
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .muse-plugin/plugin.json .muse-plugin/marketplace.json; do
   if ! check_eq "missing field untouched $f" '"version": "1.0.0"' "$(version_line "${HARNESS_TMP}/missing/$f")"; then fails_here=1; fi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
@@ -85,7 +87,7 @@ if [ "$SUT_STATUS" -eq 0 ]; then
   printf 'FAIL unsafe version exit: want non-zero, got 0\n'
   fails_here=1
 fi
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json; do
   if ! check_eq "unsafe version untouched $f" '"version": "1.0.0"' "$(version_line "${HARNESS_TMP}/badver/$f")"; then fails_here=1; fi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
@@ -137,7 +139,7 @@ root="${HARNESS_TMP}/make-ok"
 make_fixture "$root" "1.0.0"
 run_sut env "BUMP_ROOT=${root}" make -C "$root" -f "${REPO_ROOT}/Makefile" bump 'VERSION=2.0.0'
 if ! check_eq 'make bump exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json package.json; do
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json; do
   if ! check_eq "make bump $f" '"version": "2.0.0"' "$(version_line "$root/$f")"; then fails_here=1; fi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi

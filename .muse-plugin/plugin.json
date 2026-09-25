@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "name": "dude",
+  "displayName": "dude",
+  "version": "1.1.1",
+  "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
+  "compat": {
+    "source": "native",
+    "manifestDir": ".muse-plugin"
+  },
+  "capabilities": {
+    "skills": [
+      {
+        "id": "audit-code",
+        "path": "skills/audit-code/SKILL.md"
+      },
+      {
+        "id": "implement-work",
+        "path": "skills/implement-work/SKILL.md"
+      },
+      {
+        "id": "investigate-anomaly",
+        "path": "skills/investigate-anomaly/SKILL.md"
+      },
+      {
+        "id": "investigate-performance",
+        "path": "skills/investigate-performance/SKILL.md"
+      },
+      {
+        "id": "plan-work",
+        "path": "skills/plan-work/SKILL.md"
+      },
+      {
+        "id": "pr-to-ready",
+        "path": "skills/pr-to-ready/SKILL.md"
+      },
+      {
+        "id": "review-code",
+        "path": "skills/review-code/SKILL.md"
+      },
+      {
+        "id": "review-findings",
+        "path": "skills/review-findings/SKILL.md"
+      },
+      {
+        "id": "review-plan",
+        "path": "skills/review-plan/SKILL.md"
+      },
+      {
+        "id": "settle-question",
+        "path": "skills/settle-question/SKILL.md"
+      },
+      {
+        "id": "simplify-code",
+        "path": "skills/simplify-code/SKILL.md"
+      },
+      {
+        "id": "using-dude",
+        "path": "skills/using-dude/SKILL.md"
+      }
+    ],
+    "hooks": [
+      {
+        "id": "session-start",
+        "event": "SessionStart",
+        "command": [
+          "sh",
+          "hooks/session-start"
+        ],
+        "timeoutMs": 5000
+      }
+    ]
+  }
+}
