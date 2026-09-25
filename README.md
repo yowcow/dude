@@ -84,7 +84,7 @@ muse plugins marketplace add dude-test <path-to-dude-clone>
 muse plugins install dude@dude-test
 ```
 
-Measured: with the flow-A install present, installing the same `dude` id
+Measured: with the primary install present, installing the same `dude` id
 from the marketplace fails with `invalid-plugin-package` ("already installed
 from a different source"); the reverse order is unmeasured.
 
@@ -100,7 +100,7 @@ injection happens at all. Editing the hook's matcher or command invalidates its
 trust and Codex shows `Hooks need review` again on the next interactive start;
 adding a trailing newline does not.
 
-Muse's help gives approve as `approve <plugin-id[[:kind]:capability-id] |
+Muse Code's help gives approve as `approve <plugin-id[[:kind]:capability-id] |
 stable-id>`; only the bare-id form is measured here: bare
 `muse plugins approve dude` flips exactly `runtime_capabilities[0].status`
 from `review_needed` to `trusted_enabled` for
