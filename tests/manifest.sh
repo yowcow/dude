@@ -7,7 +7,10 @@ cd "$ROOT" || exit 1
 
 claude plugin validate .
 python3 "${HOME}/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" .
-muse plugins validate .
+# `plugins` commands sit behind the experimental plugins gate; without the
+# cached feature flags of an interactive login (fresh HOME, CI) `validate`
+# refuses with "plugins are not available in this build".
+MUSE_EXPERIMENTAL_PLUGINS=on muse plugins validate .
 
 for manifest in .agents/plugins/marketplace.json package.json hooks/hooks.json .muse-plugin/plugin.json .muse-plugin/marketplace.json; do
   python3 -m json.tool "$manifest" >/dev/null

@@ -26,7 +26,7 @@ SH
 
 cat >"${stub_bin}/muse" <<'SH'
 #!/usr/bin/env bash
-{ printf 'muse'; printf ' %s' "$@"; printf '\n'; } >>"$CALLS"
+{ printf 'muse'; printf ' %s' "$@"; printf ' [%s]' "${MUSE_EXPERIMENTAL_PLUGINS:-unset}"; printf '\n'; } >>"$CALLS"
 exit "$MUSE_STATUS"
 SH
 
@@ -42,7 +42,7 @@ chmod +x "${stub_bin}/claude" "${stub_bin}/muse" "${stub_bin}/python3"
 
 run_manifest() {
   : >"${HARNESS_TMP}/calls"
-  run_sut env \
+  run_sut env -u MUSE_EXPERIMENTAL_PLUGINS \
     "HOME=${HARNESS_TMP}/home" \
     "PATH=${stub_bin}:${PATH}" \
     "CALLS=${HARNESS_TMP}/calls" \
@@ -56,7 +56,7 @@ run_manifest() {
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
   "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
-  'muse plugins validate .' \
+  'muse plugins validate . [on]' \
   'python3 -m json.tool .agents/plugins/marketplace.json' \
   'python3 -m json.tool package.json' \
   'python3 -m json.tool hooks/hooks.json' \
@@ -94,7 +94,7 @@ run_manifest 0 0 1 0
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
   "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
-  'muse plugins validate .')"
+  'muse plugins validate . [on]')"
 if ! check_eq 'Muse failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_eq 'Muse failure calls' "$want_calls" "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
@@ -105,7 +105,7 @@ run_manifest 0 0 0 1
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
   "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
-  'muse plugins validate .' \
+  'muse plugins validate . [on]' \
   'python3 -m json.tool .agents/plugins/marketplace.json')"
 if ! check_eq 'JSON failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_eq 'JSON failure calls' "$want_calls" "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
@@ -126,7 +126,7 @@ make_fixture() {
 
 run_fixture() {
   : >"${HARNESS_TMP}/calls"
-  run_sut env \
+  run_sut env -u MUSE_EXPERIMENTAL_PLUGINS \
     "HOME=${HARNESS_TMP}/home" \
     "PATH=${stub_bin}:${PATH}" \
     "CALLS=${HARNESS_TMP}/calls" \
