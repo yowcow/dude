@@ -104,11 +104,18 @@ alone (syntax-checked only). What each runtime does with one:
 | OpenCode    | yes                        | no, git-backed installs do not use it to decide an update      |
 | Claude Code | no — `validate` only warns | **yes — run `/plugin update` after a bump to pick it up**      |
 | Codex       | yes, strict semver         | no                                                             |
+| Muse Code   | yes                        | yes — run `muse plugins update` after a bump to pick it up     |
 
 So the two manifests Claude Code reads — `.claude-plugin/plugin.json` and the
 plugin entry in `.claude-plugin/marketplace.json` — carry the shared `"version"` value.
 `claude plugin update dude@dude` compares versions, so a bump reaches existing
 installs only after a manual update.
+
+The two manifests Muse Code reads — `.muse-plugin/plugin.json` and the
+plugin entry in `.muse-plugin/marketplace.json` — carry the shared `"version"` value.
+`muse plugins validate` rejects a manifest missing `"version"` (`invalid-manifest-schema`).
+`muse plugins update dude` picked up the bumped `9.9.9-test` version, reporting
+previous/new manifest shas.
 
 `.codex-plugin/plugin.json` and `package.json` read the same `"version"`
 because their formats require one. Codex keeps a per-version
