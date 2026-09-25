@@ -77,6 +77,16 @@ muse plugins install ./
 muse plugins approve dude
 ```
 
+Measured alternative:
+
+```bash
+muse plugins marketplace add dude-test <source>
+muse plugins install dude@dude-test
+```
+
+One `dude` id cannot be installed from both sources at once — the
+second install fails with `invalid-plugin-package`.
+
 Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
 gains a `[hooks.state."dude@dude:hooks/hooks.json:session_start:0:0"]` entry
 carrying a `trusted_hash`. Installing dude does not grant it: `codex plugin add`
@@ -331,6 +341,9 @@ Point a marketplace at a local clone instead of the remote:
 
 codex plugin marketplace add ~/repos/dude
 codex plugin add dude@dude
+
+muse plugins marketplace add dude-test <source>
+muse plugins install dude@dude-test
 ```
 
 Starting OpenCode from the repository checkout loads
