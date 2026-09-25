@@ -52,6 +52,7 @@ jobs:
 
       - name: install manifest validators
         run: |
+          set -o pipefail
           python3 -m venv "$HOME/.venv-manifest"
           "$HOME/.venv-manifest/bin/pip" install --disable-pip-version-check 'PyYAML==6.0.2'
           echo "$HOME/.venv-manifest/bin" >> "$GITHUB_PATH"
@@ -61,6 +62,10 @@ jobs:
             https://raw.githubusercontent.com/openai/codex/6b9826e3aa83b1a5947db50f4332cb9c65f1b340/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py
           curl --fail --location --output "$HOME/.codex/skills/.system/plugin-creator/scripts/identifier_validation.py" \
             https://raw.githubusercontent.com/openai/codex/6b9826e3aa83b1a5947db50f4332cb9c65f1b340/codex-rs/skills/src/assets/samples/plugin-creator/scripts/identifier_validation.py
+          # No version pin: unlike claude-code (npm tag) and codex (commit
+          # SHA), muse ships only the stable channel via this installer.
+          curl -fsSL https://dev.meta.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: make manifest
         run: make manifest
@@ -73,6 +78,7 @@ jobs:
 
       - name: install latest manifest validators
         run: |
+          set -o pipefail
           python3 -m venv "$HOME/.venv-manifest"
           "$HOME/.venv-manifest/bin/pip" install --disable-pip-version-check 'PyYAML==6.0.2'
           echo "$HOME/.venv-manifest/bin" >> "$GITHUB_PATH"
@@ -82,6 +88,8 @@ jobs:
           base_url="https://raw.githubusercontent.com/openai/codex/${codex_tag}/codex-rs/skills/src/assets/samples/plugin-creator/scripts"
           curl --fail --location --output "$HOME/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py" "$base_url/validate_plugin.py"
           curl --fail --location --output "$HOME/.codex/skills/.system/plugin-creator/scripts/identifier_validation.py" "$base_url/identifier_validation.py"
+          curl -fsSL https://dev.meta.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: make manifest
         run: make manifest
