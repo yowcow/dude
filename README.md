@@ -84,7 +84,7 @@ muse plugins marketplace add dude-test <source>
 muse plugins install dude@dude-test
 ```
 
-One `dude` id cannot be installed from both sources at once — the
+Measured: one `dude` id cannot be installed from both sources at once — the
 second install fails with `invalid-plugin-package`.
 
 Codex records hook trust per hook rather than per plugin — `~/.codex/config.toml`
@@ -102,8 +102,8 @@ adding a trailing newline does not.
 Muse approves as `<plugin-id[[:kind]:capability-id] | stable-id>`: bare
 `muse plugins approve dude` flips exactly `runtime_capabilities[0].status`
 from `review_needed` to `trusted_enabled` for `plugin:dude:hook:session-start`.
-Trust is per capability — skills need no approval and the hook never appears
-in `effective_capabilities`. Whether one bare-id approval covers multiple
+Trust is per capability — skills need no approval and the hook did not appear
+in the observed inspect output for `effective_capabilities`. Whether one bare-id approval covers multiple
 hooks is unmeasured. Behavior of an unapproved hook is unmeasured. Whether
 editing the hook requires re-approval is unmeasured.
 
@@ -375,8 +375,8 @@ environment — ask whoever owns it.
 
 The hazard is the hook running twice, so it is not specific to Claude Code:
 Codex runs `hooks/hooks.json` too, once the hook is trusted. Whether a second
-Codex install injects twice as well has not been measured here. Whether
-a second Muse install injects twice is unmeasured here.
+Codex install injects twice as well has not been measured here.
+Whether a second Muse install injects twice is unmeasured here.
 
 Check the manifests before installing:
 
