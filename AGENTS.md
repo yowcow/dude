@@ -23,9 +23,12 @@ CI runs `lint`, `test`, and the fixed `manifest` merge gate on pushes and pull r
 ```
 claude plugin validate .
 python3 ~/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .
+MUSE_EXPERIMENTAL_PLUGINS=on muse plugins validate .
 python3 -m json.tool .agents/plugins/marketplace.json >/dev/null
 python3 -m json.tool package.json >/dev/null
 python3 -m json.tool hooks/hooks.json >/dev/null
+python3 -m json.tool .muse-plugin/plugin.json >/dev/null
+python3 -m json.tool .muse-plugin/marketplace.json >/dev/null
 ```
 
 `manifest-latest` resolves current vendor releases only to detect compatibility drift; a person investigates a failure, updates the fixed baseline if warranted, or intentionally leaves the baseline unchanged.

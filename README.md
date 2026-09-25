@@ -357,17 +357,18 @@ make manifest
 
 `claude plugin validate` starts from `.claude-plugin/marketplace.json` and reaches that same
 `plugin.json` through the entry's `"source": "./"`. It passes without a version
-warning while all four version fields agree.
+warning while all six version fields agree.
 The Codex validator reads `.codex-plugin/plugin.json` and walks every `SKILL.md`
-as well, so it catches malformed frontmatter at the same time. Neither manifest
-validator covers `.agents/plugins/marketplace.json` (versionless mirror, no
-`version`), `package.json`, or `hooks/hooks.json`, so `make manifest`
-JSON-parses those three files, syntax only. `make lint test` still does not run manifest validation: it covers shell
+as well, so it catches malformed frontmatter at the same time. `muse plugins validate`
+covers `.muse-plugin/`. The three validators do not cover every manifest, so
+`make manifest` JSON-parses `.agents/plugins/marketplace.json` (versionless mirror, no
+`version`), `package.json`, `hooks/hooks.json`, `.muse-plugin/plugin.json`, and
+`.muse-plugin/marketplace.json`, syntax only. `make lint test` still does not run manifest validation: it covers shell
 and the test suite.
 
 CI's pinned `manifest` job is the reproducible merge decision. `manifest-latest`
 is a non-required pull-request/weekly compatibility signal using current Claude
-Code and Codex releases; investigate upstream failures, update the fixed
+Code, Codex, and Muse releases; investigate upstream failures, update the fixed
 baseline when warranted, or deliberately retain it.
 
 `AUTHORING.md` holds the rules for writing and editing these skills — where
