@@ -92,9 +92,10 @@ adding a trailing newline does not.
 ## Versions
 
 dude is versioned with semver. The same value lives in
-four places: `.claude-plugin/plugin.json`, the plugin entry in
-`.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`, and
-`package.json`. `.agents/plugins/marketplace.json` is a versionless mirror:
+six places: `.claude-plugin/plugin.json`, the plugin entry in
+`.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`,
+`.muse-plugin/plugin.json`, the plugin entry in
+`.muse-plugin/marketplace.json`, and `package.json`. `.agents/plugins/marketplace.json` is a versionless mirror:
 its schema carries no `version`, so `bump` and the version check leave it
 alone (syntax-checked only). What each runtime does with one:
 
