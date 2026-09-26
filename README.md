@@ -261,7 +261,7 @@ deleting the branch and worktree are yours.
 | OpenCode    | yes — a summary stub via `experimental.chat.messages.transform` on the first user message     | —                       |
 | Claude Code | yes — a summary stub via a SessionStart hook                                                  | —                       |
 | Codex       | yes, once the hook is trusted — the same stub via `hooks/hooks.json`                          | `dude:using-dude`       |
-| Muse Code   | yes — a summary stub via a SessionStart hook                                                  | —                       |
+| Muse Code   | yes, on `startup` once the hook is trusted — a summary stub via a SessionStart hook           | —                       |
 
 Each row's evidence is in the prose below.
 
