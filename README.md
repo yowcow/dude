@@ -80,8 +80,8 @@ muse plugins approve dude
 Measured alternative (Muse Code 1.4.0, hermetic HOME):
 
 ```bash
-muse plugins marketplace add dude-test <path-to-dude-clone>
-muse plugins install dude@dude-test
+muse plugins marketplace add dude <path-to-dude-clone>
+muse plugins install dude@dude
 ```
 
 Measured: with the primary install present, installing the same `dude` id
