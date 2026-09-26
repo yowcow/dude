@@ -98,6 +98,7 @@ check_context() {
   local label="$1" root="$2"
   local want="${HARNESS_TMP}/expected.ctx" got="${HARNESS_TMP}/got.ctx"
   {
+    printf '<!-- dude-bootstrap:using-dude -->\n'
     printf '<EXTREMELY_IMPORTANT>\n'
     printf 'dude'"'"'s workflow rules — summary stub (not the full ruleset) from the dude install at %s:\n\n' "$root"
     printf 'Before any task, read the `dude:using-dude` skill and follow it. '
