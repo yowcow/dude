@@ -261,6 +261,7 @@ deleting the branch and worktree are yours.
 | OpenCode    | yes — a summary stub via `experimental.chat.messages.transform` on the first user message     | —                       |
 | Claude Code | yes — a summary stub via a SessionStart hook                                                  | —                       |
 | Codex       | yes, once the hook is trusted — the same stub via `hooks/hooks.json`                          | `dude:using-dude`       |
+| Muse Code   | yes, on `startup` once the hook is trusted — a summary stub via a SessionStart hook           | —                       |
 
 Each row's evidence is in the prose below.
 
@@ -282,6 +283,12 @@ Codex installs all of dude's skills and runs the shared `hooks/hooks.json` once
 the hook is trusted, receiving the same stub — the Install section above
 covers what trust involves. The `dude:using-dude` skill works whether the hook is
 trusted or not.
+
+Muse Code needs no invocation: a SessionStart hook injects the summary
+stub of `using-dude` on `startup` (measured: exit 0 with the stub in the
+injection context, Muse Code 1.4.0) — the Install section above covers
+what trust involves. Behavior on other sources and with an unapproved
+hook is unmeasured.
 
 The skill bodies use bare names (`plan-work`), because the `dude:` prefix is a
 plugin namespace the host adds.

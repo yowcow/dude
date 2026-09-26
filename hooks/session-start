@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SessionStart hook: put a summary stub of using-dude in context.
 #
-# Claude Code reads a JSON object on stdout and injects
+# Claude Code and Muse Code read a JSON object on stdout and inject
 # hookSpecificOutput.additionalContext. The JSON string is escaped with bash
 # parameter substitution rather than jq, because the hook has to run wherever
 # the plugin is installed and jq is not guaranteed there.
