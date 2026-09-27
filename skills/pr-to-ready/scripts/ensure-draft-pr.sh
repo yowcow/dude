@@ -134,12 +134,14 @@ if [ "$LINE_COUNT" -ge 2 ]; then
 fi
 
 # --- Step 2b: fork detection, only when no PR exists. Metadata always; STOP only when no base-repo was given. ---
-if ! FORK_JSON="$(gh repo view --json isFork,parent --jq '"\(.isFork) \(.parent.nameWithOwner // empty)"' 2>/dev/null)"; then
+if ! FORK_JSON="$(gh repo view --json isFork,parent,nameWithOwner --jq '"\(.isFork) \(.parent.nameWithOwner // empty) \(.nameWithOwner)"' 2>/dev/null)"; then
   echo "STOP repo-lookup-failed"
   exit 0
 fi
 IS_FORK="${FORK_JSON%% *}"
-PARENT="${FORK_JSON#* }"
+REST="${FORK_JSON#* }"
+PARENT="${REST% *}"
+OWN="${REST##* }"
 if [ "$IS_FORK" = "true" ] && [ -z "$BASE_REPO" ]; then
   echo "STOP ask-base-repo"
   exit 0
@@ -186,9 +188,11 @@ esac
 
 # --head is not optional: `gh pr create`'s head defaults to the *current*
 # branch, and there is no guarantee $BRANCH is the branch checked out here.
+# Lookup stays bare: `gh pr list --head` does not support owner:branch
+# (per --help), only create qualifies.
 if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
-  PARENT_OWNER="${PARENT%%/*}"
-  HEAD_ARG="${PARENT_OWNER}:${BRANCH}"
+  CHILD_OWNER="${OWN%%/*}"
+  HEAD_ARG="${CHILD_OWNER}:${BRANCH}"
 else
   HEAD_ARG="$BRANCH"
 fi
