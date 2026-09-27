@@ -5,25 +5,25 @@
 # pre-empting that suite.
 #
 # Offline: the `@opencode/plugin` specifier is stubbed at runtime via a
-# `node:module` resolve hook written to TMPDIR (real `define` is identity,
+# `node:module` resolve hook written to tmpdir (real `define` is identity,
 # so the stub is faithful for shape purposes). Nothing is installed and no
 # new file is committed for this.
 set -euo pipefail
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-TMPDIR="$(mktemp -d)"
-trap 'rm -rf "$TMPDIR"' EXIT
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
 
-cat >"$TMPDIR/stub.mjs" <<'JS'
+cat >"$tmpdir/stub.mjs" <<'JS'
 export const Plugin = { define: (d) => d };
 JS
 
-cat >"$TMPDIR/hooks.mjs" <<'JS'
+cat >"$tmpdir/hooks.mjs" <<'JS'
 import { register } from 'node:module';
 register('./resolve-hook.mjs', import.meta.url);
 JS
 
-cat >"$TMPDIR/resolve-hook.mjs" <<'JS'
+cat >"$tmpdir/resolve-hook.mjs" <<'JS'
 export async function resolve(specifier, context, next) {
   if (specifier === '@opencode/plugin') {
     return { url: new URL('./stub.mjs', import.meta.url).href, shortCircuit: true };
@@ -32,7 +32,7 @@ export async function resolve(specifier, context, next) {
 }
 JS
 
-node --import "$TMPDIR/hooks.mjs" --input-type=module - "$ROOT" <<'JS'
+node --import "$tmpdir/hooks.mjs" --input-type=module - "$ROOT" <<'JS'
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
