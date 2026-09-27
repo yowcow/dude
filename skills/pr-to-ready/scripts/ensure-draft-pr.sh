@@ -40,14 +40,15 @@
 # found-PR row into a stop. Non-fork repos take the exact pre-fork path.
 set -euo pipefail
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <branch> <title> <body-file>" >&2
+if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
+  echo "Usage: $0 <branch> <title> <body-file> [base-repo]" >&2
   exit 2
 fi
 
 BRANCH="$1"
 TITLE="$2"
 BODY_FILE="$3"
+BASE_REPO="${4:-}"
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -69,7 +70,12 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # produce.
 pr_lookup() {
   local stop_slug="$1"
-  if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft,url --jq '.[] | "\(.number) \(.isDraft) \(.url)"')"; then
+  if [ -n "$BASE_REPO" ]; then
+    LOOKUP_ARGS=(pr list --repo "$BASE_REPO" --head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+  else
+    LOOKUP_ARGS=(pr list --head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+  fi
+  if ! LOOKUP="$(gh "${LOOKUP_ARGS[@]}")"; then
     echo "STOP $stop_slug"
     return 1
   fi
@@ -127,6 +133,18 @@ if [ "$LINE_COUNT" -ge 2 ]; then
   exit 0
 fi
 
+# --- Step 2b: fork detection, only when no PR exists. Metadata always; STOP only when no base-repo was given. ---
+if ! FORK_JSON="$(gh repo view --json isFork,parent --jq '"\(.isFork) \(.parent.nameWithOwner // empty)"' 2>/dev/null)"; then
+  echo "STOP repo-lookup-failed"
+  exit 0
+fi
+IS_FORK="${FORK_JSON%% *}"
+PARENT="${FORK_JSON#* }"
+if [ "$IS_FORK" = "true" ] && [ -z "$BASE_REPO" ]; then
+  echo "STOP ask-base-repo"
+  exit 0
+fi
+
 # --- Step 3: no PR exists. Only now is a base resolved, and only by asking
 # the sibling script — never guessed here. ---
 
@@ -136,7 +154,11 @@ fi
 # failure (bad invocation, runtime error) and is propagated unchanged so it is
 # not misreported as an unrecognised state.
 sibling_status=0
-RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
+if [ -n "$BASE_REPO" ]; then
+  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" "$BASE_REPO")" || sibling_status=$?
+else
+  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
+fi
 if [ "$sibling_status" -eq 1 ]; then
   echo "STOP unrecognised-pr-state"
   exit 0
@@ -164,7 +186,18 @@ esac
 
 # --head is not optional: `gh pr create`'s head defaults to the *current*
 # branch, and there is no guarantee $BRANCH is the branch checked out here.
-if ! gh pr create --draft --head "$BRANCH" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE" >&2; then
+if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
+  PARENT_OWNER="${PARENT%%/*}"
+  HEAD_ARG="${PARENT_OWNER}:${BRANCH}"
+else
+  HEAD_ARG="$BRANCH"
+fi
+if [ -n "$BASE_REPO" ]; then
+  CREATE_ARGS=(pr create --repo "$BASE_REPO" --draft --head "$HEAD_ARG" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
+else
+  CREATE_ARGS=(pr create --draft --head "$BRANCH" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
+fi
+if ! gh "${CREATE_ARGS[@]}" >&2; then
   echo "STOP pr-create-failed"
   exit 0
 fi
