@@ -82,9 +82,16 @@ pr_lookup() {
   if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
     # Parent-targeted cross-fork read: `gh pr list --head` takes no
     # owner qualification, and a bare head against the parent cannot see a
-    # child's PR. List with head fields and filter locally instead.
+    # child's PR. List with head fields and filter locally instead. --limit
+    # 100 is the API single-page max (watch-claude-review.sh precedent): the
+    # default page of 30 could hide the child's PR on a busy parent. Values
+    # are escaped for the double-quoted jq string (`gh --jq` takes no --arg
+    # on this gh version, measured) -- branch names come from issue slugs,
+    # so this is pathological-input hardening, not a live path.
     CHILD_OWNER="${OWN%%/*}"
-    LOOKUP_ARGS+=(--json "number,isDraft,url,headRefName,headRepositoryOwner" --jq ".[] | select(.headRefName==\"$BRANCH\" and .headRepositoryOwner.login==\"$CHILD_OWNER\") | \"\(.number) \(.isDraft) \(.url)\"")
+    ESCAPED_BRANCH="${BRANCH//\\/\\\\}"; ESCAPED_BRANCH="${ESCAPED_BRANCH//\"/\\\"}"
+    ESCAPED_OWNER="${CHILD_OWNER//\\/\\\\}"; ESCAPED_OWNER="${ESCAPED_OWNER//\"/\\\"}"
+    LOOKUP_ARGS+=(--limit 100 --json "number,isDraft,url,headRefName,headRepositoryOwner" --jq ".[] | select(.headRefName==\"$ESCAPED_BRANCH\" and .headRepositoryOwner.login==\"$ESCAPED_OWNER\") | \"\(.number) \(.isDraft) \(.url)\"")
   else
     LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
   fi

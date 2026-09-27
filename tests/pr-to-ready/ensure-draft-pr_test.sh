@@ -174,7 +174,7 @@ stub_default_branch() {
 # qualification. PARENT_JQ must spell the SUT's own filter exactly.
 PARENT_JQ='.[] | select(.headRefName=="feature" and .headRepositoryOwner.login=="acme-child") | "\(.number) \(.isDraft) \(.url)"'
 stub_pr_list_parent() {
-  gh_stub_raw_response "$1" "$3" pr list --repo "$2" --json number,isDraft,url,headRefName,headRepositoryOwner --jq "$PARENT_JQ"
+  gh_stub_raw_response "$1" "$3" pr list --repo "$2" --limit 100 --json number,isDraft,url,headRefName,headRepositoryOwner --jq "$PARENT_JQ"
 }
 
 # Step 2b fork detection: `gh repo view --json isFork,parent,nameWithOwner`,
@@ -398,6 +398,20 @@ printf 'https://example.invalid/pull/7\n' | stub_pr_create_repo 4 acme-parent/re
 printf '[{"number":7,"isDraft":true,"headRefName":"feature","headRepositoryOwner":{"login":"acme-child"},"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list_parent 5 acme-parent/repo 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" acme-parent/repo
 assert_row 'fork-parent-selected-creates-with-qualified-head' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 5
+
+row_start
+fixture fork-parent-found feature remote
+printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 1 0
+printf '[{"number":12,"isDraft":true,"headRefName":"feature","headRepositoryOwner":{"login":"acme-child"},"url":"https://example.invalid/pull/12"}]\n' | stub_pr_list_parent 2 acme-parent/repo 0
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" acme-parent/repo
+assert_row 'fork-parent-existing-pr-is-reported' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 2
+
+row_start
+fixture fork-parent-multi feature remote
+printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 1 0
+printf '[{"number":12,"isDraft":true,"headRefName":"feature","headRepositoryOwner":{"login":"acme-child"},"url":"https://example.invalid/pull/12"},{"number":13,"isDraft":false,"headRefName":"feature","headRepositoryOwner":{"login":"acme-child"},"url":"https://example.invalid/pull/13"}]\n' | stub_pr_list_parent 2 acme-parent/repo 0
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" acme-parent/repo
+assert_row 'fork-parent-several-prs-stop' 0 'STOP ask-multiple-prs\n' 2
 
 # ---- step 3: the base, resolved by the real sibling ----------------------
 #
