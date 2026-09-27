@@ -5,6 +5,8 @@
 # `node:module` resolve hook written to tmpdir (real `define` is identity,
 # so the stub is faithful for shape purposes). Nothing is installed and no
 # new file is committed for this.
+#
+# RED knob is PLUGIN_UNDER_TEST=<mutant .js>; SUT does not apply (subject is a JS module).
 set -euo pipefail
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
