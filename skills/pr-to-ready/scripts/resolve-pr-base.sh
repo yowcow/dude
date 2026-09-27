@@ -18,15 +18,16 @@
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
-# Usage: resolve-pr-base.sh <branch>
+# Usage: resolve-pr-base.sh <branch> [repo]
 set -euo pipefail
 
-if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 <branch>" >&2
+if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <branch> [repo]" >&2
   exit 2
 fi
 
 BRANCH="$1"
+BASE_REPO="${2:-}"
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
@@ -35,7 +36,11 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # Resolve the default branch before the scan below rather than at the two
 # places that print it: the scan's range is expressed against it, so it has
 # to be both named and fetched by then.
-DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+if [ -n "$BASE_REPO" ]; then
+  DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
+else
+  DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+fi
 
 # The task branch's tip is read below as FETCH_HEAD rather than from a local
 # checkout — this session may not have <branch> checked out at all. So the
