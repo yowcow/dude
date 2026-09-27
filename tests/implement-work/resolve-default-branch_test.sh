@@ -82,7 +82,12 @@ run_sut bash "$SUT"
 assert_row 'api-call-fails' 1 '' 1
 
 row_start
-run_sut bash "$SUT" extra
-assert_row 'extra-argument-is-usage-error' 2 '' 0
+printf 'trunk\n' | gh_stub_response '*' 0 repo view acme/parent --json defaultBranchRef --jq .defaultBranchRef.name
+run_sut bash "$SUT" acme/parent
+assert_row 'repo-arg-names-the-branch' 0 'trunk\n' 1
+
+row_start
+run_sut bash "$SUT" acme/parent extra
+assert_row 'two-arguments-is-usage-error' 2 '' 0
 
 harness_exit "$failed" "$total"
