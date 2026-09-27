@@ -53,11 +53,9 @@ if [ "$#" -gt 1 ]; then
 fi
 
 REPO="${1:-}"
-if [ -n "$REPO" ]; then
-  VIEW_ARGS=(repo view "$REPO" --json defaultBranchRef --jq .defaultBranchRef.name)
-else
-  VIEW_ARGS=(repo view --json defaultBranchRef --jq .defaultBranchRef.name)
-fi
+VIEW_ARGS=(repo view)
+if [ -n "$REPO" ]; then VIEW_ARGS+=("$REPO"); fi
+VIEW_ARGS+=(--json defaultBranchRef --jq .defaultBranchRef.name)
 
 if ref="$(gh "${VIEW_ARGS[@]}" 2>/dev/null)" && [ -n "$ref" ]; then
   printf '%s\n' "$ref"

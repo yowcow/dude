@@ -70,11 +70,9 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # produce.
 pr_lookup() {
   local stop_slug="$1"
-  if [ -n "$BASE_REPO" ]; then
-    LOOKUP_ARGS=(pr list --repo "$BASE_REPO" --head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
-  else
-    LOOKUP_ARGS=(pr list --head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
-  fi
+  LOOKUP_ARGS=(pr list)
+  if [ -n "$BASE_REPO" ]; then LOOKUP_ARGS+=(--repo "$BASE_REPO"); fi
+  LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
   if ! LOOKUP="$(gh "${LOOKUP_ARGS[@]}")"; then
     echo "STOP $stop_slug"
     return 1
@@ -156,11 +154,9 @@ fi
 # failure (bad invocation, runtime error) and is propagated unchanged so it is
 # not misreported as an unrecognised state.
 sibling_status=0
-if [ -n "$BASE_REPO" ]; then
-  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" "$BASE_REPO")" || sibling_status=$?
-else
-  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
-fi
+SIBLING_ARGS=("$BRANCH")
+if [ -n "$BASE_REPO" ]; then SIBLING_ARGS+=("$BASE_REPO"); fi
+RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${SIBLING_ARGS[@]}")" || sibling_status=$?
 if [ "$sibling_status" -eq 1 ]; then
   echo "STOP unrecognised-pr-state"
   exit 0
@@ -196,11 +192,9 @@ if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; 
 else
   HEAD_ARG="$BRANCH"
 fi
-if [ -n "$BASE_REPO" ]; then
-  CREATE_ARGS=(pr create --repo "$BASE_REPO" --draft --head "$HEAD_ARG" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
-else
-  CREATE_ARGS=(pr create --draft --head "$BRANCH" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
-fi
+CREATE_ARGS=(pr create)
+if [ -n "$BASE_REPO" ]; then CREATE_ARGS+=(--repo "$BASE_REPO"); fi
+CREATE_ARGS+=(--draft --head "$HEAD_ARG" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
 if ! gh "${CREATE_ARGS[@]}" >&2; then
   echo "STOP pr-create-failed"
   exit 0
