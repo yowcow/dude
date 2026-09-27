@@ -115,6 +115,13 @@ REMOTE_DEP="$(build_remote dep - dep)"
 # Two commits on one stack, the newer one recording a different branch: the
 # newer trailer has to win.
 REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
+# A remote carrying a `trunk` branch beside `main`: the selected-repo row
+# below needs a default that exists on origin (the selection only names it;
+# the fetch still reads it from origin) yet differs from every other row's
+# `main` -- a same-named answer would pass even if the selection never
+# reached `gh repo view`.
+REMOTE_TRUNK="$(build_remote trunkremote - -)"
+git -C "$REMOTE_TRUNK" branch trunk main
 
 # ---- the default-branch ladder, with no trailer to find ------------------
 #
@@ -136,6 +143,12 @@ printf 'main\n' | stub_default_branch 0
 W="$(work_repo dflt-gh "$REMOTE_PLAIN" -)"
 run_in "$W" feature
 assert_row 'no-trailer-gh-names-default' 0 'BASE main\n' 1
+
+row_start
+printf 'trunk\n' | gh_stub_response '*' 0 repo view acme/selected --json defaultBranchRef --jq .defaultBranchRef.name
+W="$(work_repo selected-repo "$REMOTE_TRUNK" main)"
+run_in "$W" feature acme/selected
+assert_row 'selected-repo-names-the-default' 0 'BASE trunk\n' 1
 
 row_start
 : | stub_default_branch 1
@@ -272,8 +285,14 @@ run_in "$W"
 assert_row 'no-argument' 2 '' 0
 
 row_start
-W="$(work_repo args-extra "$REMOTE_PLAIN" main)"
-run_in "$W" feature extra
-assert_row 'too-many-arguments' 2 '' 0
+printf 'main\n' | gh_stub_response '*' 0 repo view acme/selected --json defaultBranchRef --jq .defaultBranchRef.name
+W="$(work_repo args-two-valid "$REMOTE_PLAIN" -)"
+run_in "$W" feature acme/selected
+assert_row 'two-arguments-names-the-repo' 0 'BASE main\n' 1
+
+row_start
+W="$(work_repo args-three "$REMOTE_PLAIN" main)"
+run_in "$W" feature extra another
+assert_row 'three-arguments' 2 '' 0
 
 harness_exit "$failed" "$total"

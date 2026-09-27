@@ -44,15 +44,20 @@
 # name, and tolerating an empty answer hands back the empty string, which a
 # caller fetches as `git fetch origin -- ''`.
 #
-# Usage: resolve-default-branch.sh
+# Usage: resolve-default-branch.sh [repo]
 set -euo pipefail
 
-if [ "$#" -gt 0 ]; then
-  echo "Usage: $0" >&2
+if [ "$#" -gt 1 ]; then
+  echo "Usage: $0 [repo]" >&2
   exit 2
 fi
 
-if ref="$(gh repo view --json defaultBranchRef --jq '.defaultBranchRef.name' 2>/dev/null)" && [ -n "$ref" ]; then
+REPO="${1:-}"
+VIEW_ARGS=(repo view)
+if [ -n "$REPO" ]; then VIEW_ARGS+=("$REPO"); fi
+VIEW_ARGS+=(--json defaultBranchRef --jq .defaultBranchRef.name)
+
+if ref="$(gh "${VIEW_ARGS[@]}" 2>/dev/null)" && [ -n "$ref" ]; then
   printf '%s\n' "$ref"
   exit 0
 fi

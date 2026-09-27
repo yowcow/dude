@@ -26,22 +26,36 @@
 # stdout; that failure mode is invisible to `bash -n`, since it never
 # executes a call into another directory.
 #
-# Usage: ensure-draft-pr.sh <branch> <title> <body-file>
+# Usage: ensure-draft-pr.sh <branch> <title> <body-file> [base-repo]
 #
 # Output contract (single source; skills/implement-work/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
 #   PR <n> created draft=<bool> base=<base> url=<url> -- this run opened it.
+#   STOP ask-base-repo child=<child> parent=<parent> -- the repo is a fork and
+#     no base-repo was given; re-run with the user-selected repo (fork child
+#     first, then its parent) as [base-repo].
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
+#
+# Parent-targeted limitation: [base-repo] reaches only the default-branch name
+# lookup; the fetches and the prerequisite-PR lookup still run against origin
+# and the current repo. Parent-targeted runs therefore assume the parent and
+# the child share the default-branch name, and resolve the prerequisite in the
+# child's context.
+#
+# Fork detection runs only after the Step-2 existence check found zero PRs:
+# detecting earlier would STOP on a branch that already has a PR, turning a
+# found-PR row into a stop. Non-fork repos take the exact pre-fork path.
 set -euo pipefail
 
-if [ "$#" -ne 3 ]; then
-  echo "Usage: $0 <branch> <title> <body-file>" >&2
+if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
+  echo "Usage: $0 <branch> <title> <body-file> [base-repo]" >&2
   exit 2
 fi
 
 BRANCH="$1"
 TITLE="$2"
 BODY_FILE="$3"
+BASE_REPO="${4:-}"
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -63,11 +77,40 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # produce.
 pr_lookup() {
   local stop_slug="$1"
-  if ! LOOKUP="$(gh pr list --head "$BRANCH" --json number,isDraft,url --jq '.[] | "\(.number) \(.isDraft) \(.url)"')"; then
+  LOOKUP_ARGS=(pr list)
+  if [ -n "$BASE_REPO" ]; then LOOKUP_ARGS+=(--repo "$BASE_REPO"); fi
+  if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
+    # Parent-targeted cross-fork read: `gh pr list --head` takes no
+    # owner qualification, and a bare head against the parent cannot see a
+    # child's PR. List with head fields and filter locally instead. --limit
+    # 100 is the API single-page max (watch-claude-review.sh precedent): the
+    # default page of 30 could hide the child's PR on a busy parent. Values
+    # are escaped for the double-quoted jq string (`gh --jq` takes no --arg
+    # on this gh version, measured) -- branch names come from issue slugs,
+    # so this is pathological-input hardening, not a live path.
+    CHILD_OWNER="${OWN%%/*}"
+    ESCAPED_BRANCH="${BRANCH//\\/\\\\}"; ESCAPED_BRANCH="${ESCAPED_BRANCH//\"/\\\"}"
+    ESCAPED_OWNER="${CHILD_OWNER//\\/\\\\}"; ESCAPED_OWNER="${ESCAPED_OWNER//\"/\\\"}"
+    LOOKUP_ARGS+=(--limit 100 --json "number,isDraft,url,headRefName,headRepositoryOwner" --jq ".[] | select(.headRefName==\"$ESCAPED_BRANCH\" and .headRepositoryOwner.login==\"$ESCAPED_OWNER\") | \"\(.number) \(.isDraft) \(.url)\"")
+  else
+    LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+  fi
+  if ! LOOKUP="$(gh "${LOOKUP_ARGS[@]}")"; then
     echo "STOP $stop_slug"
     return 1
   fi
   LINE_COUNT="$(grep -c . <<<"$LOOKUP" || true)"
+}
+
+fetch_fork_metadata() {
+  if ! FORK_JSON="$(gh repo view --json isFork,parent,nameWithOwner --jq '"\(.isFork) \(.parent.nameWithOwner // empty) \(.nameWithOwner)"' 2>/dev/null)"; then
+    echo "STOP repo-lookup-failed"
+    return 1
+  fi
+  IS_FORK="${FORK_JSON%% *}"
+  REST="${FORK_JSON#* }"
+  PARENT="${REST% *}"
+  OWN="${REST##* }"
 }
 
 # --- Step 1: the branch must be on the remote before anything else runs. ---
@@ -106,6 +149,18 @@ fi
 
 # --- Step 2: does a PR already exist for this branch? ---
 
+# Parent-targeted lookups need fork metadata to choose the filtered readback,
+# so fetch it early on fork paths only. Non-fork paths (no base-repo) keep the
+# exact pre-fork lookup with no extra call, and found-PR rows still take no
+# fork stub at all.
+PARENT=""; OWN=""; FORK_FETCHED=""
+if [ -n "$BASE_REPO" ]; then
+  if ! fetch_fork_metadata; then
+    exit 0
+  fi
+  FORK_FETCHED=1
+fi
+
 if ! pr_lookup pr-lookup-failed; then
   exit 0
 fi
@@ -121,6 +176,17 @@ if [ "$LINE_COUNT" -ge 2 ]; then
   exit 0
 fi
 
+# --- Step 2b: fork detection, only when no PR exists. Metadata always; STOP only when no base-repo was given. ---
+if [ -z "$FORK_FETCHED" ]; then
+  if ! fetch_fork_metadata; then
+    exit 0
+  fi
+fi
+if [ "$IS_FORK" = "true" ] && [ -z "$BASE_REPO" ]; then
+  echo "STOP ask-base-repo child=${OWN} parent=${PARENT}"
+  exit 0
+fi
+
 # --- Step 3: no PR exists. Only now is a base resolved, and only by asking
 # the sibling script — never guessed here. ---
 
@@ -130,7 +196,9 @@ fi
 # failure (bad invocation, runtime error) and is propagated unchanged so it is
 # not misreported as an unrecognised state.
 sibling_status=0
-RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH")" || sibling_status=$?
+SIBLING_ARGS=("$BRANCH")
+if [ -n "$BASE_REPO" ]; then SIBLING_ARGS+=("$BASE_REPO"); fi
+RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${SIBLING_ARGS[@]}")" || sibling_status=$?
 if [ "$sibling_status" -eq 1 ]; then
   echo "STOP unrecognised-pr-state"
   exit 0
@@ -158,7 +226,18 @@ esac
 
 # --head is not optional: `gh pr create`'s head defaults to the *current*
 # branch, and there is no guarantee $BRANCH is the branch checked out here.
-if ! gh pr create --draft --head "$BRANCH" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE" >&2; then
+# Parent-targeted lookups filter locally (see pr_lookup): `gh pr list --head`
+# does not support owner:branch (per --help), only create qualifies.
+if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
+  CHILD_OWNER="${OWN%%/*}"
+  HEAD_ARG="${CHILD_OWNER}:${BRANCH}"
+else
+  HEAD_ARG="$BRANCH"
+fi
+CREATE_ARGS=(pr create)
+if [ -n "$BASE_REPO" ]; then CREATE_ARGS+=(--repo "$BASE_REPO"); fi
+CREATE_ARGS+=(--draft --head "$HEAD_ARG" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
+if ! gh "${CREATE_ARGS[@]}" >&2; then
   echo "STOP pr-create-failed"
   exit 0
 fi

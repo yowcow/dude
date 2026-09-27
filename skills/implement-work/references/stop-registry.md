@@ -16,6 +16,7 @@ one (`pr-readback-failed`).
 | --- | --- |
 | `abandoned-prerequisite` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `ancestor-check-failed` | `pr-to-ready/retarget-pr.sh` |
+| `ask-base-repo` | `pr-to-ready/ensure-draft-pr.sh` |
 | `ask-default-branch` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-base.sh`, `review-code/resolve-range.sh` |
 | `ask-multiple-prereqs` | `implement-work/resolve-base.sh` |
 | `ask-multiple-prs` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `pr-to-ready/ensure-draft-pr.sh` |
@@ -48,6 +49,7 @@ one (`pr-readback-failed`).
 | `pr-readback-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `prereq-lookup-failed` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `push-failed` | `pr-to-ready/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
+| `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `trailer-read-failed` | `implement-work/read-base-trailer.sh` |
 | `unrecognised-pr-state` | `pr-to-ready/ensure-draft-pr.sh` |

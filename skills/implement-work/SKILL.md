@@ -189,6 +189,8 @@ Push the branch to `origin` under its own name, unconditionally.
 
 Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints — the output contract in that script's header is the single source. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
 
+Where that call answers `STOP ask-base-repo`, the checkout is a fork and no base repository was chosen: ask the user which repository the draft PR should target, offering the fork child first and its parent second, then call the same script once more with the chosen repository appended. A found or created PR from that second call is the deliverable as above. A stop from it is reported and the branch handed over regardless.
+
 Title and body follow the repo's PR template when it has one.
 
 - The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository.
