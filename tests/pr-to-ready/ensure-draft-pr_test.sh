@@ -169,6 +169,14 @@ stub_default_branch() {
   gh_stub_response "$1" "$2" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
+# Parent-targeted cross-fork readback: no --head filter, head fields listed
+# and filtered locally, since `gh pr list --head` takes no owner
+# qualification. PARENT_JQ must spell the SUT's own filter exactly.
+PARENT_JQ='.[] | select(.headRefName=="feature" and .headRepositoryOwner.login=="acme-child") | "\(.number) \(.isDraft) \(.url)"'
+stub_pr_list_parent() {
+  gh_stub_raw_response "$1" "$3" pr list --repo "$2" --json number,isDraft,url,headRefName,headRepositoryOwner --jq "$PARENT_JQ"
+}
+
 # Step 2b fork detection: `gh repo view --json isFork,parent,nameWithOwner`,
 # body already filtered -- the SUT reads the `"false "` / `"true <parent>"`
 # line itself plus its own owner for the parent-targeted create head.
@@ -348,23 +356,33 @@ assert_row 'an-empty-list-is-no-pr-and-the-pr-is-created' 0 'PR 7 created draft=
 #
 # Step 2b runs only when step 2 found zero PRs: a fork whose branch already
 # has a PR reports the PR, never STOP ask-base-repo -- the step-2 rows above
-# prove it by taking no fork stub at all. `gh pr list --head` takes no owner
-# qualification ("<owner>:<branch>" syntax not supported, per
-# `gh pr list --help`), so the parent-scoped lookups below keep the bare head
-# while only `gh pr create --head` carries `<owner>:<branch>` (per
-# `gh pr create --help`); the readback row pins that asymmetry.
+# prove it by taking no fork stub at all. Fork paths (a base-repo argument)
+# fetch fork metadata before step 2 so parent-targeted lookups can choose the
+# filtered readback; non-fork paths keep the exact pre-fork call order.
+# `gh pr list --head` takes no owner qualification ("<owner>:<branch>"
+# syntax not supported, per `gh pr list --help`), so parent-scoped lookups
+# list with head fields and filter locally while only `gh pr create --head`
+# carries `<owner>:<branch>` (per `gh pr create --help`); the readback rows
+# pin that asymmetry.
 
 row_start
 fixture fork-nobase feature remote
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 2 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'fork-without-base-repo-stops' 0 'STOP ask-base-repo\n' 2
+assert_row 'fork-without-base-repo-stops' 0 'STOP ask-base-repo child=acme-child/repo parent=acme-parent/repo\n' 2
+
+row_start
+fixture fork-lookupfail feature remote
+printf '[]\n' | stub_pr_list 1 feature 0
+: | stub_fork 2 1
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
+assert_row 'fork-lookup-failure-stops' 0 'STOP repo-lookup-failed\n' 2
 
 row_start
 fixture fork-child feature remote
-printf '[]\n' | stub_pr_list_repo 1 acme-child/repo feature 0
-printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 2 0
+printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 1 0
+printf '[]\n' | stub_pr_list_repo 2 acme-child/repo feature 0
 printf 'main\n' | stub_default_branch_repo 3 acme-child/repo 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create_repo 4 acme-child/repo feature main 0
 printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list_repo 5 acme-child/repo feature 0
@@ -373,11 +391,11 @@ assert_row 'fork-child-selected-creates-and-reads-back' 0 'PR 7 created draft=tr
 
 row_start
 fixture fork-parent feature remote
-printf '[]\n' | stub_pr_list_repo 1 acme-parent/repo feature 0
-printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 2 0
+printf 'true acme-parent/repo acme-child/repo\n' | stub_fork 1 0
+printf '[]\n' | stub_pr_list_parent 2 acme-parent/repo 0
 printf 'main\n' | stub_default_branch_repo 3 acme-parent/repo 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create_repo 4 acme-parent/repo acme-child:feature main 0
-printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list_repo 5 acme-parent/repo feature 0
+printf '[{"number":7,"isDraft":true,"headRefName":"feature","headRepositoryOwner":{"login":"acme-child"},"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list_parent 5 acme-parent/repo 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" acme-parent/repo
 assert_row 'fork-parent-selected-creates-with-qualified-head' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 5
 
@@ -574,8 +592,8 @@ assert_row 'two-arguments' 2 '' 0
 
 row_start
 fixture args-four feature remote
-printf '[]\n' | stub_pr_list_repo 1 acme/child feature 0
-printf 'false  acme/repo\n' | stub_fork 2 0
+printf 'false  acme/repo\n' | stub_fork 1 0
+printf '[]\n' | stub_pr_list_repo 2 acme/child feature 0
 printf 'main\n' | stub_default_branch_repo 3 acme/child 0
 printf 'https://example.invalid/pull/7\n' | stub_pr_create_repo 4 acme/child feature main 0
 printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list_repo 5 acme/child feature 0

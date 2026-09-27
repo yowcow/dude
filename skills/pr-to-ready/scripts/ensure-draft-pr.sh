@@ -31,9 +31,16 @@
 # Output contract (single source; skills/implement-work/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
 #   PR <n> created draft=<bool> base=<base> url=<url> -- this run opened it.
-#   STOP ask-base-repo -- the repo is a fork and no base-repo was given; re-run
-#     with the user-selected repo (fork child first, then its parent) as [base-repo].
+#   STOP ask-base-repo child=<child> parent=<parent> -- the repo is a fork and
+#     no base-repo was given; re-run with the user-selected repo (fork child
+#     first, then its parent) as [base-repo].
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
+#
+# Parent-targeted limitation: [base-repo] reaches only the default-branch name
+# lookup; the fetches and the prerequisite-PR lookup still run against origin
+# and the current repo. Parent-targeted runs therefore assume the parent and
+# the child share the default-branch name, and resolve the prerequisite in the
+# child's context.
 #
 # Fork detection runs only after the Step-2 existence check found zero PRs:
 # detecting earlier would STOP on a branch that already has a PR, turning a
@@ -72,12 +79,31 @@ pr_lookup() {
   local stop_slug="$1"
   LOOKUP_ARGS=(pr list)
   if [ -n "$BASE_REPO" ]; then LOOKUP_ARGS+=(--repo "$BASE_REPO"); fi
-  LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+  if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
+    # Parent-targeted cross-fork read: `gh pr list --head` takes no
+    # owner qualification, and a bare head against the parent cannot see a
+    # child's PR. List with head fields and filter locally instead.
+    CHILD_OWNER="${OWN%%/*}"
+    LOOKUP_ARGS+=(--json "number,isDraft,url,headRefName,headRepositoryOwner" --jq ".[] | select(.headRefName==\"$BRANCH\" and .headRepositoryOwner.login==\"$CHILD_OWNER\") | \"\(.number) \(.isDraft) \(.url)\"")
+  else
+    LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+  fi
   if ! LOOKUP="$(gh "${LOOKUP_ARGS[@]}")"; then
     echo "STOP $stop_slug"
     return 1
   fi
   LINE_COUNT="$(grep -c . <<<"$LOOKUP" || true)"
+}
+
+fetch_fork_metadata() {
+  if ! FORK_JSON="$(gh repo view --json isFork,parent,nameWithOwner --jq '"\(.isFork) \(.parent.nameWithOwner // empty) \(.nameWithOwner)"' 2>/dev/null)"; then
+    echo "STOP repo-lookup-failed"
+    return 1
+  fi
+  IS_FORK="${FORK_JSON%% *}"
+  REST="${FORK_JSON#* }"
+  PARENT="${REST% *}"
+  OWN="${REST##* }"
 }
 
 # --- Step 1: the branch must be on the remote before anything else runs. ---
@@ -116,6 +142,18 @@ fi
 
 # --- Step 2: does a PR already exist for this branch? ---
 
+# Parent-targeted lookups need fork metadata to choose the filtered readback,
+# so fetch it early on fork paths only. Non-fork paths (no base-repo) keep the
+# exact pre-fork lookup with no extra call, and found-PR rows still take no
+# fork stub at all.
+PARENT=""; OWN=""; FORK_FETCHED=""
+if [ -n "$BASE_REPO" ]; then
+  if ! fetch_fork_metadata; then
+    exit 0
+  fi
+  FORK_FETCHED=1
+fi
+
 if ! pr_lookup pr-lookup-failed; then
   exit 0
 fi
@@ -132,16 +170,13 @@ if [ "$LINE_COUNT" -ge 2 ]; then
 fi
 
 # --- Step 2b: fork detection, only when no PR exists. Metadata always; STOP only when no base-repo was given. ---
-if ! FORK_JSON="$(gh repo view --json isFork,parent,nameWithOwner --jq '"\(.isFork) \(.parent.nameWithOwner // empty) \(.nameWithOwner)"' 2>/dev/null)"; then
-  echo "STOP repo-lookup-failed"
-  exit 0
+if [ -z "$FORK_FETCHED" ]; then
+  if ! fetch_fork_metadata; then
+    exit 0
+  fi
 fi
-IS_FORK="${FORK_JSON%% *}"
-REST="${FORK_JSON#* }"
-PARENT="${REST% *}"
-OWN="${REST##* }"
 if [ "$IS_FORK" = "true" ] && [ -z "$BASE_REPO" ]; then
-  echo "STOP ask-base-repo"
+  echo "STOP ask-base-repo child=${OWN} parent=${PARENT}"
   exit 0
 fi
 
@@ -184,8 +219,8 @@ esac
 
 # --head is not optional: `gh pr create`'s head defaults to the *current*
 # branch, and there is no guarantee $BRANCH is the branch checked out here.
-# Lookup stays bare: `gh pr list --head` does not support owner:branch
-# (per --help), only create qualifies.
+# Parent-targeted lookups filter locally (see pr_lookup): `gh pr list --head`
+# does not support owner:branch (per --help), only create qualifies.
 if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
   CHILD_OWNER="${OWN%%/*}"
   HEAD_ARG="${CHILD_OWNER}:${BRANCH}"
