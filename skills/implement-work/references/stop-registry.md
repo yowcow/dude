@@ -20,6 +20,8 @@ one (`pr-readback-failed`).
 | `ask-multiple-prereqs` | `implement-work/resolve-base.sh` |
 | `ask-multiple-prs` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `pr-to-ready/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `pr-to-ready/ensure-draft-pr.sh` |
+| `ask-base-repo` | `pr-to-ready/ensure-draft-pr.sh` |
+| `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
 | `blocked-lookup-failed` | `implement-work/resolve-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |

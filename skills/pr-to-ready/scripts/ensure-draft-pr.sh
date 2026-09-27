@@ -26,12 +26,18 @@
 # stdout; that failure mode is invisible to `bash -n`, since it never
 # executes a call into another directory.
 #
-# Usage: ensure-draft-pr.sh <branch> <title> <body-file>
+# Usage: ensure-draft-pr.sh <branch> <title> <body-file> [base-repo]
 #
 # Output contract (single source; skills/implement-work/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
 #   PR <n> created draft=<bool> base=<base> url=<url> -- this run opened it.
+#   STOP ask-base-repo -- the repo is a fork and no base-repo was given; re-run
+#     with the user-selected repo (fork child first, then its parent) as [base-repo].
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
+#
+# Fork detection runs only after the Step-2 existence check found zero PRs:
+# detecting earlier would STOP on a branch that already has a PR, turning a
+# found-PR row into a stop. Non-fork repos take the exact pre-fork path.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
