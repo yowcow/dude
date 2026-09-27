@@ -75,7 +75,7 @@ assert.equal(hookCalls[0].name, 'context');
 const skillDirs = readdirSync(path.join(root, 'skills'), { withFileTypes: true })
   .filter((e) => e.isDirectory()).map((e) => e.name).sort();
 assert.equal(registered.length, skillDirs.length, 'one Skill.Info per skills/ dir');
-assert.deepEqual(registered.map((s) => s.id).sort(), skillDirs);
+assert.deepStrictEqual(registered.map((s) => s.id).sort(), skillDirs);
 for (const s of registered) {
   assert.ok(s.id && s.name && s.description && s.content,
     `Skill.Info ${s.id} must carry id/name/description/content`);
@@ -87,8 +87,10 @@ for (const s of registered) {
     `Skill.Info ${s.id} content must equal its SKILL.md bytes`);
 }
 const usingDude = registered.find((s) => s.id === 'using-dude');
+assert.ok(usingDude, 'using-dude must be registered');
 const fm = /^description:\s*(.*)$/m.exec(
   readFileSync(path.join(root, 'skills/using-dude/SKILL.md'), 'utf8'));
+assert.ok(fm, 'using-dude SKILL.md must contain a description: frontmatter line');
 assert.equal(usingDude.description, fm[1],
   'using-dude description must match SKILL.md frontmatter');
 
@@ -133,7 +135,7 @@ const stubText = freshEvent.system[0].text;
 // `dude:using-dude` colon, so a greedy `.*(?=:)` eats the `Before any task`
 // sentence and a first-colon match leaves `:suffix` behind.
 const normalize = (s) =>
-  s.replace(/from the dude install at [^\n]*/, 'from the dude install at <ROOT>');
+  s.replace(/from the dude install at [^\n]*/g, 'from the dude install at <ROOT>');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
 for (const line of [
