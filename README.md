@@ -46,14 +46,14 @@ OpenCode:
 ```jsonc
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": [
+  "plugins": [
     "dude@git+https://github.com/yowcow/dude.git",
     "superpowers@git+https://github.com/obra/superpowers.git",
   ],
 }
 ```
 
-Put `$schema` and both `plugin` entries in the global
+Put `$schema` and both `plugins` entries in the global
 `~/.config/opencode/opencode.jsonc`, then restart OpenCode.
 
 Claude Code:
@@ -258,16 +258,16 @@ deleting the branch and worktree are yours.
 
 | Runtime     | `using-dude` in context at session start?                                                     | How to reach it by hand |
 | ----------- | --------------------------------------------------------------------------------------------- | ----------------------- |
-| OpenCode    | yes — a summary stub via `experimental.chat.messages.transform` on the first user message     | —                       |
+| OpenCode    | yes — a summary stub via `ctx.session.hook("context", …)` editing `event.system`               | —                       |
 | Claude Code | yes — a summary stub via a SessionStart hook                                                  | —                       |
 | Codex       | yes, once the hook is trusted — the same stub via `hooks/hooks.json`                          | `dude:using-dude`       |
 | Muse Code   | yes, on `startup` once the hook is trusted — a summary stub via a SessionStart hook           | —                       |
 
 Each row's evidence is in the prose below.
 
-OpenCode's package plugin registers all of dude's skills and prepends a summary
-stub of `using-dude` — the same stub sentences as the hook stub under a different envelope (compared normalized — marker, envelope, and install path stripped, per `tests/opencode-plugin_test.sh`) — to the first user
-message through `experimental.chat.messages.transform`, so the stub is in
+OpenCode's package plugin registers all of dude's skills via `ctx.skill.transform` and appends a summary
+stub of `using-dude` — the same stub sentences as the hook stub under a different envelope (compared normalized — marker, envelope, and install path stripped, per `tests/opencode-plugin_test.sh`) — to `event.system`
+through `ctx.session.hook("context", …)`, so the stub is in
 context at session start and the full rules load on a `dude:using-dude` skill
 call. The injected text uses a dude-only marker
 and does not contain `EXTREMELY_IMPORTANT`, so Superpowers' bootstrap and
@@ -370,7 +370,7 @@ Starting OpenCode from the repository checkout loads
 configured dude plugin entry first, then use the native `skill` tool to verify
 every local skill.
 
-The checkout's transform and the hook emit the same stub: try hook changes by
+The checkout's plugin context hook and the hook emit the same stub: try hook changes by
 editing `hooks/session-start` and `tests/hooks/session-start_test.sh` in place,
 and keep `.opencode/plugins/dude.js` repeating those stub sentences (compared normalized, not byte-for-byte — see `tests/opencode-plugin_test.sh`).
 

@@ -14,7 +14,7 @@ HERE := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 all: lint test
 
-# Rewrite the four version fields to one value, e.g. `make bump VERSION=1.2.3`.
+# Rewrite the six version fields to one value, e.g. `make bump VERSION=1.2.3`.
 # The value reaches bump.sh through the environment, never interpolated into
 # the recipe: quoting $(VERSION) would not survive a value carrying a quote,
 # which make expands before the shell sees the line.
