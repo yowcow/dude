@@ -54,6 +54,7 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 - It answers `PR <n> found draft=<bool> url=<url>`, `PR <n> created draft=true base=<base> url=<url>`, or `STOP <slug>`.
 - On either `PR` line, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on a `STOP`, report it and end the run.
 - Title and body follow `implement-work`'s **Hand off**, which owns that convention.
+- On `STOP ask-base-repo`, follow `implement-work`'s **Hand off** fork procedure above (ask child-first, re-call with the chosen repository appended).
 
 ### 0-3. Prepare the workspace
 
