@@ -2,5 +2,8 @@
   "name": "dude",
   "version": "1.2.0",
   "type": "module",
-  "main": ".opencode/plugins/dude.js"
+  "main": ".opencode/plugins/dude.js",
+  "dependencies": {
+    "@opencode/plugin": "2.0.18"
+  }
 }
