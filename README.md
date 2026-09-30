@@ -323,10 +323,10 @@ tier alone there.
 
 ### What the run's own tier decides
 
-A review finding's verdict goes out to marked workers, but `implement-work`'s
-two gates, `pr-to-ready`'s clean check and `simplify-code`'s accept/reject stay
-in the main loop and come down with its tier. The run still reports _clean_,
-and no gate in the flow catches the drop.
+A review finding's verdict goes out to marked workers, and a `simplify-code`
+proposal's to unmarked ones, but `implement-work`'s two gates and
+`pr-to-ready`'s clean check stay in the main loop and come down with its tier.
+The run still reports _clean_, and no gate in the flow catches the drop.
 
 ### What else the run's cost rides on
 
@@ -336,12 +336,13 @@ worker count, which lowering the main loop's tier does not reduce
 ([measurements](https://github.com/yowcow/dude/issues/169#issuecomment-5534943995);
 [correction](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
 
-The subagent default also carries the four roles that no skill marks —
-`implement-work`'s plan drafter, `simplify-code`'s proposer, and the
-execution method's per-task reviewer and per-task implementer. Dispatched
-without a `model` of its own, each rides the same ceiling that **What
-tier a marked worker runs at** above sets for the marked workers'
-sake. Across 158 Claude Code dispatches of those four roles, the
+The subagent default also carries the roles that no skill marks —
+`implement-work`'s plan drafter, `simplify-code`'s proposer and verdict
+worker, and the execution method's per-task reviewer and per-task
+implementer. Dispatched without a `model` of its own, each rides the same
+ceiling that **What tier a marked worker runs at** above sets for the marked
+workers' sake. Across 158 Claude Code dispatches of four of those roles —
+all but the verdict worker, which the measurement predates — the
 58 with no `model` argument all landed on Opus, at $121 over a
 four-day window, and the 100 with one all landed off Opus — the
 `implement-work` plan drafter alone accounted for $69 of that $121
