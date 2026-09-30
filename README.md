@@ -341,8 +341,8 @@ The subagent default also carries the roles that no skill marks —
 worker, and the execution method's per-task reviewer and per-task
 implementer. Dispatched without a `model` of its own, each rides the same
 ceiling that **What tier a marked worker runs at** above sets for the marked
-workers' sake. Across 158 Claude Code dispatches of four of those roles —
-all but the verdict worker, which the measurement predates — the
+workers' sake. Across 158 Claude Code dispatches of the four roles other
+than the verdict worker, which the measurement predates, the
 58 with no `model` argument all landed on Opus, at $121 over a
 four-day window, and the 100 with one all landed off Opus — the
 `implement-work` plan drafter alone accounted for $69 of that $121
