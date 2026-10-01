@@ -305,10 +305,12 @@ Code the default is the environment variable
 `CLAUDE_CODE_SUBAGENT_MODEL`, not a `settings.json` key; set it to the highest
 tier you have and leave it there regardless of the run's own tier.
 
-Effort is a second, separate ceiling: on
-Claude Code a worker runs at the session's own effort and no dispatch can
-raise it above that, even where its model lands on the highest tier. Launch even
-a cheap main-loop session at the effort you want its marked workers to have.
+Effort is a second, separate ceiling: on Claude Code, in a session whose effort
+was set with `CLAUDE_CODE_EFFORT_LEVEL`, or for a worker whose agent definition
+carries no `effort`, a worker runs at the session's own effort and no dispatch
+can raise it above that, even where its model lands on the highest tier. Launch
+even a cheap main-loop session at the effort you want its marked workers to
+have.
 
 Confirming the ceiling actually held takes two checks, not just the first:
 the default against the environment
