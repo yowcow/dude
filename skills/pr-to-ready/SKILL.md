@@ -14,7 +14,7 @@ Take an open PR to a reviewed one: resolve the run from the PR's number or URL, 
 
 ## Orchestration model
 
-Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the six conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, plus the requesting-code-review dispatch where selected, Step 3's re-confirmation of the six conditions, and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
+Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the six conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, plus the requesting-code-review dispatch where selected, Step 3's re-confirmation script together with condition 6's read (condition 2's read waits until that script returns), and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
 
 **Never delegate:** the clean judgment and stop conditions, including reading whether checks pass; any change that touches the worktree, together with committing and pushing it; and any write to the PR itself — comments, thread replies, thread resolution, marking it ready.
 
@@ -68,6 +68,8 @@ Call `<skill-dir>/../implement-work/scripts/attach-workspace.sh <branch> <path>`
   - Anything pending — **stop.** It is work this run did not write, and Step 1's diagnosis fix and 2-3's `accept` fixes would carry it into the PR unread by anyone; report what the script printed and hand the tree back to a person to say whose it is.
 - `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
 - `CREATE` — **stop.** A PR's head branch exists on its repository's remote by definition, and 0-2 has already established that this checkout is that repository, so nothing to attach to means the branch was deleted under an open PR. Report it; don't cut a fresh branch, which would put an empty history under the name the PR points at.
+
+Once `REUSE` has measured clean or `ATTACHED` has answered, run `<skill-dir>/scripts/clear-recheck-record.sh` from `<path>`, before anything else there. The record Step 3's re-confirmation leaves outlives the run, so an earlier run on the same SHA — one with ready-on-clean = no, say — would otherwise leave Step 3's ready open to a run that never re-confirmed.
 
 **Run every later step from that workspace.** Without this, the run edits, commits and pushes in whatever tree the session started in — with `<branch>` unchecked-out, that is whatever branch was: Step 1's diagnosis fix and 2-3's `accept` fixes are committed onto the default branch and pushed there, reviewed by nobody, while the PR they were written for does not move.
 
@@ -247,10 +249,18 @@ A round here is one 2-1 → 2-2 → 2-3 cycle per `using-dude`'s **Loop converge
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the same six conditions on the SHA it leaves from — measuring only, fixing nothing. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean. When **verbose** is on, post the re-confirmed measured-tip SHA and values (requesting-code-review comment id included) with the listing exit codes and outputs as a final comment before branching below; when off, keep them in the round's report to the caller instead. The final comment, when posted, follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything that needs fixing here takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+Once Step 2 exits clean, re-confirm the six conditions on the SHA it leaves from — measuring only, fixing nothing, and whatever ready-on-clean says. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean.
+
+Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>` with that SHA and the base Step 1 most recently resolved. It measures in a fixed order — the head is still that SHA, the checks watched until they settle, condition 3's two listings, then base and mergeability — prints each stage's exit status and output, and ends on `RECORDED met <sha>` or `RECORDED unmet <sha>`: whether everything a machine can judge held. Three judgements stay here:
+
+- every conclusion its watch stage printed passes, or that stage exited 5 — the script reports conclusions and never judges them, as in Step 1;
+- condition 2 — read only once the script has returned: until the checks settle, the Claude run can still be moving;
+- condition 6 — its read may go out together with the script.
+
+The re-confirmation holds only on `RECORDED met` with all three. When **verbose** is on, post the re-confirmed measured-tip SHA and values (requesting-code-review comment id included) with what the script printed as a final comment before branching below; when off, keep them in the round's report to the caller instead. The final comment, when posted, follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the ready-on-clean flag Step 0 recorded:
-- **ready-on-clean = yes**: mark the PR ready. Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed.
+- **ready-on-clean = yes**: mark the PR ready with `<skill-dir>/scripts/mark-ready.sh <owner> <repo> <pr-number>` — the only way this flow marks a PR ready. **Never run `gh pr ready` directly**: it marks the PR ready with no re-confirmation recorded, or on one about a commit the PR no longer points at. On `READY <n>`, Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed. On `STOP <slug>`, take the third terminal state: report the slug and where the PR stands.
 - **ready-on-clean = no**: report that CI and review are clean.
 
 **This flow has three terminal states: ready, draft, and handed back to a person.** **None of them is Escalation, and none of them calls `plan-work`**: a conflict, a drifted base, or a finding only a person can settle has not touched the agreed design, so the question re-approval asks — which part of the design this undoes — has no honest answer there.
