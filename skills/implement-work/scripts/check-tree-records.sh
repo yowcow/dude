@@ -26,7 +26,7 @@ if [ "$#" -ne 0 ]; then
 fi
 
 RECORD_DIR="$(git rev-parse --absolute-git-dir)/dude-completion-gate"
-HEAD_TREE="$(git rev-parse -q --verify 'HEAD^{tree}')"
+HEAD_TREE="$(git rev-parse --verify 'HEAD^{tree}')"
 
 MISSING=""
 STALE=""

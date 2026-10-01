@@ -18,6 +18,8 @@
 #   - compare only the verify record to HEAD^{tree}:
 #     `verify-at-new-tree-others-at-old`
 #   - drop the clean-tree check: `dirty-tree`
+#   - probe with `git status --porcelain -uno`, which skips untracked files:
+#     `untracked-file`
 #   - check STALE before DIRTY: `dirty-tree-records-over-the-edit`
 #   - store under `git rev-parse --git-common-dir` instead of the worktree's
 #     own git dir (in both scripts): `records-are-per-worktree`
@@ -131,6 +133,16 @@ printf 'uncommitted\n' >"${W}/tracked.txt"
 run_in "$W"
 assert_row 'dirty-tree' 0 'DIRTY\n' 0
 tally check_eq 'dirty-tree: pending paths on stderr' ' M tracked.txt' "$(cat "$SUT_STDERR")"
+
+# ---- untracked, non-ignored file after the records ---------------------
+
+row_start
+W="$(build_repo untracked)"
+record "$W" verify simplify review
+printf 'new\n' >"${W}/new.txt"
+run_in "$W"
+assert_row 'untracked-file' 0 'DIRTY\n' 0
+tally check_eq 'untracked-file: pending paths on stderr' '?? new.txt' "$(cat "$SUT_STDERR")"
 
 # ---- records taken over an uncommitted edit: DIRTY, not STALE ----------
 #
