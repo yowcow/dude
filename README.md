@@ -344,12 +344,11 @@ execution method's per-task reviewer and per-task implementer. Dispatched
 without a `model` of its own, each rides the same ceiling that **What
 tier a marked worker runs at** above sets for the marked workers'
 sake. Across 158 Claude Code dispatches of those four roles, the
-58 with no `model` argument all landed on Opus, at $121 over a
+58 with no `model` argument all landed on Opus, at $61 over a
 four-day window, and the 100 with one all landed off Opus — the
-`implement-work` plan drafter alone accounted for $69 of that $121
-([measurements](https://github.com/yowcow/dude/issues/267#issuecomment-5612054475)).
-The only lever available is naming a cheaper model at the dispatch itself;
-lowering the default would pull the marked workers down with it
+`implement-work` plan drafter alone accounted for $35 of that $61
+([measurements](https://github.com/yowcow/dude/pull/514)).
+Lowering the default would pull the marked workers down with it
 ([yowcow/dude#266](https://github.com/yowcow/dude/issues/266)).
 
 ## Development
