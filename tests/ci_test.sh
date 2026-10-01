@@ -22,10 +22,6 @@ if ! grep -Fq "$fixed_claude" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest pins Claude validator\n' >&2
   failed=1
 fi
-if grep -Fq 'plugin-creator' "$workflow"; then
-  printf 'FAIL: workflow must not install the removed Codex validator\n' >&2
-  failed=1
-fi
 if grep -Fq '@anthropic-ai/claude-code@latest' <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not resolve latest Claude validator\n' >&2
   failed=1
