@@ -18,6 +18,7 @@
 #   - compare only the verify record to HEAD^{tree}:
 #     `verify-at-new-tree-others-at-old`
 #   - drop the clean-tree check: `dirty-tree`
+#   - check STALE before DIRTY: `dirty-tree-records-over-the-edit`
 #   - store under `git rev-parse --git-common-dir` instead of the worktree's
 #     own git dir (in both scripts): `records-are-per-worktree`
 set -euo pipefail
@@ -130,6 +131,18 @@ printf 'uncommitted\n' >"${W}/tracked.txt"
 run_in "$W"
 assert_row 'dirty-tree' 0 'DIRTY\n' 0
 tally check_eq 'dirty-tree: pending paths on stderr' ' M tracked.txt' "$(cat "$SUT_STDERR")"
+
+# ---- records taken over an uncommitted edit: DIRTY, not STALE ----------
+#
+# The records differ from HEAD^{tree} here, so a checker that tests STALE
+# before DIRTY answers STALE.
+
+row_start
+W="$(build_repo dirty-over-edit)"
+printf 'uncommitted\n' >"${W}/tracked.txt"
+record "$W" verify simplify review
+run_in "$W"
+assert_row 'dirty-tree-records-over-the-edit' 0 'DIRTY\n' 0
 
 # ---- records belong to the worktree that made them ---------------------
 

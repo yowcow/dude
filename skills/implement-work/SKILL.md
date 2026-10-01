@@ -142,7 +142,7 @@ Add only what the execution method left undone.
      - No → it is this task's work, so implement it in this round.
      - Yes → don't implement it; record it and leave by step 6's first exit.
      - Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take `using-dude`'s **Escalation** by that route, recorded and exited the same way.
-2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job. When it applied nothing, skip its check run — this round's step-1 Verify result already covers the tree. When it finishes, record the tree with `<skill-dir>/scripts/record-tree.sh simplify`.
+2. **Simplify** — `simplify-code` on the recent diff only. No execution method has a simplification pass, so this is the gate's main job. When it applied nothing, skip its check run — this round's step-1 Verify result already covers the tree. Either way, record the tree with `<skill-dir>/scripts/record-tree.sh simplify`.
 3. **Review** — run `review-code`. When it applied nothing, skip its check run — the tree is already covered: by step-2's check run where Simplify changed the tree this round, otherwise by this round's step-1 Verify result on the unchanged tree. The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here. Record the tree with `<skill-dir>/scripts/record-tree.sh review` only when that verdict is clean.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
@@ -184,9 +184,9 @@ Add only what the execution method left undone.
 
 The deliverable is a **draft PR** on a pushed branch of verified commits — exactly what `pr-to-ready` takes as its entry. Once the completion gate takes its normal exit, check, push, and then open the PR, in that order.
 
-Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`: it passes only when steps 1-3 each last recorded the tree about to be pushed and nothing is left uncommitted. Only `OK` lets the push go ahead. Any other line names the phases missing or stale, or a dirty tree. Go back to the completion gate's step 1 and count that as one of its rounds.
+Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`: it passes only when steps 1-3 each last recorded the tree about to be pushed and nothing is left uncommitted. Only `OK` lets the push go ahead. Go back to the completion gate's step 1; the pass that follows is one of its rounds.
 
-Push the branch to `origin` under its own name, unconditionally.
+Push the branch to `origin` under its own name; the check's `OK` is its only precondition.
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
