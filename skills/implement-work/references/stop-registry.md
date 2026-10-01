@@ -27,12 +27,14 @@ one (`pr-readback-failed`).
 | `branch-nowhere` | `pr-to-ready/ensure-draft-pr.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
+| `conditions-unmet` | `pr-to-ready/mark-ready.sh` |
 | `cross-fork` | `pr-to-ready/resolve-pr-entry.sh` |
 | `default-fetch-failed` | `pr-to-ready/resolve-pr-base.sh`, `review-code/resolve-range.sh` |
 | `detached-head` | `implement-work/absorb-base.sh` |
 | `dirty-tree` | `implement-work/absorb-base.sh` |
 | `dirty-worktree` | `pr-to-ready/retarget-pr.sh` |
 | `fetch-failed` | `pr-to-ready/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `review-code/resolve-range.sh` |
+| `head-moved` | `pr-to-ready/mark-ready.sh` |
 | `ls-remote-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `merge-base-failed` | `review-code/resolve-range.sh` |
 | `merge-conflict` | `pr-to-ready/retarget-pr.sh` |
@@ -40,15 +42,17 @@ one (`pr-readback-failed`).
 | `no-merge-in-progress` | `implement-work/commit-merge.sh` |
 | `no-pr` | `pr-to-ready/resolve-pr-entry.sh` |
 | `no-prereq-pr` | `implement-work/read-base-trailer.sh` |
+| `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh` |
 | `pr-not-created` | `pr-to-ready/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
-| `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/retarget-pr.sh` |
+| `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
 | `pr-readback-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `prereq-lookup-failed` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `push-failed` | `pr-to-ready/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
+| `ready-failed` | `pr-to-ready/mark-ready.sh` |
 | `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `trailer-read-failed` | `implement-work/read-base-trailer.sh` |

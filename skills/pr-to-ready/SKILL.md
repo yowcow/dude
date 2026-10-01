@@ -249,7 +249,7 @@ A round here is one 2-1 → 2-2 → 2-3 cycle per `using-dude`'s **Loop converge
 
 ## Step 3: Finish
 
-Once Step 2 exits clean, re-confirm the six conditions on the SHA it leaves from — measuring only, fixing nothing, and whatever ready-on-clean says. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean.
+Once Step 2 exits clean, re-confirm the six conditions on the SHA it leaves from — measuring only, fixing nothing, on either value of ready-on-clean. Without this, Clean can go stale with no push at all: requesting a review is itself an action, and the check-run it starts can still fail after Step 2 already judged clean.
 
 Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>` with that SHA and the base Step 1 most recently resolved. It measures in a fixed order — the head is still that SHA, the checks watched until they settle, condition 3's two listings, then base and mergeability — prints each stage's exit status and output, and ends on `RECORDED met <sha>` or `RECORDED unmet <sha>`: whether everything a machine can judge held. Three judgements stay here:
 

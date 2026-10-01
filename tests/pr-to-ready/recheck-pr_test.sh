@@ -31,6 +31,17 @@
 # The dude#255 row reuses the worktree `clean-records-met` left a met record in
 # on the same SHA, so its unmet verdict has to overwrite that record.
 #
+# The met-conditions each have a row that fails only on them, everything else
+# clean: `head-moved-is-unmet`, `not-mergeable-is-unmet`,
+# `suppressed-finding-is-unmet` (the listing finds a finding),
+# `thread-listing-fails-is-unmet` (the listing exits 1 with empty output, so
+# only the status half of its condition catches it), and
+# `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after its 60 polls: 64 gh
+# calls). Each is followed by a mark-ready row, so the verdict written is
+# pinned and not only the stdout. Deleting the watch condition, the suppressed
+# condition, or either listing's status half (leaving `[ -z "$OUT" ]`) fails
+# the matching row.
+#
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; the broken variant reads the thread listing before the
 # watch, and fails `dude-255-thread-after-settle-poll` and its mark-ready row:
@@ -191,6 +202,55 @@ stub_no_suppressed
 stub_state main CONFLICTING
 run_in "$W" acme widgets 7 deadbeef main
 assert_row 'not-mergeable-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main CONFLICTING\nRECORDED unmet deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+gh_stub_raw_response '*' 0 pr view --repo acme/widgets --json reviews \
+  --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/reviews-suppressed.json"
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main
+assert_row 'suppressed-finding-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'suppressed-finding-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+: | gh_stub_response 4 1 api graphql --paginate \
+  -f owner=acme -f repo=widgets -F pr=7 \
+  -f "query=${QUERY}" --jq "$THREADS_JQ"
+stub_no_suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main
+assert_row 'thread-listing-fails-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=1\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'thread-listing-fails-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+# ---- the checks never settle: watch-checks.sh exit 1 is unmet --------------
+#
+# Every poll answers in_progress, so the watch spends its whole 60-poll budget
+# (the sleep stub is instant) and exits 1: the head read (1), the polls (2-61),
+# then the two listings (62, 63) and the state (64). The listings answer clean,
+# so the watch is the only condition failing.
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-in-progress
+stub_threads 62 threads-all-resolved
+stub_no_suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main
+assert_row 'watch-unsettled-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=1\nbuild\tin_progress\t-\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 64
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'watch-unsettled-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
 
 # ---- a repository that runs no checks: watch-checks.sh exit 5 is met --------
 #
