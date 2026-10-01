@@ -345,7 +345,7 @@ sake. Across 158 Claude Code dispatches of those four roles, the
 58 with no `model` argument all landed on Opus, at $61 over a
 four-day window, and the 100 with one all landed off Opus — the
 `implement-work` plan drafter alone accounted for $35 of that $61
-([measurements](https://github.com/yowcow/dude/issues/267#issuecomment-5612054475)).
+([measurements](https://github.com/yowcow/dude/pull/514)).
 Lowering the default would pull the marked workers down with it
 ([yowcow/dude#266](https://github.com/yowcow/dude/issues/266)).
 
