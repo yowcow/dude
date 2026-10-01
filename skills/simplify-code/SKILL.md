@@ -13,9 +13,9 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 
 ## Orchestration model
 
-**This skill dispatches proposers: read-only workers that may run in parallel.** Everything else runs in the main loop.
+**This skill dispatches two kinds of read-only worker: proposers, and one verdict worker per proposal.** Everything else runs in the main loop.
 
-- The orchestrator owns this pass: it dispatches proposers, judges what they return, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
+- The orchestrator owns this pass: it dispatches both, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
 - Proposers are read-only workers, following the contract stated in `review-code`'s **Orchestration model** and bought for the same reason. Each gets the diff, the paths it touches, and its assigned lenses. A proposer returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean.
 - Proposers stay read-only for one reason beyond that contract: `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
@@ -66,7 +66,7 @@ Report "no proposals" explicitly rather than inventing one.
 
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
-3. Evaluate every proposal with `superpowers:receiving-code-review`: reject — with a stated reason — anything that changes behavior, that needs a measurement to justify it (see **Don't over-simplify**), that reaches outside the diff (see **Scope**), or that only reflects proposer preference.
+3. Dispatch one verdict worker per proposal, borrowing only this from `review-code`'s **Orchestration model**, not its tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference.
 4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when invoked from `implement-work`'s completion gate — its step-1 Verify already covers the unchanged tree in this round.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
