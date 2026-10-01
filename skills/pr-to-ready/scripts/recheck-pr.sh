@@ -49,7 +49,7 @@ BASE="$5"
 RECORD="$(git rev-parse --git-dir)/dude-pr-to-ready-recheck"
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-met=yes
+verdict=met
 
 # stage <name> <cmd...>: run one stage, print its header and stdout, and leave
 # the stdout in OUT and the status in ST for the condition that follows it.
@@ -63,17 +63,15 @@ stage() {
 }
 
 stage head gh pr view -R "${OWNER}/${REPO}" --json headRefOid --jq .headRefOid -- "$PR"
-{ [ "$ST" -eq 0 ] && [ "$OUT" = "$SHA" ]; } || met=""
+{ [ "$ST" -eq 0 ] && [ "$OUT" = "$SHA" ]; } || verdict=unmet
 stage watch-checks bash "${SCRIPT_DIR}/watch-checks.sh" "$OWNER" "$REPO" "$SHA"
-{ [ "$ST" -eq 0 ] || [ "$ST" -eq 5 ]; } || met=""
+{ [ "$ST" -eq 0 ] || [ "$ST" -eq 5 ]; } || verdict=unmet
 stage unresolved-threads bash "${SCRIPT_DIR}/list-unresolved-threads.sh" "$OWNER" "$REPO" "$PR"
-{ [ "$ST" -eq 0 ] && [ -z "$OUT" ]; } || met=""
+{ [ "$ST" -eq 0 ] && [ -z "$OUT" ]; } || verdict=unmet
 stage suppressed-comments bash "${SCRIPT_DIR}/list-suppressed-comments.sh" "$OWNER" "$REPO" "$PR"
-{ [ "$ST" -eq 0 ] && [ -z "$OUT" ]; } || met=""
+{ [ "$ST" -eq 0 ] && [ -z "$OUT" ]; } || verdict=unmet
 stage check-pr-state bash "${SCRIPT_DIR}/check-pr-state.sh" "$OWNER" "$REPO" "$PR" "$BASE"
-[ "$OUT" = "BASE-OK ${BASE} MERGEABLE" ] || met=""
+[ "$OUT" = "BASE-OK ${BASE} MERGEABLE" ] || verdict=unmet
 
-verdict=unmet
-if [ -n "$met" ]; then verdict=met; fi
 printf '%s %s\n' "$verdict" "$SHA" >"$RECORD"
 printf 'RECORDED %s %s\n' "$verdict" "$SHA"
