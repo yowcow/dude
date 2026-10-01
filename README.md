@@ -305,10 +305,12 @@ Code the default is the environment variable
 `CLAUDE_CODE_SUBAGENT_MODEL`, not a `settings.json` key; set it to the highest
 tier you have and leave it there regardless of the run's own tier.
 
-Effort is a second, separate ceiling: on
-Claude Code a worker runs at the session's own effort and no dispatch can
-raise it above that, even where its model lands on the highest tier. Launch even
-a cheap main-loop session at the effort you want its marked workers to have.
+Effort is a second, separate ceiling: on Claude Code, in a session whose effort
+was set with `CLAUDE_CODE_EFFORT_LEVEL`, or for a worker whose agent definition
+carries no `effort`, a worker runs at the session's own effort and no dispatch
+can raise it above that, even where its model lands on the highest tier. Launch
+even a cheap main-loop session at the effort you want its marked workers to
+have.
 
 Confirming the ceiling actually held takes two checks, not just the first:
 the default against the environment
@@ -343,12 +345,11 @@ implementer. Dispatched without a `model` of its own, each rides the same
 ceiling that **What tier a marked worker runs at** above sets for the marked
 workers' sake. Across 158 Claude Code dispatches of the four roles other
 than the verdict worker, which the measurement predates, the
-58 with no `model` argument all landed on Opus, at $121 over a
+58 with no `model` argument all landed on Opus, at $61 over a
 four-day window, and the 100 with one all landed off Opus — the
-`implement-work` plan drafter alone accounted for $69 of that $121
-([measurements](https://github.com/yowcow/dude/issues/267#issuecomment-5612054475)).
-The only lever available is naming a cheaper model at the dispatch itself;
-lowering the default would pull the marked workers down with it
+`implement-work` plan drafter alone accounted for $35 of that $61
+([measurements](https://github.com/yowcow/dude/pull/514)).
+Lowering the default would pull the marked workers down with it
 ([yowcow/dude#266](https://github.com/yowcow/dude/issues/266)).
 
 ## Development
