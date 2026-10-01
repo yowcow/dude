@@ -35,7 +35,6 @@ cat >"${stub_bin}/python3" <<'SH'
 { printf 'python3'; printf ' %s' "$@"; printf '\n'; } >>"$CALLS"
 if [ "$1" = '-m' ]; then exit "$JSON_STATUS"; fi
 if [ "$1" = '-' ]; then exec "$PYTHON3_REAL" -; fi
-exit "$CODEX_STATUS"
 SH
 
 chmod +x "${stub_bin}/claude" "${stub_bin}/muse" "${stub_bin}/python3"
@@ -47,15 +46,13 @@ run_manifest() {
     "PATH=${stub_bin}:${PATH}" \
     "CALLS=${HARNESS_TMP}/calls" \
     "CLAUDE_STATUS=${1:-0}" \
-    "CODEX_STATUS=${2:-0}" \
-    "MUSE_STATUS=${3:-0}" \
-    "JSON_STATUS=${4:-0}" \
+    "MUSE_STATUS=${2:-0}" \
+    "JSON_STATUS=${3:-0}" \
     bash "$SUT"
 }
 
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
-  "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
   'muse plugins validate . [on]' \
   'python3 -m json.tool .agents/plugins/marketplace.json' \
   'python3 -m json.tool package.json' \
@@ -66,34 +63,23 @@ want_calls="$(printf '%s\n' \
 
 total=$((total + 1))
 fails_here=0
-run_manifest 0 0 0 0
+run_manifest 0 0 0
 if ! check_eq 'green exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_eq 'green calls' "$want_calls" "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))
 fails_here=0
-run_manifest 1 0 0 0
+run_manifest 1 0 0
 if ! check_eq 'Claude failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_eq 'Claude failure calls' 'claude plugin validate .' "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))
 fails_here=0
-run_manifest 0 1 0 0
+run_manifest 0 1 0
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
-  "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py .")"
-if ! check_eq 'Codex failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_eq 'Codex failure calls' "$want_calls" "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-total=$((total + 1))
-fails_here=0
-run_manifest 0 0 1 0
-want_calls="$(printf '%s\n' \
-  'claude plugin validate .' \
-  "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
   'muse plugins validate . [on]')"
 if ! check_eq 'Muse failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_eq 'Muse failure calls' "$want_calls" "$(cat "${HARNESS_TMP}/calls")"; then fails_here=1; fi
@@ -101,10 +87,9 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 total=$((total + 1))
 fails_here=0
-run_manifest 0 0 0 1
+run_manifest 0 0 1
 want_calls="$(printf '%s\n' \
   'claude plugin validate .' \
-  "python3 ${HARNESS_TMP}/home/.codex/skills/.system/plugin-creator/scripts/validate_plugin.py ." \
   'muse plugins validate . [on]' \
   'python3 -m json.tool .agents/plugins/marketplace.json')"
 if ! check_eq 'JSON failure exit' 1 "$SUT_STATUS"; then fails_here=1; fi
@@ -131,7 +116,6 @@ run_fixture() {
     "PATH=${stub_bin}:${PATH}" \
     "CALLS=${HARNESS_TMP}/calls" \
     "CLAUDE_STATUS=0" \
-    "CODEX_STATUS=0" \
     "MUSE_STATUS=0" \
     "JSON_STATUS=0" \
     "MANIFEST_ROOT=$1" \
