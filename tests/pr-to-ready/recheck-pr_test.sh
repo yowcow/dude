@@ -38,11 +38,11 @@
 # only the status half of its condition catches it),
 # `suppressed-listing-fails-is-unmet` (the listing exits 4 on a heading/entry
 # count mismatch with empty output, so only the status half of its condition
-# catches it), and `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after its 60 polls: 64 gh
-# calls). Each is followed by a mark-ready row, so the verdict written is
-# pinned and not only the stdout. Deleting the watch condition, the suppressed
-# condition, or either listing's status half (leaving `[ -z "$OUT" ]`) fails
-# the matching row.
+# catches it), and `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after
+# its 60 polls: 64 gh calls). The last four are each followed by a mark-ready
+# row, so the verdict written is pinned and not only the stdout. Deleting the
+# watch condition, the suppressed condition, or either listing's status half
+# (leaving `[ -z "$OUT" ]`) fails the matching row.
 #
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; the broken variant reads the thread listing before the

@@ -7,10 +7,6 @@
 # stubs `gh` either — this script never calls it, and every row asserts zero
 # gh calls to hold that.
 #
-# RECORD_NAME is a copy of the name the three scripts share. If it drifts,
-# mark-ready_test.sh's `met-and-current-goes-ready` row fails, since that row
-# seeds the record through the same copy.
-#
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; the broken variant is `rm` without `-f`, which fails
 # `no-record-still-succeeds`.
