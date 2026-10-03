@@ -184,7 +184,7 @@ Add only what the execution method left undone.
 
 The deliverable is a **draft PR** on a pushed branch of verified commits — exactly what `pr-to-ready` takes as its entry. Once the completion gate takes its normal exit, check, push, and then open the PR, in that order.
 
-Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`: it passes only when steps 1-3 each last recorded the tree about to be pushed and nothing is left uncommitted. Only `OK` lets the push go ahead; on any other line, go back to the completion gate's step 1, and the pass that follows is one of its rounds.
+Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`. Only `OK` lets the push go ahead; on any other line, go back to the completion gate's step 1, and the pass that follows is one of its rounds.
 
 Push the branch to `origin` under its own name; the check's `OK` is its only precondition.
 
