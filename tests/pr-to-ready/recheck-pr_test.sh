@@ -32,8 +32,10 @@
 # on the same SHA, so its unmet verdict has to overwrite that record.
 #
 # The met-conditions each have a row that fails only on them, everything else
-# clean: `head-moved-is-unmet`, `not-mergeable-is-unmet`,
-# `suppressed-finding-is-unmet` (the listing finds a finding),
+# clean: `head-moved-is-unmet`, `not-mergeable-is-unmet`, `base-drift-is-unmet`
+# (the state is `BASE-DRIFT develop MERGEABLE`, so only the base half of its
+# condition catches it), `suppressed-finding-is-unmet` (the listing finds a
+# finding),
 # `thread-listing-fails-is-unmet` (the listing exits 1 with empty output, so
 # only the status half of its condition catches it),
 # `suppressed-listing-fails-is-unmet` (the listing exits 4 on a heading/entry
@@ -41,8 +43,9 @@
 # catches it), and `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after
 # its 60 polls: 64 gh calls). The last four are each followed by a mark-ready
 # row, so the verdict written is pinned and not only the stdout. Deleting the
-# watch condition, the suppressed condition, or either listing's status half
-# (leaving `[ -z "$OUT" ]`) fails the matching row.
+# watch condition, the suppressed condition, either listing's status half
+# (leaving `[ -z "$OUT" ]`), or the state condition's `BASE-OK` half (keying on
+# `MERGEABLE` alone) fails the matching row.
 #
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; the broken variant reads the thread listing before the
@@ -204,6 +207,15 @@ stub_no_suppressed
 stub_state main CONFLICTING
 run_in "$W" acme widgets 7 deadbeef main
 assert_row 'not-mergeable-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main CONFLICTING\nRECORDED unmet deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_no_suppressed
+stub_state develop MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main
+assert_row 'base-drift-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-DRIFT develop MERGEABLE\nRECORDED unmet deadbeef\n' 6
 
 row_start
 stub_head deadbeef

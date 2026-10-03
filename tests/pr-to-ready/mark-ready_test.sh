@@ -9,9 +9,6 @@
 # `clean-records-met: mark-ready goes ready` pins the same pair from the
 # writer's side.
 #
-# `gh pr ready` is stubbed only on rows that expect it to be reached, so a row
-# that should refuse and calls it anyway fails as an unstubbed argv.
-#
 # `stale-met-record-cleared-at-0-3` is `met-and-current-goes-ready` with one
 # difference, the 0-3 clear in between: an earlier run left a met record on the
 # same SHA, and this run never re-confirmed.
