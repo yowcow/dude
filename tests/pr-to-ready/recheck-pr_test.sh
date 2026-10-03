@@ -35,8 +35,10 @@
 # clean: `head-moved-is-unmet`, `not-mergeable-is-unmet`,
 # `suppressed-finding-is-unmet` (the listing finds a finding),
 # `thread-listing-fails-is-unmet` (the listing exits 1 with empty output, so
-# only the status half of its condition catches it), and
-# `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after its 60 polls: 64 gh
+# only the status half of its condition catches it),
+# `suppressed-listing-fails-is-unmet` (the listing exits 4 on a heading/entry
+# count mismatch with empty output, so only the status half of its condition
+# catches it), and `watch-unsettled-is-unmet` (watch-checks.sh exits 1 after its 60 polls: 64 gh
 # calls). Each is followed by a mark-ready row, so the verdict written is
 # pinned and not only the stdout. Deleting the watch condition, the suppressed
 # condition, or either listing's status half (leaving `[ -z "$OUT" ]`) fails
@@ -231,6 +233,20 @@ assert_row 'thread-listing-fails-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch
 row_start
 ready_in "$W" acme widgets 7
 assert_row 'thread-listing-fails-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+gh_stub_raw_response 5 0 pr view --repo acme/widgets --json reviews \
+  --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/reviews-suppressed-count-mismatch.json"
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main
+assert_row 'suppressed-listing-fails-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=4\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'suppressed-listing-fails-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
 
 # ---- the checks never settle: watch-checks.sh exit 1 is unmet --------------
 #
