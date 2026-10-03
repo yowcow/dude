@@ -20,9 +20,12 @@
 #   - drop the clean-tree check: `dirty-tree`
 #   - probe with `git status --porcelain -uno`, which skips untracked files:
 #     `untracked-file`
+#   - drop --untracked-files=normal from the probe:
+#     `untracked-file-hidden-by-config`
 #   - check STALE before DIRTY: `dirty-tree-records-over-the-edit`
 #   - store under `git rev-parse --git-common-dir` instead of the worktree's
 #     own git dir (in both scripts): `records-are-per-worktree`
+#   - the same, in record-tree.sh alone: `records-in-a-linked-worktree`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -144,6 +147,21 @@ run_in "$W"
 assert_row 'untracked-file' 0 'DIRTY\n' 0
 tally check_eq 'untracked-file: pending paths on stderr' '?? new.txt' "$(cat "$SUT_STDERR")"
 
+# ---- the same, under status.showUntrackedFiles=no ----------------------
+#
+# Without --untracked-files=normal the probe honours this setting and sees a
+# clean tree, and the records already match HEAD^{tree}: OK, with the file
+# silently absent from the push.
+
+row_start
+W="$(build_repo untracked-hidden)"
+record "$W" verify simplify review
+git -C "$W" config status.showUntrackedFiles no
+printf 'new\n' >"${W}/new.txt"
+run_in "$W"
+assert_row 'untracked-file-hidden-by-config' 0 'DIRTY\n' 0
+tally check_eq 'untracked-file-hidden-by-config: pending paths on stderr' '?? new.txt' "$(cat "$SUT_STDERR")"
+
 # ---- records taken over an uncommitted edit: DIRTY, not STALE ----------
 #
 # The records differ from HEAD^{tree} here, so a checker that tests STALE
@@ -165,6 +183,21 @@ L="$(git_repo_scratch perworktree-linked)"
 git -C "$W" worktree add -q --detach "$L"
 run_in "$L"
 assert_row 'records-are-per-worktree' 0 'MISSING verify simplify review\n' 0
+
+# ---- recorded and checked inside a linked worktree ---------------------
+#
+# The shape the skill runs in. A recorder that writes under the common dir
+# leaves this worktree's own git dir empty, so the checker answers MISSING
+# here and never OK, while every row above -- run where the two dirs are one
+# -- stays green.
+
+row_start
+W="$(build_repo inworktree)"
+L="$(git_repo_scratch inworktree-linked)"
+git -C "$W" worktree add -q --detach "$L"
+record "$L" verify simplify review
+run_in "$L"
+assert_row 'records-in-a-linked-worktree' 0 "OK $(head_tree "$L")\n" 0
 
 # ---- argument validation -----------------------------------------------
 

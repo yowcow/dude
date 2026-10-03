@@ -44,8 +44,10 @@ if [ -n "$MISSING" ]; then
 fi
 
 # What is pushed is commits only, so an edit still in the tree is not
-# delivered even when every record matches HEAD^{tree}.
-PENDING="$(git status --porcelain)"
+# delivered even when every record matches HEAD^{tree}. The flag overrides
+# status.showUntrackedFiles=no, under which an untracked file created after
+# the records is invisible here while the records already equal HEAD^{tree}: OK.
+PENDING="$(git status --porcelain --untracked-files=normal)"
 if [ -n "$PENDING" ]; then
   echo "DIRTY"
   printf '%s\n' "$PENDING" >&2
