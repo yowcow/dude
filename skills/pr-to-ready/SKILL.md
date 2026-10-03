@@ -254,7 +254,7 @@ Once Step 2 exits clean, re-confirm the six conditions on the SHA it leaves from
 Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>` with that SHA and the base Step 1 most recently resolved. It measures in a fixed order — the head is still that SHA, the checks watched until they settle, condition 3's two listings, then base and mergeability — prints each stage's exit status and output, and ends on `RECORDED met <sha>` or `RECORDED unmet <sha>`: whether everything a machine can judge held. Three judgements stay here:
 
 - every conclusion its watch stage printed passes, or that stage exited 5 — the script reports conclusions and never judges them, as in Step 1;
-- condition 2 — read only once the script has returned: until the checks settle, the Claude run can still be moving;
+- condition 2 — read only once the script has returned;
 - condition 6.
 
 The re-confirmation holds only on `RECORDED met` with all three. When **verbose** is on, post the re-confirmed measured-tip SHA and values (requesting-code-review comment id included) with what the script printed as a final comment before branching below; when off, keep them in the round's report to the caller instead. The final comment, when posted, follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
