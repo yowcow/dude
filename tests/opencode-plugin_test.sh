@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# V2 behavior suite for the opencode plugin (yowcow/dude#495).
+# V1+V2 dual-export suite for the opencode plugin (yowcow/dude#495).
 #
 # Offline: the `@opencode/plugin` specifier is stubbed at runtime via a
 # `node:module` resolve hook written to tmpdir (real `define` is identity,
@@ -148,6 +148,39 @@ for (const line of [
 }
 assert.ok(normSession.includes(normStub.split('\n')[1].slice(0, 40)),
   'session-start context must contain the stub body');
+
+// V1 object form (OpenCode 1.18.29+): the same default export carries server().
+assert.equal(typeof mod.default.server, 'function',
+  'dual export must carry V1 server()');
+const v1 = await mod.default.server();
+assert.equal(typeof v1.config, 'function',
+  'V1 server() must return a config hook');
+const v1sys = v1['experimental.chat.system.transform'];
+assert.equal(typeof v1sys, 'function',
+  'V1 server() must return a system transform');
+
+// V1 skills registration appends the skills dir to config.skills.paths.
+{
+  const config = {};
+  const skillsPath = path.join(root, 'skills');
+  await v1.config(config);
+  assert.ok(config.skills.paths.includes(skillsPath),
+    'V1 config must register the skills dir');
+  await v1.config(config);
+  assert.equal(config.skills.paths.filter((p) => p === skillsPath).length, 1,
+    'V1 config must not duplicate the skills dir');
+}
+
+// V1 system stub equals the V2 stub once normalized, and stays idempotent.
+{
+  const output = { system: [] };
+  await v1sys({}, output);
+  assert.equal(output.system.length, 1);
+  assert.equal(normalize(output.system[0]), normStub,
+    'V1 stub must equal the V2 stub');
+  await v1sys({}, output);
+  assert.equal(output.system.length, 1, 'V1 system transform must be idempotent');
+}
 JS
 
-printf 'ok 1/1 opencode-plugin_test.sh (V2 behavior; yowcow/dude#495)\n'
+printf 'ok 1/1 opencode-plugin_test.sh (V1+V2 dual export; yowcow/dude#495)\n'
