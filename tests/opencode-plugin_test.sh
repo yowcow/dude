@@ -181,6 +181,41 @@ assert.equal(typeof v1sys, 'function',
   await v1sys({}, output);
   assert.equal(output.system.length, 1, 'V1 system transform must be idempotent');
 }
+
+// V1 pre-marked system is untouched.
+{
+  const output = { system: [`<!-- ${MARKER} --> already here`] };
+  await v1sys({}, output);
+  assert.equal(output.system.length, 1, 'V1 pre-marked system must be untouched');
+  assert.ok(output.system[0].includes('already here'));
+}
+
+// V1 non-string entries do not crash the guard and still get the stub.
+{
+  const output = { system: [{ type: 'text' }, 42] };
+  await v1sys({}, output);
+  assert.equal(output.system.length, 3);
+  assert.equal(normalize(output.system[2]), normStub);
+}
+
+// V1 config preserves existing keys and paths.
+{
+  const config = { top: 1, skills: { other: 1, paths: ['/other'] } };
+  const skillsPath = path.join(root, 'skills');
+  await v1.config(config);
+  assert.ok(config.skills.paths.includes('/other'), 'V1 config must keep existing paths');
+  assert.ok(config.skills.paths.includes(skillsPath), 'V1 config must register the skills dir');
+  assert.equal(config.skills.other, 1, 'V1 config must keep existing skills keys');
+  assert.equal(config.top, 1, 'V1 config must keep top-level keys');
+}
+
+// V1 config replaces a non-array paths value instead of crashing.
+{
+  const config = { skills: { paths: '/other' } };
+  const skillsPath = path.join(root, 'skills');
+  await v1.config(config);
+  assert.deepStrictEqual(config.skills.paths, [skillsPath]);
+}
 JS
 
 printf 'ok 1/1 opencode-plugin_test.sh (V1+V2 dual export; yowcow/dude#495)\n'

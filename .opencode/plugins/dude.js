@@ -61,7 +61,7 @@ export default {
     return {
       config: async (config) => {
         config.skills = config.skills || {};
-        config.skills.paths = config.skills.paths || [];
+        config.skills.paths = Array.isArray(config.skills.paths) ? config.skills.paths : [];
         if (!config.skills.paths.includes(skillsRoot)) {
           config.skills.paths.push(skillsRoot);
         }
