@@ -41,16 +41,35 @@ function loadSkills() {
     });
 }
 
-export default Plugin.define({
-  id: 'dude',
-  async setup(ctx) {
-    const skills = loadSkills();
-    await ctx.skill.transform((editor) => {
-      for (const s of skills) editor.add(s);
-    });
-    await ctx.session.hook('context', (event) => {
-      if (event.system.some((p) => typeof p.text === 'string' && p.text.includes(MARKER))) return;
-      event.system.push({ type: 'text', text: bootstrap() });
-    });
+export default {
+  ...Plugin.define({
+    id: 'dude',
+    async setup(ctx) {
+      const skills = loadSkills();
+      await ctx.skill.transform((editor) => {
+        for (const s of skills) editor.add(s);
+      });
+      await ctx.session.hook('context', (event) => {
+        if (event.system.some((p) => typeof p.text === 'string' && p.text.includes(MARKER))) return;
+        event.system.push({ type: 'text', text: bootstrap() });
+      });
+    },
+  }),
+  // V1 object form (OpenCode 1.18.29+): V1 calls server() and uses the
+  // returned hooks; V2 reads id/setup() and ignores server().
+  async server() {
+    return {
+      config: async (config) => {
+        config.skills = config.skills || {};
+        config.skills.paths = Array.isArray(config.skills.paths) ? config.skills.paths : [];
+        if (!config.skills.paths.includes(skillsRoot)) {
+          config.skills.paths.push(skillsRoot);
+        }
+      },
+      'experimental.chat.system.transform': async (_input, output) => {
+        if (output.system.some((s) => typeof s === 'string' && s.includes(MARKER))) return;
+        output.system.push(bootstrap());
+      },
+    };
   },
-});
+};
