@@ -57,5 +57,6 @@ Load-bearing bits an editor otherwise guesses wrong:
 - Name Superpowers procedures (`superpowers:…`); never reimplement them; never name the host runtime. Skill bodies use bare names (`plan-work`), not `dude:plan-work`.
 - `hooks/session-start` must not grow a `jq` dependency (not guaranteed at install) and must not be rewritten to a heredoc (bash 5.3+ hangs there).
 - Do not install a second copy of dude to try hook changes — both SessionStart hooks fire into the same session.
+- `agents/highest-tier.md` keeps an empty body, and a comment counts as a body: Muse Code surfaces a root `agents/*.md` as an Agent Definition only once the body is non-empty, the documented bare `muse plugins approve dude` then enables it alongside the hook, and `muse plugins validate` reports the same either way, so `make manifest` does not catch it.
 
 Issue numbers under `tests/` that look like `#171` refer to `yowcow/dotfiles`, not this tracker. Qualify cross-repo references (`owner/repo#N`).
