@@ -225,10 +225,14 @@ to roughly 60k. Handing it the PR URL is what makes that split practical — the
 reference is the whole entry, so no branch name has to be remembered and no
 checkout prepared by hand.
 
-A run's sessions need not all be at the same tier. `plan-work` is where a
-design gets agreed and a bad call is expensive to undo, so give it the highest
-tier you have; `implement-work` and `pr-to-ready` mostly execute and inquire,
-and a cheaper tier carries their main loops. Three sections below are what that
+A run's sessions need not all be at the same tier.
+
+| What the main loop keeps | Skills | Main loop's tier |
+| --- | --- | --- |
+| Deciding what to look at and where to dig; a bad choice or an oversight is hard to recover later | `plan-work`, `audit-code`, `settle-question`, `investigate-*` | Highest tier you have |
+| Mostly executing and inquiring | `implement-work`, `pr-to-ready` | A cheaper tier carries them |
+
+Every other session runs at whatever tier you launch it at. Three sections below are what that
 leaves you to handle: **What tier a marked worker runs at**, for keeping the
 marked workers high once the session under them is cheap,
 **What the run's own tier decides**, for the judgments that come down with the
