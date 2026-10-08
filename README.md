@@ -232,7 +232,7 @@ A run's sessions need not all be at the same tier.
 | Deciding what to look at and where to dig; a bad choice or an oversight is hard to recover later | `plan-work`, `audit-code`, `settle-question`, `investigate-*` | Highest tier you have |
 | Mostly executing and inquiring | `implement-work`, `pr-to-ready` | A cheaper tier carries them |
 
-Every other session runs at the run's default. Three sections below are what that
+Every other session runs at whatever tier you launch it at. Three sections below are what that
 leaves you to handle: **What tier a marked worker runs at**, for keeping the
 marked workers high once the session under them is cheap,
 **What the run's own tier decides**, for the judgments that come down with the
