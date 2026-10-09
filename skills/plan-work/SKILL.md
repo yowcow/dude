@@ -90,7 +90,7 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 
 1. Resolve **Entry**. A design invalidated downstream skips step 2.
 2. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
-   - **Only where the request prescribes a means** — how to do it, not only what to achieve — dispatch the alternative proposer. Fix options carried in by investigation findings are not such a means: they are already candidates for **Design agreement**.
+   - **Only where the issue or request prescribes a means** — how to do it, not only what to achieve — dispatch the alternative proposer. Fix options carried in by investigation findings are not such a means: they are already candidates for **Design agreement**.
    - **The brief carries only the goal, rewritten by you with the means stripped out — never the issue's URL or body.** A reference hands the means straight to the worker and its independence is silently gone; for the same reason, a dispatch form that carries this session's context forward is barred.
    - The worker is read-only and returns a proposal only: the most direct route to the goal, what already-existing thing it reuses, and its trade-offs.
 3. Reach **Design agreement**.
@@ -108,7 +108,7 @@ This loop's stopping conditions are `using-dude`'s **Loop convergence**. One rou
 ## Report
 
 - the entry, and what it carried — for findings, the investigation's report; for an invalidated design, the finding and the branch it came back with
-- whether the alternative proposer was dispatched, and the one-line reason: the request prescribed a means, or it did not
+- where step 2 ran: whether the alternative proposer was dispatched, and the one-line reason: the issue or request prescribed a means, or it did not
 - where the result was published: the comment URL, or that chat is the record and why
 - the `review-plan` rounds run and the final verdict, with accepted findings folded in and rejected findings given their reason
 - the sub-issues created — on re-entry, the breakdown of children left alone, updated, and created — or that there are none because no tracking issue backs the work and the user declined to create one
