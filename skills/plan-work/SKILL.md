@@ -12,6 +12,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - The orchestrator owns everything that decides: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, folding the accepted findings in, calling convergence or escalation, and publishing.
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
+- **This skill dispatches one worker of its own: the alternative proposer.** It is dispatched at the tier `using-dude`'s **Worker tier** sets for a marked worker: a route it misses reads as "nothing beats the human's means", and the comparison ends by ratifying that means.
 
 ## Boundaries
 
@@ -30,6 +31,8 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 ## Design agreement
 
 Reach it with `superpowers:brainstorming`, run to its own self-review and the user's confirmation. **Don't follow it onward to the next skill**, however emphatically it says to. What this flow takes from it is that draft alone. Then come back and draft the TODO list yourself.
+
+Where **Pass** step 2 dispatched the alternative proposer, take the human's means and its proposal into `superpowers:brainstorming` as candidates side by side; which one the design takes is the user's choice.
 
 ## Output contract
 
@@ -87,6 +90,9 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 
 1. Resolve **Entry**. A design invalidated downstream skips step 2.
 2. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
+   - **Only where the issue or request prescribes a means** — how to do it, not only what to achieve — dispatch the alternative proposer. Fix options carried in by investigation findings are not such a means: they are already candidates for **Design agreement**.
+   - **The brief carries only the goal, rewritten by you with the means stripped out — never the issue's URL or body.** A reference hands the means straight to the worker and its independence is silently gone; for the same reason, a dispatch form that carries this session's context forward is barred.
+   - The worker is read-only and returns a proposal only: the most direct route to the goal, what already-existing thing it reuses, and its trade-offs.
 3. Reach **Design agreement**.
 4. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 5.
 5. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
@@ -102,6 +108,7 @@ This loop's stopping conditions are `using-dude`'s **Loop convergence**. One rou
 ## Report
 
 - the entry, and what it carried — for findings, the investigation's report; for an invalidated design, the finding and the branch it came back with
+- where step 2 ran: whether the alternative proposer was dispatched, and the one-line reason: the issue or request prescribed a means, or it did not
 - where the result was published: the comment URL, or that chat is the record and why
 - the `review-plan` rounds run and the final verdict, with accepted findings folded in and rejected findings given their reason
 - the sub-issues created — on re-entry, the breakdown of children left alone, updated, and created — or that there are none because no tracking issue backs the work and the user declined to create one
