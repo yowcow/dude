@@ -16,7 +16,7 @@ One invocation runs the loop to completion:
 
 **This skill dispatches no worker of its own: each round's reviewer and verdict workers are `vet-code`'s.**
 
-- The orchestrator owns the loop: it resolves the scope, calls `vet-code` each round, applies the accepted fixes, verifies, and decides when the loop ends. A reviewer never declares the code clean.
+- The orchestrator owns the loop: it resolves the scope, calls `vet-code` each round, applies the accepted fixes, verifies, and decides when the loop ends.
 
 ## Boundaries
 

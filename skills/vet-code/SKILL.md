@@ -18,7 +18,6 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
   - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
   - One worker per finding, launched together, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`.
   - Each gets the finding, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
-  - The caller applies the accepted fixes and verifies them against the project's checks, and re-judges no verdict.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
 ## Reviewer prompt
