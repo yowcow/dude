@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Resolve the committed range this review covers, printed as two SHAs.
 #
-# Two input shapes, one purpose. Given a PR number, the range is the PR
-# record's own endpoints: anything derived from the local checkout instead
-# reviews whatever this working copy happens to sit on, which is not the PR's
-# diff wherever the two have diverged, and nothing in the findings would say
-# so. Given no argument, the range runs from the base this branch was cut
-# from to HEAD, and that base is read back from the Base-Branch trailer
-# rather than assumed.
+# Two input shapes, one purpose. Given a PR number, the range is the PR's own
+# head and its merge-base with the PR record's base, both fetched: anything
+# derived from the local checkout instead reviews whatever this working copy
+# happens to sit on, which is not the PR's diff wherever the two have
+# diverged, and nothing in the findings would say so. Given no argument, the
+# range runs from the base this branch was cut from to HEAD, and that base is
+# read back from the Base-Branch trailer rather than assumed.
 #
 # Reading it back is what the reviewed range depends on. Squash and rebase
 # merges rewrite a prerequisite's commits under fresh SHAs, so falling back to
@@ -28,6 +28,7 @@ if [ "$#" -gt 1 ]; then
 fi
 
 PR="${1:-}"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 if [ -n "$PR" ] && ! [[ "$PR" =~ ^[0-9]+$ ]]; then
   echo "Usage: $0 [pr-number]" >&2
@@ -47,18 +48,30 @@ emit_range() {
 }
 
 if [ -n "$PR" ]; then
-  if ! ENDS="$(gh pr view --json baseRefOid,headRefOid --jq '"\(.baseRefOid) \(.headRefOid)"' -- "$PR" 2>/dev/null)"; then
+  if ! BASE_OID="$(gh pr view --json baseRefOid --jq .baseRefOid -- "$PR" 2>/dev/null)" || [ -z "$BASE_OID" ]; then
     echo "STOP pr-lookup-failed"
     exit 0
   fi
-  emit_range "${ENDS%% *}" "${ENDS##* }"
+  # Both ends are fetched, never assumed local: a PR somebody else opened has
+  # a head this clone never held, and the base oid may be the base branch's
+  # current tip rather than the fork point. The left end is therefore the
+  # merge-base, so commits that reached the base after the PR was opened do
+  # not show up as deletions by the PR.
+  if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
+    ! BASE_TIP="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BASE_OID}")"; then
+    echo "STOP fetch-failed"
+    exit 0
+  fi
+  if ! BASE_SHA="$(git merge-base "$BASE_TIP" "$HEAD_SHA")"; then
+    echo "STOP merge-base-failed"
+    exit 0
+  fi
+  emit_range "${BASE_SHA}" "${HEAD_SHA}"
   exit 0
 fi
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
-SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-
 # Fetch-default-first with a bounded scan, mirroring
 # ../../pr-to-ready/scripts/resolve-pr-base.sh: the scan must stop at the
 # default-branch tip, or a branch that recorded nothing picks up whatever
