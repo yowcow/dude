@@ -29,7 +29,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
    - **a committed range** — the two SHAs bounding it;
    - **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Don't send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none;
    - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched;
-   - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job; posting anything to the PR is not.
+   - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
 2. **What was implemented** — what the change does, or for a paths-only scope what the code is for.
 3. **The requirements** — the plan, or the original request. When there is none, say so in the prompt: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
 4. **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
