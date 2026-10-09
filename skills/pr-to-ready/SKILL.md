@@ -23,7 +23,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 **Evaluating a finding never happens in the main loop**, on any round, and goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
 
 - The main loop carries this run's own account of why the code reads as it does — it applied every fix on this branch, and where the run continued from `implement-work` it wrote the branch too.
-- A verdict reached there is anchored on that account, which is exactly what `review-code`'s **Orchestration model** buys a read-only worker in a fresh context to escape.
+- A verdict reached there is anchored on that account, which is exactly what `vet-code`'s **Orchestration model** buys a read-only worker in a fresh context to escape.
 - A real finding rejected on such a verdict is replied to and resolved on it, and no later round reads the thread again.
 
 ## Step 0: Set up the run
