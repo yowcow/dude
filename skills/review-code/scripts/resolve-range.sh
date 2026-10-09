@@ -56,9 +56,7 @@ if [ -n "$PR" ]; then
   # a head this clone never held, and the base oid may be the base branch's
   # current tip rather than the fork point. The left end is therefore the
   # merge-base, so commits that reached the base after the PR was opened do
-  # not show up as deletions by the PR. The head comes from
-  # `refs/pull/<n>/head`, which sits outside every clone's fetch refspec and
-  # outlives the PR branch.
+  # not show up as deletions by the PR.
   if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
     ! BASE_TIP="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BASE_OID}")"; then
     echo "STOP fetch-failed"
