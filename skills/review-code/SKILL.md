@@ -14,17 +14,9 @@ One invocation runs the loop to completion:
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: a read-only reviewer, and one verdict worker per finding.** Nothing else leaves the main loop.
+**This skill dispatches no worker of its own: each round's reviewer and verdict workers are `vet-code`'s.**
 
-- The orchestrator owns the loop: it resolves the scope, dispatches the reviewer, dispatches a verdict worker for every finding it returns, applies the accepted fixes, verifies, and decides when the loop ends. A reviewer never declares the code clean.
-- The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review`. It gets the scope and the requirements and returns findings only. It never edits code, never runs the project's checks, and never commits.
-- The reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: a finding it doesn't return leaves this loop *clean* and passes `implement-work`'s completion gate, which is itself this check.
-- **Judging a finding never happens in the main loop**, on any round, and goes out at that same marked tier.
-  - The main loop wrote this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
-  - One worker per finding, launched together, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` with the fix, `reject` with the technical reason, or `needs-user` — the three verdicts `pr-to-ready`'s 2-3 already takes.
-  - Each gets the finding, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
-  - The main loop applies the accepted fixes and verifies them against the project's checks, and re-judges no verdict.
-- What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way. `simplify-code`'s proposers are dispatched on the same contract, for the same reason.
+- The orchestrator owns the loop: it resolves the scope, calls `vet-code` each round, applies the accepted fixes, verifies, and decides when the loop ends. A reviewer never declares the code clean.
 
 ## Boundaries
 
@@ -49,30 +41,13 @@ Either invocation answers in one line:
 - `EMPTY` — the range holds nothing; fall through to 4.
 - `STOP <reason>` — the base could not be settled. Report the reason and stop, rather than reviewing a range that may be somebody else's work.
 
-## Reviewer prompt
-
-`superpowers:requesting-code-review` is the dispatch mechanism; what the reviewer is told is this skill's own. Whatever shape that dispatch offers to carry it, the prompt is complete when it holds these four:
-
-1. **The scope** — whatever **Scope** resolved, in one of these four shapes:
-   - **a committed range** — the two SHAs bounding it;
-   - **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Don't send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none;
-   - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Say the same in the report: nothing constrains the review to recent change, so the findings may be about code this work never touched;
-   - **a PR** — the range **Scope** resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job; posting anything to the PR is not — that belongs to `pr-to-ready`.
-2. **What was implemented** — what the change does, or for a paths-only scope what the code is for.
-3. **The requirements** — the plan, or the original request. When there is none, say so in the prompt: the review then runs against the repository's own standards and the code's evident intent. Say it in the report too, so a reader knows plan alignment was not checked.
-4. **The earlier rounds** — from the second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
-
-Confine every search to the project root or narrower.
-
 ## Pass
 
 One invocation is one pass, and a pass is as many rounds as it takes:
 
 1. Resolve the scope per **Scope** and declare it.
-2. Dispatch one reviewer with the code as it now stands. One reviewer per round, fresh each round — the fan-out here is fixed at one, because a diff doesn't warrant more.
-3. Dispatch one verdict worker per finding, per **Orchestration model**, and take back what each returns.
-  - A worker verifies the claim against the code before accepting it, and rejects — with a stated reason — a finding that is wrong, that only reflects reviewer preference, or that asks for work beyond the request.
-  - Where the call is a person's rather than a technical one, it returns `needs-user` instead.
+2. Invoke `vet-code` once on the code as it now stands, handing it the scope, what was implemented, the requirements, and from the second round on the earlier rounds' record.
+3. Take back the judged findings `vet-code` returns — each `accept` with its fix, `reject` with its reason, or `needs-user` — and re-judge none of them; carry any caveat it returns (paths-only scope, no requirements) into **Report**.
 4. Count the `needs-user` verdicts before applying anything.
   - One or more ends the pass's rounds here, on the terms `pr-to-ready`'s 2-3 states: go to step 7 and leave non-clean, per **Escalation**.
   - Otherwise apply the accepted Critical and Important findings yourself — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**.
