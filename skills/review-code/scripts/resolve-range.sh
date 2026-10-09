@@ -58,8 +58,7 @@ if [ -n "$PR" ]; then
   # merge-base, so commits that reached the base after the PR was opened do
   # not show up as deletions by the PR. The head comes from
   # `refs/pull/<n>/head`, which sits outside every clone's fetch refspec and
-  # outlives the PR branch; each fetch's SHA is read straight back rather than
-  # taken from a tracking ref.
+  # outlives the PR branch.
   if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
     ! BASE_TIP="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BASE_OID}")"; then
     echo "STOP fetch-failed"
@@ -75,7 +74,6 @@ fi
 
 # The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
 # -- see its header for the rationale.
-
 # Fetch-default-first with a bounded scan, mirroring
 # ../../pr-to-ready/scripts/resolve-pr-base.sh: the scan must stop at the
 # default-branch tip, or a branch that recorded nothing picks up whatever

@@ -146,7 +146,6 @@ set -euo pipefail
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-code/scripts/resolve-range.sh}"
 
-
 failed=0
 total=0
 
@@ -243,9 +242,7 @@ work_repo() {
 }
 
 # stub_pr_view <pr-number> <exit-status> -- the PR record lookup, filtered
-# body (the base oid) on stdin. Only the base oid is read from the record: the
-# head is fetched from `refs/pull/<n>/head`, so a head oid in the record would
-# be a second answer to a question the fetch already settles.
+# body (the base oid) on stdin.
 stub_pr_view() {
   gh_stub_response '*' "$2" pr view --json baseRefOid --jq .baseRefOid -- "$1"
 }
