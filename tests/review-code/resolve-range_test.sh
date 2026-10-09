@@ -11,13 +11,10 @@
 # and a real work repository cloned from it, both under $HARNESS_TMP and both
 # offline.
 #
-# Limitation: the SUT extracts the PR record's two oids through a --jq filter
-# passed to `gh pr view`, and the fake `gh` matches stubs on the *exact*
-# argv. A mutation confined to that filter's text changes the argv itself, so
-# such a mutant makes the stub report an unstubbed call rather than exercising
-# the mutated filter against a fixture body: gh_stub_raw_response does run the
-# filter this file wrote, for real, through jq -- but never a mutated copy of
-# it, so a defect that lives only inside the filter string is invisible here.
+# Limitation: the SUT reads the PR record's base oid through a --jq filter
+# passed to `gh pr view`, and the fake `gh` matches stubs on the *exact* argv.
+# The stub bodies here are already filtered, so a defect that lives only
+# inside the filter string is invisible to this file.
 #
 # RED verification (see tests/README.md). resolve-range.sh has never been
 # tested before this file, so there is no pre-fix commit to point SUT= at the
@@ -149,7 +146,6 @@ set -euo pipefail
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-code/scripts/resolve-range.sh}"
 
-PR_VIEW_JQ='"\(.baseRefOid) \(.headRefOid)"'
 
 failed=0
 total=0
@@ -246,12 +242,12 @@ work_repo() {
   printf '%s\n' "$dir"
 }
 
-# stub_pr_view <pr-number> <exit-status> -- the PR record lookup, raw body on
-# stdin. Raw, not filtered, so the SUT's own interpolation of the two oids
-# into one line is what runs: a pre-filtered fixture would state the answer
-# the row is checking.
+# stub_pr_view <pr-number> <exit-status> -- the PR record lookup, filtered
+# body (the base oid) on stdin. Only the base oid is read from the record: the
+# head is fetched from `refs/pull/<n>/head`, so a head oid in the record would
+# be a second answer to a question the fetch already settles.
 stub_pr_view() {
-  gh_stub_raw_response '*' "$2" pr view --json baseRefOid,headRefOid --jq "$PR_VIEW_JQ" -- "$1"
+  gh_stub_response '*' "$2" pr view --json baseRefOid --jq .baseRefOid -- "$1"
 }
 
 # stub_default_branch <exit-status> -- the `gh repo view` rung of the
@@ -276,24 +272,66 @@ stub_pr_list() {
   gh_stub_raw_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_LIST_JQ"
 }
 
-# ---- the PR-number shape: the PR record's own endpoints -----------------
+# ---- the PR-number shape: the PR's own endpoints, fetched --------------
 #
-# The first row runs from a directory that is not a git repository at all, so
-# no answer derived from a local checkout is even reachable: the range can
-# only have come from the PR record. The oids are deliberately not shas of
-# anything in the fixture, for the same reason.
+# `prremote` plays the base repository. The work clone is taken while trunk
+# sits on its one commit, and only afterwards does the PR head appear
+# (as `refs/pull/7/head` alone, no branch) and trunk advance past the fork
+# point -- so the clone holds neither the head nor the base's current tip,
+# which is what a reviewer's checkout of somebody else's PR looks like.
+PRREMOTE="$(git_repo_bare acme prremote)"
+PRSEED="$(git_repo_scratch prseed)"
+git_repo_init "$PRSEED" trunk
+git_repo_commit "$PRSEED" README.md 'base\n' "$(commit_msg 'base commit' -)"
+git_repo_push "$PRSEED" "$PRREMOTE" trunk
+FORK_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
+PRWORK="$(git_repo_clone prwork "$PRREMOTE" trunk)"
+git_repo_checkout "$PRSEED" pr trunk
+git_repo_commit "$PRSEED" PR.md 'pr\n' "$(commit_msg 'pr commit' -)"
+PRHEAD_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
+git_repo_push "$PRSEED" "$PRREMOTE" pr:refs/pull/7/head
+git_repo_push "$PRSEED" "$PRREMOTE" "${FORK_SHA}:refs/pull/10/head"
+git_repo_checkout "$PRSEED" trunk
+git_repo_commit "$PRSEED" LATER.md 'later\n' "$(commit_msg 'base moved on' -)"
+MOVED_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
+git_repo_push "$PRSEED" "$PRREMOTE" trunk
+PRUNREL="$(git_repo_scratch prunrel)"
+git_repo_init "$PRUNREL" other
+git_repo_commit "$PRUNREL" O.md 'other\n' "$(commit_msg 'unrelated root' -)"
+git_repo_push "$PRUNREL" "$PRREMOTE" other:refs/pull/9/head
 
 row_start
-printf '{"headRefOid":"hhh222","baseRefOid":"bbb111"}\n' | stub_pr_view 42 0
-NOREPO="$(git_repo_scratch pr-shape-norepo)"
-run_in "$NOREPO" 42
-assert_row 'pr-shape-uses-the-pr-record' 0 'RANGE bbb111..hhh222\n' 1
+printf '%s\n' "$FORK_SHA" | stub_pr_view 7 0
+run_in "$PRWORK" 7
+assert_row 'pr-shape-fetches-the-missing-head' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 1
+
+# The record's base oid here is the base branch's *current* tip, which the
+# clone has never fetched and which is not an ancestor of the head. Taken as
+# the range's left end it would show LATER.md as a deletion by the PR.
+row_start
+printf '%s\n' "$MOVED_SHA" | stub_pr_view 7 0
+run_in "$PRWORK" 7
+assert_row 'pr-shape-base-moved-on-uses-merge-base' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 1
 
 row_start
-printf '{"headRefOid":"same111","baseRefOid":"same111"}\n' | stub_pr_view 42 0
-NOREPO_SAME="$(git_repo_scratch pr-shape-empty)"
-run_in "$NOREPO_SAME" 42
-assert_row 'pr-shape-empty-when-ends-coincide' 0 'EMPTY\n' 1
+printf '%s\n' "$FORK_SHA" | stub_pr_view 10 0
+run_in "$PRWORK" 10
+assert_row 'pr-shape-empty-when-head-is-the-base' 0 'EMPTY\n' 1
+
+row_start
+printf '%s\n' "$FORK_SHA" | stub_pr_view 8 0
+run_in "$PRWORK" 8
+assert_row 'pr-shape-head-fetch-fails' 0 'STOP fetch-failed\n' 1
+
+row_start
+printf '%s\n' 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' | stub_pr_view 7 0
+run_in "$PRWORK" 7
+assert_row 'pr-shape-base-fetch-fails' 0 'STOP fetch-failed\n' 1
+
+row_start
+printf '%s\n' "$FORK_SHA" | stub_pr_view 9 0
+run_in "$PRWORK" 9
+assert_row 'pr-shape-merge-base-fails' 0 'STOP merge-base-failed\n' 1
 
 row_start
 : | stub_pr_view 42 1
@@ -302,6 +340,7 @@ run_in "$NOREPO_FAIL" 42
 assert_row 'pr-lookup-fails' 0 'STOP pr-lookup-failed\n' 1
 
 row_start
+NOREPO="$(git_repo_scratch pr-shape-norepo)"
 run_in "$NOREPO" 42 extra
 assert_row 'too-many-arguments' 2 '' 0
 
