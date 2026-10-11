@@ -58,7 +58,7 @@ fi
 # second fetch overwrites FETCH_HEAD, and the gate below runs one
 # (../references/gh-mechanics.md, "Capture the two tips as shas, one per
 # fetch").
-if ! BASE_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "$BASE")"; then
+if ! BASE_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "$BASE")"; then
   echo "STOP fetch-failed"
   exit 0
 fi
@@ -72,7 +72,7 @@ fi
 # as this retarget's verification.
 RETARGET_ON_GITHUB=yes
 if [ "$CURRENT_BASE" = "$BASE" ]; then
-  if ! BRANCH_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "$BRANCH")"; then
+  if ! BRANCH_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "$BRANCH")"; then
     echo "STOP branch-fetch-failed"
     exit 0
   fi

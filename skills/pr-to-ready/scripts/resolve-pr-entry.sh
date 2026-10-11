@@ -14,7 +14,7 @@
 # nobody, while the PR it was meant for does not move.
 #
 # Naming the repository is not by itself enough to stop that, which is why the
-# origin comparison below exists. ../../implement-work/scripts/attach-workspace.sh,
+# origin comparison below exists. ./attach-workspace.sh,
 # which Step 0-3 calls next, works entirely against the current repository and
 # its `origin`, and takes no owner or repo argument. So with a URL naming
 # `acme/widgets` and a cwd whose origin is a fork or a sibling clone, that

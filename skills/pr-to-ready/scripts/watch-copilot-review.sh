@@ -140,7 +140,7 @@ export -f check_new_review
 export OWNER REPO PR BASELINE_IDS ID_FILTER SCRIPT_DIR
 
 set +e
-bash "${SCRIPT_DIR}/../../implement-work/scripts/poll.sh" "${MAX_ITER}" "${INTERVAL}" check_new_review
+bash "${SCRIPT_DIR}/poll.sh" "${MAX_ITER}" "${INTERVAL}" check_new_review
 poll_status=$?
 set -e
 if [ "$poll_status" -eq 0 ]; then

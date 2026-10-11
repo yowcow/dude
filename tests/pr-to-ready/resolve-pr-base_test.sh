@@ -18,12 +18,12 @@
 # to fail after both fetches have succeeded, and both refs it names are the
 # ones those fetches just created -- there is no fixture that leaves them
 # unreadable without also breaking the fetch that precedes it. The guard now
-# lives in skills/implement-work/scripts/read-base-trailer.sh and is covered
-# by tests/implement-work/read-base-trailer_test.sh's `trailer-read-fails` row.
+# lives in skills/pr-to-ready/scripts/read-base-trailer.sh and is covered
+# by tests/pr-to-ready/read-base-trailer_test.sh's `trailer-read-fails` row.
 #
 # Limitation: the SUT no longer calls `gh` or `--jq` at all -- that filter now
 # lives in read-base-trailer.sh, and is covered there, raw-stubbed, by
-# tests/implement-work/read-base-trailer_test.sh (which is why that file's own
+# tests/pr-to-ready/read-base-trailer_test.sh (which is why that file's own
 # header carries the `--jq`-defect Limitation instead).
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
@@ -34,8 +34,8 @@
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/resolve-pr-base_test.sh
 #
 #   A copy of the *current* script needs two siblings beside it, laid out as
-#   skills/implement-work/scripts/resolve-default-branch.sh and
-#   skills/implement-work/scripts/read-base-trailer.sh relative to
+#   skills/pr-to-ready/scripts/resolve-default-branch.sh and
+#   skills/pr-to-ready/scripts/read-base-trailer.sh relative to
 #   skills/pr-to-ready/scripts/: it resolves both paths through dirname "$0",
 #   so a lone copy answers STOP ask-default-branch (or fails outright) on
 #   every row and the failures say nothing about the mutation. The bb8d8b8^

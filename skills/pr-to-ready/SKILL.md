@@ -62,10 +62,10 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 
 `<branch>` need not be checked out here, or exist here at all — a fresh session entered from a PR URL is the ordinary case — and every later step writes to a working tree: Step 1's `retarget-pr.sh` merges the base and pushes it, and Step 1's diagnosis fixes and 2-3's `accept` fixes commit and push. Preparing it once here rather than where each of those needs it keeps one step instead of three.
 
-Call `<skill-dir>/../implement-work/scripts/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
+Call `<skill-dir>/scripts/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
 
 - `REUSE <path>` — a worktree already carries `<branch>`, and it need not be clean: this flow's third terminal state deliberately leaves a tree uncommitted, and the same tree outlives the run that left it.
-  - Measure it before binding it — run `<skill-dir>/../implement-work/scripts/check-clean.sh` **from `<path>`**, which takes no argument and reads the tree it runs in, so running it where the session started measures a tree this run will never touch.
+  - Measure it before binding it — run `<skill-dir>/scripts/check-clean.sh` **from `<path>`**, which takes no argument and reads the tree it runs in, so running it where the session started measures a tree this run will never touch.
   - Clean: use it as-is.
   - Anything pending — **stop.** It is work this run did not write, and Step 1's diagnosis fix and 2-3's `accept` fixes would carry it into the PR unread by anyone; report what the script printed and hand the tree back to a person to say whose it is.
 - `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
