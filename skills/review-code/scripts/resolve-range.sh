@@ -57,8 +57,8 @@ if [ -n "$PR" ]; then
   # current tip rather than the fork point. The left end is therefore the
   # merge-base, so commits that reached the base after the PR was opened do
   # not show up as deletions by the PR.
-  if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
-    ! BASE_TIP="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BASE_OID}")"; then
+  if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
+    ! BASE_TIP="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BASE_OID}")"; then
     echo "STOP fetch-failed"
     exit 0
   fi
@@ -80,9 +80,9 @@ fi
 # also the NO-TRAILER base, so that path fetches nothing further. A
 # remote-tracking ref is not named in the exclusion: it goes stale with the
 # clone's fetch history, while FETCH_HEAD is what the fetch just wrote.
-DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
-if ! TIP_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${DEFAULT}")"; then
+if ! TIP_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
@@ -101,7 +101,7 @@ fi
 # an unrecognised PR state, whose message it has already put on stderr --
 # leaves this script exiting 1 with nothing on stdout, instead of a second
 # message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
   exit 1
 fi
 
@@ -150,7 +150,7 @@ esac
 # a tracking ref, a branch cut from a freshly fetched tip would be measured
 # against whatever an older fetch wrote, putting merge-base *below* the fork
 # point and sweeping somebody else's commits into the reviewed range.
-if ! FETCH_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${FETCH_SPEC}")"; then
+if ! FETCH_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${FETCH_SPEC}")"; then
   echo "STOP fetch-failed"
   exit 0
 fi
