@@ -45,7 +45,7 @@ one (`pr-readback-failed`).
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh` |
+| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh`, `review-pr/check-pr-author.sh` |
 | `pr-not-created` | `pr-to-ready/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
