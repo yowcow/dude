@@ -9,19 +9,27 @@ Use after code changes and before `review-code`.
 
 It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
 
-One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller, on the same terms as `review-code`.
+One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code is the caller's.
 
 ## Orchestration model
 
 **This skill dispatches two kinds of read-only worker: proposers, and one verdict worker per proposal.** Everything else runs in the main loop.
 
 - The orchestrator owns this pass: it dispatches both, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
-- Proposers are read-only workers, following the contract stated in `vet-code`'s **Orchestration model** and bought for the same reason. Each gets the diff, the paths it touches, and its assigned lenses. A proposer returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean.
+- Proposers are read-only workers: each gets the diff, the paths it touches, and its assigned lenses, and returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean — at the tier `using-dude`'s **Worker tier** sets for a marked worker. What that buys is a fresh context unanchored on why the code ended up this way; a proposal it doesn't return reads as nothing actionable.
 - Proposers stay read-only for one reason beyond that contract: `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
 ## Scope
 
-- Resolve scope the way `review-code`'s **Scope** does, rather than a second time here: the two skills run on the same code in the same pass of `implement-work`'s completion gate, so a separate ladder in this file would be a second answer — and on a stacked branch the wrong one, since only that ladder reads back what the branch was cut from. Don't broaden cleanup unless the user asks.
+Resolve what to simplify in this order, and declare the resolved scope before dispatching anything:
+
+1. **Caller-supplied** — a SHA range or paths. Use it as given.
+2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
+3. **Clean tree** — the commits ahead of the base the caller names; on a direct invocation, ask the user for the range instead of guessing it.
+4. **Nothing to simplify** — no uncommitted change, and no range with anything in it. Ask the user what to simplify. Never widen to the whole repository on a guess.
+
+Kept as a second copy so this pass resolves the same scope without borrowing: the caller hands it the same range the review runs on.
+- Don't broaden cleanup unless the user asks.
 - If a worthwhile simplification needs files outside the diff, report it instead of changing it.
 - Preserve behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics.
 - When the existing checks can't prove a simplification behavior-preserving, add the minimal characterization test that can, and say so in the report. That's the proof, not scope creep.
@@ -66,7 +74,7 @@ Report "no proposals" explicitly rather than inventing one.
 
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
-3. Dispatch one verdict worker per proposal, borrowing only this from `vet-code`'s **Orchestration model**, not its tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference.
+3. Dispatch one verdict worker per proposal, without the tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference — per `vet-code`'s **Output**. The tier mark is left out because proposals are not findings: a proposal no worker returns must not read as clean.
 4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when invoked from `implement-work`'s completion gate — its step-1 Verify already covers the unchanged tree in this round.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.

@@ -33,7 +33,7 @@ Resolve what to review in this order, and declare the resolved scope before disp
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree, commits ahead of `<base>`** — run `<skill-dir>/scripts/resolve-range.sh` with no argument.
   - `<base>` is resolved, not assumed: the script reads back the `Base-Branch:` trailer that `implement-work` records when it cuts a branch from a prerequisite's PR, settles the base from what state that PR is now in, and falls back to the default branch where there is no trailer.
-  - The trailer's contract, the state-to-base table, and why each test is written the way it is all live in `implement-work`'s `references/base-branch.md`, under **The contract**, **Reading the trailer back**, and **Resolving the default branch**.
+  - The trailer's contract, the state-to-base table, and why the lookups are tested the way they are all live in `implement-work`'s `references/base-branch.md`, under **The contract**, **Reading the trailer back**, and **Resolving the default branch**. This table is owned by the referenced contract; duplicating it here would drift.
 4. **Nothing to review** — no uncommitted change, and no range with anything in it. Ask the user what to review. Never widen to the whole repository on a guess.
 
 Either invocation answers in one line:
@@ -50,7 +50,7 @@ One invocation is one pass, and a pass is as many rounds as it takes:
 2. Invoke `vet-code` once on the code as it now stands, handing it the scope, what was implemented, the requirements, and from the second round on the earlier rounds' record.
 3. Take back the judged findings `vet-code` returns — each `accept` with its fix, `reject` with its reason, or `needs-user` — and re-judge none of them; carry any caveat it returns (paths-only scope, no requirements) into **Report**.
 4. Count the `needs-user` verdicts before applying anything.
-  - One or more ends the pass's rounds here, on the terms `pr-to-ready`'s 2-3 states: go to step 7 and leave non-clean, per **Escalation**.
+  - One or more ends the pass's rounds here with the meaning `vet-code`'s **Output** gives `needs-user`: go to step 7 and leave non-clean, per **Escalation**.
   - Otherwise apply the accepted Critical and Important findings yourself — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**.
   - When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
   - Record Minor findings; don't fix them.
@@ -65,7 +65,7 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
 - This loop stops per `using-dude`'s **Loop convergence**.
   - **Pass** says what a round is here, and two findings are the same when a later round faults the same location on the same grounds, however the wording moved — including a claim restated after a fix meant to resolve it.
   - A round that trips either of **Loop convergence**'s two non-clean conditions still applies and verifies its accepted findings before the loop ends; it just doesn't start another review.
-- **A `needs-user` verdict stops the pass non-clean**, on the terms `pr-to-ready`'s 2-3 and its stop condition 3 set out: the round that stopped applied nothing, and the caller hands the finding to a person.
+- **A `needs-user` verdict stops the pass non-clean**, with the meaning `vet-code`'s **Output** gives `needs-user`: the round that stopped applied nothing, and the caller hands the finding to a person.
 - A Critical finding that invalidates the approved design is not fixed in this loop.
   - Per `using-dude`'s **Escalation** it goes back to `plan-work` for re-approval, and this skill is no exception.
   - What this pass hands over is the finding itself, reported separately from the ordinary verdict so the caller routes it rather than reading the pass as merely unfinished.
