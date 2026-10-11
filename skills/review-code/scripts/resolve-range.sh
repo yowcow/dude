@@ -70,7 +70,7 @@ if [ -n "$PR" ]; then
   exit 0
 fi
 
-# The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
+# The default branch is resolved by the local `resolve-default-branch.sh` copy
 # -- see its header for the rationale.
 # Fetch-default-first with a bounded scan, mirroring
 # ../../pr-to-ready/scripts/resolve-pr-base.sh: the scan must stop at the

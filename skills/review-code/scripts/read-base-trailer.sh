@@ -9,19 +9,18 @@
 #   STOP <slug>                                 the caller stops and says so
 #
 # This implements the cases of the state-to-base table where the two readers
-# print the same bytes -- ../references/base-branch.md, "## Reading the trailer
+# print the same bytes -- ../../implement-work/references/base-branch.md, "## Reading the trailer
 # back". The rows where they differ (no trailer, OPEN, MERGED) stay with the
 # callers: NO-TRAILER and PREREQ hand those decisions back rather than taking
 # them here.
 #
-# Called as a subprocess by two scripts in two other skills --
-# ../../pr-to-ready/scripts/resolve-pr-base.sh and
-# ../../review-code/scripts/resolve-range.sh -- and by no SKILL.md, this
-# skill's own included. There is deliberately no caller contract for it in
-# implement-work/SKILL.md: it is one answer two skills need, and it lives here
-# because the spec it implements does. Without this paragraph the next reader
-# takes the absent caller for an oversight and either wires a contract for it
-# into a SKILL.md that never calls it, or deletes the script as unreferenced.
+# Called as a subprocess by ./resolve-range.sh in this same skill -- and by no
+# SKILL.md, this skill's own included. There is deliberately no caller contract
+# for it in review-code/SKILL.md: it is one answer this skill needs, and it
+# lives here because the spec it implements does. Without this paragraph the
+# next reader takes the absent caller for an oversight and either wires a
+# contract for it into a SKILL.md that never calls it, or deletes the script
+# as unreferenced.
 # ../scripts/resolve-default-branch.sh sits here for the same reason and says
 # the same thing.
 #
