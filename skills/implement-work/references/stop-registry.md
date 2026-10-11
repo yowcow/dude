@@ -55,6 +55,7 @@ one (`pr-readback-failed`).
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
 | `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
+| `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `implement-work/read-base-trailer.sh` |
 | `unrecognised-pr-state` | `pr-to-ready/ensure-draft-pr.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
