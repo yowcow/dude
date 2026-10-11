@@ -53,12 +53,12 @@ one (`pr-readback-failed`).
 | `prereq-lookup-failed` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `push-failed` | `pr-to-ready/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh` |
+| `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `trailer-read-failed` | `implement-work/read-base-trailer.sh` |
 | `unrecognised-pr-state` | `pr-to-ready/ensure-draft-pr.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
-| `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh` |
+| `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
 
 ## Exit codes
 
