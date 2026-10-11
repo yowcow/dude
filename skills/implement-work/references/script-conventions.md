@@ -26,7 +26,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 This exact line. Cross-skill calls are strictly downward, as
 `bash "${SCRIPT_DIR}/../../review-code/scripts/resolve-range.sh"`
-(check-pr-repo.sh precedent); same-directory calls
+(review-pr precedent); same-directory calls
 as `bash "${SCRIPT_DIR}/<name>.sh"` (`resolve-base.sh` precedent).
 
 ## STOP contract
