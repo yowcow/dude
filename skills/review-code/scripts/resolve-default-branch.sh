@@ -3,31 +3,29 @@
 # Print this repository's default branch by its bare name on stdout, or exit 1
 # having printed nothing.
 #
-# Called as a subprocess by three scripts in three skills -- resolve-base.sh
-# beside this one, ../../pr-to-ready/scripts/resolve-pr-base.sh, and
-# ../../review-code/scripts/resolve-range.sh -- and by no SKILL.md, this
-# skill's own included. There is deliberately no caller contract for it in
-# implement-work/SKILL.md: it is one answer three skills need, and it lives
-# here because the spec it implements does -- references/base-branch.md,
+# Called as a subprocess by the sibling `resolve-range.sh` in this skill --
+# and by no SKILL.md, this skill's own included. There is deliberately no
+# caller contract for it in review-code/SKILL.md: it is one answer this
+# script needs, and it lives here because the spec it implements does --
+# ../../implement-work/references/base-branch.md,
 # "## Resolving the default branch". Without this paragraph the next reader
 # takes the absent caller for an oversight and either wires a contract for it
 # into a SKILL.md that never calls it, or deletes the script as unreferenced.
 #
 # The `STOP ask-default-branch` slug is each caller's own output contract and
-# stays with the caller: the three print it on stdout as their answer, and a
+# stays with the caller: the caller prints it on stdout as its answer, and a
 # slug printed from here would land in the caller's command substitution and
 # be read back as a branch name.
 #
-# Canonical source: this script is the one implementation of "default branch
-# name" other scripts call; conventions and the
-# STOP registry live beside it at references/script-conventions.md and
-# references/stop-registry.md. Do not add rungs here and do not print a
-# slug here — both stay with the caller per the paragraphs above.
+# One per-skill copy of the "default branch name" helper (one copy per skill
+# that needs it); conventions and the STOP registry live at
+# ../../implement-work/references/script-conventions.md and
+# ../../implement-work/references/stop-registry.md. Do not add rungs here and
+# do not print a slug here — both stay with the caller per the paragraphs
+# above.
 #
 # Two rungs, never guessing a branch name: the GitHub API, then give up and let
-# the caller ask a person. `.defaultBranchRef.name` is the bare name, which is
-# what every caller takes -- one compares it against branch names, two hand it
-# straight to `git fetch origin --`.
+# the caller ask a person. `.defaultBranchRef.name` is the bare name.
 #
 # refs/remotes/origin/HEAD is deliberately not a rung. A clone sets that symref
 # once and never refreshes it, so after the repository renames its default

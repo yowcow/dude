@@ -2,10 +2,8 @@
 # Copied from ../../implement-work/scripts/poll.sh to remove lateral cross-skill use; cf. check-pr-repo.sh:37-38.
 # Run a check command until it exits 0 or the iteration cap runs out.
 #
-# This is the canonical poll loop for single-predicate retries
-# (`watch-copilot-review.sh`'s seq/sleep loop is this shape; item 3 migrates
-# such loops onto this script). It does not cover `watch-checks.sh`'s
-# stateful settle loop (stability window, empty-grace, fast-fail exits 3/4/5,
+# The per-skill poll loop for single-predicate retries. It does not cover
+# `watch-checks.sh`'s stateful settle loop (stability window, empty-grace, fast-fail exits 3/4/5,
 # last-good-rows timeout print). Conventions:
 # skills/implement-work/references/script-conventions.md.
 #

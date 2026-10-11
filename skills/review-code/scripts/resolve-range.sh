@@ -88,8 +88,7 @@ if ! TIP_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
 fi
 
 # The trailer scan, the prerequisite lookup, and the three answers both
-# readers print identically live in
-# ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
+# readers print identically live in ./read-base-trailer.sh -- see its header. What is
 # left here is base-branch.md's `review-code`'s `<base>` column: the three
 # rows where the two readers disagree.
 #
