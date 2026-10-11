@@ -20,7 +20,7 @@ Review a PR somebody else opened, have every finding judged against the PR's own
 
 Take the PR number or URL from the caller; if none was given, ask.
 
-1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is both this checkout's `origin` and the repository `gh` resolves here. A PR opened from a fork passes: only the base repository is compared. On `STOP <slug>`, report it and end the run.
+1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is both this checkout's `origin` and the repository `gh` resolves here. On `STOP <slug>`, report it and end the run.
 2. Run `<skill-dir>/scripts/check-pr-author.sh <n>`. On `SELF`, stop and point the user to `pr-to-ready`. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
 
 ### 2. Resolve the range and the requirements

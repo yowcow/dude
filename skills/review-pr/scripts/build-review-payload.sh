@@ -70,16 +70,16 @@ in_diff() {
   return 1
 }
 
-INLINE='[]'
+INLINE=''
 i=0
 while IFS=$'\t' read -r path line; do
   if [ -n "$path" ] && in_diff "$path" "$line"; then
-    INLINE="$(jq -c --argjson i "$i" '. + [$i]' <<<"$INLINE")"
+    INLINE="${INLINE:+${INLINE},}${i}"
   fi
   i=$((i + 1))
 done < <(jq -r '.[] | [(.path // ""), (.line // "" | tostring)] | @tsv' "$FINDINGS")
 
-jq -c --rawfile summary "$SUMMARY" --argjson inline "$INLINE" '
+jq -c --rawfile summary "$SUMMARY" --argjson inline "[${INLINE}]" '
   . as $f
   | [range(0; length) | select(. as $i | $inline | any(.[]; . == $i) | not) | $f[.]
      | "- " + (if .path then "`" + .path + (if .line then ":" + (.line | tostring) else "" end) + "`: " else "" end) + .body]
