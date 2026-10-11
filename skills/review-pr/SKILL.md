@@ -35,7 +35,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 
 ### 4. Draft
 
-- Write the review's summary, and one entry per `accept` finding — Minor included — whose text carries its severity and proposed fix, with its path and head-side line where it has them.
+- Write the review's summary, and one entry per `accept` finding — Minor included — whose text carries its severity and proposed fix, with its path — relative to the repository root, never under `<head-dir>` — and head-side line where it has them.
 - Run `<skill-dir>/scripts/build-review-payload.sh <base> <head> <summary-file> <findings-file>`. It makes a finding an inline comment only on a line the diff adds, and puts every other finding into the review body.
 - Show the user in chat the draft as it would be posted — body and inline comments — and, apart from it and never in it, each `reject` with its reason and each `needs-user` with its question.
 
