@@ -13,12 +13,12 @@
 # callers: NO-TRAILER and PREREQ hand those decisions back rather than taking
 # them here.
 #
-# Called as a subprocess by two scripts in two other skills --
-# ../../pr-to-ready/scripts/resolve-pr-base.sh and
-# ../../review-code/scripts/resolve-range.sh -- and by no SKILL.md, this
-# skill's own included. There is deliberately no caller contract for it in
-# implement-work/SKILL.md: it is one answer two skills need, and it lives here
-# because the spec it implements does. Without this paragraph the next reader
+# Called as a subprocess by the sibling `resolve-pr-base.sh` in this skill --
+# and by no SKILL.md, this skill's own included. There is deliberately no
+# caller contract for it in implement-work/SKILL.md: it is one answer this
+# script needs, and it lives here because the spec it implements does.
+# Other skills hold their own copies; nothing outside this skill calls this
+# copy. Without this paragraph the next reader
 # takes the absent caller for an oversight and either wires a contract for it
 # into a SKILL.md that never calls it, or deletes the script as unreferenced.
 # ../scripts/resolve-default-branch.sh sits here for the same reason and says
