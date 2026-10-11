@@ -47,6 +47,10 @@
         "path": "skills/review-plan/SKILL.md"
       },
       {
+        "id": "review-pr",
+        "path": "skills/review-pr/SKILL.md"
+      },
+      {
         "id": "settle-question",
         "path": "skills/settle-question/SKILL.md"
       },
