@@ -15,7 +15,7 @@
 # merged prerequisite as "still in flight" and hand back its branch as
 # --base. Merging this task into that branch then puts nothing into the
 # default branch, and the change silently fails to land. See
-# ../../implement-work/references/base-branch.md, "## Reading the trailer
+# ../references/base-branch.md, "## Reading the trailer
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
