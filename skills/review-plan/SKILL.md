@@ -16,7 +16,7 @@ Use on planning work before any code is written, or on a revision of it. This re
   - **Dispatch** sizes the fan-out.
   - Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
-- **Judging a finding never happens in the main loop** either, on the contract and at the marked tier `review-code`'s **Orchestration model** sets out.
+- **Judging a finding never happens in the main loop** either, on the contract and at the marked tier `vet-code`'s **Orchestration model** sets out.
   - What that buys here is that the main loop owns the very artifact under review — `plan-work`'s TODO list, or `implement-work`'s implementation plan — folding every accepted finding into that artifact.
   - A verdict reached there rests on its own account of the design.
   - A real design flaw rejected on it flows into the implementation, which is all any later gate reads.

@@ -57,6 +57,10 @@
       {
         "id": "using-dude",
         "path": "skills/using-dude/SKILL.md"
+      },
+      {
+        "id": "vet-code",
+        "path": "skills/vet-code/SKILL.md"
       }
     ],
     "hooks": [

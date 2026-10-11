@@ -26,6 +26,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `settle-question`         | A judgment on an open question, with the evidence that settles it                  |
 | `simplify-code`           | Recently changed code simplified, behavior preserved                               |
 | `using-dude`              | The workflow rules the other skills are wired by                                   |
+| `vet-code`                | One round of code review findings, each judged, handed to the skill that called it |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —
