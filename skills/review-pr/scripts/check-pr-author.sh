@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Answer whether a PR's author is the user gh is logged in as.
 #
-# One answer, two callers that stop on opposite sides of it: review-pr stops on
-# SELF (your own PR belongs to pr-to-ready), and review-code stops on OTHER,
-# since its loop applies fixes to the working tree and would rewrite somebody
-# else's code. The PR is resolved by number through gh's own repository
-# resolution, the same one ../../review-code/scripts/resolve-range.sh uses, so
-# both read the same PR.
+# One answer, two copies that stop on opposite sides of it: this copy's
+# caller (review-pr) stops on SELF (your own PR belongs to pr-to-ready), and
+# the review-code copy's caller stops on OTHER, since its loop applies fixes
+# to the working tree and would rewrite somebody else's code. The PR is
+# resolved by number through gh's own repository resolution, the same one
+# ../../review-code/scripts/resolve-range.sh uses, so both read the same PR.
 #
 # A failed lookup is a STOP, never a guess: reading it as OTHER sends
 # review-code's caller away from their own PR, and reading it as SELF sends

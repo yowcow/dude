@@ -16,7 +16,7 @@ Never guess a branch name. Two rungs, in order — `gh repo view`, then ask the 
 
 `git symbolic-ref refs/remotes/origin/HEAD` is not a rung. A clone sets that symref once and never refreshes it, so once the repository renames its default branch the symref keeps naming the old one for as long as that branch still exists, and a rung reading it would resolve the base to the wrong branch with nothing anywhere reporting the mistake.
 
-The one form of that ladder is `implement-work/scripts/resolve-default-branch.sh`, called as a subprocess by the three scripts that need it; the `STOP` each of them prints is its own output contract and stays with it.
+The one form of that ladder is each skill's own `scripts/resolve-default-branch.sh` copy, called as a subprocess by the script in that skill that needs it; the `STOP` each of them prints is its own output contract and stays with it.
 
 ## Reading the trailer back
 

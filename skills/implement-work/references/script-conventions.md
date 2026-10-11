@@ -24,9 +24,9 @@ Remaining `exit 1` paths are runtime failures, not usage.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 ```
 
-This exact line. Cross-skill calls go through it as
-`bash "${SCRIPT_DIR}/../../<skill>/scripts/<name>.sh"`
-(`resolve-range.sh`, `resolve-pr-base.sh` precedent); same-directory calls
+This exact line. Cross-skill calls are strictly downward, as
+`bash "${SCRIPT_DIR}/../../review-code/scripts/resolve-range.sh"`
+(check-pr-repo.sh precedent); same-directory calls
 as `bash "${SCRIPT_DIR}/<name>.sh"` (`resolve-base.sh` precedent).
 
 ## STOP contract
@@ -47,5 +47,5 @@ remote-tracking ref a narrowed clone need not update.
 
 ## Default branch
 
-Call `implement-work/scripts/resolve-default-branch.sh`. Never guess a
+Call your own skill's `scripts/resolve-default-branch.sh` copy. Never guess a
 name, never read `refs/remotes/origin/HEAD` (stale after a rename).
