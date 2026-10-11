@@ -20,10 +20,12 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 **Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; running the requesting-code-review where selected; collecting reviewer comments into a structured list of findings; and evaluating each finding. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
-**Evaluating a finding never happens in the main loop**, on any round, and goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
+**Two workers here are marked** — their miss passes as "nothing found", so each goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: the requesting-code-review reviewer in 2-1, and each finding's evaluator in 2-3. Both are fresh-context, read-only workers that take the round's inputs from 2-1 and nothing of the main loop's own account.
+
+**Evaluating a finding never happens in the main loop**, on any round.
 
 - The main loop carries this run's own account of why the code reads as it does — it applied every fix on this branch, and where the run continued from `implement-work` it wrote the branch too.
-- A verdict reached there is anchored on that account, which is exactly what `vet-code`'s **Orchestration model** buys a read-only worker in a fresh context to escape.
+- A verdict reached there is anchored on that account, which a read-only worker in a fresh context escapes.
 - A real finding rejected on such a verdict is replied to and resolved on it, and no later round reads the thread again.
 
 ## Step 0: Set up the run
@@ -122,6 +124,17 @@ Request only the names in the reviewers set. A name not in the set is a skip wit
 
 Capture the round-request SHA once before any selected request goes out.
 
+Right after it, settle the round's inputs, whether or not requesting-code-review is in the set.
+
+- **Scope**: the PR's range, ending at the round-request SHA, taken from `<skill-dir>/../review-code/scripts/resolve-range.sh <pr>`.
+  - That script reads the PR record through `gh`'s own repository resolution, while 0-2 checked only origin; where the two differ (`GH_REPO`, `gh repo set-default`), it reads another repository's PR of the same number and the range is silently wrong. Pin `gh`'s resolution to the `<owner>/<repo>` 0-2 returned when calling it.
+  - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
+  - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.
+- **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller — and, with verbose on, in the Request identity row's contents under `Details`.
+- **Verdict record**: every reviewer's findings this run's 2-3 has judged, each `accept` or `reject` with its reason. Earlier runs' verdicts are not rebuilt.
+
+Then request each name in the set:
+
 - **Claude**: only if Claude is in the set. `<skill-dir>/scripts/watch-claude-review.sh <branch>` — exit 0 means available (its recent runs come back as JSON), exit 3 means no `@claude` workflow, so skip Claude; anything else, stop and inspect.
   - That exit status is the whole availability test — don't go searching the workflows yourself.
   - When available, post a request comment with a short list of what to focus on; every request comment includes that round-request SHA.
@@ -130,7 +143,7 @@ Capture the round-request SHA once before any selected request goes out.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the round's single comment (Posting below). That record, not a separate mark, is what tells a later reader the request from a manual click on the timeline, so post no mark here.
-- **requesting-code-review**: only if requesting-code-review is in the set. Dispatch one read-only advisory subagent applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
+- **requesting-code-review**: only if requesting-code-review is in the set. Dispatch one read-only advisory subagent, marked, applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. Hand it the round's scope, requirements, and verdict record, and what was implemented as the PR body states it; without requirements it cannot fault a mismatch with the purpose, and without the record it raises a rejected claim again every round. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
 
 If this step requested nobody, skip 2-2 and go to Step 3.
 
@@ -150,7 +163,7 @@ Delegate collection to a subagent:
 - The requesting-code-review collection reads only the comment posted for this round's identity, never an earlier round's requesting-code-review comment.
 - Dedupe, and return a structured list of findings, each with `file:line`, the thread or comment id where it has one — a suppressed finding has none — and a one-line summary.
 - Do not re-collect a thread this run already resolved. A new review that repeats the same claim at the same place is a new finding; Loop convergence still identifies two findings as the same one by place and claim.
-- Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`.
+- Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`. Each is marked, and receives its one finding with the round's scope, requirements, and verdict record, never the main loop's account.
 
 **Count the `needs-user` verdicts back in the orchestrator before anything else.** One or more ends the round before anything is applied: it takes the **third terminal state**.
 
@@ -194,7 +207,7 @@ When there is at least one finding and every finding is `reject`:
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the subagent return reference plus the posted comment id/URL. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the subagent return reference plus the posted comment id/URL, and any caveat on the round's inputs (no requirements, say). |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the posted comment id. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
 
