@@ -22,7 +22,8 @@
 # Output: one line of JSON, {"body":...,"comments":[{"path","line","side","body"}]}
 set -euo pipefail
 
-if [ "$#" -ne 4 ] || [ ! -r "$3" ] || [ ! -r "$4" ]; then
+if [ "$#" -ne 4 ] || [ ! -r "$3" ] || [ ! -r "$4" ] ||
+  ! jq -e 'type == "array"' "$4" >/dev/null 2>&1; then
   echo "Usage: $0 <base-sha> <head-sha> <summary-file> <findings-file>" >&2
   exit 2
 fi
@@ -31,11 +32,6 @@ BASE="$1"
 HEAD="$2"
 SUMMARY="$3"
 FINDINGS="$4"
-
-if ! jq -e 'type == "array"' "$FINDINGS" >/dev/null 2>&1; then
-  echo "error: ${FINDINGS} is not a JSON array" >&2
-  exit 2
-fi
 
 # ADDED: one "<path>\t<start>\t<count>" per hunk, head side, from ONE
 # rename-aware diff of the whole range. A pathspec naming only the new path
@@ -82,7 +78,7 @@ done < <(jq -r '.[] | [(.path // ""), (.line // "" | tostring)] | @tsv' "$FINDIN
 jq -c --rawfile summary "$SUMMARY" --argjson inline "[${INLINE}]" '
   . as $f
   | [range(0; length) | select(. as $i | $inline | any(.[]; . == $i) | not) | $f[.]
-     | "- " + (if .path then "`" + .path + (if .line then ":" + (.line | tostring) else "" end) + "`: " else "" end) + .body]
+     | "- " + (if .path then "`" + .path + (if .line then ":" + (.line | tostring) else "" end) + "`: " else "" end) + (.body | gsub("\n"; "\n  "))]
     as $out
   | {body: (($summary | rtrimstr("\n")) + (if ($out | length) > 0 then "\n\n" + ($out | join("\n")) else "" end)),
      comments: [$inline[] | $f[.] | {path, line, side: "RIGHT", body}]}' "$FINDINGS"

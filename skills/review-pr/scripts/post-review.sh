@@ -43,12 +43,9 @@ case "$EVENT" in
 esac
 [ -r "$PAYLOAD_FILE" ] || usage
 
-if ! BODY="$(jq -c --arg c "$HEAD" --arg e "$EVENT" \
+BODY="$(jq -c --arg c "$HEAD" --arg e "$EVENT" \
   '{commit_id: $c, body, comments} + (if $e == "PENDING" then {} else {event: $e} end)' \
-  "$PAYLOAD_FILE" 2>/dev/null)"; then
-  echo "error: ${PAYLOAD_FILE} is not a review payload" >&2
-  exit 2
-fi
+  "$PAYLOAD_FILE" 2>/dev/null)" || usage
 
 if ! OUT="$(printf '%s\n' "$BODY" |
   gh api --method POST "repos/${OWNER}/${REPO}/pulls/${PR}/reviews" --input - \

@@ -11,7 +11,8 @@
 # RED verification (see tests/README.md): making in_diff always succeed puts
 # every pathed finding inline and fails 'mixed findings' and 'line next to a
 # hunk'; going back to a diff limited to the finding's path (`-- "$path"`)
-# fails 'renamed file: unchanged line'.
+# fails 'renamed file: unchanged line'; dropping the continuation-line indent
+# fails 'multi-line body stays in its item'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -89,6 +90,13 @@ row_start
 printf '%s' '[{"path":"b.txt","line":1,"body":"Minor: only inline"}]' >"$FINDINGS"
 run_in "$REPO" "$BASE_SHA" "$HEAD_SHA" "$SUMMARY" "$FINDINGS"
 assert_payload 'everything inline' '{"body":"Summary.","comments":[{"path":"b.txt","line":1,"side":"RIGHT","body":"Minor: only inline"}]}'
+
+# A body line starting with `- ` must stay inside its own item, not read as
+# another finding.
+row_start
+printf '%s' '[{"path":"c.txt","line":1,"body":"Minor: a\n- b"}]' >"$FINDINGS"
+run_in "$REPO" "$BASE_SHA" "$HEAD_SHA" "$SUMMARY" "$FINDINGS"
+assert_payload 'multi-line body stays in its item' '{"body":"Summary.\n\n- `c.txt:1`: Minor: a\n  - b","comments":[]}'
 
 row_start
 printf '[]' >"$FINDINGS"
