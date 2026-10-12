@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/attach-workspace.sh: the one
+# Table test for tools/attach-workspace.sh: the one
 # line it prints for each of REUSE / ATTACHED / CREATE, and what it leaves on
 # disk.
 #
@@ -35,7 +35,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/attach-workspace.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/attach-workspace.sh}"
 
 failed=0
 total=0

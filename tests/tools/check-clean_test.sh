@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/check-clean.sh: the exit
+# Table test for tools/check-clean.sh: the exit
 # status and the stdout it prints for each state of the working tree.
 #
 # git is not stubbed. The behaviour under test is git's own -- `git status
@@ -28,7 +28,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/check-clean.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/check-clean.sh}"
 
 failed=0
 total=0

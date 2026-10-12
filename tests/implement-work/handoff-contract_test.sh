@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Stale-detection gate for the implement-work Hand off prose contract.
-# Single source is skills/pr-to-ready/scripts/ensure-draft-pr.sh's header:
+# Single source is tools/ensure-draft-pr.sh's header:
 # skills/implement-work/SKILL.md cites it as the single source and restates
 # no output literal, so a script output change cannot drift silently past the prose.
 set -euo pipefail
@@ -11,7 +11,7 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
 SKILL="${REPO_ROOT}/skills/implement-work/SKILL.md"
-SCRIPT="${REPO_ROOT}/skills/pr-to-ready/scripts/ensure-draft-pr.sh"
+SCRIPT="${REPO_ROOT}/tools/ensure-draft-pr.sh"
 
 failed=0
 total=0

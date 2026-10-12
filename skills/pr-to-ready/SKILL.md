@@ -50,7 +50,7 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 - `PR <n> branch=<head> base=<base> repo=<owner>/<repo> draft=<bool>` — bind `<PR>`, `<branch>`, and the `<owner>` and `<repo>` every later script call takes; none of those three is re-derived from the checkout again. `<base>` is the base the PR points at **now**, which is not the same question as the base it *should* sit on: Step 1 re-resolves that and may replace it.
 - `STOP <slug>` — report the stop and end the run. Nothing downstream has a repository, a branch, or a base it could work from.
 
-**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `<skill-dir>/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` first.
+**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `tools/ensure-draft-pr.sh <branch> <title> <body-file>` first.
 
 - It pushes the branch if only a local ref exists, looks for a PR already on it, and creates a draft one when none is found — resolving the base itself, at that point alone.
 - It answers `PR <n> found draft=<bool> url=<url>`, `PR <n> created draft=true base=<base> url=<url>`, or `STOP <slug>`.
@@ -62,10 +62,10 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 
 `<branch>` need not be checked out here, or exist here at all — a fresh session entered from a PR URL is the ordinary case — and every later step writes to a working tree: Step 1's `retarget-pr.sh` merges the base and pushes it, and Step 1's diagnosis fixes and 2-3's `accept` fixes commit and push. Preparing it once here rather than where each of those needs it keeps one step instead of three.
 
-Call `<skill-dir>/../implement-work/scripts/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
+Call `tools/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:using-git-worktrees`'s own directory convention. Branch on the one line it prints:
 
 - `REUSE <path>` — a worktree already carries `<branch>`, and it need not be clean: this flow's third terminal state deliberately leaves a tree uncommitted, and the same tree outlives the run that left it.
-  - Measure it before binding it — run `<skill-dir>/../implement-work/scripts/check-clean.sh` **from `<path>`**, which takes no argument and reads the tree it runs in, so running it where the session started measures a tree this run will never touch.
+  - Measure it before binding it — run `tools/check-clean.sh` **from `<path>`**, which takes no argument and reads the tree it runs in, so running it where the session started measures a tree this run will never touch.
   - Clean: use it as-is.
   - Anything pending — **stop.** It is work this run did not write, and Step 1's diagnosis fix and 2-3's `accept` fixes would carry it into the PR unread by anyone; report what the script printed and hand the tree back to a person to say whose it is.
 - `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
@@ -79,7 +79,7 @@ Once `REUSE` has measured clean or `ATTACHED` has answered, run `<skill-dir>/scr
 
 Before watching CI, settle whether the base is still the right one — the prerequisite's state can have moved since Step 0.
 
-1. Re-resolve it: `<skill-dir>/scripts/resolve-pr-base.sh <branch>` → `BASE <name>` or `STOP <slug>`. This is the base the branch *should* sit on, read from its `Base-Branch:` trailer and the prerequisite's current state — a different question from the `<base>` 0-2 bound, which is the one the PR points at now.
+1. Re-resolve it: `tools/resolve-pr-base.sh <branch>` → `BASE <name>` or `STOP <slug>`. This is the base the branch *should* sit on, read from its `Base-Branch:` trailer and the prerequisite's current state — a different question from the `<base>` 0-2 bound, which is the one the PR points at now.
 2. Check the PR against that answer: `<skill-dir>/scripts/check-pr-state.sh <owner> <repo> <pr-number> <base>` → `BASE-OK|BASE-DRIFT <current-base> MERGEABLE|CONFLICTING|UNKNOWN`, or `STOP <slug>`. The name it prints is the base the PR points at **now**, not the one you passed in — which is what makes `BASE-DRIFT` worth reading. Read-only: it measures and never fixes.
 3. On `BASE-DRIFT`: pull the resolved base in with `<skill-dir>/scripts/retarget-pr.sh <owner> <repo> <pr-number> <branch> <base>` → `BASE-OK <base>` (nothing to do), `RETARGETED <old> <new>` — the merge is pushed, so CI below runs against the new tip rather than the one it already passed on — or `STOP <slug>` on a conflict while merging the new base in.
 4. On `CONFLICTING`, or on an `UNKNOWN` that stands after the script's own bounded re-read: neither is something to fix here — both are the **third terminal state**.
@@ -126,7 +126,7 @@ Capture the round-request SHA once before any selected request goes out.
 
 Right after it, settle the round's inputs, whether or not requesting-code-review is in the set.
 
-- **Scope**: the PR's range, ending at the round-request SHA, taken from `<skill-dir>/../review-code/scripts/resolve-range.sh <pr>`.
+- **Scope**: the PR's range, ending at the round-request SHA, taken from `tools/resolve-range.sh <pr>`.
   - That script reads the PR record through `gh`'s own repository resolution, while 0-2 checked only origin; where the two differ (`GH_REPO`, `gh repo set-default`), it reads another repository's PR of the same number and the range is silently wrong. Pin `gh`'s resolution to the `<owner>/<repo>` 0-2 returned when calling it.
   - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
   - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.

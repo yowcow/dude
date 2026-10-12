@@ -21,11 +21,11 @@ Review a PR somebody else opened, have every finding judged against the PR's own
 Take the PR number or URL from the caller; if none was given, ask.
 
 1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is both this checkout's `origin` and the repository `gh` resolves here. On `STOP <slug>`, report it and end the run.
-2. Run `<skill-dir>/scripts/check-pr-author.sh <n>`. On `SELF`, stop and point the user to `pr-to-ready`. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
+2. Run `tools/check-pr-author.sh <n>`. On `SELF`, stop and point the user to `pr-to-ready`. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
 
 ### 2. Resolve the range and the requirements
 
-- Run `<skill-dir>/../review-code/scripts/resolve-range.sh <n>`. On `RANGE <base>..<head>`, bind both SHAs. On `EMPTY`, report that there is nothing to review and end the run. On `STOP <slug>`, report it and end the run.
+- Run `tools/resolve-range.sh <n>`. On `RANGE <base>..<head>`, bind both SHAs. On `EMPTY`, report that there is nothing to review and end the run. On `STOP <slug>`, report it and end the run.
 - The requirements are the PR's body and the issues it links. Where neither states any, say so.
 
 ### 3. Vet

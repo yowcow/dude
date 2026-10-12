@@ -55,7 +55,7 @@ The contract behind the `Base-Branch:` trailer, the ladder that resolves the def
 
 - Why the scripts below test what they test the way they do is in each script's own header comment instead.
 
-That skill detects existing isolation from the current directory only, and its creation step assumes the branch is new. So on resumption, look before creating: run `<skill-dir>/scripts/attach-workspace.sh <branch> <path>` and read its one-line answer.
+That skill detects existing isolation from the current directory only, and its creation step assumes the branch is new. So on resumption, look before creating: run `tools/attach-workspace.sh <branch> <path>` and read its one-line answer.
 
 - `REUSE <path>` — a worktree already carries `<branch>`; use it as-is.
 - `ATTACHED <path>` — no worktree existed, but the branch did, locally or (fetched first) only on the remote; a new workspace now tracks it.
@@ -147,7 +147,7 @@ Add only what the execution method left undone.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
    - **Hand off** pushes it, and a push carries only commits, while **Escalation** hands `plan-work` a branch name that re-approval judges by what it contains; either way, anything left uncommitted is simply absent from what the next flow reads.
-   - Confirm it worked by running `<skill-dir>/scripts/check-clean.sh` and reading its exit status — 0 is clean, non-zero is dirty and prints what is pending; don't leave this step while it reports dirty.
+   - Confirm it worked by running `tools/check-clean.sh` and reading its exit status — 0 is clean, non-zero is dirty and prints what is pending; don't leave this step while it reports dirty.
    - A byproduct of step 1's checks belongs in `.gitignore`; the byproduct itself is never committed.
    - A round that changed nothing commits nothing, and anything you can't account for as this round's own work stops the gate and goes to the user rather than being swept in.
 5. **Absorb the base** — run `<skill-dir>/scripts/absorb-base.sh <branch> <base>`, with `<base>` **re-resolved now** rather than the base the branch was cut from.
@@ -190,7 +190,7 @@ Push the branch to `origin` under its own name; the check's `OK` is its only pre
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
-Then call `<skill-dir>/../pr-to-ready/scripts/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints — the output contract in that script's header is the single source. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
+Then call `tools/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints — the output contract in that script's header is the single source. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
 
 Where that call answers `STOP ask-base-repo`, the checkout is a fork and no base repository was chosen: ask the user which repository the draft PR should target, offering the fork child first and its parent second, then call the same script once more with the chosen repository appended. A found or created PR from that second call is the deliverable as above. A stop from it is reported and the branch handed over regardless.
 

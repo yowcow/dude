@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/read-base-trailer.sh: which
+# Table test for tools/read-base-trailer.sh: which
 # trailer the scan takes from the revs it was given, and the one line it
 # prints for each answer the prerequisite lookup can give.
 #
 # git is not stubbed. Which commits the scan reaches is the point -- the revs
 # arrive from the caller and go straight to `git log` -- and a git stub would
 # encode the test author's belief about that range rather than git's own
-# behaviour, the same reason tests/pr-to-ready/resolve-pr-base_test.sh gives.
+# behaviour, the same reason tests/tools/resolve-pr-base_test.sh gives.
 # Each row builds a real repository under $HARNESS_TMP. No remote and no
 # fetch: this script reads whatever revs it is handed and nothing else.
 #
@@ -23,7 +23,7 @@
 # pre-fix version to point SUT= at. Each guard the script's own header names
 # was mutated in a copy under `mktemp -d` -- never inside the repository, where
 # lint.sh would select it by shebang -- and this file re-run against it as
-# `SUT=<copy> tests/run.sh tests/implement-work/read-base-trailer_test.sh`.
+# `SUT=<copy> tests/run.sh tests/tools/read-base-trailer_test.sh`.
 # What each mutant produced, measured:
 #
 #   1. The exit-status half of the guarded read. Replacing the guard with
@@ -91,7 +91,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/read-base-trailer.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/read-base-trailer.sh}"
 
 PR_LIST_JQ='.[] | "\(.number) \(.state)"'
 

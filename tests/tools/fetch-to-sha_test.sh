@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/fetch-to-sha.sh: the SHA it
+# Table test for tools/fetch-to-sha.sh: the SHA it
 # prints for a fetchable ref, and the empty-stdout exit 1 for anything it
 # cannot fetch.
 #
@@ -10,7 +10,7 @@
 # RED verification: copy this file's SUT to a mktemp dir (never inside the
 # repository, where lint.sh would select it by shebang), replace the
 # `git rev-parse FETCH_HEAD` line with `git rev-parse HEAD`, and re-run as
-# `SUT=<copy> tests/run.sh tests/implement-work/fetch-to-sha_test.sh`:
+# `SUT=<copy> tests/run.sh tests/tools/fetch-to-sha_test.sh`:
 # `fetches-branch-tip` must fail with the work clone's HEAD where the
 # remote's tip is wanted.
 set -euo pipefail
@@ -24,7 +24,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/fetch-to-sha.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/fetch-to-sha.sh}"
 
 failed=0
 total=0

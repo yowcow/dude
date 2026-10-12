@@ -5,7 +5,7 @@
 # SELF (your own PR belongs to pr-to-ready), and review-code stops on OTHER,
 # since its loop applies fixes to the working tree and would rewrite somebody
 # else's code. The PR is resolved by number through gh's own repository
-# resolution, the same one ../../review-code/scripts/resolve-range.sh uses, so
+# resolution, the same one tools/resolve-range.sh uses, so
 # both read the same PR.
 #
 # A failed lookup is a STOP, never a guess: reading it as OTHER sends
@@ -13,8 +13,8 @@
 # review-pr's caller to pr-to-ready, which would push to somebody else's
 # branch.
 #
-# Conventions: ../../implement-work/references/script-conventions.md.
-# STOP slugs: ../../implement-work/references/stop-registry.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
 #
 # Usage: check-pr-author.sh <pr-number>
 # Output: SELF | OTHER | STOP pr-lookup-failed

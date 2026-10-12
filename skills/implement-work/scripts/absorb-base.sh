@@ -53,7 +53,7 @@ fi
 # `review-code`'s own range resolution fetches too -- so an inherited
 # FETCH_HEAD names whichever ref was fetched last, and merging that absorbs
 # some other branch entirely while still printing MERGED. The tip comes from fetch-to-sha.sh rather than refs/remotes/origin/<base>, which goes stale with the clone's fetch history.
-if ! BASE_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BASE}")"; then
+if ! BASE_SHA="$(bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${BASE}")"; then
   echo "STOP base-fetch-failed"
   exit 0
 fi

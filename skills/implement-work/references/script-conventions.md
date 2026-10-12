@@ -1,6 +1,6 @@
 # Script conventions
 
-Applies to every executable under `skills/*/scripts/`. Cited by header
+Applies to every executable under `tools/` and `skills/*/scripts/`. Cited by header
 from each script; repeated nowhere else.
 
 ## Usage errors exit 2
@@ -16,7 +16,7 @@ Shape, not just number: `Usage: ...` on stderr, nothing on stdout, exit 2.
 Numeric arguments are validated with `[[ "$X" =~ ^[0-9]+$ ]]`
 (`resolve-thread.sh` regex-shape precedent; its own exit stays 1); a non-numeric value is a usage error.
 Remaining `exit 1` paths are runtime failures, not usage.
-`resolve-default-branch.sh` takes no arguments — extra args are a usage error.
+`resolve-default-branch.sh` takes an optional `[repo]` — more than one argument is a usage error.
 
 ## SCRIPT_DIR
 
@@ -24,10 +24,10 @@ Remaining `exit 1` paths are runtime failures, not usage.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 ```
 
-This exact line. Cross-skill calls go through it as
-`bash "${SCRIPT_DIR}/../../<skill>/scripts/<name>.sh"`
-(`resolve-range.sh`, `resolve-pr-base.sh` precedent); same-directory calls
-as `bash "${SCRIPT_DIR}/<name>.sh"` (`resolve-base.sh` precedent).
+This exact line. Calls into the shared tools go through it as
+`bash "${SCRIPT_DIR}/../../../tools/<name>.sh"`
+from `skills/<skill>/scripts/`; same-directory calls
+as `bash "${SCRIPT_DIR}/<name>.sh"` (`tools/resolve-pr-base.sh` precedent).
 
 ## STOP contract
 
@@ -47,5 +47,5 @@ remote-tracking ref a narrowed clone need not update.
 
 ## Default branch
 
-Call `implement-work/scripts/resolve-default-branch.sh`. Never guess a
+Call `tools/resolve-default-branch.sh`. Never guess a
 name, never read `refs/remotes/origin/HEAD` (stale after a rename).

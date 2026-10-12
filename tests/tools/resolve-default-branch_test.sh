@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/resolve-default-branch.sh: what
+# Table test for tools/resolve-default-branch.sh: what
 # it prints and what it exits for each answer `gh repo view` can give.
 #
-# Three callers in three skills read this script's stdout as a branch name and
+# Four callers in two skills plus tools/ read this script's stdout as a branch name and
 # its non-zero exit as "could not tell", so every row asserts both halves. No
 # git fixture and no run_in: this script shells out to `gh` and to nothing
 # else, and reads no repository of its own.
@@ -10,13 +10,13 @@
 # Limitation: the `--jq .defaultBranchRef.name` expression is not executed --
 # gh_stub_response hands back the post-jq bytes each row scripted. A defect
 # confined to that filter string is invisible here, exactly as it is in the
-# three caller test files.
+# four caller test files.
 #
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version to point SUT= at. Each guard the script's own header names
 # was mutated in a copy under `mktemp -d` -- never inside the repository, where
 # lint.sh would select it by shebang -- and this file re-run against it as
-# `SUT=<copy> tests/run.sh tests/implement-work/resolve-default-branch_test.sh`.
+# `SUT=<copy> tests/run.sh tests/tools/resolve-default-branch_test.sh`.
 # What each mutant produced, measured:
 #
 #   1. The emptiness half of the guard. Dropping `&& [ -n "$ref" ]` failed
@@ -43,7 +43,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/resolve-default-branch.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/resolve-default-branch.sh}"
 
 failed=0
 total=0

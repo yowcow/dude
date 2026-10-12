@@ -14,7 +14,7 @@
 # the default branch where a prerequisite is recorded puts merge-base *below*
 # that prerequisite and sweeps its whole diff into the range — the reviewer
 # then reports findings against code this task never wrote. See
-# ../../implement-work/references/base-branch.md, "## The contract",
+# skills/implement-work/references/base-branch.md, "## The contract",
 # "## Reading the trailer back", "### Why the state is re-read and the branch
 # is not" and "## Resolving the default branch" — this script implements that
 # table's `review-code`'s `<base>` column.
@@ -57,8 +57,8 @@ if [ -n "$PR" ]; then
   # current tip rather than the fork point. The left end is therefore the
   # merge-base, so commits that reached the base after the PR was opened do
   # not show up as deletions by the PR.
-  if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
-    ! BASE_TIP="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BASE_OID}")"; then
+  if ! HEAD_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "refs/pull/${PR}/head")" ||
+    ! BASE_TIP="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BASE_OID}")"; then
     echo "STOP fetch-failed"
     exit 0
   fi
@@ -70,26 +70,26 @@ if [ -n "$PR" ]; then
   exit 0
 fi
 
-# The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
+# The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
 # Fetch-default-first with a bounded scan, mirroring
-# ../../pr-to-ready/scripts/resolve-pr-base.sh: the scan must stop at the
+# tools/resolve-pr-base.sh: the scan must stop at the
 # default-branch tip, or a branch that recorded nothing picks up whatever
 # Base-Branch trailer shared history left behind. The tip is saved as a SHA
 # because the prerequisite fetch below rewrites FETCH_HEAD; the saved SHA is
 # also the NO-TRAILER base, so that path fetches nothing further. A
 # remote-tracking ref is not named in the exclusion: it goes stale with the
 # clone's fetch history, while FETCH_HEAD is what the fetch just wrote.
-DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
-if ! TIP_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${DEFAULT}")"; then
+if ! TIP_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
 
 # The trailer scan, the prerequisite lookup, and the three answers both
 # readers print identically live in
-# ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
+# tools/read-base-trailer.sh -- see its header. What is
 # left here is base-branch.md's `review-code`'s `<base>` column: the three
 # rows where the two readers disagree.
 #
@@ -101,7 +101,7 @@ fi
 # an unrecognised PR state, whose message it has already put on stderr --
 # leaves this script exiting 1 with nothing on stdout, instead of a second
 # message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
   exit 1
 fi
 
@@ -150,7 +150,7 @@ esac
 # a tracking ref, a branch cut from a freshly fetched tip would be measured
 # against whatever an older fetch wrote, putting merge-base *below* the fork
 # point and sweeping somebody else's commits into the reviewed range.
-if ! FETCH_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${FETCH_SPEC}")"; then
+if ! FETCH_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${FETCH_SPEC}")"; then
   echo "STOP fetch-failed"
   exit 0
 fi

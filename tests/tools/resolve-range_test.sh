@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Table test for skills/review-code/scripts/resolve-range.sh: which of its
+# Table test for tools/resolve-range.sh: which of its
 # two input shapes -- a PR number, or none -- the script resolves a reviewed
 # range from, and the exact line it prints for each answer.
 #
 # git is not stubbed. The range is the thing under test, and a git stub would
 # encode the test author's belief about what a range should be rather than
-# git's own behaviour -- exactly the failure mode tests/pr-to-ready's
+# git's own behaviour -- exactly the failure mode tests/tools'
 # resolve-pr-base_test.sh documents for the same reason. Each row that reaches
 # the no-PR path therefore builds a real bare repository to play the remote
 # and a real work repository cloned from it, both under $HARNESS_TMP and both
@@ -26,8 +26,8 @@
 # after Task 2: it mutates emit_range, its own guard, and fails a PR-shape row
 # that returns before the trailer scan is ever reached. Every other record
 # (1-3 and 5-8) mutates a guard that either lives in, or is reached through,
-# the shared ../../implement-work/scripts/read-base-trailer.sh and/or
-# ../../implement-work/scripts/resolve-default-branch.sh this script calls as
+# the shared tools/read-base-trailer.sh and/or
+# tools/resolve-default-branch.sh this script calls as
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
 # every file the mutant's row needs in place -- a lone copy of this script
 # answers `STOP ask-default-branch` (or fails outright) on every row instead,
@@ -36,9 +36,9 @@
 # covered. What each mutant actually produced, measured:
 #
 #   1. The trailer read guarded as well as captured. This guard now lives in
-#      ../../implement-work/scripts/read-base-trailer.sh (its own :48-61), so
-#      the mutant is applied there, in a copy of the tree two directory levels
-#      deep with read-base-trailer.sh in place. Replacing the
+#      tools/read-base-trailer.sh (its own :48-61), so
+#      the mutant is applied there, in a copy of the tools/ tree
+#      with read-base-trailer.sh in place. Replacing the
 #      `if ! TRAILER_LOG=...` block with
 #      `TRAILER_LOG="$(git log ... 2>/dev/null || true)"` failed
 #      `trailer-read-fails` alone: want `STOP trailer-read-failed`, got
@@ -50,8 +50,8 @@
 #   2. The MERGED boundary being the prerequisite's own head
 #      (resolve-range.sh:93-98). Replacing
 #      `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
-#      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")"`
-#      in a copy of the three-file tree (resolve-range.sh, read-base-trailer.sh,
+#      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")"`
+#      in a copy of the tools/ tree (resolve-range.sh, read-base-trailer.sh,
 #      resolve-default-branch.sh -- the mutation itself substitutes the
 #      resolve-default-branch.sh call, which only reaches an unstubbed
 #      `gh repo view` once read-base-trailer.sh is also in place to answer
@@ -78,11 +78,11 @@
 #      both EMPTY rows -- `pr-shape-empty-when-ends-coincide` and
 #      `no-trailer-empty-when-head-is-the-default-tip`.
 #   5. The default branch being looked up rather than guessed. That lookup
-#      lives in the shared ../../implement-work/scripts/resolve-default-branch.sh
+#      lives in the shared tools/resolve-default-branch.sh
 #      this script reaches only via read-base-trailer.sh's `NO-TRAILER` answer,
-#      so the mutant is a copy of the three-file tree with that script's whole
-#      body replaced by `printf 'main\n'` -- all three files copied, two
-#      directory levels deep, because the call resolves through dirname "$0"
+#      so the mutant is a copy of the tools/ tree with that script's whole
+#      body replaced by `printf 'main\n'` -- all three files copied
+#      side by side, because the call resolves through dirname "$0"
 #      and a lone copy of this script fails every row on the siblings' absence
 #      instead. It failed seven rows -- `stale-symref-is-ignored`,
 #      `no-trailer-gh-names-default`, `trunk-history-trailer-is-ignored`,
@@ -144,7 +144,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/review-code/scripts/resolve-range.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/resolve-range.sh}"
 
 failed=0
 total=0

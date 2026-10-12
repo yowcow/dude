@@ -31,14 +31,16 @@
 #   - blockedBy counted -> checked for emptiness: two-prerequisites-stop
 #   - closedByPullRequestsReferences counted with `length` -> checked for
 #     emptiness: prerequisite-has-several-prs
-#   - the emptiness check in the shared resolve-default-branch.sh dropped:
+#   - the emptiness check in the shared tools/resolve-default-branch.sh dropped:
 #     default-branch-api-answers-empty. The guard lives in that script rather
-#     than in this SUT, so the mutant is reached by copying both scripts into
-#     one directory and pointing SUT= at the copied resolve-base.sh -- a lone
-#     copy cannot find its sibling through dirname "$0" and fails every row
+#     than in this SUT, so the mutant is reached by laying out both scripts as
+#     skills/implement-work/scripts/resolve-base.sh and
+#     tools/resolve-default-branch.sh under a temp root and pointing SUT= at
+#     the copied resolve-base.sh -- a lone copy cannot find its sibling
+#     through dirname "$0" and fails every row
 #     for that reason instead (tests/README.md records the same shape for
 #     watch-copilot-review.sh). Its primary RED lives in
-#     tests/implement-work/resolve-default-branch_test.sh.
+#     tests/tools/resolve-default-branch_test.sh.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR

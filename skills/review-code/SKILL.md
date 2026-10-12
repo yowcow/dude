@@ -28,10 +28,10 @@ One invocation runs the loop to completion:
 
 Resolve what to review in this order, and declare the resolved scope before dispatching anything:
 
-1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range its own record bounds, via `<skill-dir>/scripts/resolve-range.sh <pr-number>`.
-  - Before resolving a PR, run `<skill-dir>/../review-pr/scripts/check-pr-author.sh <pr-number>`. On `OTHER`, apply nothing and stop, pointing the user to `review-pr`: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
+1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range its own record bounds, via `tools/resolve-range.sh <pr-number>`.
+  - Before resolving a PR, run `tools/check-pr-author.sh <pr-number>`. On `OTHER`, apply nothing and stop, pointing the user to `review-pr`: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
-3. **Clean tree, commits ahead of `<base>`** — run `<skill-dir>/scripts/resolve-range.sh` with no argument.
+3. **Clean tree, commits ahead of `<base>`** — run `tools/resolve-range.sh` with no argument.
   - `<base>` is resolved, not assumed: the script reads back the `Base-Branch:` trailer that `implement-work` records when it cuts a branch from a prerequisite's PR, settles the base from what state that PR is now in, and falls back to the default branch where there is no trailer.
   - The trailer's contract, the state-to-base table, and why the lookups are tested the way they are all live in `implement-work`'s `references/base-branch.md`, under **The contract**, **Reading the trailer back**, and **Why the lookups are tested the way they are**. This table is owned by the referenced contract; duplicating it here would drift.
 4. **Nothing to review** — no uncommitted change, and no range with anything in it. Ask the user what to review. Never widen to the whole repository on a guess.

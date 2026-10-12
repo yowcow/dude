@@ -14,50 +14,50 @@ one (`pr-readback-failed`).
 
 | Slug | Printed by |
 | --- | --- |
-| `abandoned-prerequisite` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
+| `abandoned-prerequisite` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `ancestor-check-failed` | `pr-to-ready/retarget-pr.sh` |
-| `ask-base-repo` | `pr-to-ready/ensure-draft-pr.sh` |
-| `ask-default-branch` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-base.sh`, `review-code/resolve-range.sh` |
+| `ask-base-repo` | `tools/ensure-draft-pr.sh` |
+| `ask-default-branch` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `ask-multiple-prereqs` | `implement-work/resolve-base.sh` |
-| `ask-multiple-prs` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `pr-to-ready/ensure-draft-pr.sh` |
-| `ask-multiple-prs-after-create` | `pr-to-ready/ensure-draft-pr.sh` |
+| `ask-multiple-prs` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `tools/ensure-draft-pr.sh` |
+| `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
 | `blocked-lookup-failed` | `implement-work/resolve-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
-| `branch-nowhere` | `pr-to-ready/ensure-draft-pr.sh` |
+| `branch-nowhere` | `tools/ensure-draft-pr.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
 | `conditions-unmet` | `pr-to-ready/mark-ready.sh` |
 | `cross-fork` | `pr-to-ready/resolve-pr-entry.sh` |
-| `default-fetch-failed` | `pr-to-ready/resolve-pr-base.sh`, `review-code/resolve-range.sh` |
+| `default-fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `detached-head` | `implement-work/absorb-base.sh` |
 | `dirty-tree` | `implement-work/absorb-base.sh` |
 | `dirty-worktree` | `pr-to-ready/retarget-pr.sh` |
-| `fetch-failed` | `pr-to-ready/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `review-code/resolve-range.sh` |
+| `fetch-failed` | `tools/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `tools/resolve-range.sh` |
 | `head-moved` | `pr-to-ready/mark-ready.sh` |
-| `ls-remote-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `merge-base-failed` | `review-code/resolve-range.sh` |
+| `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
+| `merge-base-failed` | `tools/resolve-range.sh` |
 | `merge-conflict` | `pr-to-ready/retarget-pr.sh` |
 | `merge-failed` | `implement-work/absorb-base.sh` |
 | `no-merge-in-progress` | `implement-work/commit-merge.sh` |
 | `no-pr` | `pr-to-ready/resolve-pr-entry.sh` |
-| `no-prereq-pr` | `implement-work/read-base-trailer.sh` |
+| `no-prereq-pr` | `tools/read-base-trailer.sh` |
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
-| `pr-create-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `pr-to-ready/ensure-draft-pr.sh`, `review-code/resolve-range.sh`, `review-pr/check-pr-author.sh` |
-| `pr-not-created` | `pr-to-ready/ensure-draft-pr.sh` |
+| `pr-create-failed` | `tools/ensure-draft-pr.sh` |
+| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh` |
+| `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
-| `pr-readback-failed` | `pr-to-ready/ensure-draft-pr.sh` |
-| `prereq-lookup-failed` | `implement-work/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
-| `push-failed` | `pr-to-ready/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
+| `pr-readback-failed` | `tools/ensure-draft-pr.sh` |
+| `prereq-lookup-failed` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
+| `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `pr-to-ready/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh` |
+| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
-| `trailer-read-failed` | `implement-work/read-base-trailer.sh` |
-| `unrecognised-pr-state` | `pr-to-ready/ensure-draft-pr.sh` |
+| `trailer-read-failed` | `tools/read-base-trailer.sh` |
+| `unrecognised-pr-state` | `tools/ensure-draft-pr.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
 
