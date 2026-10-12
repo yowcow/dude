@@ -1,6 +1,7 @@
 # tests/
 
-An offline test suite for the `gh`-wrapping scripts under `skills/*/scripts/`.
+An offline test suite for the `gh`-wrapping scripts under `skills/*/scripts/`
+and `tools/`.
 The tree sits beside the skills it tests, but **not inside any skill
 directory**: what this repository distributes as a plugin is `skills/` and its
 contents, so a `tests/` dir inside a skill would ship to every agent that
@@ -19,9 +20,9 @@ installs the plugin. `tests/` at the repository root ships to none of them.
 - `tests/lib/bin-nosleep/sleep` — the instant `sleep`, put on `PATH` only by
   an explicit `stub_sleep_instant` call.
 - `tests/scripts-have-tests.sh` — the coverage gate: every script under
-  `skills/*/scripts/` and every file under `hooks/` except `hooks.json` must
-  have a test file. Not named `*_test.sh`, so `run.sh` does not collect it
-  directly; `scripts-have-tests_test.sh` is what runs it.
+  `skills/*/scripts/`, every file under `tools/`, and every file under `hooks/`
+  except `hooks.json` must have a test file. Not named `*_test.sh`, so `run.sh`
+  does not collect it directly; `scripts-have-tests_test.sh` is what runs it.
 - `tests/lib/harness_test.sh` — a self-test of the harness mechanism itself
   (no script under test).
 - `<name>_test.sh` anywhere under `tests/` — the actual test cases.
@@ -230,10 +231,11 @@ name from the prune raises the count, which is what makes the check meaningful;
 ## The coverage gate: `scripts-have-tests.sh`
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
-`tests/<skill>/<name>_test.sh`. Every file under `hooks/` except `hooks.json`
-must have a non-empty test file at `tests/hooks/<name>_test.sh` (a trailing
-`.sh` on the hook is stripped; subdirectories are mirrored). There is no
-general exemption path. The one named carve-out is `AUTHORING.md`'s single native `gh` operation rule: a call `plan-work` makes directly has no script to count.
+`tests/<skill>/<name>_test.sh`. Every file under `tools/` must have a
+non-empty test file at `tests/tools/<name>_test.sh`. Every file under `hooks/`
+except `hooks.json` must have a non-empty test file at
+`tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
+subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s single native operation rule: a call `plan-work` makes directly has no script to count.
 `scripts-have-tests_test.sh` runs the gate against the real tree as its first
 two cases, which is how the gate reaches `make test` with no Makefile or
 workflow change — the same trick `lint.sh` uses to land in its own selection.
@@ -244,9 +246,9 @@ the gate to be removed.
 Its rules, each of which `scripts-have-tests_test.sh` asserts against a synthetic
 tree rather than stating as prose:
 
-- An empty enumeration is an **error**, independently for `skills/*/scripts/`
-  and for `hooks/`. A broken hooks selector and a fully covered skills tree
-  are otherwise the same green.
+- An empty enumeration is an **error**, independently for `skills/*/scripts/`,
+  `tools/`, and `hooks/`. A broken tools selector and fully covered skills and
+  hooks trees are otherwise the same green.
 - An empty test file is **not** coverage. `run.sh` collects it and
   `bash <empty>` exits 0, so it is a passing test with no detection power.
 - A `find` that dies partway through `skills` is a **failure**, never a
@@ -255,12 +257,12 @@ tree rather than stating as prose:
   asserted for hooks by the missing-directory case rather than a chmod-000
   subdirectory.
 - Selection is by position in the tree, not by shebang: a script under
-  `scripts/` in a language ShellCheck does not cover must not be silently
+  `scripts/` or `tools/` in a language ShellCheck does not cover must not be silently
   exempt as well as unlinted, and a file under `hooks/` is not exempt for
   lacking a shebang either. `hooks.json` is excluded by exact relative path
   because it is the JSON manifest `make manifest` already validates, not
   because of its suffix.
-- A **symlink** under `scripts/` or `hooks/` is enumerated like a regular
+- A **symlink** under `scripts/`, `tools/`, or `hooks/` is enumerated like a regular
   file, which is where this parts company with `lint.sh`'s deliberate
   `-type f`. For a linter that exclusion is right; for this gate `-type f`
   answers the wrong question, since it classifies a symlink by the link.
