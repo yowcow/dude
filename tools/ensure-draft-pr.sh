@@ -13,7 +13,8 @@
 # push it and carry on.
 #
 # The existence check uses `gh pr list --head`, never `gh pr view`, and reads
-# the result with `.[]`, never `.[0]` — see ../references/gh-mechanics.md,
+# the result with `.[]`, never `.[0]` — see
+# skills/pr-to-ready/references/gh-mechanics.md,
 # "## Asking whether a PR exists" and "## Reading the PR number back" for why:
 # in short, exit status and line count must be read together, and a numeric
 # branch name would otherwise be misread by `gh pr view` as a PR number.

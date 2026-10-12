@@ -14,7 +14,7 @@
 # merged prerequisite as "still in flight" and hand back its branch as
 # --base. Merging this task into that branch then puts nothing into the
 # default branch, and the change silently fails to land. See
-# ../../implement-work/references/base-branch.md, "## Reading the trailer
+# skills/implement-work/references/base-branch.md, "## Reading the trailer
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
@@ -29,7 +29,7 @@ fi
 BRANCH="$1"
 BASE_REPO="${2:-}"
 
-# The default branch is resolved by ../../implement-work/scripts/resolve-default-branch.sh
+# The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -37,9 +37,9 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # places that print it: the scan's range is expressed against it, so it has
 # to be both named and fetched by then.
 if [ -n "$BASE_REPO" ]; then
-  DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
+  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
 else
-  DEFAULT="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 fi
 
 # The task branch's tip is read below as FETCH_HEAD rather than from a local
@@ -54,19 +54,19 @@ fi
 # fetch-failed, the caller could not tell a missing task branch from a
 # missing default branch, and the two want different answers from the person
 # they stop for.
-if ! DEFAULT_SHA="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${DEFAULT}")"; then
+if ! DEFAULT_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
 
-if ! bash "${SCRIPT_DIR}/../../implement-work/scripts/fetch-to-sha.sh" "${BRANCH}" >/dev/null; then
+if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BRANCH}" >/dev/null; then
   echo "STOP fetch-failed"
   exit 0
 fi
 
 # The trailer scan, the prerequisite lookup, and the three answers both
 # readers print identically live in
-# ../../implement-work/scripts/read-base-trailer.sh -- see its header. What is
+# tools/read-base-trailer.sh -- see its header. What is
 # left here is base-branch.md's `pr-to-ready`'s `--base` column: the three
 # rows where the two readers disagree.
 #
@@ -83,7 +83,7 @@ fi
 # an unrecognised PR state, whose message it has already put on stderr --
 # leaves this script exiting 1 with nothing on stdout, instead of a second
 # message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/../../implement-work/scripts/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"; then
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"; then
   exit 1
 fi
 

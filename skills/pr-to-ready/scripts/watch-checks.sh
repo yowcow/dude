@@ -81,7 +81,7 @@ EMPTY_GRACE=3
 #
 # The default branch is read from `repos/{owner}/{repo}`'s default_branch field
 # rather than through the shared
-# skills/implement-work/scripts/resolve-default-branch.sh that the three
+# tools/resolve-default-branch.sh that the three
 # base-resolving scripts call. That script answers for the
 # *current checkout*, and this script takes <owner> <repo> on the argv precisely
 # so it can watch a repository it is not standing in; run from inside another

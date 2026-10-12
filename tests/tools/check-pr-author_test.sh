@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/review-pr/scripts/check-pr-author.sh: whether the PR's
+# Table test for tools/check-pr-author.sh: whether the PR's
 # author is the user gh is logged in as. review-pr stops on SELF and
 # review-code stops on OTHER, so the two answers and the failed lookup each get
 # a row. The SUT reads no git state, so rows run with run_sut from anywhere.
@@ -14,7 +14,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/check-pr-author.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/check-pr-author.sh}"
 
 failed=0
 total=0

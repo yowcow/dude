@@ -19,8 +19,8 @@ if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
-# The default branch is resolved by resolve-default-branch.sh beside this
-# script -- see its header for the rationale.
+# The default branch is resolved by tools/resolve-default-branch.sh
+# -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # blockedBy and closedByPullRequestsReferences must be counted, never merely
@@ -41,8 +41,8 @@ else
 fi
 
 if [ "${BLOCKED_COUNT}" -eq 0 ]; then
-  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-  if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+  DEFAULT="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+  if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
     exit 1
   fi
   echo "BASE ${DEFAULT}"
@@ -94,14 +94,14 @@ STATE="${PR_INFO##* }"
 
 case "${STATE}" in
   MERGED)
-    DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+    DEFAULT="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
+    if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
       exit 1
     fi
     echo "BASE ${DEFAULT}"
     ;;
   OPEN)
-    if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${HEAD_REF}" >/dev/null; then
+    if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${HEAD_REF}" >/dev/null; then
       exit 1
     fi
     echo "BASE ${HEAD_REF}"

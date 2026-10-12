@@ -2,7 +2,7 @@
 # Check that a PR reference names the repository this checkout reviews from,
 # and print the PR number with that repository.
 #
-# review-pr resolves its range with ../../review-code/scripts/resolve-range.sh,
+# review-pr resolves its range with tools/resolve-range.sh,
 # which reads the PR record through `gh pr view <n>` -- answered from whichever
 # repository gh resolves here -- and fetches the PR's head and base from
 # `origin`. If either names a repository other than the reference's, PR <n> of

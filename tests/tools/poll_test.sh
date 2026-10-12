@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/implement-work/scripts/poll.sh: when it stops, what
+# Table test for tools/poll.sh: when it stops, what
 # it prints, and which usage errors exit 2.
 #
 # The check command is a counter fixture under $HARNESS_TMP: it prints
@@ -11,7 +11,7 @@
 # `if [ "$i" -lt "$MAX" ]; then sleep` guard so it sleeps after the final
 # attempt too, and re-run: `sleeps-between-tries-only: sleeps` tally must
 # fail (3 sleeps, not 2). Then replace `exit 1` with `exit 0` and re-run
-# as `SUT=<copy> tests/run.sh tests/implement-work/poll_test.sh`:
+# as `SUT=<copy> tests/run.sh tests/tools/poll_test.sh`:
 # `cap-exhausted`, `sleeps-between-tries-only`, and `exhausted-empty-output`
 # must fail on exit status alone.
 set -euo pipefail
@@ -21,7 +21,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/poll.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/poll.sh}"
 
 failed=0
 total=0

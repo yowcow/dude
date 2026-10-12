@@ -24,10 +24,10 @@
 # pre-fix copy sitting alone in a temp dir would fail to find it, every listing
 # would come back empty, and rows would fail for the wrong reason.
 #   tmp="$(mktemp -d)"
-#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/skills/implement-work/scripts"
+#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/tools"
 #   git show 9600d30^:skills/pr-to-ready/scripts/watch-copilot-review.sh >"$tmp/skills/pr-to-ready/scripts/watch-copilot-review.sh"
 #   cp skills/pr-to-ready/scripts/list-copilot-reviews.sh "$tmp/skills/pr-to-ready/scripts/"
-#   cp skills/implement-work/scripts/poll.sh "$tmp/skills/implement-work/scripts/poll.sh"
+#   cp tools/poll.sh "$tmp/tools/poll.sh"
 #   SUT="$tmp/skills/pr-to-ready/scripts/watch-copilot-review.sh" tests/run.sh tests/pr-to-ready/watch-copilot-review_test.sh
 set -euo pipefail
 
@@ -205,9 +205,9 @@ mkdir -p -- "${cdpath_shadow}/skills/pr-to-ready/scripts"
 cp -- "$SUT" "${cdpath_shadow}/skills/pr-to-ready/scripts/watch-copilot-review.sh"
 chmod +x -- "${cdpath_shadow}/skills/pr-to-ready/scripts/watch-copilot-review.sh"
 cp -- "${REPO_ROOT}/skills/pr-to-ready/scripts/list-copilot-reviews.sh" "${cdpath_shadow}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"
-mkdir -p -- "${cdpath_shadow}/skills/implement-work/scripts"
-cp -- "${REPO_ROOT}/skills/implement-work/scripts/poll.sh" "${cdpath_shadow}/skills/implement-work/scripts/poll.sh"
-chmod +x -- "${cdpath_shadow}/skills/implement-work/scripts/poll.sh"
+mkdir -p -- "${cdpath_shadow}/tools"
+cp -- "${REPO_ROOT}/tools/poll.sh" "${cdpath_shadow}/tools/poll.sh"
+chmod +x -- "${cdpath_shadow}/tools/poll.sh"
 cdpath_decoy="$(mktemp -d "${HARNESS_TMP}/cdpath-decoy.XXXXXX")"
 mkdir -p "${cdpath_decoy}/skills/pr-to-ready/scripts"
 printf '#!/usr/bin/env bash\nexit 99\n' >"${cdpath_decoy}/skills/pr-to-ready/scripts/list-copilot-reviews.sh"

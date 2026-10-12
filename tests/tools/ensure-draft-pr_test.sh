@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/pr-to-ready/scripts/ensure-draft-pr.sh: the
+# Table test for tools/ensure-draft-pr.sh: the
 # branch/PR/base decision tree -- whether the branch reaches the remote,
 # whether a PR already exists for it, and only then how the base is resolved.
 #
@@ -26,19 +26,18 @@
 # answer depends on the call; see fixture()'s own comment for why it stays.
 #
 # RED verification (see tests/README.md). The tree has to be copied with its
-# shape intact: resolve-pr-base.sh reaches
-# skills/implement-work/scripts/resolve-default-branch.sh and
-# skills/implement-work/scripts/read-base-trailer.sh through dirname "$0", so
+# shape intact: resolve-pr-base.sh sits beside tools/resolve-default-branch.sh
+# and tools/read-base-trailer.sh, reaching both through dirname "$0", so
 # a flat copy answers STOP ask-default-branch (or fails outright) on every row
 # regardless of this file's own mutation.
 #   tmp="$(mktemp -d)"
-#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/skills/implement-work/scripts"
-#   cp skills/pr-to-ready/scripts/resolve-pr-base.sh "$tmp/skills/pr-to-ready/scripts/"
-#   cp skills/implement-work/scripts/resolve-default-branch.sh "$tmp/skills/implement-work/scripts/"
-#   cp skills/implement-work/scripts/read-base-trailer.sh "$tmp/skills/implement-work/scripts/"
-#   cp skills/pr-to-ready/scripts/ensure-draft-pr.sh "$tmp/skills/pr-to-ready/scripts/mut.sh"
-#   # apply exactly one edit to "$tmp/skills/pr-to-ready/scripts/mut.sh"
-#   SUT="$tmp/skills/pr-to-ready/scripts/mut.sh" tests/run.sh tests/pr-to-ready/ensure-draft-pr_test.sh
+#   mkdir -p "$tmp/tools"
+#   cp tools/resolve-pr-base.sh "$tmp/tools/"
+#   cp tools/resolve-default-branch.sh "$tmp/tools/"
+#   cp tools/read-base-trailer.sh "$tmp/tools/"
+#   cp tools/ensure-draft-pr.sh "$tmp/tools/mut.sh"
+#   # apply exactly one edit to "$tmp/tools/mut.sh"
+#   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
 # Measured (#381): with the pre-fix SUT the new
 # `an-unrecognised-prerequisite-state-stops` row fails alone (1/33) -- want
 # exit 0 `STOP unrecognised-pr-state`, got exit 1 with empty stdout.
@@ -66,7 +65,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/ensure-draft-pr.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/ensure-draft-pr.sh}"
 
 # The two --jq filters the SUT and its sibling pass, spelled here exactly as
 # they appear in those scripts: the stub matches an argv on its exact bytes.
