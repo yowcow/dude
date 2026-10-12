@@ -60,7 +60,7 @@ That skill detects existing isolation from the current directory only, and its c
 - `REUSE <path>` — a worktree already carries `<branch>`; use it as-is.
 - `ATTACHED <path>` — no worktree existed, but the branch did, locally or (fetched first) only on the remote; a new workspace now tracks it.
   - Checking the remote before giving up matters here: creating a branch afresh where one already exists remotely would strand that pushed work under a diverged history, and force-push is barred, so there is no recovering it.
-- `CREATE` — no branch exists anywhere; create it normally, from the base that **Base branch** below settles.
+- `CREATE` — no branch exists anywhere; this call creates the end state `<skill-dir>/references/branch-and-push.md` (Cut) wants, from the base that **Base branch** below settles.
 
 ### Base branch
 
@@ -186,7 +186,7 @@ The deliverable is a **draft PR** on a pushed branch of verified commits — exa
 
 Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`. On any line other than `OK`, go back to the completion gate's step 1, and the pass that follows is one of its rounds.
 
-Push the branch to `origin` under its own name; the check's `OK` is its only precondition.
+Bring about the end state `<skill-dir>/references/branch-and-push.md` (Push) wants; the check's `OK` is its only precondition.
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
