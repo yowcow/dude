@@ -10,7 +10,7 @@ Use on code in any state — a diff just written, a branch, or an uncommitted wo
 One invocation runs the loop to completion:
 
 - review, judge, fix, verify, review again, until no blocking finding remains.
-- What it does not own is re-entry — reviewing again after something else changes the code belongs to the caller; in the Change workflow, `implement-work`'s completion gate owns that.
+- What it does not own is re-entry — reviewing again after something else changes the code belongs to the caller.
 
 ## Orchestration model
 
@@ -21,15 +21,14 @@ One invocation runs the loop to completion:
 ## Boundaries
 
 - This skill applies fixes but never commits — commits are the caller's.
-- Simplification belongs to `simplify-code`; don't fold it in here.
-- GitHub-side review — Claude and Copilot on a PR, thread replies, thread resolution — belongs to `pr-to-ready`. Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
+- Report each round to the caller in chat and never to GitHub, per `using-dude`'s **Stage boundaries**.
 
 ## Scope
 
 Resolve what to review in this order, and declare the resolved scope before dispatching anything:
 
 1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range its own record bounds, via `tools/resolve-range.sh <pr-number>`.
-  - Before resolving a PR, run `tools/check-pr-author.sh <pr-number>`. On `OTHER`, apply nothing and stop, pointing the user to `review-pr`: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
+  - Before resolving a PR, run `tools/check-pr-author.sh <pr-number>`. On `OTHER`, apply nothing and stop: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree, commits ahead of `<base>`** — run `tools/resolve-range.sh` with no argument.
   - `<base>` is resolved, not assumed: the script reads back the `Base-Branch:` trailer that `implement-work` records when it cuts a branch from a prerequisite's PR, settles the base from what state that PR is now in, and falls back to the default branch where there is no trailer.

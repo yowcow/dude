@@ -5,7 +5,7 @@ description: Use to simplify recently modified code while preserving behavior.
 
 # Simplify Code
 
-Use after code changes and before `review-code`.
+Use after code changes.
 
 It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
 
@@ -48,7 +48,7 @@ Each lens is a distinct kind of avoidable complexity, and every one is behavior-
 - No clever one-liners or dense expressions just to cut lines; no nested ternaries for multi-branch logic (prefer `if`/`else` or `switch`).
 - Keep helpful abstractions and separation of concerns; don't merge unrelated concerns into one unit.
 - Don't make code harder to debug, extend, or review.
-- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope. Report it and leave it to `investigate-performance`. Repairing cost the diff itself introduced is not speculative, and the baseline decides which it is: restoring the cost the code had before the change is in scope, making it cheaper than it has ever been is not.
+- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope. Report it. Repairing cost the diff itself introduced is not speculative, and the baseline decides which it is: restoring the cost the code had before the change is in scope, making it cheaper than it has ever been is not.
 
 ## Dispatch
 

@@ -36,11 +36,11 @@ Six, and none of them lowers the bar in **What counts as a finding**. Run the on
 - **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line`, a command plus its measured value, or a source/window/record per claim; and whether that artifact carries the claim.
 - **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the report itself left, not by re-running the sweep: the command issued, the count it returned, and no `| head` or page cut between the two. A claim whose trace cannot be pointed at in the report is a finding.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
-- **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them. This is the `investigate-*` exit condition re-read by someone who did not decide it was met.
+- **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them.
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
 - **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly.
 
-*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here (it enters `plan-work`), so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
+*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions**, and say so in the report: the work this report may propose is not reviewed here, so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
 ## Dispatch
 
@@ -83,7 +83,7 @@ Only the converged counts reach the tracking issue, published by the caller per 
 Counts reuse the Report ledger's accepted entries, rejected-but-checked entries, and intake decisions; no separate log is kept.
 Rejected: flagging the `AUTHORING.md` `byte-for-byte` wording overstatement as a finding — left as is, no reader reaches a wrong conclusion or wrong fix because the mechanism is correct and only the wording overstates (Side A not met; real yowcow/dude#442 axis-2 nit).
 Rejected: flagging excess measurement precision (or section ordering) as a finding — followed as stated, the reader spends a fix that changes no conclusion, which is reviewer preference, never a finding (Side B not met; the preference class named above).
-Replay the corpus — the yowcow/dude#442 audit report plus the yowcow/dude#443 design-comment review-plan rounds (Pass 1, Revision 1, Revision 2 clean) — once under the current single additive pass and once under the new additive-plus-subtractive design.
+Replay the corpus — the yowcow/dude#442 audit report plus the yowcow/dude#443 design-comment review rounds (Pass 1, Revision 1, Revision 2 clean) — once under the current single additive pass and once under the new additive-plus-subtractive design.
 Report the accepted-entry sustain rate (accepted entries sustained under the Evidence-only verification pass divided by total accepted entries) with per-lens counts for both arms.
 
 ## Caller contract
