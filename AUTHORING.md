@@ -46,7 +46,7 @@ Skills stack in four dependency layers, top down: `using-dude` (workflow rules),
 
 Shared mechanism lives once, in top-level `tools/`, called through `SCRIPT_DIR` rather than by bare name or cwd-relative path. What stays a script is what the Keep rule keeps: a dude contract (Base-Branch trailer, blockedBy base resolution, tree records, recheck records, repo identity checks, merge guards) or a concrete silent failure the script's header names. A generic operation — neither — stays abstract prose under rule 1 and never becomes a script.
 
-A kept script leaves by a replacement test, never by rewriting this rule. The unit is the script, or every script its Keep entry covers when it has one; the test passes only if all of these hold, and the unit's scripts, their tests, and the Keep entry are then deleted together:
+A kept script leaves by a replacement test. The unit is the script, or every script its Keep entry covers when it has one; the test passes only if all of these hold, and the unit's scripts, their tests, and the Keep entry are then deleted together:
 
 - The fixture is every behavior-test row of the unit's scripts, argument-check rows excepted.
 - The subject and the judge are blind: each is a fresh context that has not seen the unit's scripts or their tests.
