@@ -157,7 +157,6 @@ failed=$((failed + bad))
 total=$((total + 1))
 bad=0
 while read -r owner target _; do
-  [ -n "$owner" ] || continue
   if ! grep -qE "^${owner} ${target} " "$mentions"; then
     printf 'FAIL skill-deps: EDGES row %s -> %s is stale: no mention is left\n' "$owner" "$target"
     bad=1
