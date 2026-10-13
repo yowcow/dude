@@ -17,11 +17,11 @@ Use on planning work before any code is written, or on a revision of it. This re
   - Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
 - **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the tier `using-dude`'s **Worker tier** sets for a marked worker — per `vet-code`'s **Output**.
-  - What that buys here is that the main loop owns the very artifact under review — `plan-work`'s TODO list, or `implement-work`'s implementation plan — folding every accepted finding into that artifact.
+  - What that buys here is that the main loop owns the very artifact under review — the TODO list or implementation plan the caller declared — folding every accepted finding into that artifact.
   - A verdict reached there rests on its own account of the design.
   - A real design flaw rejected on it flows into the implementation, which is all any later gate reads.
   - The orchestrator writes the report from the verdicts and re-judges none of them.
-- One invocation is one pass, and it never re-reviews on its own. Revising and re-running until it comes back clean belongs to the caller — `plan-work` for a TODO list, `implement-work` for an implementation plan.
+- One invocation is one pass, and it never re-reviews on its own. Revising and re-running until it comes back clean belongs to the caller.
 
 ## What counts as a finding
 
@@ -35,9 +35,9 @@ There is no non-blocking tier. A finding that passes the test has to be resolved
 
 One invocation reviews exactly one target, and **the caller declares which**. The target sets the lens list and the fan-out, because the two artifacts fail in different ways.
 
-- **TODO list** — from `plan-work`: the design plus a numbered list of PR-sized items. Lenses: **Necessity, Completeness, Consistency, Reality, Risk**.
+- **TODO list** — the design plus a numbered list of PR-sized items. Lenses: **Necessity, Completeness, Consistency, Reality, Risk**.
   - *Skip* **Assumptions** and **Executability**, and say so in the report: there is no task-level detail yet for either to bite on.
-- **Implementation plan** — from `implement-work`: the detailed plan for one PR. Lenses: **Completeness, Consistency, Reality, Assumptions, Executability, Risk**.
+- **Implementation plan** — the detailed plan for one PR. Lenses: **Completeness, Consistency, Reality, Assumptions, Executability, Risk**.
   - *Skip* **Necessity**, and say so in the report: whether the work is warranted was settled when the TODO list was reviewed.
   - If this plan reaches past the scope boundary of the item it implements, that is not Necessity reopening — raise it under Consistency, against that item's stated completion criteria.
   - Completeness and Consistency here also cover error paths, migration and rollback, and ordering between tasks.

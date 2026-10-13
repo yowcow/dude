@@ -14,9 +14,7 @@
 # Only the base repository is compared. A PR opened from a fork keeps its head
 # at refs/pull/<n>/head on the base repository, which is where resolve-range
 # fetches it from, and this skill pushes nothing, so neither the PR's head
-# repository nor origin's push URL is read -- the cross-fork and push-URL
-# stops in ../../pr-to-ready/scripts/resolve-pr-entry.sh guard pushes this
-# skill never makes.
+# repository nor origin's push URL is read.
 #
 # Conventions: ../../implement-work/references/script-conventions.md.
 # STOP slugs: ../../implement-work/references/stop-registry.md.
@@ -34,8 +32,6 @@ usage() {
 REF="$1"
 
 # Reduce a remote URL or an owner/repo pair to lowercase `<owner>/<repo>`.
-# Copied from ../../pr-to-ready/scripts/resolve-pr-entry.sh, whose comment
-# says why each strip and the case fold are there.
 normalize_repo_path() {
   local url="$1" owner repo
   repo="${url##*/}"

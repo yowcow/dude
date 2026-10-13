@@ -5,8 +5,6 @@ description: Use to simplify recently modified code while preserving behavior.
 
 # Simplify Code
 
-Use after code changes and before `review-code`.
-
 It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
 
 One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code is the caller's.
@@ -48,7 +46,7 @@ Each lens is a distinct kind of avoidable complexity, and every one is behavior-
 - No clever one-liners or dense expressions just to cut lines; no nested ternaries for multi-branch logic (prefer `if`/`else` or `switch`).
 - Keep helpful abstractions and separation of concerns; don't merge unrelated concerns into one unit.
 - Don't make code harder to debug, extend, or review.
-- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope. Report it and leave it to `investigate-performance`. Repairing cost the diff itself introduced is not speculative, and the baseline decides which it is: restoring the cost the code had before the change is in scope, making it cheaper than it has ever been is not.
+- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope. Report it. Repairing cost the diff itself introduced is not speculative, and the baseline decides which it is: restoring the cost the code had before the change is in scope, making it cheaper than it has ever been is not.
 
 ## Dispatch
 
@@ -75,7 +73,7 @@ Report "no proposals" explicitly rather than inventing one.
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
 3. Dispatch one verdict worker per proposal, without the tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference — per `vet-code`'s **Output**. The tier mark is left out because proposals are not findings: a proposal no worker returns must not read as clean.
-4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when invoked from `implement-work`'s completion gate — its step-1 Verify already covers the unchanged tree in this round.
+4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
 
@@ -88,5 +86,5 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 - the fan-out used
 - what changed, and what behavior was preserved
 - proposals rejected, with the reason
-- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged and that this round's step-1 Verify covers the tree
+- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over
 - any simplification left undone, including anything reported instead of changed
