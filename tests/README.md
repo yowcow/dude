@@ -244,7 +244,7 @@ Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 non-empty test file at `tests/tools/<name>_test.sh`. Every file under `hooks/`
 except `hooks.json` must have a non-empty test file at
 `tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
-subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s single native operation rule: a call `plan-work` makes directly has no script to count.
+subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s native-write rule (rule 1): a write the agent makes natively has no script to count.
 `scripts-have-tests_test.sh` runs the gate against the real tree as its first
 two cases, which is how the gate reaches `make test` with no Makefile or
 workflow change — the same trick `lint.sh` uses to land in its own selection.
