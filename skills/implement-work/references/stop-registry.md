@@ -3,7 +3,7 @@
 Every `STOP <slug>` a script prints on stdout, and the exit-code contract
 around it. A slug not on this list must not be printed; add it here first.
 
-Slugs are owned by their printing script. `fetch-to-sha.sh` and
+Slugs are owned by their printing script. `fetch-to-sha.sh`, `origin-repo.sh` and
 `resolve-default-branch.sh` print no slug: they exit 1 with empty stdout and
 the caller prints its own slug from this list. Two scripts print through a
 variable: `ensure-draft-pr.sh`'s `echo "STOP $stop_slug"`, whose slugs are
