@@ -25,7 +25,7 @@ if [ "$#" -ne 0 ]; then
   exit 2
 fi
 
-if ! URL="$(git remote get-url origin 2>/dev/null)" || [ -z "$URL" ]; then
+if ! URL="$(git remote get-url origin 2>/dev/null)"; then
   exit 1
 fi
 
