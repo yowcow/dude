@@ -165,5 +165,57 @@ while read -r owner target _; do
 done <<<"$EDGES"
 failed=$((failed + bad))
 
+# --- no skill borrows another skill's Orchestration model --------------------
+# Allow-listed phrasings are stripped first, so any "orchestration" left over is
+# a borrowing however it is worded; a possessive of another skill followed by
+# orchestration, dispatch, or worker is the paraphrase that avoids the word.
+total=$((total + 1))
+bad=0
+while IFS= read -r f; do
+  rel="${f#"$ROOT"/}"
+  owner="${rel#skills/}"
+  owner="${owner%%/*}"
+  while IFS= read -r hit; do
+    n="${hit%%:*}"
+    text="${hit#*:}"
+    if [ "$text" = '## Orchestration model' ] && [ "${f##*/}" = SKILL.md ]; then continue; fi
+    rest="$(printf '%s\n' "$text" |
+      sed -E -e "s/this skill's (\*\*)?Orchestration model(\*\*)?//g" \
+        -e 's#\.\./SKILL\.md, "Orchestration##g' | tr '[:upper:]' '[:lower:]')"
+    case "$rest" in
+      *orchestration*)
+        printf 'FAIL skill-deps: %s:%s borrows an Orchestration model: %s\n' "$rel" "$n" "$text"
+        bad=1
+        ;;
+    esac
+  done < <(grep -niE 'orchestration' "$f" || true)
+  for t in "${skills[@]}"; do
+    [ "$t" != "$owner" ] || continue
+    while IFS= read -r hit; do
+      printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+      bad=1
+    done < <(grep -nE "(^|[^a-z0-9-])${t}\`?'s (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)" "$f" || true)
+  done
+done <"$files"
+failed=$((failed + bad))
+
+# --- no path into another skill's scripts/ -----------------------------------
+total=$((total + 1))
+bad=0
+while IFS= read -r f; do
+  rel="${f#"$ROOT"/}"
+  owner="${rel#skills/}"
+  owner="${owner%%/*}"
+  while IFS= read -r d; do
+    t="${d##*/}"
+    [ "$t" != "$owner" ] || continue
+    while IFS= read -r hit; do
+      printf 'FAIL skill-deps: %s:%s names a path into %s/scripts/: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+      bad=1
+    done < <(grep -nE "(^|[^a-z0-9-])${t}/scripts([^a-z0-9-]|$)" "$f" || true)
+  done <"$dirs"
+done <"$files"
+failed=$((failed + bad))
+
 printf 'skill-deps: %s skill(s), %s file(s), %s mention(s)\n' "${#skills[@]}" "$nfiles" "$nmentions"
 harness_exit "$failed" "$total"
