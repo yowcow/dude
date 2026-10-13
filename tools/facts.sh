@@ -18,8 +18,8 @@
 #     becomes when it is written anyway; a fact is never guessed.
 #
 # `wait` counts the rounds of a WAIT. The state lives in a file this script
-# writes and the agent hands back unchanged, so a stale or foreign path is a
-# STOP rather than a count restarted from zero: a restart waits past the
+# writes and the agent hands back unchanged, so a missing or unrecognised
+# state file is a STOP rather than a count restarted from zero: a restart waits past the
 # limit the porting script inherited.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
@@ -39,6 +39,7 @@ usage() {
 }
 
 NAME_RE='^[a-z0-9._-]+$'
+PAD_RE='^[[:space:]]|[[:space:]]$'
 
 # spec_name <spec>: the fact name inside `name`, `name=v`, `name:A,B`, `name[]`.
 spec_name() {
@@ -92,6 +93,7 @@ verify() {
   case "$spec" in
     *=*) if [ "$v" != "${spec#*=}" ]; then echo fact-mismatch; fi ;;
     *:*)
+      case "$v" in *,*) echo fact-enum; return ;; esac
       case ",${spec#*:}," in
         *",${v},"*) ;;
         *) echo fact-enum ;;
@@ -110,7 +112,8 @@ check() {
     if [ ! -r "$file" ]; then echo "STOP fact-malformed"; return; fi
     while IFS= read -r line || [ -n "$line" ]; do
       [ -n "$line" ] || continue
-      if [ "$line" = "${line%%=*}" ] || ! [[ "${line%%=*}" =~ $NAME_RE ]]; then
+      if [ "$line" = "${line%%=*}" ] || ! [[ "${line%%=*}" =~ $NAME_RE ]] ||
+        [[ "${line#*=}" =~ $PAD_RE ]]; then
         echo "STOP fact-malformed"
         return
       fi

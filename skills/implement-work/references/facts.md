@@ -10,15 +10,16 @@ and **Waiting**.
 
 - One fact per line, `name=value`, split at the first `=`; the value runs to
   the end of the line. Names are lower-case `[a-z0-9._-]`. Blank lines are
-  skipped; any other line is malformed and stops the script.
+  skipped; any other line is malformed and stops the script, and so is a
+  value with leading or trailing whitespace.
 - A list repeats its name once per element, in the order read, and adds
   `<name>.total=<n>`, the count the source reported — not the count of lines
   written. `<name>.total=0` with no element lines is an empty list.
 - An identifier the `NEED` line pinned as `name=value` is written from the
   record actually read, never copied from the `NEED` line: the copy passes
   the check whichever record was read.
-- A fact that could not be read is written with an empty value. Never fill
-  it from elsewhere, and never write `null`; both stop the script.
+- A fact that could not be read is written with an empty value; an empty
+  value or `null` stops the script. Never fill it from elsewhere.
 
 ## Facts
 

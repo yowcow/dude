@@ -113,6 +113,14 @@ assert_row 'enum: value outside the set' 0 'STOP fact-enum\n' 0
 
 row_start
 F="$(facts_file <<'EOF'
+pr.state=OPEN,CLOSED
+EOF
+)"
+run_sut bash "$SUT" check "$F" 'pr.state:OPEN,CLOSED'
+assert_row 'enum: a value spelling several members' 0 'STOP fact-enum\n' 0
+
+row_start
+F="$(facts_file <<'EOF'
 pr.author.login=
 EOF
 )"
@@ -126,6 +134,16 @@ EOF
 )"
 run_sut bash "$SUT" check "$F" pr.author.login
 assert_row 'unfilled: null' 0 'STOP fact-missing\n' 0
+
+row_start
+F="$(printf 'pr.author.login=me \n' | facts_file)"
+run_sut bash "$SUT" check "$F" pr.author.login
+assert_row 'whitespace: trailing space' 0 'STOP fact-malformed\n' 0
+
+row_start
+F="$(printf 'pr.author.login= \n' | facts_file)"
+run_sut bash "$SUT" check "$F" pr.author.login
+assert_row 'whitespace: only a space' 0 'STOP fact-malformed\n' 0
 
 row_start
 F="$(facts_file <<'EOF'
