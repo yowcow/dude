@@ -56,6 +56,20 @@ file format are in `facts.md`.
   exits 0. This is the one slug that comes out of a command substitution:
   the relayed line is the script's answer, never data it goes on to use.
 
+## Waiting: `WAIT`
+
+A script that waits on GitHub never sleeps or polls. It answers
+`WAIT <seconds> <state-file>` on stdout, exit 0, from
+`tools/facts.sh wait`. The caller waits that long, reads the facts again,
+and calls the script again with the same arguments plus
+`--state <state-file>`, passing the path back unchanged.
+
+- The state file is written by the script and read by nothing else; the
+  first call has none.
+- Whether the limit is reached or the result is stable is the script's
+  decision alone. A porting script keeps the limit and interval it had.
+  On the last round it answers its own final word in place of `WAIT`.
+
 ## FETCH_HEAD
 
 `git rev-parse FETCH_HEAD` runs before any second `git fetch`: every fetch

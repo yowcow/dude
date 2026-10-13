@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
-# Table test for tools/facts.sh: the facts contract's self-check and its read. Every script on the contract relays the line
-# `check` prints verbatim, so each answer gets a row, and each of the four
+# Table test for tools/facts.sh: the facts contract's self-check, its read and
+# the WAIT round counter. Every script on the contract relays the line `check`
+# prints verbatim, so each answer gets a row, and each of the four
 # self-checks (identifier, count, enum, unfilled) gets a STOP row of its own.
 # No row stubs gh and every row asserts 0 gh calls.
 #
 # RED verification (see tests/README.md): the script is new. Mutants measured
 # in a copy under `mktemp -d`: dropping the `null` test fails 'unfilled: null';
 # comparing the list's line count with `-gt` fails 'count: short list';
-# skipping the malformed-line scan turns 'malformed line' into a NEED.
+# skipping the malformed-line scan turns 'malformed line' into a NEED;
+# `-ge` to `-gt` in the round comparison fails the three rows that end on the
+# final word: 'wait: the limit-th round answers the final word', 'wait: the
+# sequence' and 'wait: limit 1 ends on the first round', plus the state-file tally.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -160,6 +164,57 @@ assert_row 'get: list in file order' 0 '101\n102\n' 0
 row_start
 run_sut bash "$SUT" get "$F" pr.author.login
 assert_row 'get: scalar' 0 'alice\n' 0
+
+# --- wait: a WAIT sequence driven by fact fixtures alone reaches its limit ------
+#
+# The agent re-reads the facts every round and passes the state file back
+# unchanged; only the script decides the limit. Three rounds with limit 3:
+# WAIT, WAIT, then the caller's final word, and the state file is gone.
+row_start
+TMPDIR="$HARNESS_TMP"
+export TMPDIR
+STATE=''
+seen=''
+for round in 1 2 3; do
+  F="$(printf 'reviews.total=0\nround.seen=%s\n' "$round" | facts_file)"
+  run_sut bash "$SUT" check "$F" 'reviews[]'
+  seen="${seen}$(cat "$SUT_STDOUT") "
+  run_sut bash "$SUT" wait "$STATE" 3 5 TIMEOUT
+  read -r word secs path <"$SUT_STDOUT" || true
+  case "$word" in
+    WAIT)
+      if [ -n "$STATE" ] && [ "$path" != "$STATE" ]; then seen="${seen}moved "; fi
+      STATE="$path"
+      seen="${seen}${word}-${secs} "
+      ;;
+    *) seen="${seen}${word} " ;;
+  esac
+done
+assert_row 'wait: the limit-th round answers the final word' 0 'TIMEOUT\n' 0
+tally check_eq 'wait: the sequence' 'OK WAIT-5 OK WAIT-5 OK TIMEOUT ' "$seen"
+if [ -e "$STATE" ]; then state_left=yes; else state_left=no; fi
+tally check_eq 'wait: the state file is removed at the end' no "$state_left"
+
+row_start
+run_sut bash "$SUT" wait "${HARNESS_TMP}/no-such-state" 3 5 TIMEOUT
+assert_row 'wait: missing state file' 0 'STOP wait-state-invalid\n' 0
+
+row_start
+BAD="$(printf 'reviews.total=0\n' | facts_file)"
+run_sut bash "$SUT" wait "$BAD" 3 5 TIMEOUT
+assert_row 'wait: a file it did not write' 0 'STOP wait-state-invalid\n' 0
+
+row_start
+run_sut bash "$SUT" wait '' 1 5 TIMEOUT
+assert_row 'wait: limit 1 ends on the first round' 0 'TIMEOUT\n' 0
+
+row_start
+run_sut bash "$SUT" wait '' 0 5 TIMEOUT
+assert_row 'wait: limit 0' 2 '' 0
+
+row_start
+run_sut bash "$SUT" wait '' 3 5 timeout
+assert_row 'wait: lower-case final word' 2 '' 0
 
 # --- usage ---------------------------------------------------------------------
 row_start

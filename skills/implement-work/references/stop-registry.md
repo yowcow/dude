@@ -68,6 +68,7 @@ stdout through every such script.
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
 | `unrecognised-pr-state` | `tools/ensure-draft-pr.sh` |
+| `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
 

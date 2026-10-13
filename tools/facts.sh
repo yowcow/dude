@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The shared half of the facts contract: the self-check a script runs before
-# it uses a GitHub fact, and the read that follows it.
+# it uses a GitHub fact, the read that follows it, and the WAIT round counter.
 #
 # A facts file holds one `name=value` per line; a list repeats its name once
 # per element and carries `<name>.total`, the count its source reported.
@@ -17,17 +17,24 @@
 #   unfilled — an empty value or `null`, which is what an unreadable field
 #     becomes when it is written anyway; a fact is never guessed.
 #
+# `wait` counts the rounds of a WAIT. The state lives in a file this script
+# writes and the agent hands back unchanged, so a stale or foreign path is a
+# STOP rather than a count restarted from zero: a restart waits past the
+# limit the porting script inherited.
+#
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
 # Usage: facts.sh check <facts-file|''> <spec>...
 #        facts.sh get <facts-file> <name>
+#        facts.sh wait <state-file|''> <limit> <seconds> <final-word>
 # Output (check): OK | NEED <token>... | STOP <slug>
 # Output (get): the values recorded under <name>, one per line
+# Output (wait): WAIT <seconds> <state-file> | <final-word> | STOP wait-state-invalid
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 check <facts-file|''> <spec>... | get <facts-file> <name>" >&2
+  echo "Usage: $0 check <facts-file|''> <spec>... | get <facts-file> <name> | wait <state-file|''> <limit> <seconds> <final-word>" >&2
   exit 2
 }
 
@@ -134,6 +141,31 @@ check() {
   echo OK
 }
 
+wait_round() {
+  local state="$1" limit="$2" seconds="$3" final="$4" round=0 line
+  if ! [[ "$limit" =~ ^[1-9][0-9]*$ ]] || ! [[ "$seconds" =~ ^[0-9]+$ ]] ||
+    ! [[ "$final" =~ ^[A-Z][A-Z-]*$ ]]; then
+    usage
+  fi
+  if [ -z "$state" ]; then
+    state="$(mktemp "${TMPDIR:-/tmp}/dude-wait.XXXXXX")"
+  else
+    if [ ! -f "$state" ] || ! line="$(cat -- "$state")" || ! [[ "$line" =~ ^round=[1-9][0-9]*$ ]]; then
+      echo "STOP wait-state-invalid"
+      return
+    fi
+    round="${line#round=}"
+  fi
+  round=$((round + 1))
+  if [ "$round" -ge "$limit" ]; then
+    rm -f -- "$state"
+    echo "$final"
+    return
+  fi
+  printf 'round=%s\n' "$round" >"$state"
+  echo "WAIT ${seconds} ${state}"
+}
+
 [ "$#" -ge 1 ] || usage
 cmd="$1"
 shift
@@ -146,6 +178,10 @@ case "$cmd" in
     [ "$#" -eq 2 ] || usage
     [[ "$2" =~ $NAME_RE ]] || usage
     values "$1" "$2"
+    ;;
+  wait)
+    [ "$#" -eq 4 ] || usage
+    wait_round "$@"
     ;;
   *) usage ;;
 esac
