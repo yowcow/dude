@@ -34,7 +34,7 @@ as `bash "${SCRIPT_DIR}/<name>.sh"` (`tools/resolve-pr-base.sh` precedent).
 `STOP <slug>` goes on stdout with exit 0; the slug must be on the
 registry (`stop-registry.md`). Human-readable detail goes on stderr.
 Scripts that answer through a caller (`resolve-default-branch.sh`,
-`fetch-to-sha.sh`) print no slug: they exit 1 with empty stdout and the
+`fetch-to-sha.sh`, `origin-repo.sh`) print no slug: they exit 1 with empty stdout and the
 caller prints its own slug, because a slug printed from inside a command
 substitution would be read back as data.
 
