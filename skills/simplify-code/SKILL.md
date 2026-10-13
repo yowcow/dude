@@ -75,7 +75,7 @@ Report "no proposals" explicitly rather than inventing one.
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
 3. Dispatch one verdict worker per proposal, without the tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference — per `vet-code`'s **Output**. The tier mark is left out because proposals are not findings: a proposal no worker returns must not read as clean.
-4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when invoked from `implement-work`'s completion gate — its step-1 Verify already covers the unchanged tree in this round.
+4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
 
@@ -88,5 +88,5 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 - the fan-out used
 - what changed, and what behavior was preserved
 - proposals rejected, with the reason
-- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged and that this round's step-1 Verify covers the tree
+- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over
 - any simplification left undone, including anything reported instead of changed
