@@ -75,7 +75,7 @@ in_table() {
 dirs="${HARNESS_TMP}/dirs"
 files="${HARNESS_TMP}/files"
 if ! find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -print | sort >"$dirs" ||
-  ! find "$ROOT/skills" -path "$ROOT/skills/using-dude" -prune -o -type f -print | sort >"$files"; then
+  ! find "$ROOT/skills" -path "$ROOT/skills/using-dude" -prune -o \( -type f -o -type l \) -print | sort >"$files"; then
   echo "skill-deps: listing $ROOT/skills failed — the tree was not fully read" >&2
   exit 1
 fi
@@ -179,7 +179,7 @@ while IFS= read -r f; do
     text="${hit#*:}"
     if [ "$text" = '## Orchestration model' ] && [ "${f##*/}" = SKILL.md ]; then continue; fi
     rest="$(printf '%s\n' "$text" |
-      sed -E -e "s/this skill's (\*\*)?Orchestration model(\*\*)?//g" \
+      sed -E -e "s/[Tt]his skill's (\*\*)?Orchestration model(\*\*)?//g" \
         -e 's#\.\./SKILL\.md, "Orchestration##g' | tr '[:upper:]' '[:lower:]')"
     case "$rest" in
       *orchestration*)
@@ -193,7 +193,7 @@ while IFS= read -r f; do
     while IFS= read -r hit; do
       printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
       bad=1
-    done < <(grep -nE "(^|[^a-z0-9-])${t}\`?'s (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)" "$f" || true)
+    done < <(grep -nE "(^|[^a-z0-9-])${t}\`?'s? (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)" "$f" || true)
   done
 done <"$files"
 failed=$((failed + bad))
