@@ -200,6 +200,15 @@ written expecting real waits. Unlike the fake `gh`, it accepts any argv: the
 `gh` rule exists because an unstubbed call would be answered by the network,
 and `sleep` hands the caller nothing it reads.
 
+## Fact fixtures: `facts_file`
+
+A script on the facts contract (`skills/implement-work/references/facts.md`)
+calls no `gh`: it answers `NEED` for the facts it lacks, and decides from the
+file the caller passes as `--facts <file>`. Its rows therefore stub nothing.
+`facts_file` takes the file's bytes on stdin and prints a fresh path under
+`$HARNESS_TMP`; pass that path as `--facts`. Every row still asserts `0` gh
+calls through `assert_row`, which is what shows the script reached no `gh`.
+
 ## The lint selection: `lint.sh`
 
 `lint.sh` selects by shebang, not by a `*.sh` glob, so the extensionless PATH

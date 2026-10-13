@@ -490,4 +490,35 @@ git -C "$clone_work" merge-base --is-ancestor "$blob_sha" "$(git -C "$clone_work
 if ! check_eq 'gitrepo: is-ancestor on a blob is neither verdict' '128' "$blob_status"; then blob_fails=1; fi
 if [ "$blob_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- property 12: a fact fixture is the bytes given, in a file of its own -----
+#
+# Scripts on the facts contract read GitHub facts from a file the agent wrote,
+# so a fixture is that file. Two fixtures in one row must not share a path: a
+# row that drives several calls with different facts would otherwise read the
+# last fixture's bytes on every call.
+total=$((total + 1))
+ff_fails=0
+ff_one="$(facts_file <<'EOF'
+repo=acme/widgets
+pr.number=12
+EOF
+)"
+ff_two="$(printf 'viewer.login=me' | facts_file)"
+if ! check_eq 'facts_file: bytes verbatim' \
+  "$(printf 'repo=acme/widgets\npr.number=12\n' | od -An -c)" "$(od -An -c <"$ff_one")"; then ff_fails=1; fi
+if ! check_eq 'facts_file: no trailing newline added' \
+  "$(printf 'viewer.login=me' | od -An -c)" "$(od -An -c <"$ff_two")"; then ff_fails=1; fi
+if [ "$ff_one" = "$ff_two" ]; then
+  printf 'FAIL facts_file: two fixtures share the path %s\n' "$ff_one"
+  ff_fails=1
+fi
+case "$ff_one" in
+  "${HARNESS_TMP}"/*) ;;
+  *)
+    printf 'FAIL facts_file: %s is outside HARNESS_TMP\n' "$ff_one"
+    ff_fails=1
+    ;;
+esac
+if [ "$ff_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
