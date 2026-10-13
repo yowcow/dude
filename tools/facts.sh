@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+# The shared half of the facts contract: the self-check a script runs before
+# it uses a GitHub fact, and the read that follows it.
+#
+# A facts file holds one `name=value` per line; a list repeats its name once
+# per element and carries `<name>.total`, the count its source reported.
+# Format and catalogue: skills/implement-work/references/facts.md.
+#
+# `check` prints one line its caller relays verbatim. Each self-check stops a
+# wrong record from reaching the caller's decision:
+#   identifier (`name=value`) — another record than the one asked for was
+#     read; measured over MCP, a head filter without its owner is ignored and
+#     unrelated PRs come back.
+#   count (`name[]`, or a scalar given twice) — a list shorter than its total
+#     is a truncated page, read as the whole list.
+#   enum (`name:A,B`) — a value outside the set the caller branches on.
+#   unfilled — an empty value or `null`, which is what an unreadable field
+#     becomes when it is written anyway; a fact is never guessed.
+#
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
+#
+# Usage: facts.sh check <facts-file|''> <spec>...
+#        facts.sh get <facts-file> <name>
+# Output (check): OK | NEED <token>... | STOP <slug>
+# Output (get): the values recorded under <name>, one per line
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 check <facts-file|''> <spec>... | get <facts-file> <name>" >&2
+  exit 2
+}
+
+NAME_RE='^[a-z0-9._-]+$'
+
+# spec_name <spec>: the fact name inside `name`, `name=v`, `name:A,B`, `name[]`.
+spec_name() {
+  local n="${1%%=*}"
+  n="${n%%:*}"
+  printf '%s\n' "${n%\[\]}"
+}
+
+# values <file> <name>: every value recorded under <name>, one per line.
+values() {
+  local line
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "$2="*) printf '%s\n' "${line#*=}" ;;
+    esac
+  done <"$1"
+}
+
+# count <file> <name>: how many lines record <name>.
+count() {
+  values "$1" "$2" | wc -l | tr -d ' '
+}
+
+unfilled() {
+  [ -z "$1" ] || [ "$1" = null ]
+}
+
+# verify <file> <spec>: prints the slug of the first failed self-check, or
+# nothing.
+verify() {
+  local file="$1" spec="$2" name total v
+  name="$(spec_name "$spec")"
+  case "$spec" in
+    *'[]')
+      total="$(values "$file" "${name}.total")"
+      if [ "$(count "$file" "${name}.total")" -ne 1 ]; then echo fact-count; return; fi
+      if unfilled "$total"; then echo fact-missing; return; fi
+      if ! [[ "$total" =~ ^[0-9]+$ ]] || [ "$(count "$file" "$name")" -ne "$total" ]; then
+        echo fact-count
+        return
+      fi
+      while IFS= read -r v; do
+        if unfilled "$v"; then echo fact-missing; return; fi
+      done < <(values "$file" "$name")
+      return
+      ;;
+  esac
+  if [ "$(count "$file" "$name")" -ne 1 ]; then echo fact-count; return; fi
+  v="$(values "$file" "$name")"
+  if unfilled "$v"; then echo fact-missing; return; fi
+  case "$spec" in
+    *=*) if [ "$v" != "${spec#*=}" ]; then echo fact-mismatch; fi ;;
+    *:*)
+      case ",${spec#*:}," in
+        *",${v},"*) ;;
+        *) echo fact-enum ;;
+      esac
+      ;;
+  esac
+}
+
+check() {
+  local file="$1" spec name key line need='' slug
+  shift
+  for spec in "$@"; do
+    if ! [[ "$(spec_name "$spec")" =~ $NAME_RE ]]; then usage; fi
+  done
+  if [ -n "$file" ]; then
+    if [ ! -r "$file" ]; then echo "STOP fact-malformed"; return; fi
+    while IFS= read -r line || [ -n "$line" ]; do
+      [ -n "$line" ] || continue
+      if [ "$line" = "${line%%=*}" ] || ! [[ "${line%%=*}" =~ $NAME_RE ]]; then
+        echo "STOP fact-malformed"
+        return
+      fi
+    done <"$file"
+  fi
+  for spec in "$@"; do
+    name="$(spec_name "$spec")"
+    key="$name"
+    case "$spec" in *'[]') key="${name}.total" ;; esac
+    if [ -z "$file" ] || [ "$(count "$file" "$key")" -eq 0 ]; then
+      case "$spec" in
+        *=*) need="${need} ${spec}" ;;
+        *) need="${need} ${name}" ;;
+      esac
+    fi
+  done
+  if [ -n "$need" ]; then
+    echo "NEED${need}"
+    return
+  fi
+  for spec in "$@"; do
+    slug="$(verify "$file" "$spec")"
+    if [ -n "$slug" ]; then
+      echo "STOP ${slug}"
+      return
+    fi
+  done
+  echo OK
+}
+
+[ "$#" -ge 1 ] || usage
+cmd="$1"
+shift
+case "$cmd" in
+  check)
+    [ "$#" -ge 2 ] || usage
+    check "$@"
+    ;;
+  get)
+    [ "$#" -eq 2 ] || usage
+    [[ "$2" =~ $NAME_RE ]] || usage
+    values "$1" "$2"
+    ;;
+  *) usage ;;
+esac

@@ -38,6 +38,24 @@ Scripts that answer through a caller (`resolve-default-branch.sh`,
 caller prints its own slug, because a slug printed from inside a command
 substitution would be read back as data.
 
+## Facts: `NEED` and `--facts`
+
+A script that needs GitHub facts calls no GitHub client. It takes
+`--facts <file>` and checks the file with `tools/facts.sh check` before it
+reads a fact with `tools/facts.sh get`; the facts, their shapes, and the
+file format are in `facts.md`.
+
+- Without the file, or with a needed fact absent from it, the script answers
+  `NEED <token>...` on stdout, exit 0. A bare token names a fact to read. A
+  `name=value` token pins the identifier the read is for: read the record it
+  names and write `name` from that record, not from the `NEED` line.
+- The caller reads every named fact, writes the file, and calls the script
+  again with `--facts <file>`. A fact it could not read is written with an
+  empty value, never guessed; the check stops on it.
+- Any line `check` prints other than `OK` is relayed verbatim and the script
+  exits 0. This is the one slug that comes out of a command substitution:
+  the relayed line is the script's answer, never data it goes on to use.
+
 ## FETCH_HEAD
 
 `git rev-parse FETCH_HEAD` runs before any second `git fetch`: every fetch
