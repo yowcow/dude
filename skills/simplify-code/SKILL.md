@@ -5,8 +5,6 @@ description: Use to simplify recently modified code while preserving behavior.
 
 # Simplify Code
 
-Use after code changes.
-
 It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
 
 One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code is the caller's.
