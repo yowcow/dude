@@ -67,7 +67,7 @@ Once the report below is drafted, run `review-findings` on it for one pass and p
 6. **Fix options** — expected gain and cost of each.
 7. **Open questions**
 
-What a fix carries into `plan-work` is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to that flow, never work started from here.
+What a fix carries forward is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to the next flow, never work started from here.
 
 ## Escalation
 

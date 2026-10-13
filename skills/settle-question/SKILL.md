@@ -53,7 +53,7 @@ Once the report below is drafted, run `review-findings` on it for one pass and p
 5. **Next items** — concrete next actions in order, each naming its owner (who decides) and its action type: file, decide, or measure. Not work to start here.
 6. **Not measured** — the claims left unaudited, and what would settle each.
 
-**Verdict** and **Next items** are what `plan-work` receives — that flow's input, never work this one starts. A question-shaped run has no reproduction to carry forward.
+**Verdict** and **Next items** are what `using-dude`'s **Investigation → Change transition** carries forward — the next flow's input, never work this one starts. A question-shaped run has no reproduction to carry forward.
 
 ## Escalation
 

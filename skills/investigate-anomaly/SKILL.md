@@ -82,7 +82,7 @@ Once the report below is drafted, run `review-findings` on it for one pass and p
 7. **Remediation options** — immediate mitigation vs preventive fixes.
 8. **Open questions**
 
-**Reproduction or observation baseline** and **Remediation options** are what `using-dude`'s **Investigation → Change transition** hands to `plan-work` — that flow's input, not work this one starts.
+**Reproduction or observation baseline** and **Remediation options** are what `using-dude`'s **Investigation → Change transition** carries forward — the next flow's input, not work this one starts.
 
 ## Escalation
 

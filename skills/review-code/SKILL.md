@@ -67,7 +67,7 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
   - A round that trips either of **Loop convergence**'s two non-clean conditions still applies and verifies its accepted findings before the loop ends; it just doesn't start another review.
 - **A `needs-user` verdict stops the pass non-clean**, with the meaning `vet-code`'s **Output** gives `needs-user`: the round that stopped applied nothing, and the caller hands the finding to a person.
 - A Critical finding that invalidates the approved design is not fixed in this loop.
-  - Per `using-dude`'s **Escalation** it goes back to `plan-work` for re-approval, and this skill is no exception.
+  - Per `using-dude`'s **Escalation** it goes back for re-approval, and this skill is no exception.
   - What this pass hands over is the finding itself, reported separately from the ordinary verdict so the caller routes it rather than reading the pass as merely unfinished.
 
 ## Report
