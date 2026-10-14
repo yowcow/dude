@@ -10,5 +10,5 @@ for n in 1 2 3; do
   total=$((total + n))
 done
 greet "$total"
-rm -rf $TMPDIR/probe-$1
-cat $2 | grep foo > out.txt
+rm -rf "$TMPDIR"/probe-"$1"
+grep foo "$2" > out.txt
