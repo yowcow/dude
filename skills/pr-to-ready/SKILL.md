@@ -30,16 +30,14 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 ## Step 0: Set up the run
 
-### 0-1. Ask ready-on-clean and reviewers, bind verbose
+### 0-1. Ask ready-on-clean and reviewers
 
 Ask the user two things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
 - Which of Copilot, Claude, and requesting-code-review should this run request, from none to all three? Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
-All three hold for the rest of the run — ready-on-clean is not re-asked, the reviewers set is not re-asked, and verbose is not re-bound mid-loop.
-
-Bind **verbose** from the caller's invocation instead of asking: on when it carries `verbose`, `verbose=on`, or `verbose=true` (case-insensitive); off otherwise, including an explicit `verbose=off`. Off keeps observability output in the round's report to the caller instead of posting it. Quiet is the ordinary path; verbose is for when a later attribution may need the full record.
+Both hold for the rest of the run — neither is re-asked.
 
 ### 0-2. Resolve the run from the PR reference
 
@@ -130,7 +128,7 @@ Right after it, settle the round's inputs, whether or not requesting-code-review
   - That script reads the PR record through `gh`'s own repository resolution, while 0-2 checked only origin; where the two differ (`GH_REPO`, `gh repo set-default`), it reads another repository's PR of the same number and the range is silently wrong. Pin `gh`'s resolution to the `<owner>/<repo>` 0-2 returned when calling it.
   - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
   - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.
-- **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller — and, with verbose on, in the Request identity row's contents under `Details`.
+- **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller.
 - **Verdict record**: every reviewer's findings this run's 2-3 has judged, each `accept` or `reject` with its reason. Earlier runs' verdicts are not rebuilt.
 
 Then request each name in the set:
@@ -142,7 +140,7 @@ Then request each name in the set:
 - **Copilot**: only if Copilot is in the set. Record the baseline first, then request.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
-  - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the round's single comment (Posting below). That record, not a separate mark, is what tells a later reader the request from a manual click on the timeline, so post no mark here.
+  - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the Request identity row.
 - **requesting-code-review**: only if requesting-code-review is in the set. Dispatch one read-only advisory subagent, marked, applying `superpowers:requesting-code-review` to the PR diff at the round-request SHA, returning a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. Hand it the round's scope, requirements, and verdict record, and what was implemented as the PR body states it; without requirements it cannot fault a mismatch with the purpose, and without the record it raises a rejected claim again every round. The subagent posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there.
 
 If this step requested nobody, skip 2-2 and go to Step 3.
@@ -167,15 +165,15 @@ Delegate collection to a subagent:
 
 **Count the `needs-user` verdicts back in the orchestrator before anything else.** One or more ends the round before anything is applied: it takes the **third terminal state**.
 
-- Nothing is fixed, nothing is committed or pushed, and no thread is replied to or resolved; record the values actually read plus needs-user verdicts per the Posting gate below before handing over.
+- Nothing is fixed, nothing is committed or pushed, and nothing is written to the PR — no thread reply, no resolution, no verdict comment; the values actually read go in the hand-over with the verdicts below.
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
 Otherwise branch on this round's findings.
 
-When there is no finding (LGTM or empty reviews): go to the clean judgment first, then post as the posting paragraph below (LGTM verdict with the measured values).
+When there is no finding (LGTM or empty reviews): go to the clean judgment. Nothing is written to the PR this round; the measured values go in the round's report to the caller.
 
-When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post as the posting paragraph below. Do not evaluate the six clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
+When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post per **Posting** below. Do not evaluate the six clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
 
 A round's fixes take Step 1's ordinary-change discipline with two departures.
 
@@ -188,39 +186,38 @@ When there is at least one finding and every finding is `reject`:
 
 - Do not fix, do not commit, do not push.
 - Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is.
-- If it does not stop: reply to the round's threads and resolve them per the posting paragraph below (threads only, hold the aggregate PR comment). Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change, judging mergeability alone — the requesting-code-review leftover yield does not apply here, since requesting-code-review rejects are recorded only by the aggregate post below; row 6 guards the leftover after it is recorded.
+- If it does not stop: post per **Posting** below — thread replies, resolution, and the verdict comment together. Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change, judging mergeability alone.
 - Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test.
-- Only when both exited 0: post the aggregate PR comment per the posting paragraph below with the listing exit codes/outputs just read; then, if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1.
+- Only when both exited 0: if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1.
 - If those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
 
-**Posting** (every round — accept-including, all-reject, no-finding, and needs-user alike):
-
-- When **verbose** is off, skip the aggregate PR comment: thread replies and resolution still run except on a needs-user round, where they are skipped per above, and the verdict travels in the round's report to the caller instead — on a needs-user round, that report is the handover itself.
-- When verbose is on, post as the three subsections below (**Where to write**, **What to write**, **What not to write**) plus the two paragraphs after them; on a needs-user round, skip thread replies and resolution, and every finding's verdict (threaded or not) goes in that single PR comment. The requesting-code-review verdicts aggregate the same way as the other reviewers' — the round's report to the caller when verbose is off, the single aggregate PR comment when on.
+**Posting** (every round except a needs-user one, which writes nothing to the PR — its verdicts travel in the hand-over):
 
 #### Where to write
 
-- On every round except a needs-user one, where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]` (skip replies and resolution where it has none).
-- When verbose is on, record the round's verdict on every finding that has no thread — accepted, rejected, and needs-user alike, with the same reasoning — in one new PR comment per round.
+- Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`.
+- Record the verdict on every finding that has no thread — every requesting-code-review finding, Copilot's suppressed ones, Claude's non-inline ones — `accept` and `reject` alike, with the same reasoning, in one new PR comment per round: one line per finding, no fold. Threaded findings stay out of it. A round with no threadless finding posts no such comment.
 
-#### What to write
+#### What the round's report carries
+
+Every round's report to the caller carries these rows; the Request identity and Measured evidence rows are never written to the PR.
 
 | Payload | Contents |
 |---|---|
 | Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the subagent return reference plus the posted comment id/URL, and any caveat on the round's inputs (no requirements, say). |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the posted comment id. |
-| Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding, since with no thread it reaches neither of those two calls. |
+| Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding. |
 
 #### What not to write
 
 | Route | Rule |
 |---|---|
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
-| Newly posted aggregate PR comment | May not mention `@claude`, which would re-trigger the workflow. |
+| Verdict comment | May not mention `@claude`, which would re-trigger the workflow. |
 
-Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the aggregate comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
-The round's single comment shows only the human-readable verdict outside the fold — one line per finding, or LGTM where there was no finding — and puts everything else (request/skip decisions, SHAs, exit codes, listing outputs, requesting-code-review comment id, and any SKILL-internal words such as round numbers or step names) inside a single `<details>` block labelled exactly `Details`, so the timeline stays scannable to a reader who never saw this skill.
+No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
 ### Clean judgment & stop conditions
 
@@ -237,7 +234,7 @@ The round's single comment shows only the human-readable verdict outside the fol
 
 6. this round's requesting-code-review block leaves no actionable finding — every finding from this round's requesting-code-review identity (subagent return + posted comment id + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting-code-review passes this condition. On the no-finding path this is definitional — it never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
 
-**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Post the measured-tip SHA with the values read for this judgment in the round's comment (2-3's Posting) when verbose is on — in the round's report to the caller when off — so Clean on that SHA can be re-derived later.
+**Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Record the measured-tip SHA with the values read for this judgment in the round's report to the caller (the Measured evidence row), so Clean on that SHA can be re-derived later.
 
 When it isn't clean, what to do follows from which condition failed, and every remedy short of a terminal state re-enters the loop:
 - conditions 2, 3, or 6 (reviewer feedback) → if the clean judgment was entered from the no-finding path, do not re-enter 2-3: walk the stop list with Clean false, and take the **third terminal state** when the leftover is not from this round's review — except `list-suppressed-comments.sh`'s **exit 4**, which is not feedback to address but the **third terminal state**: Copilot's format moved, and no round of fixes can move it back;
@@ -270,7 +267,7 @@ Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>`
 - condition 2 — read only once the script has returned;
 - condition 6.
 
-The re-confirmation holds only on `RECORDED met` with all three. When **verbose** is on, post the re-confirmed measured-tip SHA and values (requesting-code-review comment id included) with what the script printed as a final comment before branching below; when off, keep them in the round's report to the caller instead. The final comment, when posted, follows the same fold rule as 2-3's Posting — verdict line outside, everything else inside the single `Details` block. The `@ claude` split rule from 2-3's Posting applies to this final comment too. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (requesting-code-review comment id included), with what the script printed, in the report to the caller; nothing is posted to the PR here. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the ready-on-clean flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready with `<skill-dir>/scripts/mark-ready.sh <owner> <repo> <pr-number>` — the only way this flow marks a PR ready. **Never mark it ready by any other means**: that marks the PR ready with no re-confirmation recorded, or on one about a commit the PR no longer points at. On `READY <n>`, Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed. On `STOP <slug>`, take the third terminal state: report the slug and where the PR stands.
