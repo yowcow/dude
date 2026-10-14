@@ -3,12 +3,17 @@
 Every `STOP <slug>` a script prints on stdout, and the exit-code contract
 around it. A slug not on this list must not be printed; add it here first.
 
-Slugs are owned by their printing script. `fetch-to-sha.sh` and
+Slugs are owned by their printing script. `fetch-to-sha.sh`, `origin-repo.sh` and
 `resolve-default-branch.sh` print no slug: they exit 1 with empty stdout and
-the caller prints its own slug from this list. One script prints through a
-variable (`ensure-draft-pr.sh`'s `echo "STOP $stop_slug"`): its slugs are
-listed by call-site argument, so a literal `STOP <slug>` grep undercounts by
-one (`pr-readback-failed`).
+the caller prints its own slug from this list. Two scripts print through a
+variable: `ensure-draft-pr.sh`'s `echo "STOP $stop_slug"`, whose slugs are
+listed by call-site argument, and `tools/facts.sh`'s `echo "STOP ${slug}"`. A
+literal `STOP <slug>` grep therefore misses `pr-readback-failed`,
+`fact-count`, `fact-enum`, `fact-mismatch` and `fact-missing`.
+
+Scripts on the facts contract relay the line `tools/facts.sh check` prints
+verbatim, so its slugs are listed as printed by `tools/facts.sh` and reach
+stdout through every such script.
 
 ## Slugs
 
@@ -33,6 +38,11 @@ one (`pr-readback-failed`).
 | `detached-head` | `implement-work/absorb-base.sh` |
 | `dirty-tree` | `implement-work/absorb-base.sh` |
 | `dirty-worktree` | `pr-to-ready/retarget-pr.sh` |
+| `fact-count` | `tools/facts.sh` |
+| `fact-enum` | `tools/facts.sh` |
+| `fact-malformed` | `tools/facts.sh` |
+| `fact-mismatch` | `tools/facts.sh` |
+| `fact-missing` | `tools/facts.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `tools/resolve-range.sh` |
 | `head-moved` | `pr-to-ready/mark-ready.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
@@ -45,7 +55,7 @@ one (`pr-readback-failed`).
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `tools/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh` |
+| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
@@ -53,11 +63,12 @@ one (`pr-readback-failed`).
 | `prereq-lookup-failed` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh` |
+| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
 | `unrecognised-pr-state` | `tools/ensure-draft-pr.sh` |
+| `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
 
@@ -65,7 +76,7 @@ one (`pr-readback-failed`).
 
 | Exit | Meaning |
 | --- | --- |
-| `0` | Answer on stdout, or `STOP <slug>` on stdout where the script's header says so |
+| `0` | Answer on stdout, `NEED`/`WAIT` on stdout per `script-conventions.md`, or `STOP <slug>` on stdout where the script's header says so |
 | `1` | No answer and no STOP: fetch/lookup failed with nothing on stdout (the caller prints its STOP), or timeout where the script's header says so |
 | `2` | Usage error: `Usage: ...` on stderr, nothing on stdout |
 | `3` | Per-script availability answer, frozen: `watch-checks.sh` = no such commit on the remote, `watch-claude-review.sh` = no `@claude` workflow, `request-copilot-review.sh` = its own header's answer. No new exit-3 meanings; collisions are item 3's (yowcow/dude#421) to resolve |

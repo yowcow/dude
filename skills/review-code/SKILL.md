@@ -28,7 +28,7 @@ One invocation runs the loop to completion:
 Resolve what to review in this order, and declare the resolved scope before dispatching anything:
 
 1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range its own record bounds, via `tools/resolve-range.sh <pr-number>`.
-  - Before resolving a PR, run `tools/check-pr-author.sh <pr-number>`. On `OTHER`, apply nothing and stop: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
+  - Before resolving a PR, run `tools/check-pr-author.sh <pr-number>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, write them to a file, and run it again with `--facts <file>` added. On `OTHER`, apply nothing and stop: this loop rewrites the code it reviews, and that code is somebody else's. On `STOP <slug>`, report it and stop. On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree, commits ahead of `<base>`** — run `tools/resolve-range.sh` with no argument.
   - `<base>` is resolved, not assumed: the script reads back the `Base-Branch:` trailer that `implement-work` records when it cuts a branch from a prerequisite's PR, settles the base from what state that PR is now in, and falls back to the default branch where there is no trailer.

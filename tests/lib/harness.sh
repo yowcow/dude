@@ -42,6 +42,18 @@ row_start() {
   stub_dir_new
 }
 
+# facts_file   body on stdin; prints the path of a new fact fixture.
+# A script on the facts contract (skills/implement-work/references/facts.md)
+# reads GitHub facts from a file the agent wrote and takes it as
+# `--facts <file>`, so the fixture is that file, byte for byte. Each call gets
+# its own path, so a row driving several calls can hand each one its own facts.
+facts_file() {
+  local f
+  f="$(mktemp "${HARNESS_TMP}/facts.XXXXXX")"
+  cat >"$f"
+  printf '%s\n' "$f"
+}
+
 # Make `sleep` instant for this test file. Opt-in: a bounded poll loop in a
 # script under test is worth asserting the *count* of, never the wall clock,
 # and check-pr-state.sh's UNKNOWN re-read alone would otherwise cost 15s a row.

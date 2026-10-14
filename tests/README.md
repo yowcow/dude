@@ -200,6 +200,15 @@ written expecting real waits. Unlike the fake `gh`, it accepts any argv: the
 `gh` rule exists because an unstubbed call would be answered by the network,
 and `sleep` hands the caller nothing it reads.
 
+## Fact fixtures: `facts_file`
+
+A script on the facts contract (`skills/implement-work/references/facts.md`)
+calls no `gh`: it answers `NEED` for the facts it lacks, and decides from the
+file the caller passes as `--facts <file>`. Its rows therefore stub nothing.
+`facts_file` takes the file's bytes on stdin and prints a fresh path under
+`$HARNESS_TMP`; pass that path as `--facts`. Every row still asserts `0` gh
+calls through `assert_row`, which is what shows the script reached no `gh`.
+
 ## The lint selection: `lint.sh`
 
 `lint.sh` selects by shebang, not by a `*.sh` glob, so the extensionless PATH
@@ -235,7 +244,7 @@ Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 non-empty test file at `tests/tools/<name>_test.sh`. Every file under `hooks/`
 except `hooks.json` must have a non-empty test file at
 `tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
-subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s single native operation rule: a call `plan-work` makes directly has no script to count.
+subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s native-write rule (rule 1): a write the agent makes natively has no script to count.
 `scripts-have-tests_test.sh` runs the gate against the real tree as its first
 two cases, which is how the gate reaches `make test` with no Makefile or
 workflow change — the same trick `lint.sh` uses to land in its own selection.

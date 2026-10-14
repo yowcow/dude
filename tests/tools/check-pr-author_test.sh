@@ -1,64 +1,105 @@
 #!/usr/bin/env bash
-# Table test for tools/check-pr-author.sh: whether the PR's
-# author is the user gh is logged in as. review-pr stops on SELF and
-# review-code stops on OTHER, so the two answers and the failed lookup each get
-# a row. The SUT reads no git state, so rows run with run_sut from anywhere.
+# Table test for tools/check-pr-author.sh: whether the PR's author is the user
+# the agent's GitHub means acts as. review-pr stops on SELF and review-code
+# stops on OTHER, so both answers, the NEED that asks for the facts, and each
+# way a read can be wrong get a row. The script reads facts and origin only:
+# every row asserts 0 gh calls, and stubs none.
 #
-# RED verification (see tests/README.md): inverting the comparison fails both
-# 'own pr' and 'someone else's pr'; reading a failed author lookup as an empty
-# author (`|| true`) makes 'author lookup fails' answer OTHER instead of STOP.
+# RED verification (see tests/README.md): against the pre-port script
+# (`git show master:tools/check-pr-author.sh`) the no-facts row fails on an
+# unstubbed `gh api user` call, and every `--facts` row fails on the old
+# script's exit-2 usage error; the four usage rows pass (not ok 9/13).
+# Mutants measured in a copy under `mktemp -d` (siblings beside it): inverting the comparison fails 'own pr' and "someone else's
+# pr"; dropping `pr.number=` from the check fails 'pr number mismatch' and
+# 'no facts: NEED pins repo and pr'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=../lib/harness.sh
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/gitrepo.sh
+# shellcheck disable=SC1091
+. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/tools/check-pr-author.sh}"
 
 failed=0
 total=0
 
-# stub_viewer <exit-status>          body on stdin
-stub_viewer() {
-  gh_stub_response '*' "$1" api user --jq .login
+WORK="$(git_repo_scratch work)"
+git_repo_init "$WORK" main
+git_repo_remote "$WORK" origin 'https://github.com/Acme/Widgets.git'
+
+# facts <author> <viewer> [<pr-number> [<repo>]]  prints a fixture's path
+facts() {
+  facts_file <<EOF
+repo=${4:-acme/widgets}
+pr.number=${3:-12}
+pr.author.login=$1
+viewer.login=$2
+EOF
 }
 
-# stub_author <pr> <exit-status>     body on stdin
-stub_author() {
-  gh_stub_response '*' "$2" pr view --json author --jq .author.login -- "$1"
-}
+row_start
+run_in "$WORK" 12
+assert_row 'no facts: NEED pins repo and pr' 0 'NEED repo=acme/widgets pr.number=12 pr.author.login viewer.login\n' 0
 
 row_start
-printf 'me\n' | stub_viewer 0
-printf 'me\n' | stub_author 12 0
-run_sut bash "$SUT" 12
-assert_row 'own pr' 0 'SELF\n' 2
+run_in "$WORK" 12 --facts "$(facts me me)"
+assert_row 'own pr' 0 'SELF\n' 0
 
 row_start
-printf 'me\n' | stub_viewer 0
-printf 'alice\n' | stub_author 12 0
-run_sut bash "$SUT" 12
-assert_row "someone else's pr" 0 'OTHER\n' 2
+run_in "$WORK" 12 --facts "$(facts alice me)"
+assert_row "someone else's pr" 0 'OTHER\n' 0
 
 row_start
-: | stub_viewer 1
-printf 'alice\n' | stub_author 12 0
-run_sut bash "$SUT" 12
-assert_row 'viewer lookup fails' 0 'STOP pr-lookup-failed\n' 1
+F="$(facts_file <<'EOF'
+repo=acme/widgets
+pr.number=12
+viewer.login=me
+EOF
+)"
+run_in "$WORK" 12 --facts "$F"
+assert_row 'author not yet read' 0 'NEED pr.author.login\n' 0
 
 row_start
-printf 'me\n' | stub_viewer 0
-: | stub_author 12 1
-run_sut bash "$SUT" 12
-assert_row 'author lookup fails' 0 'STOP pr-lookup-failed\n' 2
+run_in "$WORK" 12 --facts "$(facts alice '')"
+assert_row 'viewer login unreadable' 0 'STOP fact-missing\n' 0
 
 row_start
-run_sut bash "$SUT" abc
+run_in "$WORK" 12 --facts "$(facts null me)"
+assert_row 'author login written as null' 0 'STOP fact-missing\n' 0
+
+row_start
+run_in "$WORK" 12 --facts "$(facts alice me 13)"
+assert_row 'pr number mismatch' 0 'STOP fact-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 --facts "$(facts alice me 12 upstream/widgets)"
+assert_row 'pr read in another repo' 0 'STOP fact-mismatch\n' 0
+
+NOORIGIN="$(git_repo_scratch noorigin)"
+git_repo_init "$NOORIGIN" main
+row_start
+run_in "$NOORIGIN" 12 --facts "$(facts me me)"
+assert_row 'no origin' 0 'STOP repo-lookup-failed\n' 0
+
+row_start
+run_in "$WORK" abc
 assert_row 'non-numeric pr' 2 '' 0
 
 row_start
-run_sut bash "$SUT"
+run_in "$WORK"
 assert_row 'no argument' 2 '' 0
+
+row_start
+run_in "$WORK" 12 --facts
+assert_row '--facts without a file' 2 '' 0
+
+row_start
+run_in "$WORK" 12 --state x
+assert_row 'unknown option' 2 '' 0
 
 harness_exit "$failed" "$total"
