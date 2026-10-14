@@ -27,9 +27,9 @@ stdout through every such script.
 | `ask-multiple-prs` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `tools/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
-| `blocked-lookup-failed` | `implement-work/resolve-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
+| `body-unreadable` | `implement-work/resolve-base.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
 | `conditions-unmet` | `pr-to-ready/mark-ready.sh` |
@@ -55,15 +55,16 @@ stdout through every such script.
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `tools/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `implement-work/resolve-base.sh`, `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh` |
+| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
 | `pr-readback-failed` | `tools/ensure-draft-pr.sh` |
-| `prereq-lookup-failed` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
+| `prereq-line-malformed` | `implement-work/resolve-base.sh` |
+| `prereq-lookup-failed` | `tools/read-base-trailer.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh` |
+| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |

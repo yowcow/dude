@@ -1,116 +1,128 @@
 #!/usr/bin/env bash
-# Resolve which branch a new task should be cut from, by its issue's native
-# `blockedBy` relation rather than issue-body prose. Branching from the
-# default while a prerequisite PR is still OPEN would simply omit that
-# prerequisite's changes, so the task's own checks then fail for a reason
-# nowhere in its diff.
-# Usage: resolve-base.sh [issue-number]
+# Resolve which branch a new task should be cut from, by the one prerequisite
+# line in its issue's body (`Blocked-By: #N`, which plan-work writes; format
+# and reasons in ../references/base-branch.md). Branching from the default
+# while a prerequisite PR is still OPEN would simply omit that prerequisite's
+# changes, so the task's own checks then fail for a reason nowhere in its diff.
+#
+# It reads no issue or PR itself. It answers NEED in up to three rounds — the
+# issue's body, then the PRs that close the prerequisite, then that PR's state
+# and head — each read pinned to origin's repository and to the number the
+# round before produced, so a record read for another issue or PR stops.
+#
+# The closing PRs are counted, never tested for emptiness: one PR and two need
+# opposite answers. A PR's state has three values and is read from that PR's
+# own record: MERGED and CLOSED need opposite answers, so "not open" is never
+# the test.
+#
+# Facts: ../references/facts.md.
+# Conventions: ../references/script-conventions.md.
+# STOP slugs: ../references/stop-registry.md.
+#
+# Usage: resolve-base.sh [<issue-number> [--facts <file>]]
+# Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [issue-number]" >&2
+usage() {
+  echo "Usage: $0 [<issue-number> [--facts <file>]]" >&2
   exit 2
-fi
+}
 
-ISSUE="${1:-}"
+ISSUE=''
+FACTS=''
+case "$#" in
+  0) ;;
+  1) ISSUE="$1" ;;
+  3)
+    if [ "$2" != --facts ] || [ -z "$3" ]; then usage; fi
+    ISSUE="$1"
+    FACTS="$3"
+    ;;
+  *) usage ;;
+esac
+if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then usage; fi
 
-if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[0-9]+$ ]]; then
-  echo "Usage: $0 [issue-number]" >&2
-  exit 2
-fi
-
-# The default branch is resolved by tools/resolve-default-branch.sh
-# -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+TOOLS="${SCRIPT_DIR}/../../../tools"
 
-# blockedBy and closedByPullRequestsReferences must be counted, never merely
-# checked for emptiness — "is it empty" cannot tell one prerequisite from
-# three, and both need the opposite answer here. A task with no issue behind
-# it has no relation to read, which lands on the same answer as a count of 0.
-if [ -z "$ISSUE" ]; then
-  BLOCKED_COUNT=0
-else
-  if ! BLOCKED_JSON="$(gh issue view --json blockedBy -- "${ISSUE}" 2>/dev/null)"; then
-    echo "STOP blocked-lookup-failed"
-    exit 0
-  fi
-  if ! BLOCKED_COUNT="$(printf '%s' "$BLOCKED_JSON" | jq '.blockedBy.totalCount' 2>/dev/null)"; then
-    echo "STOP blocked-lookup-failed"
-    exit 0
-  fi
-fi
-
-if [ "${BLOCKED_COUNT}" -eq 0 ]; then
-  DEFAULT="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-  if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
+# base <branch>: fetch it, then answer it.
+base() {
+  if ! bash "${TOOLS}/fetch-to-sha.sh" "$1" >/dev/null; then
     exit 1
   fi
-  echo "BASE ${DEFAULT}"
+  echo "BASE $1"
+  exit 0
+}
+
+base_default() {
+  local default
+  if ! default="$(bash "${TOOLS}/resolve-default-branch.sh")"; then
+    echo "STOP ask-default-branch"
+    exit 0
+  fi
+  base "$default"
+}
+
+# need <spec>...: relay any answer from the self-check other than OK.
+need() {
+  local verdict
+  verdict="$(bash "${TOOLS}/facts.sh" check "$FACTS" "$@")"
+  if [ "$verdict" != OK ]; then
+    echo "$verdict"
+    exit 0
+  fi
+}
+
+fact() {
+  bash "${TOOLS}/facts.sh" get "$FACTS" "$1"
+}
+
+if [ -z "$ISSUE" ]; then
+  base_default
+fi
+
+if ! REPO="$(bash "${TOOLS}/origin-repo.sh")"; then
+  echo "STOP repo-lookup-failed"
   exit 0
 fi
 
-if [ "${BLOCKED_COUNT}" -ge 2 ]; then
-  echo "STOP ask-multiple-prereqs"
-  exit 0
-fi
+SPECS=("repo=${REPO}" "issue.number=${ISSUE}" issue.body-file)
+need "${SPECS[@]}"
 
-if ! PREREQ="$(printf '%s' "$BLOCKED_JSON" | jq -r '.blockedBy.nodes[0].number' 2>/dev/null)"; then
-  echo "STOP blocked-lookup-failed"
+if ! LINE="$(bash "${TOOLS}/prereq-line.sh" "$(fact issue.body-file)")"; then
+  echo "STOP body-unreadable"
   exit 0
 fi
+case "$LINE" in
+  NONE) base_default ;;
+  MULTIPLE)
+    echo "STOP ask-multiple-prereqs"
+    exit 0
+    ;;
+  MALFORMED)
+    echo "STOP prereq-line-malformed"
+    exit 0
+    ;;
+esac
+PREREQ="${LINE#PREREQ }"
 
-# closedByPullRequestsReferences comes back as a plain array here (unlike
-# blockedBy's {nodes, totalCount}), so it is counted with `length`.
-if ! CLOSED_JSON="$(gh issue view --json closedByPullRequestsReferences -- "${PREREQ}" 2>/dev/null)"; then
-  echo "STOP prereq-lookup-failed"
-  exit 0
-fi
-if ! PR_COUNT="$(printf '%s' "$CLOSED_JSON" | jq '.closedByPullRequestsReferences | length' 2>/dev/null)"; then
-  echo "STOP prereq-lookup-failed"
-  exit 0
-fi
-
-if [ "${PR_COUNT}" -eq 0 ]; then
+SPECS+=("prereq.number=${PREREQ}" 'prereq.closing-pr[]')
+need "${SPECS[@]}"
+COUNT="$(fact prereq.closing-pr.total)"
+if [ "$COUNT" -eq 0 ]; then
   echo "STOP not-implemented"
   exit 0
 fi
-
-if [ "${PR_COUNT}" -ge 2 ]; then
+if [ "$COUNT" -ge 2 ]; then
   echo "STOP ask-multiple-prs"
   exit 0
 fi
+PR="$(fact prereq.closing-pr)"
 
-if ! PR="$(printf '%s' "$CLOSED_JSON" | jq -r '.closedByPullRequestsReferences[0].number' 2>/dev/null)"; then
-  echo "STOP prereq-lookup-failed"
-  exit 0
-fi
-
-if ! PR_INFO="$(gh pr view --json headRefName,state --jq '"\(.headRefName) \(.state)"' -- "${PR}" 2>/dev/null)"; then
-  echo "STOP pr-lookup-failed"
-  exit 0
-fi
-HEAD_REF="${PR_INFO% *}"
-STATE="${PR_INFO##* }"
-
-case "${STATE}" in
-  MERGED)
-    DEFAULT="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-    if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
-      exit 1
-    fi
-    echo "BASE ${DEFAULT}"
-    ;;
-  OPEN)
-    if ! bash "${SCRIPT_DIR}/../../../tools/fetch-to-sha.sh" "${HEAD_REF}" >/dev/null; then
-      exit 1
-    fi
-    echo "BASE ${HEAD_REF}"
-    ;;
-  CLOSED)
-    echo "STOP abandoned-prerequisite"
-    ;;
-  *)
-    echo "error: unexpected PR state '${STATE}' for PR ${PR}" >&2
-    exit 1
-    ;;
+SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' pr.head.ref)
+need "${SPECS[@]}"
+case "$(fact pr.state)" in
+  OPEN) base "$(fact pr.head.ref)" ;;
+  MERGED) base_default ;;
+  CLOSED) echo "STOP abandoned-prerequisite" ;;
 esac

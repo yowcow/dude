@@ -10,6 +10,18 @@ A single `Base-Branch: <base>` line in the trailer block of the task's **first**
 
 Branching from the default branch records **nothing**.
 
+## The prerequisite line
+
+What a task stacks on is one line in its issue's body, `Blocked-By: #N`, alone on its line, `N` the prerequisite's issue number in the same repository. `plan-work` writes it when it lands a child and reads it back; `implement-work`'s base resolution reads it. Both parse it through `tools/prereq-line.sh`, so a line the writer's read-back accepts is one the reader accepts.
+
+- No line — the task stacks on nothing; its base is the default branch.
+- One well-formed line — the base follows from the PR that closes `#N`: its head while `OPEN`, the default branch once `MERGED`.
+- Two or more, or a line that only looks like one (`Blocked-by #N`, `owner/repo#N`, a list marker in front) — stop. A near-miss read as no line would cut the task from the default branch without its prerequisite's changes.
+
+### Why a body line
+
+Not every means of reaching GitHub can read or write an issue's native blocked-by relation, and the scripts here may rely only on what every means can do; every means reads and writes an issue body. GitHub's own "blocked" display is what this gives up.
+
 ## Resolving the default branch
 
 Never guess a branch name. Two rungs, in order — `gh repo view`, then ask the user.
