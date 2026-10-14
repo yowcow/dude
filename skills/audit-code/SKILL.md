@@ -10,7 +10,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 ## Orchestration model
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
-- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the tier `using-dude`'s **Worker tier** sets for a marked worker. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
+- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
 

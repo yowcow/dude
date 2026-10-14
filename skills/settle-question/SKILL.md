@@ -10,7 +10,7 @@ Settle an open question whose deliverable is a judgment. `superpowers:systematic
 ## Orchestration model
 
 - The points to settle are independent of each other, so fan out one worker per point. Each verdict stays with the orchestrator.
-- **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the tier `using-dude`'s **Worker tier** sets for a marked worker. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
+- **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
 
