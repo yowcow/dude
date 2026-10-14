@@ -103,9 +103,12 @@ The deliverable is an evidence-backed explanation of an observed problem, or a j
 
 The orchestrator can re-judge what a worker returned, but never what it didn't return.
 
-- A worker whose miss passes as "nothing found" is dispatched at the highest tier the runtime can put on a worker — a ceiling the run's own tier does not lower, so a run started cheaply dispatches such a worker above the tier it is itself on.
+- A worker whose miss passes as "nothing found" is marked, and goes out at one of two tiers — each a ceiling the run's own tier does not lower, so a run started cheaply dispatches such a worker above the tier it is itself on:
+  - `highest`, the highest tier the runtime can put on a worker — for a worker whose miss appears nowhere in what a later gate reads: a place left unswept, an alternative never raised, a claim that becomes the record with no gate after it. An approval gate held by a person does not move a worker out of this tier, since it judges only what it is shown.
+  - `high`, the top of the runtime's regular lineup — for a worker whose miss stays inside what a later gate reads: the PR a person reviews, the plan a person approves, CI, a later review step.
+- The user's instructions may raise or lower the model either tier carries; what dude owns is only which worker goes to which tier.
 - The run's default is fine for every other worker, and this rule constrains nothing about them.
-- Which workers get the floor is each skill's own to mark, in its **Orchestration model**.
+- Which workers are marked, and at which tier, is each skill's own to say, in its **Orchestration model**.
 
 Where the runtime has no means of choosing a tier, this rule settles nothing and the run proceeds unchanged.
 
