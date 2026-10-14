@@ -32,7 +32,8 @@ number resolves there, and the same number names a different PR.
 
 ### `pr.number`
 
-The number on the PR record read. Pinned from the script's argument.
+The number on the PR record read. Pinned from the script's argument or the
+`NEED` line.
 
 ### `pr.author.login`
 
@@ -43,3 +44,37 @@ The login of the PR record's author.
 The login the caller's GitHub means is authenticated as — not git's
 `user.name` or `user.email`, which never equal a login and would answer
 `OTHER` on the caller's own PR.
+
+### `issue.number`
+
+The number on the issue record read. Pinned from the script's argument.
+
+### `issue.body-file`
+
+The path of a file holding that issue record's body exactly as read: every
+line kept, line endings included. The body, not a comment and not the title;
+the line a script looks for is written into the body.
+
+### `prereq.number`
+
+The number on the prerequisite issue's record read. Pinned from the `NEED`
+line.
+
+### `prereq.closing-pr` (list)
+
+The number of each PR that record names as closing it, open or merged, with
+`prereq.closing-pr.total` the count the record reports. A record that carries
+the count beside a shortened reference list is written as read — fewer
+elements than the total stops the script, never one PR read as the only one.
+
+### `pr.state`
+
+`OPEN`, `MERGED` or `CLOSED`, from that one PR's record — never from a list,
+which has been measured reporting a merged PR as not merged. A record that
+says `closed` with a merged flag set is `MERGED`; with the flag unset,
+`CLOSED`.
+
+### `pr.head.ref`
+
+The PR record's head branch, as the bare name: no `owner:` prefix, no
+`refs/heads/`.

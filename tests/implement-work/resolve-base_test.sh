@@ -1,46 +1,34 @@
 #!/usr/bin/env bash
 # Table test for skills/implement-work/scripts/resolve-base.sh: which base it
-# names for each shape of the issue's native `blockedBy` relation, and -- for
-# every answer that names one -- that the branch was really fetched.
+# names for each shape of the issue's prerequisite line (`Blocked-By: #N`) and
+# of the facts about the PR that closes that prerequisite, and -- for every
+# answer that names one -- that the branch was really fetched.
+#
+# The script reads no issue or PR itself: issue-backed rows hand it a fact
+# fixture (facts_file) and stub nothing. The one gh call left is the shared
+# tools/resolve-default-branch.sh's `gh repo view`, stubbed on the rows that
+# reach the default branch; yowcow/dude#571 ports it.
 #
 # git is not stubbed. Which ref a fetch updates is git's own behaviour, so a
 # git stub would encode the test author's belief about that rather than git's
-# behaviour.
-#
-# The `BASE X` line is printed whether or not the fetch happened, so the
-# stdout assertions carry nothing about it and the check_tracking assertions
-# carry all of it.
+# behaviour. The `BASE X` line is printed whether or not the fetch happened,
+# so the check_tracking assertions carry the fetch.
 #
 # The remote every row shares holds three branches: `main` and `feature` with
 # two commits each, and `decoy` with one. `decoy` is what the work repository
 # checks out, and each row plants both tracking refs one commit behind. A row
-# that expects a fetch therefore asserts the ref MOVED to the tip, and a row
-# that expects none asserts it stayed behind -- which also distinguishes
-# "fetched the default branch" from "fetched the prerequisite's head" in the
-# two rows that could otherwise be told apart only by their stdout.
+# that expects a fetch asserts the ref MOVED to the tip, and a row that
+# expects none asserts it stayed behind.
 #
-# Limitation: the shared resolve-default-branch.sh's gh call is stubbed with
-# gh_stub_response, so the `--jq .defaultBranchRef.name` expression itself is
-# not executed. The two `gh issue view` calls carry no --jq, so the SUT's own
-# jq -- the counting this file's `two-prerequisites` and `several-prs` rows
-# exist for -- does run.
-#
-# RED verification (see tests/README.md). The script is new, so there is no
-# pre-fix version; each variant below is one mutation of a guard the SUT's own
-# header names, and the rows it must fail are named:
-#   - blockedBy counted -> checked for emptiness: two-prerequisites-stop
-#   - closedByPullRequestsReferences counted with `length` -> checked for
-#     emptiness: prerequisite-has-several-prs
-#   - the emptiness check in the shared tools/resolve-default-branch.sh dropped:
-#     default-branch-api-answers-empty. The guard lives in that script rather
-#     than in this SUT, so the mutant is reached by laying out both scripts as
-#     skills/implement-work/scripts/resolve-base.sh and
-#     tools/resolve-default-branch.sh under a temp root and pointing SUT= at
-#     the copied resolve-base.sh -- a lone copy cannot find its sibling
-#     through dirname "$0" and fails every row
-#     for that reason instead (tests/README.md records the same shape for
-#     watch-copilot-review.sh). Its primary RED lives in
-#     tests/tools/resolve-default-branch_test.sh.
+# RED verification (see tests/README.md): against the pre-port script
+# (`git show f10c2ec:skills/implement-work/scripts/resolve-base.sh`) the
+# no-facts row fails on an unstubbed `gh issue view`, and every `--facts` row
+# fails on the old script's exit-2 usage error. Mutants, laid out as
+# skills/implement-work/scripts/resolve-base.sh beside a copy of tools/ under
+# a temp root (the script reaches tools/ through SCRIPT_DIR, so a lone copy
+# fails every row for that reason instead): testing the closing PRs for
+# emptiness instead of counting them fails 'prerequisite has two prs';
+# dropping the `prereq.number=` pin fails 'prerequisite read as another issue'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -54,15 +42,11 @@ set -euo pipefail
 
 SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/resolve-base.sh}"
 
-PR_JQ='"\(.headRefName) \(.state)"'
-
 failed=0
 total=0
 
 # build_remote <name> -- prints the path of a bare repo holding `main` and
-# `feature` with two commits each and `decoy` with one. The second commit on
-# main and on feature is what a fetch has to bring in: every work repository
-# below plants its tracking refs at the first.
+# `feature` with two commits each and `decoy` with one.
 build_remote() {
   local bare seed
   bare="$(git_repo_bare acme "$1")"
@@ -80,10 +64,8 @@ build_remote() {
   printf '%s\n' "$bare"
 }
 
-# work_repo <name> <bare> [<origin-head>] -- prints the path of a work repo
-# cloned from <bare> with `decoy` checked out, its origin/main and
-# origin/feature planted one commit behind the remote, and
-# refs/remotes/origin/HEAD pointed at <origin-head> when one is given.
+# work_repo <name> <bare> [<origin-head>] -- a clone of <bare> on `decoy`,
+# origin/main and origin/feature planted one commit behind.
 work_repo() {
   local dir
   dir="$(git_repo_clone "$1" "$2" decoy)"
@@ -95,10 +77,7 @@ work_repo() {
   printf '%s\n' "$dir"
 }
 
-# stale_ref <work> <bare> <branch> -- plant refs/remotes/origin/<branch> at the
-# remote's <branch>~1, i.e. one commit behind. "Behind" rather than "absent" on
-# purpose: absence would also be reported by a `git fetch` that failed, while a
-# ref sitting at the older commit is what an earlier fetch leaves behind.
+# stale_ref <work> <bare> <branch> -- refs/remotes/origin/<branch> at <branch>~1
 stale_ref() {
   local sha
   sha="$(git -C "$2" rev-parse "refs/heads/$3~1")"
@@ -122,334 +101,267 @@ check_tracking() {
   check_eq "$1" "$want" "$got"
 }
 
-# stub_blocked <issue> <exit-status> -- `gh issue view <issue> --json blockedBy`
-stub_blocked() {
-  gh_stub_response '*' "$2" issue view --json blockedBy -- "$1"
-}
-
-# stub_prereq_prs <issue> <exit-status> -- the prerequisite's closing PRs
-stub_prereq_prs() {
-  gh_stub_response '*' "$2" issue view --json closedByPullRequestsReferences -- "$1"
-}
-
-# stub_pr_view <pr> <exit-status> -- raw, so the SUT's own --jq runs
-stub_pr_view() {
-  gh_stub_raw_response '*' "$2" pr view --json headRefName,state --jq "$PR_JQ" -- "$1"
-}
-
-# stub_default_branch <exit-status> -- the `gh repo view` rung of the
+# stub_default_branch <exit-status> -- the `gh repo view` rung of the shared
 # default-branch ladder, body already filtered
 stub_default_branch() {
   gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
-# blocked_json <count> <number>... -- the shape `gh issue view --json blockedBy`
-# returns: {nodes, totalCount}. totalCount is passed separately from the nodes
-# because that is the field the SUT counts.
-# The loops below are guarded on `$#` rather than iterating `"$@"` directly:
-# under `set -u` an empty `"$@"` is an unbound-variable error in bash before
-# 4.4, and the `blocked_json 0` / `prs_json` calls are exactly that case.
-blocked_json() {
-  local count="$1" sep='' out='' n
-  shift
-  if [ "$#" -gt 0 ]; then
-    for n in "$@"; do
-      out="${out}${sep}{\"number\":${n}}"
-      sep=','
-    done
-  fi
-  printf '{"blockedBy":{"nodes":[%s],"totalCount":%s}}\n' "$out" "$count"
-}
-
-# prs_json <number>... -- closedByPullRequestsReferences is a plain array here,
-# which is why the SUT counts it with `length` and not with a totalCount field.
-prs_json() {
-  local sep='' out='' n
-  if [ "$#" -gt 0 ]; then
-    for n in "$@"; do
-      out="${out}${sep}{\"number\":${n}}"
-      sep=','
-    done
-  fi
-  printf '{"closedByPullRequestsReferences":[%s]}\n' "$out"
+# body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
+body() {
+  local f
+  f="$(mktemp "${HARNESS_TMP}/body.XXXXXX")"
+  printf '%b' "$1" >"$f"
+  printf '%s\n' "$f"
 }
 
 REMOTE="$(build_remote base)"
+REPO=acme/base
+LINE='Blocked-By: #77\n'
+CHILD_BODY='- **前提：** #77（item 1）に stack する。\n\n親の設計：https://example.invalid/1\n\nBlocked-By: #77\n'
+
+# round1 <body-path> [<issue> [<repo>]] -- the issue's facts
+round1() {
+  facts_file <<EOF
+repo=${3:-$REPO}
+issue.number=${2:-203}
+issue.body-file=$1
+EOF
+}
+
+# round2 <prereq> <total> [<pr>...] -- round 1 for a one-line body, plus the
+# prerequisite's closing PRs. The loop is guarded on $# because an empty "$@"
+# is an unbound-variable error under set -u before bash 4.4.
+round2() {
+  local p="$1" t="$2" n
+  shift 2
+  {
+    printf 'repo=%s\nissue.number=203\nissue.body-file=%s\nprereq.number=%s\n' \
+      "$REPO" "$(body "$LINE")" "$p"
+    if [ "$#" -gt 0 ]; then
+      for n in "$@"; do printf 'prereq.closing-pr=%s\n' "$n"; done
+    fi
+    printf 'prereq.closing-pr.total=%s\n' "$t"
+  } | facts_file
+}
+
+# round3 <state> [<head> [<pr>]] -- one closing PR, 55, and its record
+round3() {
+  facts_file <<EOF
+repo=${REPO}
+issue.number=203
+issue.body-file=$(body "$LINE")
+prereq.number=77
+prereq.closing-pr=55
+prereq.closing-pr.total=1
+pr.number=${3:-55}
+pr.state=$1
+pr.head.ref=${2-feature}
+EOF
+}
 
 # ---- arguments ----------------------------------------------------------
-#
-# The row runs from a work repository that could have answered, so a failure
-# here is the guard's and not the fixture's. Two arguments, not three: the
-# guard is `-gt 1`, and the boundary is what a row has to sit on.
+
+W="$(work_repo args "$REMOTE" main)"
 
 row_start
-W="$(work_repo args-extra "$REMOTE" main)"
 run_in "$W" 203 extra
-assert_row 'too-many-arguments' 2 '' 0
-tally check_tracking 'too-many-arguments: origin/main' "$W" "$REMOTE" main stale
-
+assert_row 'two arguments' 2 '' 0
 total=$((total + 1))
 if ! grep -q 'Usage:' "$SUT_STDERR"; then
-  printf 'FAIL too-many-arguments: stderr carries no usage line:\n%s\n' \
-    "$(head -c 400 "$SUT_STDERR")"
+  printf 'FAIL two arguments: stderr carries no usage line\n'
   failed=$((failed + 1))
 fi
 
-# ---- no argument at all -------------------------------------------------
-#
-# A task with no issue behind it has no relation to read, which has to land on
-# the same answer as a count of 0 -- and reach `gh issue view` not at all. The
-# point is not that `gh` is called zero times -- the default-branch ladder's
-# own `gh repo view` call runs on this row too -- but that the single `gh`
-# call is that one and `gh issue view` is never among them: an implementation
-# that asked about an empty issue number would be answered by the stub as a
-# violation, since the argv-exact-match stub has no case for an empty number.
+row_start
+run_in "$W" 203 --facts
+assert_row '--facts without a file' 2 '' 0
+
+row_start
+run_in "$W" 203 --state x
+assert_row 'unknown option' 2 '' 0
+
+row_start
+run_in "$W" abc
+assert_row 'non-numeric issue' 2 '' 0
+tally check_tracking 'arguments: origin/main untouched' "$W" "$REMOTE" main stale
+
+# ---- no issue: the default branch, no facts asked for -------------------
 
 row_start
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo no-arg "$REMOTE" main)"
 run_in "$W"
-assert_row 'no-argument-uses-default-branch' 0 'BASE main\n' 1
-tally check_tracking 'no-argument: origin/main fetched' "$W" "$REMOTE" main tip
-tally check_tracking 'no-argument: origin/feature untouched' "$W" "$REMOTE" feature stale
+assert_row 'no argument uses the default branch' 0 'BASE main\n' 1
+tally check_tracking 'no argument: origin/main fetched' "$W" "$REMOTE" main tip
+tally check_tracking 'no argument: origin/feature untouched' "$W" "$REMOTE" feature stale
 
-# ---- blockedBy: 0 -------------------------------------------------------
+# ---- round 1: the issue's body -------------------------------------------
 
 row_start
-blocked_json 0 | stub_blocked 203 0
+W="$(work_repo no-facts "$REMOTE" main)"
+run_in "$W" 203
+assert_row 'issue without facts: NEED pins repo and issue' 0 \
+  'NEED repo=acme/base issue.number=203 issue.body-file\n' 0
+tally check_tracking 'no facts: no fetch' "$W" "$REMOTE" main stale
+
+row_start
 printf 'main\n' | stub_default_branch 0
-W="$(work_repo blocked-none "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'no-prerequisite-uses-default-branch' 0 'BASE main\n' 2
-tally check_tracking 'no-prerequisite: origin/main fetched' "$W" "$REMOTE" main tip
-
-# ---- blockedBy: 2 or more ----------------------------------------------
-#
-# The counting guard's row. `.blockedBy.totalCount` is read rather than
-# "are there any", because emptiness cannot tell one prerequisite from three
-# and this row is where the two answers differ.
-#
-# Both downstream calls are stubbed even though a correct SUT makes neither:
-# without them a mutation that counted emptiness would fail as "an argv no
-# case stubbed", which names the mechanism rather than the defect, while with
-# them it fails as `BASE feature` against `STOP ask-multiple-prereqs` -- the
-# defect itself. The `gh calls` assertion is what holds the two entries to
-# being unused.
+W="$(work_repo line-none "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body 'purpose\n\nno prerequisite\n')")"
+assert_row 'no prerequisite line uses the default branch' 0 'BASE main\n' 1
+tally check_tracking 'no line: origin/main fetched' "$W" "$REMOTE" main tip
 
 row_start
-blocked_json 2 77 88 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
-W="$(work_repo blocked-two "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'two-prerequisites-stop' 0 'STOP ask-multiple-prereqs\n' 1
-tally check_tracking 'two-prerequisites: no fetch' "$W" "$REMOTE" main stale
-
-# ---- the blockedBy lookup itself fails ---------------------------------
-#
-# "Could not ask" must not be answered as "there is none". The failure takes
-# the controlled STOP path, not a bare non-zero exit with empty stdout, and
-# the row pins that it is not `BASE main`.
+W="$(work_repo line-one "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body "$CHILD_BODY")")"
+assert_row 'one prerequisite line asks for its closing prs' 0 \
+  'NEED prereq.number=77 prereq.closing-pr\n' 0
+tally check_tracking 'one line: no fetch yet' "$W" "$REMOTE" main stale
 
 row_start
-printf 'gh: HTTP 502\n' | stub_blocked 203 1
-W="$(work_repo blocked-fails "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'blockedBy-lookup-fails' 0 'STOP blocked-lookup-failed\n' 1
-tally check_tracking 'blockedBy-lookup-fails: no fetch' "$W" "$REMOTE" main stale
-
-# ---- the prerequisite has no PR ----------------------------------------
+W="$(work_repo line-two "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body 'Blocked-By: #77\nBlocked-By: #78\n')")"
+assert_row 'two prerequisite lines stop' 0 'STOP ask-multiple-prereqs\n' 0
+tally check_tracking 'two lines: no fetch' "$W" "$REMOTE" main stale
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json | stub_prereq_prs 77 0
+W="$(work_repo line-bad "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body 'Blocked-by #77\n')")"
+assert_row 'malformed prerequisite line stops' 0 'STOP prereq-line-malformed\n' 0
+tally check_tracking 'malformed: no fetch' "$W" "$REMOTE" main stale
+
+row_start
+W="$(work_repo body-gone "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "${HARNESS_TMP}/nosuch")"
+assert_row 'body file unreadable' 0 'STOP body-unreadable\n' 0
+
+row_start
+W="$(work_repo wrong-issue "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body "$LINE")" 204)"
+assert_row 'another issue read' 0 'STOP fact-mismatch\n' 0
+
+row_start
+W="$(work_repo wrong-repo "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round1 "$(body "$LINE")" 203 upstream/base)"
+assert_row 'issue read in another repo' 0 'STOP fact-mismatch\n' 0
+
+row_start
+W="$(round1 "$(body "$LINE")")"
+NOORIGIN="$(git_repo_scratch noorigin)"
+git_repo_init "$NOORIGIN" main
+run_in "$NOORIGIN" 203 --facts "$W"
+assert_row 'no origin' 0 'STOP repo-lookup-failed\n' 0
+
+# ---- round 2: the prerequisite's closing PRs -----------------------------
+
+row_start
 W="$(work_repo prs-none "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-has-no-pr' 0 'STOP not-implemented\n' 2
-tally check_tracking 'prerequisite-has-no-pr: no fetch' "$W" "$REMOTE" main stale
-
-# ---- the prerequisite has two PRs --------------------------------------
-#
-# The second counting guard's row: closedByPullRequestsReferences comes back as
-# a plain array, so it is counted with `length`. The `pr view` entry is stubbed
-# and unused for the same reason as the two-prerequisites row -- a mutation
-# that counted emptiness then fails as `BASE feature` against
-# `STOP ask-multiple-prs` rather than as an unstubbed argv.
+run_in "$W" 203 --facts "$(round2 77 0)"
+assert_row 'prerequisite has no pr' 0 'STOP not-implemented\n' 0
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 66 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo prs-two "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
-tally check_tracking 'prerequisite-has-several-prs: no fetch' "$W" "$REMOTE" main stale
-
-# ---- the PR lookup itself fails ----------------------------------------
+run_in "$W" 203 --facts "$(round2 77 2 55 66)"
+assert_row 'prerequisite has two prs' 0 'STOP ask-multiple-prs\n' 0
+tally check_tracking 'two prs: no fetch' "$W" "$REMOTE" main stale
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-printf 'gh: HTTP 502\n' | stub_prereq_prs 77 1
-W="$(work_repo prs-fails "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-pr-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
-tally check_tracking 'prerequisite-pr-lookup-fails: no fetch' "$W" "$REMOTE" main stale
-
-# ---- PR state: OPEN ----------------------------------------------------
-#
-# The prerequisite's head is the base, and it is really fetched: origin/feature
-# has to move to the remote's tip. origin/main staying behind is the other half
-# of the answer -- it is what distinguishes this row from the MERGED one below
-# by something other than its stdout.
+W="$(work_repo prs-short "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round2 77 2 55)"
+assert_row 'closing prs cut short' 0 'STOP fact-count\n' 0
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"OPEN"}\n' | stub_pr_view 55 0
+W="$(work_repo prs-other "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round2 78 1 55)"
+assert_row 'prerequisite read as another issue' 0 'STOP fact-mismatch\n' 0
+
+row_start
+W="$(work_repo prs-one "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round2 77 1 55)"
+assert_row 'one closing pr asks for its record' 0 'NEED pr.number=55 pr.state pr.head.ref\n' 0
+
+# ---- round 3: the PR's state -----------------------------------------------
+
+row_start
 W="$(work_repo state-open "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-open-uses-its-head' 0 'BASE feature\n' 3
+run_in "$W" 203 --facts "$(round3 OPEN)"
+assert_row 'prerequisite open uses its head' 0 'BASE feature\n' 0
 tally check_tracking 'open: origin/feature fetched' "$W" "$REMOTE" feature tip
 tally check_tracking 'open: origin/main untouched' "$W" "$REMOTE" main stale
 
-# ---- PR state: MERGED --------------------------------------------------
-
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"MERGED"}\n' | stub_pr_view 55 0
 printf 'main\n' | stub_default_branch 0
 W="$(work_repo state-merged "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-merged-uses-the-default-branch' 0 'BASE main\n' 4
+run_in "$W" 203 --facts "$(round3 MERGED)"
+assert_row 'prerequisite merged uses the default branch' 0 'BASE main\n' 1
 tally check_tracking 'merged: origin/main fetched' "$W" "$REMOTE" main tip
 tally check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" feature stale
 
-# ---- PR state: CLOSED --------------------------------------------------
-
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"CLOSED"}\n' | stub_pr_view 55 0
 W="$(work_repo state-closed "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 3
+run_in "$W" 203 --facts "$(round3 CLOSED)"
+assert_row 'prerequisite closed stops' 0 'STOP abandoned-prerequisite\n' 0
 tally check_tracking 'closed: no fetch' "$W" "$REMOTE" main stale
 
-# ---- PR state: something else -----------------------------------------
-#
-# An unrecognised state is the one answer that is neither BASE nor STOP: the
-# SUT refuses to guess and exits 1. The stderr assertion names the state,
-# because "exit 1 with nothing readable" would leave the caller no way to tell
-# this apart from the two lookup failures above.
+# A record that reports `closed` plus a merged flag, written as read: the
+# enum stops it rather than letting it fall to either branch.
+row_start
+W="$(work_repo state-lower "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round3 closed)"
+assert_row 'state written lower-case' 0 'STOP fact-enum\n' 0
+tally check_tracking 'lower-case state: no fetch' "$W" "$REMOTE" main stale
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"DRAFT"}\n' | stub_pr_view 55 0
-W="$(work_repo state-unknown "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'prerequisite-state-unrecognised' 1 '' 3
-tally check_tracking 'unrecognised: no fetch' "$W" "$REMOTE" main stale
-
-total=$((total + 1))
-if ! grep -q "unexpected PR state 'DRAFT' for PR 55" "$SUT_STDERR"; then
-  printf 'FAIL prerequisite-state-unrecognised: stderr names neither the state nor the PR:\n%s\n' \
-    "$(head -c 400 "$SUT_STDERR")"
-  failed=$((failed + 1))
-fi
-
-# ---- the pr view itself fails ------------------------------------------
+W="$(work_repo pr-other "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round3 OPEN feature 56)"
+assert_row 'pr read as another pr' 0 'STOP fact-mismatch\n' 0
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf 'gh: HTTP 502\n' | stub_pr_view 55 1
-W="$(work_repo pr-view-fails "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'pr-view-fails' 0 'STOP pr-lookup-failed\n' 3
-tally check_tracking 'pr-view-fails: no fetch' "$W" "$REMOTE" main stale
+W="$(work_repo head-empty "$REMOTE" main)"
+run_in "$W" 203 --facts "$(round3 OPEN '')"
+assert_row 'head unreadable' 0 'STOP fact-missing\n' 0
 
-# ---- the default-branch ladder ----------------------------------------
-#
-# Two-rung ladder: the GitHub API, then give up. Every row here runs with no
-# argument, so the issue lookups stay out of the picture and the gh call
-# count is the ladder's own.
-#
-# The first row plants a stale refs/remotes/origin/HEAD symref naming `main`
-# -- the wrong branch -- and stubs the API to answer `feature`, the right
-# one, then asserts the base comes from `feature`: the symref is never
-# consulted, so a stale answer sitting in it cannot steer the base even when
-# it disagrees with the API.
+row_start
+printf 'gh: HTTP 502\n' | stub_default_branch 1
+W="$(work_repo merged-no-default "$REMOTE")"
+run_in "$W" 203 --facts "$(round3 MERGED)"
+assert_row 'merged with no resolvable default' 0 'STOP ask-default-branch\n' 1
+tally check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main stale
+
+# ---- the default-branch ladder (shared tool, reached with no issue) ------
 
 row_start
 printf 'feature\n' | stub_default_branch 0
 W="$(work_repo ladder-stale-symref "$REMOTE" main)"
 run_in "$W"
-assert_row 'stale-symref-is-ignored' 0 'BASE feature\n' 1
+assert_row 'stale symref is ignored' 0 'BASE feature\n' 1
 tally check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
-tally check_tracking 'stale symref: origin/main untouched' "$W" "$REMOTE" main stale
-
-row_start
-printf 'main\n' | stub_default_branch 0
-W="$(work_repo ladder-api "$REMOTE")"
-run_in "$W"
-assert_row 'default-branch-from-api' 0 'BASE main\n' 1
-tally check_tracking 'api rung: origin/main fetched' "$W" "$REMOTE" main tip
-
-# An API answer that is empty is not a branch name. Without the non-empty
-# check the SUT would print `BASE ` and fetch nothing under that name -- a
-# guessed answer where the ladder is meant to give up.
 
 row_start
 : | stub_default_branch 0
 W="$(work_repo ladder-api-empty "$REMOTE")"
 run_in "$W"
-assert_row 'default-branch-api-answers-empty' 0 'STOP ask-default-branch\n' 1
-tally check_tracking 'api empty: no fetch' "$W" "$REMOTE" main stale
+assert_row 'default branch api answers empty' 0 'STOP ask-default-branch\n' 1
 
 row_start
 printf 'gh: HTTP 502\n' | stub_default_branch 1
 W="$(work_repo ladder-api-fails "$REMOTE")"
 run_in "$W"
-assert_row 'default-branch-lookup-fails' 0 'STOP ask-default-branch\n' 1
-tally check_tracking 'api fails: no fetch' "$W" "$REMOTE" main stale
+assert_row 'default branch lookup fails' 0 'STOP ask-default-branch\n' 1
 
-# The MERGED path resolves the default branch through the same ladder, so it
-# reaches the same STOP. The row exists because that ladder call sits behind
-# two issue lookups there, and a version that only handled the count-0 path
-# would answer this one differently.
-
-row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"feature","state":"MERGED"}\n' | stub_pr_view 55 0
-printf 'gh: HTTP 502\n' | stub_default_branch 1
-W="$(work_repo merged-no-default "$REMOTE")"
-run_in "$W" 203
-assert_row 'merged-with-no-resolvable-default' 0 'STOP ask-default-branch\n' 4
-tally check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main stale
-
-# ---- fetches that fail -------------------------------------------------
-#
-# The API answered a name the remote does not have, which is how a row builds
-# "the default branch is named but absent from the remote". fetch_ref has no
-# handling for it, so git's 128 propagates under `set -e` and nothing is
-# printed -- the loud direction, and the row pins that it is not `BASE nosuch`.
+# ---- fetches that fail ----------------------------------------------------
 
 row_start
 printf 'nosuch\n' | stub_default_branch 0
 W="$(work_repo default-absent "$REMOTE")"
 run_in "$W"
-assert_row 'default-branch-absent-on-remote' 1 '' 1
+assert_row 'default branch absent on remote' 1 '' 1
 
 row_start
-blocked_json 1 77 | stub_blocked 203 0
-prs_json 55 | stub_prereq_prs 77 0
-printf '{"headRefName":"nosuch","state":"OPEN"}\n' | stub_pr_view 55 0
 W="$(work_repo head-absent "$REMOTE" main)"
-run_in "$W" 203
-assert_row 'open-head-absent-on-remote' 1 '' 3
+run_in "$W" 203 --facts "$(round3 OPEN nosuch)"
+assert_row 'open head absent on remote' 1 '' 0
 tally check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
 
 harness_exit "$failed" "$total"
