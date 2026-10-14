@@ -235,8 +235,8 @@ A run's sessions need not all be at the same tier.
 | Mostly executing and inquiring | `implement-work`, `pr-to-ready` | A cheaper tier carries them |
 
 Every other session runs at whatever tier you launch it at. Three sections below are what that
-leaves you to handle: **What tier a marked worker runs at**, for keeping the
-marked workers high once the session under them is cheap,
+leaves you to handle: **What tier a marked worker runs at**, for keeping each
+marked worker at its tier once the session under it is cheap,
 **What the run's own tier decides**, for the judgments that come down with the
 session instead of staying with those workers, and **What else the run's cost
 rides on**, for the session length and worker count that remain after the
@@ -301,15 +301,18 @@ plugin namespace the host adds.
 
 ### What tier a marked worker runs at
 
-On Claude Code, dude ships one agent type, `dude:highest-tier`, whose
-definition carries `model: best`, which Claude Code resolves to the highest
-model it has available. A marked worker dispatched as that type without a model
+On Claude Code, dude ships one agent type per tier in `using-dude`'s
+**Worker tier**: `dude:highest-tier`, whose definition carries `model: best`,
+which Claude Code resolves to the highest model it has available, and
+`dude:high-tier`, whose definition carries `model: opus`, the top of the
+regular lineup. A marked worker dispatched as its tier's type without a model
 of its own runs there, whatever the run's own tier and the subagent default.
 Any other marked worker dispatched without a model of its own lands on the
 runtime's subagent default rather than the run's own tier, which only takes over
 when no default is set — so raising the run's own tier does not reach the worker
 where the default sits below it. An explicit `model` argument on the dispatch
-overrides both outright, even to a lower tier — so neither the type nor the
+overrides both outright, even to a lower tier — which is also how to cap a tier
+below what its type carries — so neither the type nor the
 default being set correctly is evidence that every marked dispatch honors it. On
 Claude Code the default is the environment variable
 `CLAUDE_CODE_SUBAGENT_MODEL`, not a `settings.json` key; set it to the highest
@@ -349,18 +352,18 @@ worker count, which lowering the main loop's tier does not reduce
 [correction](https://github.com/yowcow/dude/issues/169#issuecomment-5535611330)).
 
 The subagent default also carries the roles that no skill marks —
-`implement-work`'s plan drafter, `simplify-code`'s proposer and verdict
-worker, and the execution method's per-task reviewer and per-task
-implementer. Dispatched without a `model` of its own, each rides the same
-ceiling that **What tier a marked worker runs at** above sets for the marked
-workers' sake. Across 158 Claude Code dispatches of the four roles other
-than the verdict worker, which the measurement predates, the
-58 with no `model` argument all landed on Opus, at $61 over a
+`implement-work`'s plan drafter, `simplify-code`'s verdict worker, and the
+execution method's per-task reviewer and per-task implementer. Dispatched
+without a `model` of its own, each rides the same ceiling that **What tier a
+marked worker runs at** above sets for the marked workers' sake. Across 158
+Claude Code dispatches of `implement-work`'s plan drafter, `simplify-code`'s
+proposer, and the execution method's per-task reviewer and per-task
+implementer, the 58 with no `model` argument all landed on Opus, at $61 over a
 four-day window, and the 100 with one all landed off Opus — the
 `implement-work` plan drafter alone accounted for $35 of that $61
 ([measurements](https://github.com/yowcow/dude/pull/514)).
-Lowering the default would pull every marked worker not dispatched as
-`dude:highest-tier` down with it
+Lowering the default would pull every marked worker dispatched as neither
+`dude:high-tier` nor `dude:highest-tier` down with it
 ([yowcow/dude#266](https://github.com/yowcow/dude/issues/266)).
 
 ## Development
