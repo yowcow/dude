@@ -337,9 +337,7 @@ depends on:
 11. **The payload of an `--input -` call is recorded, and its absence is its
     own failure** — `review-pr`'s `post-review.sh` pipes its payload to `gh`
     on stdin precisely so it never reaches the shell, which puts the body
-    outside the argv the stub matches on. Without the payload, `jq -Rs` and
-    `jq -R` are indistinguishable: dropping the slurp sends one JSON document
-    per line and changes no byte of the argv. `check_gh_stdin` compares those
+    outside the argv the stub matches on. `check_gh_stdin` compares those
     bytes, and reports "gh read no stdin payload" separately from "the bytes
     differ", because a script that stopped piping its body would otherwise be
     charged with sending different bytes, and an empty expectation would let it
