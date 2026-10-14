@@ -40,7 +40,7 @@ count=0
 n=''
 while IFS= read -r line || [ -n "$line" ]; do
   line="${line%$'\r'}"
-  lead="${line#"${line%%[![:space:]>*+0-9.)-]*}"}"
+  lead="${line#"${line%%[![:space:]>*+0-9.)[\]xX-]*}"}"
   case "$lead" in
     [Bb][Ll][Oo][Cc][Kk][Ee][Dd][[:space:]-][Bb][Yy]*) ;;
     *) continue ;;
