@@ -35,7 +35,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 ### 3. Vet
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention, and bind its absolute path as `<head-dir>`: this checkout is not the PR's head, and a worker reading files here judges code the PR does not contain. Remove the worktree when the run ends.
-- Invoke `vet-code` once, handing it as the scope the committed range `<base>..<head>` together with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements — the PR body —, and the requirements. A worker does not inherit this session's working directory, and the scope is the one input `vet-code` passes to its reviewer and its verdict workers alike. Take back its judged findings and re-judge none of them.
+- Invoke `vet-code` once, handing it as the scope the committed range `<base>..<head>` together with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements — the PR body —, and the requirements, saying so when they include a settled purpose. A worker does not inherit this session's working directory, and the scope is the one input `vet-code` passes to its reviewer and its verdict workers alike. Take back its judged findings and re-judge none of them.
 
 ### 4. Draft
 
