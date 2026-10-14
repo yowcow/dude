@@ -46,7 +46,6 @@ while IFS= read -r line || [ -n "$line" ]; do
     *) continue ;;
   esac
   count=$((count + 1))
-  n=''
   if [[ "$line" =~ $WELL_FORMED ]]; then
     n="${BASH_REMATCH[1]}"
   fi
