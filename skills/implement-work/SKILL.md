@@ -66,13 +66,14 @@ That skill detects existing isolation from the current directory only, and its c
 
 Only `CREATE` above needs this — `REUSE` and `ATTACHED` attach to a branch that already exists.
 
-A task with no tracking issue — the chat-only entry — has no relation to read at all: branch from the default branch. Everything below applies only when an issue backs the task.
+A task with no tracking issue — the chat-only entry — has no prerequisite line to read at all: branch from the default branch. Everything below applies only when an issue backs the task.
 
 Run `<skill-dir>/scripts/resolve-base.sh <issue-number>`.
 
-- It reads the prerequisite from the issue's native `blockedBy` relation, never from issue-body prose, and settles the base from that prerequisite's PR state: `OPEN` → that PR's head; `MERGED` → the default branch — both fetched first, so the branch you cut actually contains what it's meant to.
+- It reads the prerequisite from the one `Blocked-By: #N` line `plan-work` writes in the issue's body, and settles the base from the state of the PR that closes that prerequisite: `OPEN` → that PR's head; `MERGED` → the default branch — both fetched first, so the branch you cut actually contains what it's meant to.
+- `NEED <token>...` — read the facts it names as `<skill-dir>/references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - Read its one-line answer: `BASE <branch>` — cut the new branch from `origin/<branch>`, the remote-tracking ref the script has just fetched, and **not** from the bare name.
-- `STOP <reason>` — no prerequisite's PR exists at all, more than one prerequisite or PR reference, or a prerequisite closed without merging: stop, and either report why the task can't start or ask a person which base to use, per the reason printed.
+- `STOP <reason>` — a prerequisite line that is malformed or not the only one, no PR on the prerequisite or more than one, a prerequisite closed without merging, or a fact that could not be read: stop, and either report why the task can't start or ask a person which base to use, per the reason printed.
 
 **Record a non-default base** as a single `Base-Branch: <base>` line in the trailer block of this task's **first** commit — `<base>` the bare branch name, no `origin/` prefix and no `refs/heads/` path. Branching from the default branch records nothing.
 
@@ -152,7 +153,7 @@ Add only what the execution method left undone.
    - A round that changed nothing commits nothing, and anything you can't account for as this round's own work stops the gate and goes to the user rather than being swept in.
 5. **Absorb the base** — run `<skill-dir>/scripts/absorb-base.sh <branch> <base>`, with `<base>` **re-resolved now** rather than the base the branch was cut from.
 
-   - Run `<skill-dir>/scripts/resolve-base.sh <issue-number>` again and take the bare name it prints after `BASE`, handling a `STOP` as **Base branch** does; a task with no issue behind it uses the default branch.
+   - Run `<skill-dir>/scripts/resolve-base.sh <issue-number>` again, with every fact read afresh rather than the file written when the branch was cut — that file still says `OPEN` after the prerequisite merged — and take the bare name it prints after `BASE`, handling `NEED` and `STOP` as **Base branch** does; a task with no issue behind it uses the default branch.
    - **Base branch**'s `origin/` prefix belongs to cutting a branch and is wrong here — this step fetches the base itself, so the bare name is what it wants, and an `origin/`-prefixed one sends the fetch after `refs/heads/origin/<base>` and stops the gate reporting a base that is missing when it is not.
    - That is the answer to "what will this merge into", which is a different question from the base of the range `review-code` reviews; `references/base-branch.md` holds why the two may differ, and why this sits here rather than where the branch was cut.
    - It comes after Commit because the first round can still hold the execution method's uncommitted changes, and `git merge` requires a clean tree.
