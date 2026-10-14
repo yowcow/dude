@@ -213,7 +213,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
 | Verdict comment | May not mention `@claude`, which would re-trigger the workflow. |
 
-Any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+Any `@claude` inside finding summaries/bodies or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
 No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
