@@ -18,7 +18,7 @@
 # read must be named as such, rather than compared against as far as it got and
 # charged to the script under test. And the payload of an `--input -` call must
 # be recorded, with its absence its own failure distinct from a byte mismatch —
-# without it, the three `plan-work` posting scripts' stdin-piped body is
+# without it, `review-pr`'s `post-review.sh` stdin-piped payload is
 # unobservable, since it never reaches the argv the stub matches on.
 #
 # The eleven numbered blocks below run in that order, matching the numbered list

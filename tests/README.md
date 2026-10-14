@@ -335,8 +335,8 @@ depends on:
     inward. The same guard keeps a plain (non-`if`) call from aborting the
     whole test file under `set -e`.
 11. **The payload of an `--input -` call is recorded, and its absence is its
-    own failure** — the three `plan-work` posting scripts pipe their body to
-    `gh` on stdin precisely so it never reaches the shell, which puts the body
+    own failure** — `review-pr`'s `post-review.sh` pipes its payload to `gh`
+    on stdin precisely so it never reaches the shell, which puts the body
     outside the argv the stub matches on. Without the payload, `jq -Rs` and
     `jq -R` are indistinguishable: dropping the slurp sends one JSON document
     per line and changes no byte of the argv. `check_gh_stdin` compares those
