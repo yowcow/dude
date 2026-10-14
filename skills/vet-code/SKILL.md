@@ -31,6 +31,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
    - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
 2. **What was implemented** — what the change does, or for a paths-only scope what the code is for.
 3. **The requirements** — the plan, or the original request. When there is none, say so in the prompt: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+   - **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
 4. **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
 
 Confine every search to the project root or narrower.
