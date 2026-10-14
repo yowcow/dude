@@ -169,7 +169,7 @@ Delegate collection to a subagent:
 
 Otherwise branch on this round's findings.
 
-When there is no finding (LGTM or empty reviews): go to the clean judgment. Nothing is written to the PR this round; the measured values go in the round's report to the caller.
+When there is no finding (LGTM or empty reviews): go to the clean judgment.
 
 When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post per **Posting** below. Do not evaluate the six clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
 
@@ -213,7 +213,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
 | Verdict comment | May not mention `@claude`, which would re-trigger the workflow. |
 
-Reproduced text keeps its observed values, except any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+Any `@claude` inside listing outputs, finding summaries/bodies, or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
 No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
