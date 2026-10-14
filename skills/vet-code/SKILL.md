@@ -12,9 +12,9 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 **This skill dispatches two kinds of worker: a read-only reviewer, and one verdict worker per finding.** Nothing else leaves the main loop.
 
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns findings only. It never edits code, never runs the project's checks, never commits, and never declares the code clean.
-- The reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
+- The reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
-- **Judging a finding never happens in the main loop**, and goes out at that same marked tier.
+- **Judging a finding never happens in the main loop**, and goes out at that same `high` tier.
   - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
   - One worker per finding, launched together, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`.
   - Each gets the finding, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.

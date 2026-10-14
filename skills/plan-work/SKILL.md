@@ -12,7 +12,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - The orchestrator owns everything that decides: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, folding the accepted findings in, calling convergence or escalation, and publishing.
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
-- **This skill dispatches one worker of its own: the alternative proposer.** It is dispatched at the tier `using-dude`'s **Worker tier** sets for a marked worker: a route it misses reads as "nothing beats the human's means", and the comparison ends by ratifying that means.
+- **This skill dispatches one worker of its own: the alternative proposer.** It is dispatched at the `highest` tier in `using-dude`'s **Worker tier**: a route it misses reads as "nothing beats the human's means", and the comparison ends by ratifying that means.
 
 ## Boundaries
 

@@ -14,9 +14,9 @@ Use on planning work before any code is written, or on a revision of it. This re
 - A reviewer takes its assigned lenses, reports findings, and hands back.
   - It never edits what it reviewed and never declares the plan clean.
   - **Dispatch** sizes the fan-out.
-  - Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker.
+  - Each reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
-- **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the tier `using-dude`'s **Worker tier** sets for a marked worker — per `vet-code`'s **Output**.
+- **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the `high` tier in `using-dude`'s **Worker tier** — per `vet-code`'s **Output**.
   - What that buys here is that the main loop owns the very artifact under review — the TODO list or implementation plan the caller declared — folding every accepted finding into that artifact.
   - A verdict reached there rests on its own account of the design.
   - A real design flaw rejected on it flows into the implementation, which is all any later gate reads.

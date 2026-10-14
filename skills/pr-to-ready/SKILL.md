@@ -20,7 +20,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 **Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; running the requesting-code-review where selected; collecting reviewer comments into a structured list of findings; and evaluating each finding. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
-**Two workers here are marked** — their miss passes as "nothing found", so each goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: the requesting-code-review reviewer in 2-1, and each finding's evaluator in 2-3. Both are fresh-context, read-only workers that take the round's inputs from 2-1 and nothing of the main loop's own account.
+**Two workers here are marked** — their miss passes as "nothing found", so each goes out at the `high` tier in `using-dude`'s **Worker tier**: the requesting-code-review reviewer in 2-1, and each finding's evaluator in 2-3. Both are fresh-context, read-only workers that take the round's inputs from 2-1 and nothing of the main loop's own account.
 
 **Evaluating a finding never happens in the main loop**, on any round.
 

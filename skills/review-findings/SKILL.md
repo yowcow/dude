@@ -11,7 +11,7 @@ Use on a report whose deliverable is findings, once it is drafted and before it 
 
 **This skill always dispatches lens reviewers in a fresh context; it never reviews inline.** The main loop gathers the inputs, sizes the fan-out, takes the union of what they return, and reports. It re-judges none of those findings, and it dispatches no verdict worker.
 
-Each reviewer goes out at the tier `using-dude`'s **Worker tier** sets for a marked worker: a miss comes back as "nothing found", and only another reader catches it.
+Each reviewer goes out at the `highest` tier in `using-dude`'s **Worker tier**: a miss comes back as "nothing found", and only another reader catches it.
 
 One invocation is one pass. This skill never re-reviews on its own, never edits the report, and never declares a claim settled. Revising flagged claims to unsettled / not measured, then publishing, belongs to the caller.
 
@@ -66,7 +66,7 @@ Report "no findings" explicitly rather than inventing one.
 ## Pass
 
 1. Gather the inputs: the target report, the question it answers, and its stated sources. One invocation reviews exactly one target, once.
-2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the marked tier.
+2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the `highest` tier.
 3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
 4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. This skill never re-invokes itself.
 5. The caller re-invokes for a subtractive verification pass only on the ledger: its input is the accepted entries plus rejected entries the caller routes back through intake with new evidence; it runs the Evidence sufficiency lens only, sustains or rejects each accepted entry against each of its evidence pointers (sustained if any carries the claim), re-evaluates each intake-routed rejected entry under Evidence sufficiency (promoted to accepted only if the new evidence carries the claim, otherwise stays rejected), and flags nothing new. A re-flagged claim without new evidence is not a finding, and a claim with no ledger entry is never a finding even with evidence.
