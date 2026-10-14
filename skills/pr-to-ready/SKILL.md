@@ -37,8 +37,6 @@ Ask the user two things, once:
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
 - Which of Copilot, Claude, and requesting-code-review should this run request, from none to all three? Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
-Both hold for the rest of the run — neither is re-asked.
-
 ### 0-2. Resolve the run from the PR reference
 
 Bind the run from the caller's reference — a PR number or a PR URL. If none was given, ask; **don't guess it from the current checkout**, whose repository need not be the PR's at all.
@@ -186,12 +184,12 @@ When there is at least one finding and every finding is `reject`:
 
 - Do not fix, do not commit, do not push.
 - Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is.
-- If it does not stop: post per **Posting** below — thread replies, resolution, and the verdict comment together. Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change, judging mergeability alone.
+- If it does not stop: post per **Posting** below. Do not evaluate the six clean conditions. Walk row 4 of the stop list even when the SHA did not change, judging mergeability alone.
 - Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test.
 - Only when both exited 0: if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing is not (this round's rejected suppressed findings remain), take the **third terminal state** and do not go back to 2-1.
 - If those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
 
-**Posting** (every round except a needs-user one, which writes nothing to the PR — its verdicts travel in the hand-over):
+**Posting**:
 
 #### Where to write
 
@@ -267,7 +265,7 @@ Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>`
 - condition 2 — read only once the script has returned;
 - condition 6.
 
-The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (requesting-code-review comment id included), with what the script printed, in the report to the caller; nothing is posted to the PR here. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (requesting-code-review comment id included), with what the script printed, in the report to the caller. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the ready-on-clean flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready with `<skill-dir>/scripts/mark-ready.sh <owner> <repo> <pr-number>` — the only way this flow marks a PR ready. **Never mark it ready by any other means**: that marks the PR ready with no re-confirmation recorded, or on one about a commit the PR no longer points at. On `READY <n>`, Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed. On `STOP <slug>`, take the third terminal state: report the slug and where the PR stands.
