@@ -18,8 +18,8 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 
 - **Never touch the working tree** — no worktree, no branch, no commit, no code edit, throughout rather than only at the end. This flow has no worktree, so a design document committed here lands on whatever branch the session is on, usually `master`. A sub-skill that assumes it should write a file and commit it does neither: redirect that output into the comment.
 - The canonical record is the tracking issue's comment — chat only when no issue tracks the work, and **Output contract** binds that version just the same, not as a lesser one.
-- `<skill-dir>/scripts/` holds the GitHub mechanism — one script per operation, each closing a way of getting it silently wrong: `<skill-dir>/scripts/post-plan-comment.sh` for anything this flow posts, the design comment and the findings report alike, and `<skill-dir>/scripts/edit-plan-comment.sh` for revising it, taking the numeric id the first prints; `<skill-dir>/scripts/set-prerequisites.sh` for the native relation. Use them rather than hand-built calls — a body passed as a flag string hands its backticks to the shell.
-- **Creating a child and attaching it to its parent is one native operation** (per `AUTHORING.md`'s carve-out), so no script wraps it: do it by whatever means are available, reading the child's body from a file rather than from a flag string. Never attach through the raw `sub_issues` endpoint — it identifies the child by database id rather than by issue number, so a number passed there silently attaches whichever issue holds that id from whatever repository.
+- **Every GitHub write this flow makes is a native operation** — posting a comment, editing it, creating a child, writing a child's body — by whatever means are available, the body passed from a file rather than a flag string: inline, a plan body hands its backticks to the shell, and a path passed where the body belongs is posted as the body itself and reported as success — pass the body as file contents, never a path string. Read each posted or edited comment back and confirm its body is the drafted text. A body over GitHub's size limit is a signal to split the work further, never to truncate it.
+- **Creating a child and attaching it to its parent is one native operation** (per `AUTHORING.md`'s carve-out), so no script wraps it: do it by whatever means are available. Never attach through the raw `sub_issues` endpoint — it identifies the child by database id rather than by issue number, so a number passed there silently attaches whichever issue holds that id from whatever repository.
 
 ## Entry
 
@@ -63,20 +63,20 @@ Two entries add to that list:
 One sub-issue per item, whatever the count. Where a tracking issue exists they aren't optional: without them `implement-work` has no named entry for a single PR. **No tracking issue → ask for one before publishing anything.** If the user declines, publish in chat with no sub-issues and write the consequence into the artifact itself: with no named entry per PR, every item has to be carried to completion in this one session, because a later session inherits nothing to pick up.
 
 - **The parent comment** carries the design, the split policy, and the list of sub-issues. **Each child** carries its purpose, its scope boundary, its completion criteria, its prerequisites and why (or that it has none), the parent design comment's URL, and — only where the item carries a branch name — that name. Nothing more: a PR-sized plan in the child puts the detail back where it was and defeats the split.
-- **A prerequisite is also a native relation, and an independent item gets none at all.** The relation is what `implement-work` reads, so it never has to parse prose. Confirm the resulting count is the one intended — 0 for an independent item.
+- **A prerequisite is one line in the child's body, `Blocked-By: #N`, alone on its line, `N` the issue number of the one earlier item it stacks on; an independent item gets no such line.** It is what `implement-work` reads to pick the base, so it never has to parse prose; the prose still carries the reason. After writing a child's body, read the body back into a file and run `tools/prereq-line.sh <file>`: it must answer `PREREQ <N>` for the intended `N`, or `NONE` for an independent item — anything else, fix the body and check again.
 - Converge the `review-plan` loop against the whole, undivided TODO list before splitting.
 - **On re-entry, children from the previous approval already exist, and one child per item still holds.**
-  - Enumerate them from the native relation, never from the parent comment's prose.
+  - Enumerate them from the parent's sub-issue relation, never from the parent comment's prose.
   - That prose records what was published, so a child added after the last edit is missing from it and the item it belongs to would be given a second one.
   - Match them by each item's **substance**, never its wording: items are renumbered and rephrased freely, so a rephrased one would otherwise read as an item dropped plus an item added.
   - Match before `review-plan` sees the list, since the list has to already account for what is finished.
   - Re-match any item a fold-in changed — those only.
 - Update the children to match the list.
-  - A surviving item's child has its body brought up to date and its relations rewired in both directions.
+  - A surviving item's child has its body brought up to date — its prerequisite line included — keeping nothing the item no longer says.
   - An item with no child gets one, as on a first publish.
   - A child whose item is gone from the list is named in the artifact as a person's cleanup — the close is theirs, and the sub-issue link stays as the record that the item was dropped.
   - **A closed child that matches a live item stops the run, whatever it was closed for.**
-  - The native relation carries no close reason, so a child closed as dropped and one whose PR merged arrive at this rule identical, and reading either as the other either drops the item silently or rebuilds work that is already merged.
+  - The sub-issue relation carries no close reason, so a child closed as dropped and one whose PR merged arrive at this rule identical, and reading either as the other either drops the item silently or rebuilds work that is already merged.
   - Ask a person which it is.
 
 ## Publish
