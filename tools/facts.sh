@@ -77,7 +77,7 @@ verify() {
       total="$(values "$file" "${name}.total")"
       if [ "$(count "$file" "${name}.total")" -ne 1 ]; then echo fact-count; return; fi
       if unfilled "$total"; then echo fact-missing; return; fi
-      if ! [[ "$total" =~ ^[0-9]+$ ]] || [ "$(count "$file" "$name")" -ne "$total" ]; then
+      if ! [[ "$total" =~ ^[0-9]+$ ]] || ! [ "$(count "$file" "$name")" -eq "$total" ]; then
         echo fact-count
         return
       fi

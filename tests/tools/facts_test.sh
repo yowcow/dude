@@ -96,6 +96,14 @@ assert_row 'count: short list' 0 'STOP fact-count\n' 0
 
 row_start
 F="$(facts_file <<'EOF'
+reviews.total=99999999999999999999
+EOF
+)"
+run_sut bash "$SUT" check "$F" 'reviews[]'
+assert_row 'count: total past the integer range' 0 'STOP fact-count\n' 0
+
+row_start
+F="$(facts_file <<'EOF'
 pr.number=12
 pr.number=13
 EOF
