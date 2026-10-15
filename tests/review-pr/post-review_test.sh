@@ -1,22 +1,33 @@
 #!/usr/bin/env bash
-# Table test for skills/review-pr/scripts/post-review.sh: each of the three
-# choices posts exactly its own review -- APPROVE and COMMENT submitted, PENDING
-# left unsubmitted by omitting `event` -- anchored to the reviewed head by
-# commit_id; no choice, or a request for changes, posts nothing.
+# Table test for skills/review-pr/scripts/post-review.sh: the guard before the
+# agent writes (a choice outside APPROVE, COMMENT, PENDING never reaches a
+# write) and the read-back after it (the review record, read by its id, must
+# be anchored to the reviewed head, in the state the choice asks for, with the
+# body the payload carried). The script reads facts and origin only: every row
+# asserts 0 gh calls, and stubs none.
 #
-# The payload reaches gh on stdin (`--input -`), outside the argv the stub
-# matches on, so each posting row also compares those bytes (check_gh_stdin).
-# The response is raw, so the SUT's own --jq runs.
-#
-# RED verification (see tests/README.md): sending `event` for PENDING fails
-# 'draft only' on its payload; dropping commit_id fails all three payloads;
-# accepting any event fails 'request changes' and 'no choice' on gh calls.
+# RED verification (see tests/README.md): against the pre-port script
+# (`git show master:skills/review-pr/scripts/post-review.sh`) 24 of 34 rows
+# fail, the guard and read-back rows, each on the old six-argument arity
+# answering usage 2. The ten usage rows pass, 'request changes' and 'no choice'
+# among them, since the old arity answers usage 2 for each.
+# Mutants measured in a copy under `mktemp -d` (siblings beside it): dropping
+# `review.commit=` from the check fails 'review pinned to another commit',
+# 'commit unreadable' and 'no facts: NEED pins';
+# mapping PENDING-with-APPROVE to `review-state-mismatch` fails 'submit
+# failed'; dropping the body compare fails 'submitted with the body dropped',
+# 'draft only, body not carried' and 'body read back differs'; comparing the
+# bodies byte-exact (`cmp`) fails 'body read back with a trailing newline'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=../lib/harness.sh
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/gitrepo.sh
+# shellcheck disable=SC1091
+. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/post-review.sh}"
 
@@ -24,78 +35,183 @@ failed=0
 total=0
 
 HEAD_SHA='c0ffeec0ffeec0ffeec0ffeec0ffeec0ffeec0ff'
+OTHER_SHA='deadbeefdeadbeefdeadbeefdeadbeefdeadbeef'
 URL='https://github.com/acme/widgets/pull/12#pullrequestreview-1'
-POST_JQ='"POSTED \(.state) \(.html_url)"'
+
+WORK="$(git_repo_scratch work)"
+git_repo_init "$WORK" main
+git_repo_remote "$WORK" origin 'https://github.com/Acme/Widgets.git'
+NOORIGIN="$(git_repo_scratch noorigin)"
+git_repo_init "$NOORIGIN" main
 
 PAYLOAD="${HARNESS_TMP}/payload.json"
 printf '%s\n' '{"body":"Summary.","comments":[{"path":"a.txt","line":3,"side":"RIGHT","body":"Important: x"}]}' >"$PAYLOAD"
+EMPTY="${HARNESS_TMP}/empty.json"
+printf '%s\n' '{"body":"Summary.","comments":[]}' >"$EMPTY"
 NOTJSON="${HARNESS_TMP}/notjson.json"
 printf 'not json\n' >"$NOTJSON"
 
-# want_stdin <event-or-empty>   the exact bytes gh must read on stdin
-want_stdin() {
-  local event_part=''
-  if [ -n "$1" ]; then event_part=",\"event\":\"$1\""; fi
-  printf '{"commit_id":"%s","body":"Summary.","comments":[{"path":"a.txt","line":3,"side":"RIGHT","body":"Important: x"}]%s}\n' \
-    "$HEAD_SHA" "$event_part" >"${HARNESS_TMP}/want-stdin"
+# The body the payload carries, as the record would hold it, and two bodies a
+# write can leave behind: none (a step that dropped it) and another text.
+BODY_OK="${HARNESS_TMP}/body-ok.txt"
+printf '%s' 'Summary.' >"$BODY_OK"
+BODY_NONE="${HARNESS_TMP}/body-none.txt"
+: >"$BODY_NONE"
+BODY_OTHER="${HARNESS_TMP}/body-other.txt"
+printf '%s' 'Another summary.' >"$BODY_OTHER"
+BODY_NL="${HARNESS_TMP}/body-nl.txt"
+printf '%s\n' 'Summary.' >"$BODY_NL"
+
+# rb <state> [<commit> [<repo> [<id> [<body-file>]]]]  prints a read-back fixture path
+rb() {
+  facts_file <<EOF
+repo=${3:-acme/widgets}
+pr.number=12
+review.id=${4:-777}
+review.commit=${2-$HEAD_SHA}
+review.state=$1
+review.body-file=${5-$BODY_OK}
+review.url=${URL}
+EOF
 }
 
-# stub_post <exit-status>   raw response body on stdin
-stub_post() {
-  gh_stub_raw_response 1 "$1" api --method POST repos/acme/widgets/pulls/12/reviews --input - --jq "$POST_JQ"
-}
+# Guard: the first call, before anything is written.
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD"
+assert_row 'approve' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE\n" 0
 
 row_start
-printf '{"state":"APPROVED","html_url":"%s"}\n' "$URL" | stub_post 0
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" APPROVE "$PAYLOAD"
-assert_row 'approve' 0 "POSTED APPROVED ${URL}\n" 1
-want_stdin APPROVE
-tally check_gh_stdin 'approve: payload' 1 "${HARNESS_TMP}/want-stdin"
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD"
+assert_row 'comment only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=COMMENT\n" 0
 
 row_start
-printf '{"state":"COMMENTED","html_url":"%s"}\n' "$URL" | stub_post 0
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" COMMENT "$PAYLOAD"
-assert_row 'comment only' 0 "POSTED COMMENTED ${URL}\n" 1
-want_stdin COMMENT
-tally check_gh_stdin 'comment only: payload' 1 "${HARNESS_TMP}/want-stdin"
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD"
+assert_row 'draft only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=PENDING\n" 0
 
 row_start
-printf '{"state":"PENDING","html_url":"%s"}\n' "$URL" | stub_post 0
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" PENDING "$PAYLOAD"
-assert_row 'draft only' 0 "POSTED PENDING ${URL}\n" 1
-want_stdin ''
-tally check_gh_stdin 'draft only: payload' 1 "${HARNESS_TMP}/want-stdin"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$EMPTY"
+assert_row 'no inline comments' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE\n" 0
 
 row_start
-printf '{"message":"Unprocessable Entity"}\n' | stub_post 1
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" COMMENT "$PAYLOAD"
-assert_row 'post fails' 0 'STOP review-post-failed\n' 1
+run_in "$NOORIGIN" 12 "$HEAD_SHA" APPROVE "$PAYLOAD"
+assert_row 'no origin' 0 'STOP repo-lookup-failed\n' 0
 
-# The stub is in place and must not be reached.
+# Usage.
 row_start
-printf '{"state":"CHANGES_REQUESTED","html_url":"%s"}\n' "$URL" | stub_post 0
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" REQUEST_CHANGES "$PAYLOAD"
+run_in "$WORK" 12 "$HEAD_SHA" REQUEST_CHANGES "$PAYLOAD"
 assert_row 'request changes' 2 '' 0
 
 row_start
-printf '{"state":"COMMENTED","html_url":"%s"}\n' "$URL" | stub_post 0
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" '' "$PAYLOAD"
+run_in "$WORK" 12 "$HEAD_SHA" '' "$PAYLOAD"
 assert_row 'no choice' 2 '' 0
 
 row_start
-run_sut bash "$SUT" acme widgets abc "$HEAD_SHA" COMMENT "$PAYLOAD"
+run_in "$WORK" abc "$HEAD_SHA" APPROVE "$PAYLOAD"
 assert_row 'non-numeric pr' 2 '' 0
 
 row_start
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" COMMENT "${HARNESS_TMP}/no-such-payload.json"
+run_in "$WORK" 12 abc APPROVE "$PAYLOAD"
+assert_row 'head not a sha' 2 '' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "${HARNESS_TMP}/absent.json"
 assert_row 'missing payload' 2 '' 0
 
 row_start
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" COMMENT "$NOTJSON"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$NOTJSON"
 assert_row 'payload not json' 2 '' 0
 
 row_start
-run_sut bash "$SUT" acme widgets 12 "$HEAD_SHA" COMMENT
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE
 assert_row 'too few arguments' 2 '' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted
+assert_row '--posted without id' 2 '' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts
+assert_row '--facts without file' 2 '' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --state x
+assert_row 'unknown option' 2 '' 0
+
+# Read-back.
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777
+assert_row 'no facts: NEED pins' 0 "NEED repo=acme/widgets pr.number=12 review.id=777 review.commit=${HEAD_SHA} review.state review.body-file review.url\n" 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED)"
+assert_row 'approve posted' 0 "POSTED APPROVED ${URL}\n" 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED)"
+assert_row 'comment posted' 0 "POSTED COMMENTED ${URL}\n" 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
+assert_row 'draft left pending' 0 "POSTED PENDING ${URL}\n" 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
+assert_row 'comment add failed midway' 0 'STOP review-pending-left\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
+assert_row 'submit failed' 0 'STOP review-pending-left\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb APPROVED)"
+assert_row 'draft only but submitted' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED)"
+assert_row 'approve asked, commented' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$OTHER_SHA")"
+assert_row 'review pinned to another commit' 0 'STOP fact-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" upstream/widgets)"
+assert_row 'review read in another repo' 0 'STOP fact-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 778)"
+assert_row "another review's record" 0 'STOP fact-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb CHANGES_REQUESTED)"
+assert_row 'state outside the flow' 0 'STOP fact-enum\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED '')"
+assert_row 'commit unreadable' 0 'STOP fact-missing\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 '')"
+assert_row 'body unreadable' 0 'STOP fact-missing\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "${HARNESS_TMP}/absent-body.txt")"
+assert_row 'body file absent' 0 'STOP body-unreadable\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NONE")"
+assert_row 'submitted with the body dropped' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING "$HEAD_SHA" acme/widgets 777 "$BODY_NONE")"
+assert_row 'draft only, body not carried' 0 'STOP review-pending-left\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED "$HEAD_SHA" acme/widgets 777 "$BODY_OTHER")"
+assert_row 'body read back differs' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NL")"
+assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n" 0
 
 harness_exit "$failed" "$total"

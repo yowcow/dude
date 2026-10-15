@@ -158,6 +158,40 @@ The PR record's web URL.
 The PR record's base branch, as the bare name. A `NEED` line may pin it;
 written from the record.
 
+### `review.id`
+
+The id of the review the create made, and the record is read by that id —
+never the PR's newest review, which may be someone else's. It is the id the
+create call returned; when the create returns none, it is the id of the
+viewer's one `PENDING` review on the PR, read right after the create
+succeeded and before any other step, since a submitted review is no longer
+pending. Written from the record read. Pinned from the script's `--posted`
+argument.
+
+### `review.commit`
+
+The commit the review record is anchored to. Pinned to the head that was
+reviewed: a review created without naming that commit anchors to the PR's
+current head, and after an author push each inline comment lands on
+whatever line sits at its number there. Written from the record, never from
+the create call's arguments.
+
+### `review.state`
+
+`PENDING`, `APPROVED` or `COMMENTED`, from that review record — never
+inferred from the submit call having returned. Any other value
+(`CHANGES_REQUESTED`, `DISMISSED`) is outside what this flow posts.
+
+### `review.body-file`
+
+The path of a file holding that review record's body exactly as read, from
+the record — never from the arguments of a create or submit call: a body the
+write steps dropped reads back empty, which is what the read-back catches.
+
+### `review.url`
+
+The review record's web URL.
+
 ### `repo.fork` (list)
 
 `true` or `false` for each repository record read for `repo`: whether it is a

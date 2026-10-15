@@ -28,7 +28,7 @@ stdout through every such script.
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
-| `body-unreadable` | `implement-work/resolve-base.sh` |
+| `body-unreadable` | `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
 | `conditions-unmet` | `pr-to-ready/mark-ready.sh` |
@@ -61,9 +61,10 @@ stdout through every such script.
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
+| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
-| `review-post-failed` | `review-pr/post-review.sh` |
+| `review-pending-left` | `review-pr/post-review.sh` |
+| `review-state-mismatch` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
