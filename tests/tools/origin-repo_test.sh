@@ -51,7 +51,17 @@ run_in "$NOORIGIN"
 assert_row 'no origin' 1 '' 0
 
 row_start
-run_in "$WORK" extra
-assert_row 'an argument' 2 '' 0
+git_repo_remote "$WORK" origin 'https://github.com/acme/widgets.git'
+git_repo_remote "$WORK" upstream 'git@github.com:Parent/Widgets.git'
+run_in "$WORK" upstream
+assert_row 'a named remote' 0 'parent/widgets\n' 0
+
+row_start
+run_in "$WORK" nosuch
+assert_row 'a remote that does not exist' 1 '' 0
+
+row_start
+run_in "$WORK" upstream extra
+assert_row 'two arguments' 2 '' 0
 
 harness_exit "$failed" "$total"
