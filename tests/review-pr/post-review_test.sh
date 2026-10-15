@@ -76,19 +76,19 @@ EOF
 # Guard: the first call, before anything is written.
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD"
-assert_row 'approve' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE comments=1\n" 0
+assert_row 'approve' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE\n" 0
 
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD"
-assert_row 'comment only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=COMMENT comments=1\n" 0
+assert_row 'comment only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=COMMENT\n" 0
 
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD"
-assert_row 'draft only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=PENDING comments=1\n" 0
+assert_row 'draft only' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=PENDING\n" 0
 
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$EMPTY"
-assert_row 'no inline comments' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE comments=0\n" 0
+assert_row 'no inline comments' 0 "WRITE repo=acme/widgets pr=12 head=${HEAD_SHA} event=APPROVE\n" 0
 
 row_start
 run_in "$NOORIGIN" 12 "$HEAD_SHA" APPROVE "$PAYLOAD"

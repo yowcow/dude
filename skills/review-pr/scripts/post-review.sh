@@ -27,7 +27,7 @@
 # STOP slugs: ../../implement-work/references/stop-registry.md.
 #
 # Usage: post-review.sh <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]
-# Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT> comments=<k>
+# Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT>
 #         | NEED <token>... | POSTED <state> <url>
 #         | STOP review-pending-left | STOP review-state-mismatch | STOP <slug>
 set -euo pipefail
@@ -69,7 +69,7 @@ case "$EVENT" in
   *) usage ;;
 esac
 [ -r "$PAYLOAD_FILE" ] || usage
-COMMENTS="$(jq -e '.comments | length' "$PAYLOAD_FILE" 2>/dev/null)" || usage
+jq -e '.comments | length' "$PAYLOAD_FILE" >/dev/null 2>&1 || usage
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 TOOLS="${SCRIPT_DIR}/../../../tools"
@@ -79,7 +79,7 @@ if ! REPO="$(bash "${TOOLS}/origin-repo.sh")"; then
 fi
 
 if [ -z "$POSTED" ]; then
-  echo "WRITE repo=${REPO} pr=${PR} head=${HEAD} event=${EVENT} comments=${COMMENTS}"
+  echo "WRITE repo=${REPO} pr=${PR} head=${HEAD} event=${EVENT}"
   exit 0
 fi
 
