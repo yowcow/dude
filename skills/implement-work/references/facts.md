@@ -14,7 +14,10 @@ and **Waiting**.
   value with leading or trailing whitespace.
 - A list repeats its name once per element, in the order read, and adds
   `<name>.total=<n>`, the count the source reported — not the count of lines
-  written. `<name>.total=0` with no element lines is an empty list.
+  written. A source that reports no count (a paginated list) gives the number
+  of elements read once every page has been read; a read that stopped before
+  the last page is a read that failed, written as an empty total.
+  `<name>.total=0` with no element lines is an empty list.
 - An identifier the `NEED` line pinned as `name=value` is written from the
   record actually read — or, for a parameter of the read (`target`, `head`,
   `prereq.head`), from the read actually made — never copied from the `NEED`
