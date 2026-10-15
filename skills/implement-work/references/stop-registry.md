@@ -61,7 +61,7 @@ stdout through every such script.
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
+| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
