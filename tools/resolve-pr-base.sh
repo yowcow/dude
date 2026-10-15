@@ -18,6 +18,10 @@
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
+#
 # Usage: resolve-pr-base.sh <branch> [repo] [--facts <file>]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
