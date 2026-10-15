@@ -12,7 +12,7 @@ Review a PR somebody else opened, have every finding judged against the PR's own
 
 ## Orchestration model
 
-**This skill dispatches no worker of its own: the reviewer and the verdict workers are `vet-code`'s.** The orchestrator resolves the PR, calls `vet-code` once, drafts the review, and makes the one write to the PR the user chose.
+**This skill dispatches no worker of its own: the reviewer and the verdict workers are `vet-code`'s.** The orchestrator resolves the PR, calls `vet-code` once, drafts the review, makes the one review write to the PR the user chose, and puts the reviewer's 👀 on the PR while the review runs, removing it when the run ends.
 
 ## Steps
 
@@ -22,6 +22,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 
 1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is both this checkout's `origin` and the repository `gh` resolves here. On `STOP <slug>`, report it and end the run.
 2. Run `tools/check-pr-author.sh <n>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, write them to a file, and run it again with `--facts <file>` added. On `SELF`, stop and report it. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
+3. Put the reviewer's 👀 reaction on the PR itself. From here on, remove the reviewer's 👀 when the run ends, however it ends, whether or not this run put it there. If it can't be removed, don't stop the run; the Report tells the user to remove it by hand.
 
 ### 2. Resolve the range, the purpose, and the requirements
 
@@ -52,7 +53,7 @@ Recommend approve when no accepted finding is Critical or Important and no verdi
 
 ### 6. Post
 
-Run `<skill-dir>/scripts/post-review.sh <owner> <repo> <n> <head> <event> <payload-file>` once, for the choice the user made: `APPROVE`, `COMMENT`, or `PENDING` for draft only. Nothing else in this run writes to the PR. When the user chose none of the three, post nothing.
+Run `<skill-dir>/scripts/post-review.sh <owner> <repo> <n> <head> <event> <payload-file>` once, for the choice the user made: `APPROVE`, `COMMENT`, or `PENDING` for draft only. Nothing else in this run writes to the PR but the 👀 of Step 1. When the user chose none of the three, post nothing.
 
 - `POSTED <state> <url>` — report the URL.
 - `STOP <slug>` — report it; nothing was posted.
@@ -63,3 +64,4 @@ Run `<skill-dir>/scripts/post-review.sh <owner> <repo> <n> <head> <event> <paylo
 - whether the purpose was checked against the means, and when it was settled but no facts outside the repository were given, that no check against such facts was made
 - what was posted — its state and URL — or that nothing was
 - the rejected findings with their reasons, and the `needs-user` questions
+- when the 👀 could not be removed, that it is still on the PR and the user has to remove it by hand
