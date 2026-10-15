@@ -47,8 +47,9 @@ file format are in `facts.md`.
 
 - Without the file, or with a needed fact absent from it, the script answers
   `NEED <token>...` on stdout, exit 0. A bare token names a fact to read. A
-  `name=value` token pins the identifier the read is for: read the record it
-  names and write `name` from that record, not from the `NEED` line.
+  `name=value` token pins the identifier the read is for; how the caller
+  writes `name` back is in `facts.md`, **The file** — never copied from the
+  `NEED` line.
 - The caller reads every named fact, writes the file, and calls the script
   again with `--facts <file>`. A fact it could not read is written with an
   empty value, never guessed; the check stops on it.

@@ -2,12 +2,12 @@
 # Resolve the committed range this review covers, printed as two SHAs.
 #
 # Two input shapes, one purpose. Given a PR number, the range is the PR's own
-# head and its merge-base with the PR record's base, both fetched: anything
-# derived from the local checkout instead reviews whatever this working copy
-# happens to sit on, which is not the PR's diff wherever the two have
-# diverged, and nothing in the findings would say so. Given no argument, the
-# range runs from the base this branch was cut from to HEAD, and that base is
-# read back from the Base-Branch trailer rather than assumed.
+# head and its merge-base with the base OID the PR's record carries, both
+# fetched: anything derived from the local checkout instead reviews whatever
+# this working copy happens to sit on, which is not the PR's diff wherever the
+# two have diverged, and nothing in the findings would say so. Given no
+# argument, the range runs from the base this branch was cut from to HEAD, and
+# that base is read back from the Base-Branch trailer rather than assumed.
 #
 # Reading it back is what the reviewed range depends on. Squash and rebase
 # merges rewrite a prerequisite's commits under fresh SHAs, so falling back to
@@ -19,21 +19,51 @@
 # is not" and "## Resolving the default branch" — this script implements that
 # table's `review-code`'s `<base>` column.
 #
-# Usage: resolve-range.sh [pr-number]
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
+#
+# Usage: resolve-range.sh [pr-number] [--facts <file>]
+# Output: RANGE <sha>..<sha> | EMPTY | NEED <token>... | STOP <slug>
 set -euo pipefail
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [pr-number]" >&2
+usage() {
+  echo "Usage: $0 [pr-number] [--facts <file>]" >&2
   exit 2
-fi
+}
 
-PR="${1:-}"
+PR=''
+FACTS=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      FACTS="$2"
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      if [ -n "$PR" ] || ! [[ "$1" =~ ^[0-9]+$ ]]; then usage; fi
+      PR="$1"
+      shift
+      ;;
+  esac
+done
+
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-if [ -n "$PR" ] && ! [[ "$PR" =~ ^[0-9]+$ ]]; then
-  echo "Usage: $0 [pr-number]" >&2
-  exit 2
-fi
+need() {
+  local verdict
+  verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
+  if [ "$verdict" != OK ]; then
+    echo "$verdict"
+    exit 0
+  fi
+}
+
+fact() {
+  bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$1"
+}
 
 # Both shapes answer through here, so an empty range is EMPTY however it was
 # resolved. Handed `RANGE <sha>..<sha>` for a PR whose endpoints coincide, the
@@ -48,10 +78,12 @@ emit_range() {
 }
 
 if [ -n "$PR" ]; then
-  if ! BASE_OID="$(gh pr view --json baseRefOid --jq .baseRefOid -- "$PR" 2>/dev/null)" || [ -z "$BASE_OID" ]; then
-    echo "STOP pr-lookup-failed"
+  if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
+    echo "STOP repo-lookup-failed"
     exit 0
   fi
+  need "repo=${REPO}" "pr.number=${PR}" pr.base.sha
+  BASE_OID="$(fact pr.base.sha)"
   # Both ends are fetched, never assumed local: a PR somebody else opened has
   # a head this clone never held, and the base oid may be the base branch's
   # current tip rather than the fork point. The left end is therefore the
@@ -96,13 +128,10 @@ fi
 # The revs are chosen here rather than there because it is this caller's
 # question: local HEAD, bounded by the fetched default tip, since this skill
 # reviews the checkout it is in.
-#
-# The call is guarded rather than left to `set -e` so that its exit-1 path --
-# an unrecognised PR state, whose message it has already put on stderr --
-# leaves this script exiting 1 with nothing on stdout, instead of a second
-# message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
-  exit 1
+if [ -n "$FACTS" ]; then
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" HEAD "^${TIP_SHA}")"
+else
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"
 fi
 
 read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
@@ -120,10 +149,7 @@ case "${KIND}" in
     emit_range "${BASE_SHA}" "${HEAD_SHA}"
     exit 0
     ;;
-  STOP)
-    # Passed through unchanged: the slugs are this script's output contract,
-    # and these five cases are answered identically by both readers,
-    # which is why they are answered once, over there.
+  STOP | NEED)
     printf '%s\n' "$ANSWER"
     exit 0
     ;;

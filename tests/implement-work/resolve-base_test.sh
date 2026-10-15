@@ -5,9 +5,14 @@
 # answer that names one -- that the branch was really fetched.
 #
 # The script reads no issue or PR itself: issue-backed rows hand it a fact
-# fixture (facts_file) and stub nothing. The one gh call left is the shared
-# tools/resolve-default-branch.sh's `gh repo view`, stubbed on the rows that
-# reach the default branch; yowcow/dude#571 ports it.
+# fixture (facts_file). The shared tools/resolve-default-branch.sh reads the
+# remote's HEAD, so the file stubs nothing; every row asserts 0 gh calls.
+#
+# There is no row for a default branch absent on the remote: a HEAD naming an
+# absent branch is unborn and prints nothing, so ls-remote answers no default
+# rather than a branch the fetch then fails on. The fetch-failure exit is still
+# covered by `open head absent on remote`, which goes through the same `base`
+# function.
 #
 # git is not stubbed. Which ref a fetch updates is git's own behaviour, so a
 # git stub would encode the test author's belief about that rather than git's
@@ -61,6 +66,7 @@ build_remote() {
   git_repo_checkout "$seed" decoy main
   git_repo_commit "$seed" D.md 'decoy\n' 'decoy commit'
   git_repo_push "$seed" "$bare" main feature decoy
+  git_repo_bare_head "$bare" main
   printf '%s\n' "$bare"
 }
 
@@ -99,12 +105,6 @@ check_tracking() {
       ;;
   esac
   check_eq "$1" "$want" "$got"
-}
-
-# stub_default_branch <exit-status> -- the `gh repo view` rung of the shared
-# default-branch ladder, body already filtered
-stub_default_branch() {
-  gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
 # body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
@@ -189,10 +189,9 @@ tally check_tracking 'arguments: origin/main untouched' "$W" "$REMOTE" main stal
 # ---- no issue: the default branch, no facts asked for -------------------
 
 row_start
-printf 'main\n' | stub_default_branch 0
 W="$(work_repo no-arg "$REMOTE" main)"
 run_in "$W"
-assert_row 'no argument uses the default branch' 0 'BASE main\n' 1
+assert_row 'no argument uses the default branch' 0 'BASE main\n' 0
 tally check_tracking 'no argument: origin/main fetched' "$W" "$REMOTE" main tip
 tally check_tracking 'no argument: origin/feature untouched' "$W" "$REMOTE" feature stale
 
@@ -206,10 +205,9 @@ assert_row 'issue without facts: NEED pins repo and issue' 0 \
 tally check_tracking 'no facts: no fetch' "$W" "$REMOTE" main stale
 
 row_start
-printf 'main\n' | stub_default_branch 0
 W="$(work_repo line-none "$REMOTE" main)"
 run_in "$W" 203 --facts "$(round1 "$(body 'purpose\n\nno prerequisite\n')")"
-assert_row 'no prerequisite line uses the default branch' 0 'BASE main\n' 1
+assert_row 'no prerequisite line uses the default branch' 0 'BASE main\n' 0
 tally check_tracking 'no line: origin/main fetched' "$W" "$REMOTE" main tip
 
 row_start
@@ -291,10 +289,9 @@ tally check_tracking 'open: origin/feature fetched' "$W" "$REMOTE" feature tip
 tally check_tracking 'open: origin/main untouched' "$W" "$REMOTE" main stale
 
 row_start
-printf 'main\n' | stub_default_branch 0
 W="$(work_repo state-merged "$REMOTE" main)"
 run_in "$W" 203 --facts "$(round3 MERGED)"
-assert_row 'prerequisite merged uses the default branch' 0 'BASE main\n' 1
+assert_row 'prerequisite merged uses the default branch' 0 'BASE main\n' 0
 tally check_tracking 'merged: origin/main fetched' "$W" "$REMOTE" main tip
 tally check_tracking 'merged: origin/feature untouched' "$W" "$REMOTE" feature stale
 
@@ -322,41 +319,42 @@ W="$(work_repo head-empty "$REMOTE" main)"
 run_in "$W" 203 --facts "$(round3 OPEN '')"
 assert_row 'head unreadable' 0 'STOP fact-missing\n' 0
 
+# The remote's HEAD names a branch it lacks, which ls-remote reports as no
+# default at all. Not origin re-pointed: the issue path pins `repo=` to
+# origin-repo.sh's answer before round 3, so a URL ending acme/nosuch.git stops
+# with `fact-mismatch` against round3's `repo=acme/base`.
 row_start
-printf 'gh: HTTP 502\n' | stub_default_branch 1
+git_repo_bare_head "$REMOTE" nosuch
 W="$(work_repo merged-no-default "$REMOTE")"
 run_in "$W" 203 --facts "$(round3 MERGED)"
-assert_row 'merged with no resolvable default' 0 'STOP ask-default-branch\n' 1
+assert_row 'merged with no resolvable default' 0 'STOP ask-default-branch\n' 0
 tally check_tracking 'merged, no default: no fetch' "$W" "$REMOTE" main stale
+git_repo_bare_head "$REMOTE" main
 
-# ---- the default-branch ladder (shared tool, reached with no issue) ------
+# ---- the default branch (shared tool, reached with no issue) --------------
 
 row_start
-printf 'feature\n' | stub_default_branch 0
+git_repo_bare_head "$REMOTE" feature
 W="$(work_repo ladder-stale-symref "$REMOTE" main)"
 run_in "$W"
-assert_row 'stale symref is ignored' 0 'BASE feature\n' 1
+assert_row 'stale symref is ignored' 0 'BASE feature\n' 0
 tally check_tracking 'stale symref: origin/feature fetched' "$W" "$REMOTE" feature tip
+git_repo_bare_head "$REMOTE" main
 
 row_start
-: | stub_default_branch 0
-W="$(work_repo ladder-api-empty "$REMOTE")"
+git_repo_bare_head "$REMOTE" nosuch
+W="$(work_repo ladder-unborn "$REMOTE")"
 run_in "$W"
-assert_row 'default branch api answers empty' 0 'STOP ask-default-branch\n' 1
+assert_row 'remote head unborn' 0 'STOP ask-default-branch\n' 0
+git_repo_bare_head "$REMOTE" main
 
 row_start
-printf 'gh: HTTP 502\n' | stub_default_branch 1
-W="$(work_repo ladder-api-fails "$REMOTE")"
+W="$(work_repo ladder-unreachable "$REMOTE")"
+git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/nosuch.git"
 run_in "$W"
-assert_row 'default branch lookup fails' 0 'STOP ask-default-branch\n' 1
+assert_row 'default branch lookup fails' 0 'STOP ask-default-branch\n' 0
 
 # ---- fetches that fail ----------------------------------------------------
-
-row_start
-printf 'nosuch\n' | stub_default_branch 0
-W="$(work_repo default-absent "$REMOTE")"
-run_in "$W"
-assert_row 'default branch absent on remote' 1 '' 1
 
 row_start
 W="$(work_repo head-absent "$REMOTE" main)"

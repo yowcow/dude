@@ -18,16 +18,44 @@
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
-# Usage: resolve-pr-base.sh <branch> [repo]
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
+#
+# Usage: resolve-pr-base.sh <branch> [repo] [--facts <file>]
+# Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
 
-if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <branch> [repo]" >&2
+usage() {
+  echo "Usage: $0 <branch> [repo] [--facts <file>]" >&2
   exit 2
-fi
+}
 
-BRANCH="$1"
-BASE_REPO="${2:-}"
+BRANCH=''
+BASE_REPO=''
+FACTS=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      FACTS="$2"
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      if [ -z "$1" ]; then usage; fi
+      if [ -z "$BRANCH" ]; then
+        BRANCH="$1"
+      elif [ -z "$BASE_REPO" ]; then
+        BASE_REPO="$1"
+      else
+        usage
+      fi
+      shift
+      ;;
+  esac
+done
+if [ -z "$BRANCH" ]; then usage; fi
 
 # The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
@@ -36,11 +64,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # Resolve the default branch before the scan below rather than at the two
 # places that print it: the scan's range is expressed against it, so it has
 # to be both named and fetched by then.
-if [ -n "$BASE_REPO" ]; then
-  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
-else
-  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-fi
+DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
 
 # The task branch's tip is read below as FETCH_HEAD rather than from a local
 # checkout — this session may not have <branch> checked out at all. So the
@@ -75,16 +99,13 @@ fi
 # default branch, and the exclusion names the saved default-branch SHA rather than a remote-tracking ref a narrowed clone need not have updated. Unbounded,
 # the scan walks to root, so a branch that recorded nothing picks up whatever
 # Base-Branch some unrelated commit left in shared history and hands that
-# branch back as --base -- which ensure-draft-pr.sh then passes to
-# `gh pr create --base`, opening the PR against a branch this task never sat
-# on.
-#
-# The call is guarded rather than left to `set -e` so that its exit-1 path --
-# an unrecognised PR state, whose message it has already put on stderr --
-# leaves this script exiting 1 with nothing on stdout, instead of a second
-# message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"; then
-  exit 1
+# branch back as the base -- which ensure-draft-pr.sh then answers as
+# `CREATE ... base=<base>`, so the caller opens the PR against a branch this
+# task never sat on.
+if [ -n "$FACTS" ]; then
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" FETCH_HEAD "^${DEFAULT_SHA}")"
+else
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"
 fi
 
 read -r KIND RECORDED _ STATE <<<"$ANSWER"
@@ -93,10 +114,7 @@ case "${KIND}" in
   NO-TRAILER)
     echo "BASE ${DEFAULT}"
     ;;
-  STOP)
-    # Passed through unchanged: the slugs are this script's output contract,
-    # and these five cases are answered identically by both readers,
-    # which is why they are answered once, over there.
+  STOP | NEED)
     printf '%s\n' "$ANSWER"
     ;;
   PREREQ)

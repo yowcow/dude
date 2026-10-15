@@ -1,93 +1,145 @@
 #!/usr/bin/env bash
-# Table test for tools/resolve-default-branch.sh: what
-# it prints and what it exits for each answer `gh repo view` can give.
+# Table test for tools/resolve-default-branch.sh: what it prints and what it
+# exits for each answer a remote's HEAD can give.
 #
-# Four callers in two skills plus tools/ read this script's stdout as a branch name and
-# its non-zero exit as "could not tell", so every row asserts both halves. No
-# git fixture and no run_in: this script shells out to `gh` and to nothing
-# else, and reads no repository of its own.
+# Every caller reads this script's stdout as a branch name and its non-zero
+# exit as "could not tell", so every row asserts both halves and that gh was
+# never called.
 #
-# Limitation: the `--jq .defaultBranchRef.name` expression is not executed --
-# gh_stub_response hands back the post-jq bytes each row scripted. A defect
-# confined to that filter string is invisible here, exactly as it is in the
-# four caller test files.
-#
-# RED verification (see tests/README.md). The script is new, so there is no
-# pre-fix version to point SUT= at. Each guard the script's own header names
-# was mutated in a copy under `mktemp -d` -- never inside the repository, where
-# lint.sh would select it by shebang -- and this file re-run against it as
-# `SUT=<copy> tests/run.sh tests/tools/resolve-default-branch_test.sh`.
-# What each mutant produced, measured:
-#
-#   1. The emptiness half of the guard. Dropping `&& [ -n "$ref" ]` failed
-#      `api-answers-empty` alone: want exit 1 with nothing on stdout, got
-#      exit 0 and a bare newline -- which a caller takes for a branch whose
-#      name is the empty string.
-#   2. The exit-status half. Replacing the guard with
-#      `ref="$(gh ... 2>/dev/null)" || true` plus an unconditional printf
-#      failed both "not knowing" rows: `api-call-fails` (want exit 1 with
-#      nothing on stdout, got exit 0 and `gh: HTTP 502` -- gh's own error text
-#      handed back as a branch name) and `api-answers-empty` (want exit 1 with
-#      nothing on stdout, got exit 0 and a bare newline) -- an unconditional
-#      printf has no way to fail on only one of the two.
-#
-# Not coverable here: the `2>/dev/null`. The fake `gh` writes a failing
-# response's body to stdout, as real gh does with the body it received, so no
-# row can produce gh stderr for that redirect to swallow and dropping it
-# changes no byte this file can read -- this is read from the fake gh's own
-# behavior (tests/lib/bin/gh), not measured by a mutant run.
+# RED verification (see tests/README.md): against the pre-port script
+# (`git show master:tools/resolve-default-branch.sh` in a copy under
+# `mktemp -d`, run as `SUT=<copy> tests/run.sh <this file>`) every row but the
+# usage row fails on an unstubbed `gh repo view`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
 # shellcheck source=../lib/harness.sh
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/gitrepo.sh
+# shellcheck disable=SC1091
+. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/tools/resolve-default-branch.sh}"
 
 failed=0
 total=0
 
-# stub_default_branch <exit-status> -- the one `gh` call this script makes,
-# body on stdin, already filtered.
-stub_default_branch() {
-  gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
+# seed <bare> <branch>...   a commit on each branch, pushed to <bare>; HEAD
+#                           points at the first branch
+SEEDS=0
+seed() {
+  local bare="$1" b seedwork
+  shift
+  SEEDS=$((SEEDS + 1))
+  seedwork="$(git_repo_scratch "seed${SEEDS}")"
+  git_repo_init "$seedwork" "$1"
+  git_repo_commit "$seedwork" f.txt 'x\n' 'init'
+  for b in "$@"; do
+    if [ "$b" != "$1" ]; then git_repo_checkout "$seedwork" "$b" "$1"; fi
+  done
+  git_repo_remote "$seedwork" origin "$bare"
+  for b in "$@"; do git_repo_push "$seedwork" origin "$b"; done
+  git_repo_bare_head "$bare" "$1"
 }
 
-# ---- the API answers ----------------------------------------------------
-#
 # `trunk` rather than `main`: a mutant that guesses the conventional name
-# instead of asking would pass a row named `main`, which is the same reason
-# resolve-range_test.sh's fixture remote calls its default branch `trunk`.
+# instead of asking would pass a row named `main`.
+BARE="$(git_repo_bare acme widgets)"
+seed "$BARE" trunk other
+W="$(git_repo_clone work "$BARE" trunk)"
 
 row_start
-printf 'trunk\n' | stub_default_branch 0
-run_sut bash "$SUT"
-assert_row 'api-names-the-branch' 0 'trunk\n' 1
+run_in "$W"
+assert_row 'remote-head-names-the-branch' 0 'trunk\n' 0
 
-# ---- the two ways of not knowing ----------------------------------------
+row_start
+git_repo_origin_head "$W" other
+run_in "$W"
+assert_row 'stale-local-symref-is-ignored' 0 'trunk\n' 0
+
+# ---- the ways of not knowing ---------------------------------------------
+
+row_start
+UNBORN="$(git_repo_bare acme empty)"
+git_repo_remote "$W" origin "$UNBORN"
+run_in "$W"
+assert_row 'remote-head-unborn' 1 '' 0
+
+row_start
+DET="$(git_repo_bare acme detached)"
+seed "$DET" trunk
+git -C "$DET" update-ref --no-deref HEAD "$(git -C "$DET" rev-parse refs/heads/trunk)"
+git_repo_remote "$W" origin "$DET"
+run_in "$W"
+assert_row 'remote-head-detached' 1 '' 0
+
+row_start
+git_repo_remote "$W" origin "${HARNESS_TMP}/remotes/acme/nosuch.git"
+run_in "$W"
+assert_row 'ls-remote-fails' 1 '' 0
+
+row_start
+NOREMOTE="$(git_repo_scratch noremote)"
+git_repo_init "$NOREMOTE" trunk
+run_in "$NOREMOTE"
+assert_row 'no-origin' 1 '' 0
+
+# ---- [repo] --------------------------------------------------------------
 #
-# Both answer exit 1 with nothing on stdout, and they must: the callers turn
-# either into `STOP ask-default-branch`, and any byte on stdout here is a
-# branch name as far as a caller's command substitution is concerned.
+# The upstream bare sits outside ${HARNESS_TMP}/remotes/ on purpose: every
+# git_repo_bare path is origin's sibling, so a remote built there is also what
+# the fallback derives, and the remote-match loop would go untested. The decoy
+# sits at the derived sibling path and answers `trunk`, so a script that skips
+# the remote match reads `trunk`, not `main`.
+git_repo_remote "$W" origin "$BARE"
+U="$(git_repo_scratch upstreams)/acme/parent.git"
+mkdir -p "${U%/*}"
+git init -q --bare "$U"
+seed "$U" main
+git_repo_remote "$W" upstream "$U"
+D="$(git_repo_bare acme parent)"
+seed "$D" trunk
 
 row_start
-: | stub_default_branch 0
-run_sut bash "$SUT"
-assert_row 'api-answers-empty' 1 '' 1
+run_in "$W" acme/parent
+assert_row 'repo-arg-selects-its-remote' 0 'main\n' 0
 
 row_start
-printf 'gh: HTTP 502\n' | stub_default_branch 1
-run_sut bash "$SUT"
-assert_row 'api-call-fails' 1 '' 1
+run_in "$W" Acme/Parent
+assert_row 'repo-arg-matches-case-insensitively' 0 'main\n' 0
 
 row_start
-printf 'trunk\n' | gh_stub_response '*' 0 repo view acme/parent --json defaultBranchRef --jq .defaultBranchRef.name
-run_sut bash "$SUT" acme/parent
-assert_row 'repo-arg-names-the-branch' 0 'trunk\n' 1
+run_in "$W" acme/widgets
+assert_row 'repo-arg-equal-to-origin' 0 'trunk\n' 0
 
 row_start
-run_sut bash "$SUT" acme/parent extra
+E="$(git_repo_bare acme elsewhere)"
+seed "$E" trunk
+git -C "$W" remote remove upstream
+run_in "$W" acme/elsewhere
+assert_row 'repo-arg-with-no-remote-reads-origins-sibling' 0 'trunk\n' 0
+
+row_start
+run_in "$W" acme/nosuch
+assert_row 'repo-arg-unreachable' 1 '' 0
+
+row_start
+run_in "$W" acme/parent extra
 assert_row 'two-arguments-is-usage-error' 2 '' 0
+
+# A relative two-segment origin URL leaves nothing in front of the [repo]
+# swap, so the remote handed to git is the argument itself plus `.git`; a
+# leading dash makes that an option. The marker is relative and lower-case
+# because the argument is lower-cased and git runs from the work dir.
+row_start
+DASH="$(git_repo_scratch dash)"
+git_repo_init "$DASH" trunk
+git_repo_remote "$DASH" origin a/b
+run_in "$DASH" '--upload-pack=touch m'
+assert_row 'repo-arg-with-leading-dash-is-no-option' 1 '' 0
+tally check_eq 'repo-arg-with-leading-dash-is-no-option: no side effect' absent \
+  "$([ -e "${DASH}/m.git" ] && echo ran || echo absent)"
 
 harness_exit "$failed" "$total"

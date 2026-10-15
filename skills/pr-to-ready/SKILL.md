@@ -46,13 +46,10 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 - `PR <n> branch=<head> base=<base> repo=<owner>/<repo> draft=<bool>` — bind `<PR>`, `<branch>`, and the `<owner>` and `<repo>` every later script call takes; none of those three is re-derived from the checkout again. `<base>` is the base the PR points at **now**, which is not the same question as the base it *should* sit on: Step 1 re-resolves that and may replace it.
 - `STOP <slug>` — report the stop and end the run. Nothing downstream has a repository, a branch, or a base it could work from.
 
-**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `tools/ensure-draft-pr.sh <branch> <title> <body-file>` first.
+**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `tools/ensure-draft-pr.sh <branch>` first, and drive it to a PR exactly as `implement-work`'s **Hand off** does — `NEED`, the create answer and its read-back, `STOP ask-base-repo` and `STOP fork-unread`; title and body follow that section too.
 
-- It pushes the branch if only a local ref exists, looks for a PR already on it, and creates a draft one when none is found — resolving the base itself, at that point alone.
-- It answers `PR <n> found draft=<bool> url=<url>`, `PR <n> created draft=true base=<base> url=<url>`, or `STOP <slug>`.
-- On either `PR` line, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on a `STOP`, report it and end the run.
-- Title and body follow `implement-work`'s **Hand off**, which owns that convention.
-- On `STOP ask-base-repo`, follow `implement-work`'s **Hand off** fork procedure (ask child-first, re-call with the chosen repository appended).
+- It pushes the branch if only a local ref exists, looks for a PR already on it, and only when none is found answers with where to open one.
+- On a `PR` line, found or created, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on any other `STOP`, report it and end the run.
 
 ### 0-3. Prepare the workspace
 
@@ -75,7 +72,7 @@ Once `REUSE` has measured clean or `ATTACHED` has answered, run `<skill-dir>/scr
 
 Before watching CI, settle whether the base is still the right one — the prerequisite's state can have moved since Step 0.
 
-1. Re-resolve it: `tools/resolve-pr-base.sh <branch>` → `BASE <name>` or `STOP <slug>`. This is the base the branch *should* sit on, read from its `Base-Branch:` trailer and the prerequisite's current state — a different question from the `<base>` 0-2 bound, which is the one the PR points at now.
+1. Re-resolve it: `tools/resolve-pr-base.sh <branch>` → `BASE <name>`, `NEED <token>...` or `STOP <slug>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. This is the base the branch *should* sit on, read from its `Base-Branch:` trailer and the prerequisite's current state — a different question from the `<base>` 0-2 bound, which is the one the PR points at now.
 2. Check the PR against that answer: `<skill-dir>/scripts/check-pr-state.sh <owner> <repo> <pr-number> <base>` → `BASE-OK|BASE-DRIFT <current-base> MERGEABLE|CONFLICTING|UNKNOWN`, or `STOP <slug>`. The name it prints is the base the PR points at **now**, not the one you passed in — which is what makes `BASE-DRIFT` worth reading. Read-only: it measures and never fixes.
 3. On `BASE-DRIFT`: pull the resolved base in with `<skill-dir>/scripts/retarget-pr.sh <owner> <repo> <pr-number> <branch> <base>` → `BASE-OK <base>` (nothing to do), `RETARGETED <old> <new>` — the merge is pushed, so CI below runs against the new tip rather than the one it already passed on — or `STOP <slug>` on a conflict while merging the new base in.
 4. On `CONFLICTING`, or on an `UNKNOWN` that stands after the script's own bounded re-read: neither is something to fix here — both are the **third terminal state**.
@@ -123,7 +120,7 @@ Capture the round-request SHA once before any selected request goes out.
 Right after it, settle the round's inputs, whether or not requesting-code-review is in the set.
 
 - **Scope**: the PR's range, ending at the round-request SHA, taken from `tools/resolve-range.sh <pr>`.
-  - That script reads the PR record through `gh`'s own repository resolution, while 0-2 checked only origin; where the two differ (`GH_REPO`, `gh repo set-default`), it reads another repository's PR of the same number and the range is silently wrong. Pin `gh`'s resolution to the `<owner>/<repo>` 0-2 returned when calling it.
+  - On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them into one facts file and run it again with `--facts <file>` added, for as long as it asks.
   - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
   - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.
 - **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller.

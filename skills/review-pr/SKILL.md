@@ -26,7 +26,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 
 ### 2. Resolve the range, the purpose, and the requirements
 
-- Run `tools/resolve-range.sh <n>`. On `RANGE <base>..<head>`, bind both SHAs. On `EMPTY`, report that there is nothing to review and end the run. On `STOP <slug>`, report it and end the run.
+- Run `tools/resolve-range.sh <n>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. On `RANGE <base>..<head>`, bind both SHAs. On `EMPTY`, report that there is nothing to review and end the run. On `STOP <slug>`, report it and end the run.
 - Take a candidate for the PR's purpose, the problem it should solve, from the issues it links and, for a sub-issue, its parent. The PR body is the author's claim, the means the author chose, and stays apart from the purpose.
 - Show the user the candidate and ask whether it is right, needs correcting, or is unknown. Ask with no candidate when there is no linked issue or the candidate only restates the PR body: an issue's text alone does not settle the purpose.
 - **Purpose settled** (confirmed or corrected): ask for facts outside this repository that bear on whether the means is sound — callers in other repositories, an earlier attempt at the same approach that was reverted, another mechanism that already meets the purpose; the answer is optional, and the run goes on without one. The requirements are the settled purpose, what the linked issues state as requirements, and any facts the user gave; where the purpose and an issue's requirements differ, the settled purpose wins. The PR body is not a requirement.
