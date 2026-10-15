@@ -161,11 +161,12 @@ written from the record.
 ### `review.id`
 
 The id of the review the create made, and the record is read by that id —
-never the PR's newest review, which may be someone else's. Written as the
-create call returned it; when the create returns none, it is the id of the
+never the PR's newest review, which may be someone else's. It is the id the
+create call returned; when the create returns none, it is the id of the
 viewer's one `PENDING` review on the PR, read right after the create
 succeeded and before any other step, since a submitted review is no longer
-pending. Pinned from the script's `--posted` argument.
+pending. Written from the record read. Pinned from the script's `--posted`
+argument.
 
 ### `review.commit`
 
