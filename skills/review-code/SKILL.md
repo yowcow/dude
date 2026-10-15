@@ -40,6 +40,7 @@ Either invocation answers in one line:
 - `RANGE <base>..<head>` — the two SHAs to review.
 - `EMPTY` — the range holds nothing; fall through to 4.
 - `STOP <reason>` — the base could not be settled. Report the reason and stop, rather than reviewing a range that may be somebody else's work.
+- `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 
 ## Pass
 

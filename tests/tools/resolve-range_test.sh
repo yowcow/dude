@@ -11,10 +11,8 @@
 # and a real work repository cloned from it, both under $HARNESS_TMP and both
 # offline.
 #
-# Limitation: the SUT reads the PR record's base oid through a --jq filter
-# passed to `gh pr view`, and the fake `gh` matches stubs on the *exact* argv.
-# The stub bodies here are already filtered, so a defect that lives only
-# inside the filter string is invisible to this file.
+# The PR shape reads the PR record's base oid as a fact (pr_facts below), so
+# its rows make no `gh` call at all; the gh call count is 0 throughout.
 #
 # The no-argument shape reads the prerequisite's PR as facts (prereq_facts
 # below), so its trailer rows make no `gh pr list` call; the rows without a
@@ -245,10 +243,14 @@ work_repo() {
   printf '%s\n' "$dir"
 }
 
-# stub_pr_view <pr-number> <exit-status> -- the PR record lookup, filtered
-# body (the base oid) on stdin.
-stub_pr_view() {
-  gh_stub_response '*' "$2" pr view --json baseRefOid --jq .baseRefOid -- "$1"
+# pr_facts <pr> <base-sha> [<repo>] -- prints a facts path: the PR record's
+# base oid, read for the one PR in the one repository the script asked about.
+pr_facts() {
+  facts_file <<EOF
+repo=${3:-acme/prremote}
+pr.number=$1
+pr.base.sha=$2
+EOF
 }
 
 # stub_default_branch <exit-status> -- the `gh repo view` rung of the
@@ -301,48 +303,65 @@ git_repo_commit "$PRUNREL" O.md 'other\n' "$(commit_msg 'unrelated root' -)"
 git_repo_push "$PRUNREL" "$PRREMOTE" other:refs/pull/9/head
 
 row_start
-printf '%s\n' "$FORK_SHA" | stub_pr_view 7 0
 run_in "$PRWORK" 7
-assert_row 'pr-shape-fetches-the-missing-head' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 1
+assert_row 'pr-shape-without-facts-asks' 0 'NEED repo=acme/prremote pr.number=7 pr.base.sha\n' 0
+
+row_start
+run_in "$PRWORK" 7 --facts "$(pr_facts 7 "$FORK_SHA")"
+assert_row 'pr-shape-fetches-the-missing-head' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 0
 
 # The record's base oid here is the base branch's *current* tip, which the
 # clone has never fetched and which is not an ancestor of the head. Taken as
 # the range's left end it would show LATER.md as a deletion by the PR.
 row_start
-printf '%s\n' "$MOVED_SHA" | stub_pr_view 7 0
-run_in "$PRWORK" 7
-assert_row 'pr-shape-base-moved-on-uses-merge-base' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 1
+run_in "$PRWORK" 7 --facts "$(pr_facts 7 "$MOVED_SHA")"
+assert_row 'pr-shape-base-moved-on-uses-merge-base' 0 "RANGE ${FORK_SHA}..${PRHEAD_SHA}\n" 0
 
 row_start
-printf '%s\n' "$FORK_SHA" | stub_pr_view 10 0
-run_in "$PRWORK" 10
-assert_row 'pr-shape-empty-when-head-is-the-base' 0 'EMPTY\n' 1
+run_in "$PRWORK" 10 --facts "$(pr_facts 10 "$FORK_SHA")"
+assert_row 'pr-shape-empty-when-head-is-the-base' 0 'EMPTY\n' 0
 
 row_start
-printf '%s\n' "$FORK_SHA" | stub_pr_view 8 0
-run_in "$PRWORK" 8
-assert_row 'pr-shape-head-fetch-fails' 0 'STOP fetch-failed\n' 1
+run_in "$PRWORK" 8 --facts "$(pr_facts 8 "$FORK_SHA")"
+assert_row 'pr-shape-head-fetch-fails' 0 'STOP fetch-failed\n' 0
 
 row_start
-printf '%s\n' 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef' | stub_pr_view 7 0
-run_in "$PRWORK" 7
-assert_row 'pr-shape-base-fetch-fails' 0 'STOP fetch-failed\n' 1
+run_in "$PRWORK" 7 --facts "$(pr_facts 7 deadbeefdeadbeefdeadbeefdeadbeefdeadbeef)"
+assert_row 'pr-shape-base-fetch-fails' 0 'STOP fetch-failed\n' 0
 
 row_start
-printf '%s\n' "$FORK_SHA" | stub_pr_view 9 0
-run_in "$PRWORK" 9
-assert_row 'pr-shape-merge-base-fails' 0 'STOP merge-base-failed\n' 1
+run_in "$PRWORK" 9 --facts "$(pr_facts 9 "$FORK_SHA")"
+assert_row 'pr-shape-merge-base-fails' 0 'STOP merge-base-failed\n' 0
+
+# An empty base oid is a record the agent could not read: it must stop, not
+# fall through to a fetch of nothing.
+row_start
+run_in "$PRWORK" 7 --facts "$(pr_facts 7 '')"
+assert_row 'pr-base-unread' 0 'STOP fact-missing\n' 0
+
+# A base oid read off another PR would pair this PR's head with that PR's
+# base, a plausible range for the wrong change.
+row_start
+run_in "$PRWORK" 7 --facts "$(pr_facts 8 "$FORK_SHA")"
+assert_row 'pr-read-as-another-pr' 0 'STOP fact-mismatch\n' 0
 
 row_start
-: | stub_pr_view 42 1
-NOREPO_FAIL="$(git_repo_scratch pr-shape-lookup-fails)"
-run_in "$NOREPO_FAIL" 42
-assert_row 'pr-lookup-fails' 0 'STOP pr-lookup-failed\n' 1
+run_in "$PRWORK" 7 --facts "$(pr_facts 7 "$FORK_SHA" upstream/prremote)"
+assert_row 'pr-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
+
+row_start
+NOREPO_FAIL="$(git_repo_scratch pr-shape-no-origin)"
+run_in "$NOREPO_FAIL" 7 --facts "$(pr_facts 7 "$FORK_SHA")"
+assert_row 'pr-shape-no-origin' 0 'STOP repo-lookup-failed\n' 0
 
 row_start
 NOREPO="$(git_repo_scratch pr-shape-norepo)"
 run_in "$NOREPO" 42 extra
 assert_row 'too-many-arguments' 2 '' 0
+
+row_start
+run_in "$PRWORK" 7 --facts
+assert_row 'pr-shape-facts-flag-without-file' 2 '' 0
 
 REMOTE="$(build_remote ranged with-dep)"
 TRUNK_SHA="$(bare_sha "$REMOTE" trunk)"

@@ -94,3 +94,9 @@ says `closed` with a merged flag set is `MERGED`; with the flag unset,
 The PR record's head branch, as the bare name: no `owner:` prefix, no
 `refs/heads/`. A `NEED` line may pin it (`pr.head.ref=<branch>`); written
 from the record, never from the list or the `NEED` line.
+
+### `pr.base.sha`
+
+The base commit OID on that one PR's record. It may be the base branch's
+current tip rather than the point the PR was cut from; the script takes the
+merge-base itself.

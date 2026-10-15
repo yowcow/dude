@@ -2,7 +2,9 @@
 # Resolve the committed range this review covers, printed as two SHAs.
 #
 # Two input shapes, one purpose. Given a PR number, the range is the PR's own
-# head and its merge-base with the PR record's base, both fetched: anything
+# head and its merge-base with the base OID the PR's record carries (fact
+# `pr.base.sha`), pinned to origin's repository -- a same-numbered PR in
+# another repository is a mismatch, not a range -- both fetched: anything
 # derived from the local checkout instead reviews whatever this working copy
 # happens to sit on, which is not the PR's diff wherever the two have
 # diverged, and nothing in the findings would say so. Given no argument, the
@@ -19,8 +21,13 @@
 # is not" and "## Resolving the default branch" — this script implements that
 # table's `review-code`'s `<base>` column.
 #
-# `NEED` from the trailer reader is passed through: the caller reads those
-# facts and calls again with `--facts`.
+# `NEED` is answered here for the PR shape and passed through from the trailer
+# reader for the other: the caller reads those facts and calls again with
+# `--facts`.
+#
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
 #
 # Usage: resolve-range.sh [pr-number] [--facts <file>]
 # Output: RANGE <sha>..<sha> | EMPTY | NEED <token>... | STOP <slug>
@@ -51,6 +58,20 @@ done
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
+# need <spec>...: relay any answer from the self-check other than OK.
+need() {
+  local verdict
+  verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
+  if [ "$verdict" != OK ]; then
+    echo "$verdict"
+    exit 0
+  fi
+}
+
+fact() {
+  bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$1"
+}
+
 # Both shapes answer through here, so an empty range is EMPTY however it was
 # resolved. Handed `RANGE <sha>..<sha>` for a PR whose endpoints coincide, the
 # caller would dispatch a reviewer over an empty diff and read the no-findings
@@ -64,10 +85,12 @@ emit_range() {
 }
 
 if [ -n "$PR" ]; then
-  if ! BASE_OID="$(gh pr view --json baseRefOid --jq .baseRefOid -- "$PR" 2>/dev/null)" || [ -z "$BASE_OID" ]; then
-    echo "STOP pr-lookup-failed"
+  if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
+    echo "STOP repo-lookup-failed"
     exit 0
   fi
+  need "repo=${REPO}" "pr.number=${PR}" pr.base.sha
+  BASE_OID="$(fact pr.base.sha)"
   # Both ends are fetched, never assumed local: a PR somebody else opened has
   # a head this clone never held, and the base oid may be the base branch's
   # current tip rather than the fork point. The left end is therefore the

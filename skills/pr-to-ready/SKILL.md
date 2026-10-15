@@ -123,7 +123,7 @@ Capture the round-request SHA once before any selected request goes out.
 Right after it, settle the round's inputs, whether or not requesting-code-review is in the set.
 
 - **Scope**: the PR's range, ending at the round-request SHA, taken from `tools/resolve-range.sh <pr>`.
-  - That script reads the PR record through `gh`'s own repository resolution, while 0-2 checked only origin; where the two differ (`GH_REPO`, `gh repo set-default`), it reads another repository's PR of the same number and the range is silently wrong. Pin `gh`'s resolution to the `<owner>/<repo>` 0-2 returned when calling it.
+  - On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them into one facts file and run it again with `--facts <file>` added, for as long as it asks.
   - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
   - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.
 - **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller.

@@ -55,7 +55,7 @@ stdout through every such script.
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
 | `pr-create-failed` | `tools/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh` |
+| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
@@ -63,7 +63,7 @@ stdout through every such script.
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
+| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
