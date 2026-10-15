@@ -298,8 +298,6 @@ row_start
 run_in "$PRWORK" 9 --facts "$(pr_facts 9 "$FORK_SHA")"
 assert_row 'pr-shape-merge-base-fails' 0 'STOP merge-base-failed\n' 0
 
-# An empty base oid is a record the agent could not read: it must stop, not
-# fall through to a fetch of nothing.
 row_start
 run_in "$PRWORK" 7 --facts "$(pr_facts 7 '')"
 assert_row 'pr-base-unread' 0 'STOP fact-missing\n' 0
@@ -469,7 +467,6 @@ W="$(work_repo prereq-unknown-state "$REMOTE" task trunk)"
 run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 DRAFT | facts_file)"
 assert_row 'prereq-state-unrecognised' 0 'STOP fact-enum\n' 0
 
-# A recorded trailer with no facts yet asks for them.
 row_start
 W="$(work_repo trailer-asks "$REMOTE" task trunk)"
 run_in "$W"

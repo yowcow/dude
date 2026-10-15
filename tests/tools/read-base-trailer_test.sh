@@ -174,7 +174,7 @@ assert_row 'no-revs' 2 '' 0
 # A list that was never read is a missing fact, where the old script's failed
 # `gh` call was `prereq-lookup-failed`.
 row_start
-F="$(printf 'repo=acme/widgets\nprereq.head=acme:dep\nprereq.head-pr.total=\n' | facts_file)"
+F="$(rounds acme:dep '')"
 run_in "$DEP" --facts "$F" HEAD
 assert_row 'prereq-lookup-unread' 0 'STOP fact-missing\n' 0
 

@@ -260,8 +260,6 @@ fixture multi feature remote
 run_in "$FIXTURE_WORK" feature --facts "$(own multi 2 12 13 | facts_file)"
 assert_row 'several-prs-for-one-branch-stop' 0 'STOP ask-multiple-prs\n' 0
 
-# A means that ignores the head filter returns unrelated PRs; the record's own
-# head is what catches it.
 row_start
 fixture head-ignored feature remote
 run_in "$FIXTURE_WORK" feature --facts "$({ own head-ignored 1 12; record 12 true other; } | facts_file)"
@@ -279,9 +277,9 @@ assert_row 'pr-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
 
 # ---- step 2b: who decides the target repository --------------------------
 #
-# Asked only once no PR was found and no other remote decided it: a fork
-# whose branch already has a PR reports the PR, never STOP ask-base-repo --
-# the step-2 rows above prove it by carrying no fork fact at all.
+# A fork whose branch already has a PR reports the PR, never STOP
+# ask-base-repo -- the step-2 rows above prove it by carrying no fork fact at
+# all.
 
 row_start
 fixture fork-origin feature remote
@@ -428,9 +426,7 @@ assert_row 'an-empty-list-is-no-pr-and-the-base-is-resolved' 0 'CREATE repo=acme
 # ---- the read-back after the agent's own create --------------------------
 #
 # The agent opens the PR; a second call with --created <base> and facts read
-# afresh finds it again. Pinned: the record's head and base, so a create whose
-# head defaulted to the checked-out branch reads back no PR, and one opened
-# onto another base is a mismatch -- neither is reported as created.
+# afresh finds it again.
 
 row_start
 fixture created feature remote

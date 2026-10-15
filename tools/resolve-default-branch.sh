@@ -7,8 +7,7 @@
 # skills/pr-to-ready/scripts/watch-claude-review.sh -- and by no SKILL.md:
 # it is one answer several skills need, and the spec it implements lives in
 # skills/implement-work/references/base-branch.md, "## Resolving the default
-# branch". Without this paragraph the next reader takes the absent caller for
-# an oversight.
+# branch".
 #
 # The answer is the remote's own HEAD, read live with `git ls-remote
 # --symref`. refs/remotes/origin/HEAD is deliberately not read: a clone sets
@@ -50,13 +49,13 @@ if [ -n "${1:-}" ]; then
     if ! URL="$(git remote get-url origin 2>/dev/null)"; then
       exit 1
     fi
-    u="${URL%/*}"
-    o="${u##*/}"
-    o="${o##*:}"
-    if [ -z "$o" ]; then
+    url_dir="${URL%/*}"
+    owner="${url_dir##*/}"
+    owner="${owner##*:}"
+    if [ -z "$owner" ]; then
       exit 1
     fi
-    REMOTE="${u%"$o"}${WANT}.git"
+    REMOTE="${url_dir%"$owner"}${WANT}.git"
   fi
 fi
 

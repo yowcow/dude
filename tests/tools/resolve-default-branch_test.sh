@@ -3,9 +3,8 @@
 # exits for each answer a remote's HEAD can give.
 #
 # Every caller reads this script's stdout as a branch name and its non-zero
-# exit as "could not tell", so every row asserts both
-# halves and that gh was never called. Every remote is a real bare repo under
-# $HARNESS_TMP whose HEAD seed points at the first branch it seeds.
+# exit as "could not tell", so every row asserts both halves and that gh was
+# never called.
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:tools/resolve-default-branch.sh` in a copy under
@@ -55,7 +54,6 @@ row_start
 run_in "$W"
 assert_row 'remote-head-names-the-branch' 0 'trunk\n' 0
 
-# A clone's refs/remotes/origin/HEAD is set once and never refreshed.
 row_start
 git_repo_origin_head "$W" other
 run_in "$W"
@@ -111,7 +109,6 @@ row_start
 run_in "$W" acme/parent
 assert_row 'repo-arg-selects-its-remote' 0 'main\n' 0
 
-# Same $W, so it discriminates too.
 row_start
 run_in "$W" Acme/Parent
 assert_row 'repo-arg-matches-case-insensitively' 0 'main\n' 0
@@ -142,7 +139,7 @@ assert_row 'two-arguments-is-usage-error' 2 '' 0
 row_start
 DASH="$(git_repo_scratch dash)"
 git_repo_init "$DASH" trunk
-git -C "$DASH" remote add origin a/b
+git_repo_remote "$DASH" origin a/b
 run_in "$DASH" '--upload-pack=touch m'
 assert_row 'repo-arg-with-leading-dash-is-no-option' 1 '' 0
 tally check_eq 'repo-arg-with-leading-dash-is-no-option: no side effect' absent \

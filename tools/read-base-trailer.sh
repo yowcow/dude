@@ -24,9 +24,6 @@
 # tools/resolve-default-branch.sh sits here for the same reason and says
 # the same thing.
 #
-# It reads no PR itself: the prerequisite's PRs come as facts (facts.md,
-# prereq.head / prereq.head-pr / pr.state).
-#
 # The revs come from the caller and go straight to `git log`, because the two
 # callers scan different histories: one reads a branch it has just fetched,
 # bounded by the default branch; the other reads the checkout it is in. Which
@@ -99,8 +96,6 @@ if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
   exit 0
 fi
 
-# The list is counted, never tested for emptiness: no PR and several need
-# different answers.
 SPECS=("repo=${REPO}" "prereq.head=${REPO%%/*}:${RECORDED}" 'prereq.head-pr[]')
 need "${SPECS[@]}"
 COUNT="$(fact prereq.head-pr.total)"

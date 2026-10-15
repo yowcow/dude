@@ -9,12 +9,10 @@
 # resolving the base before pushing would stop an unpushed local branch
 # before it ever got pushed.
 #
-# Which repository the PR targets is asked of a person, never detected: with
-# no [base-repo], a remote beside origin or origin being a fork answers
-# STOP ask-base-repo. Fork-ness is the fact `repo.fork`, asked only once no
-# PR was found and no other remote decided it; an unread value, or a read that
-# found no repository record, stops instead of reading as "not a fork", which
-# would open the PR against the fork when its owner meant the parent.
+# Fork-ness is the fact `repo.fork`, asked only once no PR was found and no
+# other remote decided it; an unread value, or a read that found no repository
+# record, stops instead of reading as "not a fork", which would open the PR
+# against the fork when its owner meant the parent.
 #
 # After CREATE, the read-back pins the record's head and base: a create whose
 # head defaulted to the checked-out branch reads back no PR, and one opened onto
@@ -171,7 +169,6 @@ if [ -z "$BASE_REPO" ]; then
   fi
   SPECS+=("repo=${REPO}" 'repo.fork[]')
   need "${SPECS[@]}"
-  # exactly one repository record: a search that missed the fork reports 0
   if [ "$(fact repo.fork.total)" -ne 1 ]; then
     echo "STOP fork-unread"
     exit 0

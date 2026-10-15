@@ -21,9 +21,8 @@
 # lives in tools/read-base-trailer.sh and is covered
 # by tests/tools/read-base-trailer_test.sh's `trailer-read-fails` row.
 #
-# The prerequisite's PR comes as facts: the trailer rows pass a facts file
-# (prereq_facts below) and the SUT makes no `gh pr list` call. The default
-# branch is the remote's own HEAD (resolve-default-branch.sh), so the file
+# The prerequisite's PR comes as facts (prereq_facts below) and the default
+# branch from the remote's own HEAD (resolve-default-branch.sh), so the file
 # stubs nothing and every row asserts 0 gh calls.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
@@ -130,8 +129,7 @@ REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
 # the fetch still reads it from origin) yet differs from every other row's
 # `main` -- a same-named answer would pass even if the selection never
 # reached the selected repository's HEAD.
-REMOTE_TRUNK="$(build_remote trunkremote - -)"
-git -C "$REMOTE_TRUNK" branch trunk main
+REMOTE_TRUNK="$(build_selected trunkremote main)"
 
 # ---- the default-branch ladder, with no trailer to find ------------------
 #
@@ -251,15 +249,13 @@ assert_row 'prerequisite-state-unrecognised' 0 'STOP fact-enum\n' 0
 # and a missing task branch want different answers from the person the caller
 # stops for.
 #
-# The first row's selected repository names a default (`trunk2`) that origin
+# The first row's selected repository names a default (`trunk`) that origin
 # does not have, so the default branch's own fetch is what fails. The second
 # row's default is a real branch, so that fetch succeeds and it is the task
 # branch's fetch that fails instead.
 
 row_start
-SEL="$(build_remote selabsent - -)"
-git -C "$SEL" branch trunk2 main
-git_repo_bare_head "$SEL" trunk2
+build_selected selabsent trunk >/dev/null
 W="$(work_repo default-absent "$REMOTE_PLAIN" -)"
 run_in "$W" feature acme/selabsent
 assert_row 'default-branch-absent-on-remote' 0 'STOP default-fetch-failed\n' 0

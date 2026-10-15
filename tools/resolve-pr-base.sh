@@ -60,11 +60,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # Resolve the default branch before the scan below rather than at the two
 # places that print it: the scan's range is expressed against it, so it has
 # to be both named and fetched by then.
-if [ -n "$BASE_REPO" ]; then
-  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
-else
-  DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
-fi
+DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
 
 # The task branch's tip is read below as FETCH_HEAD rather than from a local
 # checkout — this session may not have <branch> checked out at all. So the
