@@ -1,57 +1,107 @@
 #!/usr/bin/env bash
-# Post one PR review in the form the user chose: APPROVE or COMMENT submits it,
-# PENDING leaves it unsubmitted for the user to finish on GitHub. Anything
-# else -- an empty choice, REQUEST_CHANGES -- is refused before gh is called,
-# so a run where nothing was chosen cannot post.
+# Guard a PR review before it is written and read it back after: the choice is
+# APPROVE or COMMENT (submitted) or PENDING (left unsubmitted for the user to
+# finish on GitHub).
 #
-# PENDING is spelled by omitting `event`: that is how the REST endpoint creates
-# a pending review, and sending event=PENDING is not.
+# It writes nothing and calls no GitHub client. The first call answers WRITE;
+# the agent then creates a pending review anchored to <head>, adds each inline
+# comment, and submits it unless the choice is PENDING. The call with
+# `--posted <review-id>` reads the record back through facts.
 #
-# commit_id pins the review to the head that was reviewed. The inline line
-# numbers in the payload were computed against that head; left to default,
-# GitHub anchors them to the PR's current head, and an author who pushed in the
-# meantime gets each comment on whatever line now sits at that number.
+# The choice is validated before any write, so an empty choice or
+# REQUEST_CHANGES cannot post: the agent has no WRITE to act on.
 #
-# The payload goes to gh on stdin, never through a flag string: review bodies
-# carry backticks and quotes.
+# The read-back catches what the write calls' own success does not:
+#   - a review not anchored to <head> (`review.commit`): the inline line
+#     numbers were computed against that head, and left to default GitHub
+#     anchors them to the PR's current head, so an author who pushed meanwhile
+#     gets each comment on whatever line now sits at that number;
+#   - a draft that was submitted, or an APPROVE/COMMENT left pending
+#     (`review.state` against the choice);
+#   - a comment dropped mid-write (`review.comment-count` against the
+#     payload's);
+#   - the record of another repository, PR or review (the pins).
 #
-# Conventions: ../../implement-work/references/script-conventions.md.
-# STOP slugs: ../../implement-work/references/stop-registry.md.
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: post-review.sh <owner> <repo> <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file>
-# Output: POSTED <state> <url> | STOP review-post-failed
+# Usage: post-review.sh <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]
+# Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT> comments=<k>
+#         | NEED <token>... | POSTED <state> <url>
+#         | STOP review-pending-left | STOP review-state-mismatch | STOP <slug>
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <owner> <repo> <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file>" >&2
+  echo "Usage: $0 <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]" >&2
   exit 2
 }
 
-[ "$#" -eq 6 ] || usage
-
-OWNER="$1"
-REPO="$2"
-PR="$3"
-HEAD="$4"
-EVENT="$5"
-PAYLOAD_FILE="$6"
+POSITIONAL=()
+POSTED=''
+FACTS=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --posted | --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      if [ "$1" = --posted ]; then POSTED="$2"; else FACTS="$2"; fi
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      POSITIONAL+=("$1")
+      shift
+      ;;
+  esac
+done
+[ "${#POSITIONAL[@]}" -eq 4 ] || usage
+PR="${POSITIONAL[0]}"
+HEAD="${POSITIONAL[1]}"
+EVENT="${POSITIONAL[2]}"
+PAYLOAD_FILE="${POSITIONAL[3]}"
 
 [[ "$PR" =~ ^[0-9]+$ ]] || usage
+[[ "$HEAD" =~ ^[0-9a-f]{40}$ ]] || usage
 case "$EVENT" in
   APPROVE | COMMENT | PENDING) ;;
   *) usage ;;
 esac
 [ -r "$PAYLOAD_FILE" ] || usage
+COMMENTS="$(jq -e '.comments | length' "$PAYLOAD_FILE" 2>/dev/null)" || usage
 
-BODY="$(jq -c --arg c "$HEAD" --arg e "$EVENT" \
-  '{commit_id: $c, body, comments} + (if $e == "PENDING" then {} else {event: $e} end)' \
-  "$PAYLOAD_FILE" 2>/dev/null)" || usage
-
-if ! OUT="$(printf '%s\n' "$BODY" |
-  gh api --method POST "repos/${OWNER}/${REPO}/pulls/${PR}/reviews" --input - \
-    --jq '"POSTED \(.state) \(.html_url)"' 2>/dev/null)"; then
-  echo "STOP review-post-failed"
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
+  echo "STOP repo-lookup-failed"
   exit 0
 fi
 
-printf '%s\n' "$OUT"
+if [ -z "$POSTED" ]; then
+  echo "WRITE repo=${REPO} pr=${PR} head=${HEAD} event=${EVENT} comments=${COMMENTS}"
+  exit 0
+fi
+
+VERDICT="$(bash "${SCRIPT_DIR}/../../../tools/facts.sh" check "$FACTS" \
+  "repo=${REPO}" "pr.number=${PR}" "review.id=${POSTED}" "review.commit=${HEAD}" \
+  'review.state:PENDING,APPROVED,COMMENTED' review.comment-count review.url)"
+if [ "$VERDICT" != OK ]; then
+  echo "$VERDICT"
+  exit 0
+fi
+
+fact() { bash "${SCRIPT_DIR}/../../../tools/facts.sh" get "$FACTS" "$1"; }
+STATE="$(fact review.state)"
+COUNT="$(fact review.comment-count)"
+case "$EVENT" in
+  APPROVE) WANT=APPROVED ;;
+  COMMENT) WANT=COMMENTED ;;
+  PENDING) WANT=PENDING ;;
+esac
+if [ "$STATE" != "$WANT" ] || [ "$COUNT" != "$COMMENTS" ]; then
+  if [ "$STATE" = PENDING ]; then
+    echo "STOP review-pending-left"
+  else
+    echo "STOP review-state-mismatch"
+  fi
+  exit 0
+fi
+echo "POSTED ${STATE} $(fact review.url)"
