@@ -201,18 +201,18 @@ sed -i 's|^repo=.*|repo=upstream/widgets|' "$F"
 run_in "$DEP" --facts "$F" HEAD
 assert_row 'prereq-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
 
-# D4: a head filter the means ignored returns an unrelated PR, whose record's
+# a head filter the means ignored returns an unrelated PR, whose record's
 # head is not the recorded branch.
 row_start
 run_in "$DEP" --facts "$(rounds acme:dep 1 9 OPEN other)" HEAD
 assert_row 'head-filter-ignored-stops' 0 'STOP fact-mismatch\n' 0
 
-# D4: state comes from the record only, and a lower-case copy is not in the set.
+# state comes from the record only, and a lower-case copy is not in the set.
 row_start
 run_in "$DEP" --facts "$(rounds acme:dep 1 9 closed)" HEAD
 assert_row 'merged-read-off-a-list-lower-case' 0 'STOP fact-enum\n' 0
 
-# D4: a list reports a merged PR as not merged; copied as `CLOSED` it stops as
+# a list reports a merged PR as not merged; copied as `CLOSED` it stops as
 # abandoned rather than becoming a base, and the catalogue forbids reading
 # state off a list.
 row_start

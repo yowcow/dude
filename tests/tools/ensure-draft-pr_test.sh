@@ -21,7 +21,7 @@
 # Every row runs from inside its own work repository, never from the scripts
 # directory: the SUT finds its sibling through dirname -- "$0", so a row run
 # from the scripts directory would pass even against a cwd-relative call to
-# the sibling -- one of the guards the SUT's own header names.
+# the sibling.
 #
 # RED verification (see tests/README.md). Against
 # `git show master:tools/ensure-draft-pr.sh` every row fails but four: the old
@@ -29,11 +29,9 @@
 # The four that pass hold for the old script too: no-arguments,
 # facts-flag-without-file and created-flag-without-base (it also exits 2) and
 # the no-redundant-push tally (it does not push either). The tree has to be
-# copied with its shape intact: ensure-draft-pr.sh reaches
-# resolve-pr-base.sh, facts.sh and origin-repo.sh through dirname "$0", and
-# resolve-pr-base.sh sits beside tools/resolve-default-branch.sh,
-# tools/fetch-to-sha.sh and tools/read-base-trailer.sh, so a flat copy answers
-# on every row regardless of this file's own mutation.
+# copied with its shape intact (`cp -R tools`): the SUT resolves its siblings
+# through dirname "$0", so a flat copy answers on every row regardless of this
+# file's own mutation.
 #   tmp="$(mktemp -d)"
 #   cp -R tools "$tmp/tools"
 #   git show master:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
@@ -116,9 +114,7 @@ own() {
   local name="$1" t="$2"
   shift 2
   printf 'target=acme/%s\nhead=acme:feature\nhead.open-pr.total=%s\n' "$name" "$t"
-  if [ "$#" -gt 0 ]; then
-    for n in "$@"; do printf 'head.open-pr=%s\n' "$n"; done
-  fi
+  for n in "$@"; do printf 'head.open-pr=%s\n' "$n"; done
 }
 
 # record <pr> <draft> [<head> [<base>]] -- that PR's record lines
@@ -233,10 +229,6 @@ assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'NEED target=a
 tally check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # ---- step 2: the branch's own PR -----------------------------------------
-#
-# The list is read by the owner-qualified head and the one PR found is read
-# from its own record with its head pinned, so a list whose head filter the
-# means ignored stops on the record instead of reporting an unrelated PR.
 
 row_start
 fixture exists-draft feature remote
@@ -346,9 +338,9 @@ git_repo_remote "$FIXTURE_WORK" upstream "$(parent_bare main)"
 run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
 assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
 
-# The second call after `origin-only-fork-without-base-repo-stops`, the path
-# #571 exists to serve: no `upstream` remote, so the parent's default branch is
-# read at origin's sibling path.
+# The second call after `origin-only-fork-without-base-repo-stops`: no
+# `upstream` remote, so the parent's default branch is read at origin's sibling
+# path.
 row_start
 fixture fork-parent feature remote
 parent_bare main >/dev/null
@@ -357,7 +349,7 @@ assert_row 'origin-only-fork-parent-chosen-creates' 0 'CREATE repo=acme/parent h
 
 row_start
 fixture parent-gone feature remote
-run_in "$FIXTURE_WORK" feature acme/nosuch --facts "$(printf 'target=acme/nosuch\nhead=acme:feature\nhead.open-pr.total=0\n' | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/nosuch --facts "$(own nosuch 0 | facts_file)"
 assert_row 'parent-unreachable-stops' 0 'STOP ask-default-branch\n' 0
 
 # The parent's default (`trunk`) is one origin does not have, so the default

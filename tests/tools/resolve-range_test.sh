@@ -77,9 +77,7 @@
 #   6. OPEN fetching the branch the trailer recorded (the OPEN arm).
 #      Replacing `FETCH_SPEC="${RECORDED}"` with the MERGED path's
 #      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
-#      two others. `RECORDED` now comes from read-base-trailer.sh's answer, so
-#      this record needs the tree copy, not a single-file copy of
-#      resolve-range.sh alone. This is why `refs/pull/9/head` is a decoy under
+#      two others. This is why `refs/pull/9/head` is a decoy under
 #      `with-dep`: pointed at dep's own commit, this mutant passes.
 #   7. The trailer scan keeping the newest trailer. This guard lives in
 #      read-base-trailer.sh (`awk 'NF{print;exit}'`), so the mutant is applied

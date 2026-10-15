@@ -24,16 +24,8 @@
 # tools/resolve-default-branch.sh sits here for the same reason and says
 # the same thing.
 #
-# It reads no PR itself: the prerequisite's PRs come as facts -- the list by
-# owner-qualified head, then that one PR's record with its head pinned, so a
-# list whose head filter the means ignored stops on the record instead of
-# naming an unrelated PR as the prerequisite. State comes only from the
-# record: a list has been measured reporting a merged PR as not merged.
-#
-# The default branch is deliberately NOT resolved here, although two of the
-# three rows left to the callers name it. Resolving it here would add a remote
-# round-trip on the NO-TRAILER path, whose callers already resolve it where
-# they need it.
+# It reads no PR itself: the prerequisite's PRs come as facts (facts.md,
+# prereq.head / prereq.head-pr / pr.state).
 #
 # The revs come from the caller and go straight to `git log`, because the two
 # callers scan different histories: one reads a branch it has just fetched,
@@ -63,7 +55,6 @@ if [ "$#" -eq 0 ]; then usage; fi
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# need <spec>...: relay any answer from the self-check other than OK.
 need() {
   local verdict
   verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
@@ -108,9 +99,8 @@ if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
   exit 0
 fi
 
-# The list is read by the head branch's *name*, which a PR record keeps after
-# the branch is gone. It is counted, never tested for emptiness: no PR and
-# several need different answers.
+# The list is counted, never tested for emptiness: no PR and several need
+# different answers.
 SPECS=("repo=${REPO}" "prereq.head=${REPO%%/*}:${RECORDED}" 'prereq.head-pr[]')
 need "${SPECS[@]}"
 COUNT="$(fact prereq.head-pr.total)"

@@ -18,9 +18,6 @@
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
-# `NEED` from the trailer reader is passed through: the caller reads those
-# facts and calls again with `--facts`.
-#
 # Usage: resolve-pr-base.sh <branch> [repo] [--facts <file>]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
@@ -105,7 +102,6 @@ fi
 # branch back as the base -- which ensure-draft-pr.sh then answers as
 # `CREATE ... base=<base>`, so the caller opens the PR against a branch this
 # task never sat on.
-#
 if [ -n "$FACTS" ]; then
   ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" FETCH_HEAD "^${DEFAULT_SHA}")"
 else
@@ -119,9 +115,6 @@ case "${KIND}" in
     echo "BASE ${DEFAULT}"
     ;;
   STOP | NEED)
-    # Passed through unchanged: the slugs are this script's output contract,
-    # and these cases are answered identically by both readers,
-    # which is why they are answered once, over there.
     printf '%s\n' "$ANSWER"
     ;;
   PREREQ)

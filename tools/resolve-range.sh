@@ -2,14 +2,12 @@
 # Resolve the committed range this review covers, printed as two SHAs.
 #
 # Two input shapes, one purpose. Given a PR number, the range is the PR's own
-# head and its merge-base with the base OID the PR's record carries (fact
-# `pr.base.sha`), pinned to origin's repository -- a same-numbered PR in
-# another repository is a mismatch, not a range -- both fetched: anything
-# derived from the local checkout instead reviews whatever this working copy
-# happens to sit on, which is not the PR's diff wherever the two have
-# diverged, and nothing in the findings would say so. Given no argument, the
-# range runs from the base this branch was cut from to HEAD, and that base is
-# read back from the Base-Branch trailer rather than assumed.
+# head and its merge-base with the base OID the PR's record carries, both
+# fetched: anything derived from the local checkout instead reviews whatever
+# this working copy happens to sit on, which is not the PR's diff wherever the
+# two have diverged, and nothing in the findings would say so. Given no
+# argument, the range runs from the base this branch was cut from to HEAD, and
+# that base is read back from the Base-Branch trailer rather than assumed.
 #
 # Reading it back is what the reviewed range depends on. Squash and rebase
 # merges rewrite a prerequisite's commits under fresh SHAs, so falling back to
@@ -20,10 +18,6 @@
 # "## Reading the trailer back", "### Why the state is re-read and the branch
 # is not" and "## Resolving the default branch" — this script implements that
 # table's `review-code`'s `<base>` column.
-#
-# `NEED` is answered here for the PR shape and passed through from the trailer
-# reader for the other: the caller reads those facts and calls again with
-# `--facts`.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.
@@ -58,7 +52,6 @@ done
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# need <spec>...: relay any answer from the self-check other than OK.
 need() {
   local verdict
   verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
@@ -157,9 +150,6 @@ case "${KIND}" in
     exit 0
     ;;
   STOP | NEED)
-    # Passed through unchanged: the slugs are this script's output contract,
-    # and these cases are answered identically by both readers,
-    # which is why they are answered once, over there.
     printf '%s\n' "$ANSWER"
     exit 0
     ;;

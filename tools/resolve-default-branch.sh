@@ -19,16 +19,12 @@
 # With [repo], the remote read is the configured one whose URL reduces to
 # that repository (origin-repo.sh); else origin's URL with its last two
 # segments replaced by that repository, which reaches a fork's parent on the
-# host and transport the fork uses. One that answers no HEAD there is exit 1,
-# and the caller asks a person.
+# host and transport the fork uses.
 #
 # The exit status and the `ref:` line are read together: a failing ls-remote
 # prints nothing useful, and a remote whose HEAD is unborn or detached exits 0
 # with no `ref:` line -- an empty answer a caller would fetch as
 # `git fetch origin -- ''`.
-#
-# The STOP each caller prints on exit 1 is its own output contract
-# (script-conventions.md, STOP contract).
 #
 # Usage: resolve-default-branch.sh [repo]
 set -euo pipefail
@@ -51,8 +47,6 @@ if [ -n "${1:-}" ]; then
     fi
   done < <(git remote 2>/dev/null)
   if [ -z "$REMOTE" ]; then
-    # origin-only checkout (a fork asking for its parent): the inverse of
-    # origin-repo.sh's reduction -- swap origin's last two path segments.
     if ! URL="$(git remote get-url origin 2>/dev/null)"; then
       exit 1
     fi

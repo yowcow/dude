@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 # Table test for tools/resolve-default-branch.sh: what it prints and what it
-# exits for each answer a remote's HEAD can give. It reads the remote's HEAD
-# with git; no gh.
+# exits for each answer a remote's HEAD can give.
 #
-# Four callers in two skills plus tools/ read this script's stdout as a branch
-# name and its non-zero exit as "could not tell", so every row asserts both
+# Every caller reads this script's stdout as a branch name and its non-zero
+# exit as "could not tell", so every row asserts both
 # halves and that gh was never called. Every remote is a real bare repo under
-# $HARNESS_TMP whose HEAD git_repo_bare_head points at its default.
+# $HARNESS_TMP whose HEAD seed points at the first branch it seeds.
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:tools/resolve-default-branch.sh` in a copy under
@@ -28,7 +27,8 @@ SUT="${SUT:-${REPO_ROOT}/tools/resolve-default-branch.sh}"
 failed=0
 total=0
 
-# seed <bare> <branch>...   a commit on each branch, pushed to <bare>
+# seed <bare> <branch>...   a commit on each branch, pushed to <bare>; HEAD
+#                           points at the first branch
 SEEDS=0
 seed() {
   local bare="$1" b seedwork
@@ -42,13 +42,13 @@ seed() {
   done
   git_repo_remote "$seedwork" origin "$bare"
   for b in "$@"; do git_repo_push "$seedwork" origin "$b"; done
+  git_repo_bare_head "$bare" "$1"
 }
 
 # `trunk` rather than `main`: a mutant that guesses the conventional name
 # instead of asking would pass a row named `main`.
 BARE="$(git_repo_bare acme widgets)"
 seed "$BARE" trunk other
-git_repo_bare_head "$BARE" trunk
 W="$(git_repo_clone work "$BARE" trunk)"
 
 row_start
@@ -103,11 +103,9 @@ U="$(git_repo_scratch upstreams)/acme/parent.git"
 mkdir -p "${U%/*}"
 git init -q --bare "$U"
 seed "$U" main
-git_repo_bare_head "$U" main
 git_repo_remote "$W" upstream "$U"
 D="$(git_repo_bare acme parent)"
 seed "$D" trunk
-git_repo_bare_head "$D" trunk
 
 row_start
 run_in "$W" acme/parent
@@ -125,7 +123,6 @@ assert_row 'repo-arg-equal-to-origin' 0 'trunk\n' 0
 row_start
 E="$(git_repo_bare acme elsewhere)"
 seed "$E" trunk
-git_repo_bare_head "$E" trunk
 git -C "$W" remote remove upstream
 run_in "$W" acme/elsewhere
 assert_row 'repo-arg-with-no-remote-reads-origins-sibling' 0 'trunk\n' 0

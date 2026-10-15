@@ -9,14 +9,6 @@
 # resolving the base before pushing would stop an unpushed local branch
 # before it ever got pushed.
 #
-# The branch's PR is looked up by its owner-qualified head in the target
-# repository, and the one PR found is read from its own record with its head
-# pinned: a means that ignores the head filter returns unrelated PRs, and one
-# of them would otherwise be reported as this branch's PR.
-#
-# No base is taken as an argument. The sibling ./resolve-pr-base.sh resolves
-# one, only after no PR was found -- an existing PR needs no base.
-#
 # Which repository the PR targets is asked of a person, never detected: with
 # no [base-repo], a remote beside origin or origin being a fork answers
 # STOP ask-base-repo. Fork-ness is the fact `repo.fork`, asked only once no
@@ -24,15 +16,9 @@
 # found no repository record, stops instead of reading as "not a fork", which
 # would open the PR against the fork when its owner meant the parent.
 #
-# After CREATE the agent opens the PR and calls again with the same arguments
-# plus --created <base>, and facts read afresh. The read-back pins the record's
-# head and base: a create whose head defaulted to the checked-out branch reads
-# back no PR, and one opened onto another base is a mismatch -- neither is
-# reported as created.
-#
-# The sibling is invoked through SCRIPT_DIR (conventions): this script runs
-# from anywhere, and a bare name dies under `set -e` with a bash error instead
-# of the contracted STOP.
+# After CREATE, the read-back pins the record's head and base: a create whose
+# head defaulted to the checked-out branch reads back no PR, and one opened onto
+# another base is a mismatch -- neither is reported as created.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.
