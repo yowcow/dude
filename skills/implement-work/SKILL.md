@@ -191,9 +191,9 @@ Push the branch to `origin` under its own name; the check's `OK` is its only pre
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
-Then call `tools/ensure-draft-pr.sh <branch> <title> <body-file>` once. It looks for a PR already on `<branch>` and creates one only when none is found, resolving the base itself at that point alone. Branch on the one line it prints — the output contract in that script's header is the single source. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
+Then call `tools/ensure-draft-pr.sh <branch>`. It looks for a PR already on `<branch>`, and only when none is found resolves the base and answers with the repository, head and base to open one on. Branch on the one line it prints — the output contract in that script's header is the single source. On `NEED`, read the facts it names as `<skill-dir>/references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. On its create answer, open the draft PR by your own means in that repository, from that head, onto that base, with the title and body below; then call it again with the same branch and base repository, if one was chosen, plus `--created <base>` and a new facts file read afresh — the earlier file still says there is no PR, and without the base repository the read-back looks in origin and finds none. If opening the PR fails, report it and hand the branch over. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
 
-Where that call answers `STOP ask-base-repo`, the checkout is a fork and no base repository was chosen: ask the user which repository the draft PR should target, offering the fork child first and its parent second, then call the same script once more with the chosen repository appended. A found or created PR from that second call is the deliverable as above. A stop from it is reported and the branch handed over regardless.
+Where it answers `STOP ask-base-repo`, origin is a fork or has another remote beside it, and no base repository was chosen: ask the user which repository the draft PR should target, offering origin's own repository first, then call the same script again with the chosen repository appended. A found or created PR from there on is the deliverable as above. A stop is reported and the branch handed over regardless.
 
 Title and body follow the repo's PR template when it has one.
 
@@ -202,7 +202,7 @@ Title and body follow the repo's PR template when it has one.
 
 Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the `url=` value from that line — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
 
-- **PR creation belongs here**, and to this one point in the flow. Drafting the title and body stays in the main loop at this point and is never dispatched: the script takes a pre-drafted `<branch> <title> <body-file>` and drafts nothing itself.
+- **PR creation belongs here**, and to this one point in the flow. Drafting the title and body stays in the main loop at this point and is never dispatched; the script neither drafts nor opens the PR.
 - **Integration goes through a PR.** Merging this branch into its base instead of handing it over would skip `pr-to-ready`, CI, and PR review entirely. If the user explicitly wants that, confirm they mean to skip the PR before doing it — this skill carries no merge procedure of its own.
 
 ## Report

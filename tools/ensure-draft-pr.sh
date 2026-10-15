@@ -1,138 +1,115 @@
 #!/usr/bin/env bash
-# Ensure a draft PR exists for a branch, creating one only if none is found.
+# Ensure a draft PR exists for a branch. The script reads no PR and opens
+# none: it says what to read or do next, the agent opens the draft PR by its
+# own means, and a second call reads the record back.
 #
-# This script does NOT take a base as an argument. It resolves one itself, by
-# calling the sibling ./resolve-pr-base.sh, and only at the point where it has
-# already decided to create a PR — an existing PR needs no base at all.
+# The push-if-local-only check runs FIRST, on every call, before any fact is
+# asked for. resolve-pr-base.sh fetches the branch to read its Base-Branch
+# trailer, so it hard-stops on a branch that isn't on the remote yet;
+# resolving the base before pushing would stop an unpushed local branch
+# before it ever got pushed.
 #
-# The push-if-local-only check runs FIRST, before any base resolution.
-# resolve-pr-base.sh fetches the branch to read its Base-Branch trailer, so it
-# hard-stops on a branch that isn't on the remote yet. Resolving the base
-# before pushing would therefore stop an unpushed local branch before it ever
-# got pushed, breaking the rule that an unpushed branch is not a blocker —
-# push it and carry on.
+# The branch's PR is looked up by its owner-qualified head in the target
+# repository, and the one PR found is read from its own record with its head
+# pinned: a means that ignores the head filter returns unrelated PRs, and one
+# of them would otherwise be reported as this branch's PR.
 #
-# The existence check uses `gh pr list --head`, never `gh pr view`, and reads
-# the result with `.[]`, never `.[0]` — see
-# skills/pr-to-ready/references/gh-mechanics.md,
-# "## Asking whether a PR exists" and "## Reading the PR number back" for why:
-# in short, exit status and line count must be read together, and a numeric
-# branch name would otherwise be misread by `gh pr view` as a PR number.
+# No base is taken as an argument. The sibling ./resolve-pr-base.sh resolves
+# one, only after no PR was found -- an existing PR needs no base.
 #
-# The sibling script is invoked through SCRIPT_DIR (conventions) — never a
-# bare name or a cwd-relative path — because this script is normally run from
-# somewhere other than its own directory. A bare name dies with
-# "command not found" under `set -euo pipefail`, which exits non-zero with a
-# bash error on stderr instead of the contracted `STOP <reason-slug>` on
-# stdout; that failure mode is invisible to `bash -n`, since it never
-# executes a call into another directory.
+# Which repository the PR targets is asked of a person, never detected: with
+# no [base-repo], a remote beside origin or origin being a fork answers
+# STOP ask-base-repo. Fork-ness is the fact `repo.fork`, asked only once no
+# PR was found and no other remote decided it; an unread value, or a read that
+# found no repository record, stops instead of reading as "not a fork", which
+# would open the PR against the fork when its owner meant the parent.
 #
-# `NEED` from the base resolution is passed through: the caller reads those
-# facts and calls again with `--facts`.
+# After CREATE the agent opens the PR and calls again with the same arguments
+# plus --created <base>, and facts read afresh. The read-back pins the record's
+# head and base: a create whose head defaulted to the checked-out branch reads
+# back no PR, and one opened onto another base is a mismatch -- neither is
+# reported as created.
 #
-# Usage: ensure-draft-pr.sh <branch> <title> <body-file> [base-repo] [--facts <file>]
+# The sibling is invoked through SCRIPT_DIR (conventions): this script runs
+# from anywhere, and a bare name dies under `set -e` with a bash error instead
+# of the contracted STOP.
+#
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
+#
+# Usage: ensure-draft-pr.sh <branch> [<base-repo>] [--created <base>] [--facts <file>]
 #
 # Output contract (single source; skills/implement-work/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
-#   PR <n> created draft=<bool> base=<base> url=<url> -- this run opened it.
-#   STOP ask-base-repo child=<child> parent=<parent> -- the repo is a fork and
-#     no base-repo was given; re-run with the user-selected repo (fork child
-#     first, then its parent) as [base-repo].
-#   NEED <token>... -- facts the base resolution lacks; read them, then run
-#     again with `--facts <file>`.
+#   CREATE repo=<owner>/<repo> head=<head> base=<base> -- no PR exists: open a
+#     draft PR in <repo> from <head> onto <base>, then call again with the
+#     same <branch> [<base-repo>], plus --created <base> and facts read afresh
+#     into a new file; without the base-repo the read-back looks in origin.
+#   PR <n> created draft=<bool> base=<base> url=<url> -- the read-back after CREATE.
+#   NEED <token>... -- read those facts and call again with --facts <file>.
+#   STOP ask-base-repo -- origin is a fork or has a sibling remote, and no
+#     base-repo was given: ask which repository to target, call again with it.
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
 #
-# Parent-targeted limitation: [base-repo] reaches only the default-branch name
-# lookup; the fetches and the prerequisite-PR lookup still run against origin
-# and the current repo. Parent-targeted runs therefore assume the parent and
-# the child share the default-branch name, and resolve the prerequisite in the
-# child's context.
-#
-# Fork detection runs only after the Step-2 existence check found zero PRs:
-# detecting earlier would STOP on a branch that already has a PR, turning a
-# found-PR row into a stop. Non-fork repos take the exact pre-fork path.
+# Parent-targeted limitation: [base-repo] reaches the PR lookup and the
+# default-branch name; the fetches and the prerequisite lookup still run
+# against origin, in the child's context.
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <branch> <title> <body-file> [base-repo] [--facts <file>]" >&2
+  echo "Usage: $0 <branch> [<base-repo>] [--created <base>] [--facts <file>]" >&2
   exit 2
 }
 
-# Only `--facts` is an option: a title may legitimately start with `-`.
+BRANCH=''
+BASE_REPO=''
+CREATED=''
 FACTS=''
-POSITIONAL=()
 while [ "$#" -gt 0 ]; do
-  if [ "$1" = --facts ]; then
-    if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
-    FACTS="$2"
-    shift 2
-  else
-    POSITIONAL+=("$1")
-    shift
-  fi
+  case "$1" in
+    --created | --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      if [ "$1" = --created ]; then CREATED="$2"; else FACTS="$2"; fi
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      if [ -z "$1" ]; then usage; fi
+      if [ -z "$BRANCH" ]; then
+        BRANCH="$1"
+      elif [ -z "$BASE_REPO" ]; then
+        BASE_REPO="$1"
+      else
+        usage
+      fi
+      shift
+      ;;
+  esac
 done
-if [ "${#POSITIONAL[@]}" -lt 3 ] || [ "${#POSITIONAL[@]}" -gt 4 ]; then usage; fi
-
-BRANCH="${POSITIONAL[0]}"
-TITLE="${POSITIONAL[1]}"
-BODY_FILE="${POSITIONAL[2]}"
-BASE_REPO="${POSITIONAL[3]:-}"
+if [ -z "$BRANCH" ]; then usage; fi
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# Run the existence lookup and hand the caller both halves of the answer:
-# LOOKUP (one line per matching PR, "<number> <isDraft> <url>") and LINE_COUNT.
-# Exit status and output must be read together — a non-zero exit from `gh`
-# means "couldn't tell", not "no PR", and reading it as "none found" is
-# exactly what opens a second PR on a branch that already has one. That
-# failure is answered here, with the slug the caller passes, because the two
-# call sites report it differently; everything after it (the 0/1/>=2 branching
-# and its `exit 0`) stays with the caller, since each call site takes a
-# different action per count (create-or-report vs. confirm-or-report).
-#
-# `grep -c .` counts non-empty lines, so an empty LOOKUP counts as 0 rather
-# than the 1 `wc -l` would report — "no PR" must not turn into "exactly one
-# PR" with an empty number. It exits 1 on a zero count, hence `|| true`;
-# the count itself is still printed. The two differ only on *interior* blank
-# lines, which `gh pr list --jq '.[] | "\(.number) \(.isDraft) \(.url)"'` cannot
-# produce.
-pr_lookup() {
-  local stop_slug="$1"
-  LOOKUP_ARGS=(pr list)
-  if [ -n "$BASE_REPO" ]; then LOOKUP_ARGS+=(--repo "$BASE_REPO"); fi
-  if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
-    # Parent-targeted cross-fork read: `gh pr list --head` takes no
-    # owner qualification, and a bare head against the parent cannot see a
-    # child's PR. List with head fields and filter locally instead. --limit
-    # 100 is the API single-page max (watch-claude-review.sh precedent): the
-    # default page of 30 could hide the child's PR on a busy parent. Values
-    # are escaped for the double-quoted jq string (`gh --jq` takes no --arg
-    # on this gh version, measured) -- branch names come from issue slugs,
-    # so this is pathological-input hardening, not a live path.
-    CHILD_OWNER="${OWN%%/*}"
-    ESCAPED_BRANCH="${BRANCH//\\/\\\\}"; ESCAPED_BRANCH="${ESCAPED_BRANCH//\"/\\\"}"
-    ESCAPED_OWNER="${CHILD_OWNER//\\/\\\\}"; ESCAPED_OWNER="${ESCAPED_OWNER//\"/\\\"}"
-    LOOKUP_ARGS+=(--limit 100 --json "number,isDraft,url,headRefName,headRepositoryOwner" --jq ".[] | select(.headRefName==\"$ESCAPED_BRANCH\" and .headRepositoryOwner.login==\"$ESCAPED_OWNER\") | \"\(.number) \(.isDraft) \(.url)\"")
-  else
-    LOOKUP_ARGS+=(--head "$BRANCH" --json "number,isDraft,url" --jq '.[] | "\(.number) \(.isDraft) \(.url)"')
+need() {
+  local verdict
+  verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
+  if [ "$verdict" != OK ]; then
+    echo "$verdict"
+    exit 0
   fi
-  if ! LOOKUP="$(gh "${LOOKUP_ARGS[@]}")"; then
-    echo "STOP $stop_slug"
-    return 1
-  fi
-  LINE_COUNT="$(grep -c . <<<"$LOOKUP" || true)"
 }
 
-fetch_fork_metadata() {
-  if ! FORK_JSON="$(gh repo view --json isFork,parent,nameWithOwner --jq '"\(.isFork) \(.parent.nameWithOwner // empty) \(.nameWithOwner)"' 2>/dev/null)"; then
-    echo "STOP repo-lookup-failed"
-    return 1
-  fi
-  IS_FORK="${FORK_JSON%% *}"
-  REST="${FORK_JSON#* }"
-  PARENT="${REST% *}"
-  OWN="${REST##* }"
+fact() {
+  bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$1"
 }
+
+if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
+  echo "STOP repo-lookup-failed"
+  exit 0
+fi
+OWNER="${REPO%%/*}"
+TARGET="$(printf '%s\n' "${BASE_REPO:-$REPO}" | tr '[:upper:]' '[:lower:]')"
 
 # --- Step 1: the branch must be on the remote before anything else runs. ---
 
@@ -168,110 +145,81 @@ else
   exit 0
 fi
 
-# --- Step 2: does a PR already exist for this branch? ---
+# --- Step 2: the branch's own PR. ---
+SPECS=("target=${TARGET}" "head=${OWNER}:${BRANCH}" 'head.open-pr[]')
+need "${SPECS[@]}"
+COUNT="$(fact head.open-pr.total)"
 
-# Parent-targeted lookups need fork metadata to choose the filtered readback,
-# so fetch it early on fork paths only. Non-fork paths (no base-repo) keep the
-# exact pre-fork lookup with no extra call, and found-PR rows still take no
-# fork stub at all.
-PARENT=""; OWN=""; FORK_FETCHED=""
-if [ -n "$BASE_REPO" ]; then
-  if ! fetch_fork_metadata; then
+if [ -n "$CREATED" ]; then
+  if [ "$COUNT" -eq 0 ]; then
+    echo "STOP pr-not-created"
     exit 0
   fi
-  FORK_FETCHED=1
-fi
-
-if ! pr_lookup pr-lookup-failed; then
+  if [ "$COUNT" -ge 2 ]; then
+    echo "STOP ask-multiple-prs-after-create"
+    exit 0
+  fi
+  NUM="$(fact head.open-pr)"
+  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.base.ref=${CREATED}" 'pr.draft:true,false' pr.url
+  echo "PR ${NUM} created draft=$(fact pr.draft) base=${CREATED} url=$(fact pr.url)"
   exit 0
 fi
 
-if [ "$LINE_COUNT" -eq 1 ]; then
-  read -r NUM DRAFT URL <<<"$LOOKUP"
-  echo "PR ${NUM} found draft=${DRAFT} url=${URL}"
-  exit 0
-fi
-
-if [ "$LINE_COUNT" -ge 2 ]; then
+if [ "$COUNT" -ge 2 ]; then
   echo "STOP ask-multiple-prs"
   exit 0
 fi
-
-# --- Step 2b: fork detection, only when no PR exists. Metadata always; STOP only when no base-repo was given. ---
-if [ -z "$FORK_FETCHED" ]; then
-  if ! fetch_fork_metadata; then
-    exit 0
-  fi
-fi
-if [ "$IS_FORK" = "true" ] && [ -z "$BASE_REPO" ]; then
-  echo "STOP ask-base-repo child=${OWN} parent=${PARENT}"
+if [ "$COUNT" -eq 1 ]; then
+  NUM="$(fact head.open-pr)"
+  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" 'pr.draft:true,false' pr.url
+  echo "PR ${NUM} found draft=$(fact pr.draft) url=$(fact pr.url)"
   exit 0
 fi
 
-# --- Step 3: no PR exists. Only now is a base resolved, and only by asking
-# the sibling script — never guessed here. ---
+# --- Step 2b: no PR; with no base-repo, may the target be origin? ---
+if [ -z "$BASE_REPO" ]; then
+  OTHERS="$(git remote | grep -vx origin || true)"
+  if [ -n "$OTHERS" ]; then
+    echo "STOP ask-base-repo"
+    exit 0
+  fi
+  SPECS+=("repo=${REPO}" 'repo.fork[]')
+  need "${SPECS[@]}"
+  # exactly one repository record: a search that missed the fork reports 0
+  if [ "$(fact repo.fork.total)" -ne 1 ]; then
+    echo "STOP fork-unread"
+    exit 0
+  fi
+  need "${SPECS[@]}" 'repo.fork:true,false'
+  if [ "$(fact repo.fork)" = true ]; then
+    echo "STOP ask-base-repo"
+    exit 0
+  fi
+fi
 
-SIBLING_ARGS=("$BRANCH")
-if [ -n "$BASE_REPO" ]; then SIBLING_ARGS+=("$BASE_REPO"); fi
-if [ -n "$FACTS" ]; then SIBLING_ARGS+=(--facts "$FACTS"); fi
-RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${SIBLING_ARGS[@]}")"
-
+# --- Step 3: the base, from the sibling only. ---
+if [ -n "$BASE_REPO" ]; then
+  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" "$TARGET" --facts "$FACTS")"
+else
+  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" --facts "$FACTS")"
+fi
 case "$RESOLVED" in
   STOP* | NEED*)
-    # Passed through unchanged: this is how base-branch.md's stop rows come
-    # to bite before `gh pr create` ever runs.
     echo "$RESOLVED"
     exit 0
     ;;
-  "BASE "*)
-    BASE="${RESOLVED#BASE }"
-    ;;
+  "BASE "*) BASE="${RESOLVED#BASE }" ;;
   *)
     echo "error: unexpected output from resolve-pr-base.sh: ${RESOLVED}" >&2
     exit 1
     ;;
 esac
 
-# --- Step 4: create the draft PR. ---
-
-# --head is not optional: `gh pr create`'s head defaults to the *current*
-# branch, and there is no guarantee $BRANCH is the branch checked out here.
-# Parent-targeted lookups filter locally (see pr_lookup): `gh pr list --head`
-# does not support owner:branch (per --help), only create qualifies.
-if [ -n "$BASE_REPO" ] && [ -n "${PARENT:-}" ] && [ "$BASE_REPO" = "$PARENT" ]; then
-  CHILD_OWNER="${OWN%%/*}"
-  HEAD_ARG="${CHILD_OWNER}:${BRANCH}"
-else
+# --- Step 4: hand the create to the agent. The head is named, never left to
+# default: a create's head defaults to the checked-out branch. ---
+if [ "$TARGET" = "$REPO" ]; then
   HEAD_ARG="$BRANCH"
+else
+  HEAD_ARG="${OWNER}:${BRANCH}"
 fi
-CREATE_ARGS=(pr create)
-if [ -n "$BASE_REPO" ]; then CREATE_ARGS+=(--repo "$BASE_REPO"); fi
-CREATE_ARGS+=(--draft --head "$HEAD_ARG" --base "$BASE" --title "$TITLE" --body-file "$BODY_FILE")
-if ! gh "${CREATE_ARGS[@]}" >&2; then
-  echo "STOP pr-create-failed"
-  exit 0
-fi
-
-# --- Step 5: confirm creation with the same readback as Step 2, rather than
-# trusting `gh pr create`'s own exit status for what the PR record actually
-# says. ---
-
-if ! pr_lookup pr-readback-failed; then
-  exit 0
-fi
-
-if [ "$LINE_COUNT" -eq 0 ]; then
-  # Not "creation failed" — `gh pr create` may have exited 0 while the
-  # record still doesn't show up on readback. Report what was actually
-  # observed, not an inference about the cause.
-  echo "STOP pr-not-created"
-  exit 0
-fi
-
-if [ "$LINE_COUNT" -ge 2 ]; then
-  echo "STOP ask-multiple-prs-after-create"
-  exit 0
-fi
-
-read -r NUM DRAFT URL <<<"$LOOKUP"
-echo "PR ${NUM} created draft=${DRAFT} base=${BASE} url=${URL}"
+echo "CREATE repo=${TARGET} head=${HEAD_ARG} base=${BASE}"

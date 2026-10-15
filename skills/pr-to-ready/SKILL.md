@@ -46,13 +46,10 @@ Call `<skill-dir>/scripts/resolve-pr-entry.sh <pr-ref>` once. It resolves the re
 - `PR <n> branch=<head> base=<base> repo=<owner>/<repo> draft=<bool>` — bind `<PR>`, `<branch>`, and the `<owner>` and `<repo>` every later script call takes; none of those three is re-derived from the checkout again. `<base>` is the base the PR points at **now**, which is not the same question as the base it *should* sit on: Step 1 re-resolves that and may replace it.
 - `STOP <slug>` — report the stop and end the run. Nothing downstream has a repository, a branch, or a base it could work from.
 
-**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `tools/ensure-draft-pr.sh <branch> <title> <body-file>` first.
+**Fallback — a branch with no PR on it yet.** Where the caller gave a branch name instead (work `implement-work` left before its hand-off, a branch cut outside dude, or a PR deliberately skipped), call `tools/ensure-draft-pr.sh <branch>` first, and drive it to a PR exactly as `implement-work`'s **Hand off** does — `NEED`, the create answer and its read-back, and `STOP ask-base-repo`; title and body follow that section too.
 
-- It pushes the branch if only a local ref exists, looks for a PR already on it, and creates a draft one when none is found — resolving the base itself, at that point alone.
-- It answers `PR <n> found draft=<bool> url=<url>`, `PR <n> created draft=true base=<base> url=<url>`, or `STOP <slug>`.
-- On either `PR` line, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on a `STOP`, report it and end the run.
-- Title and body follow `implement-work`'s **Hand off**, which owns that convention.
-- On `STOP ask-base-repo`, follow `implement-work`'s **Hand off** fork procedure (ask child-first, re-call with the chosen repository appended).
+- It pushes the branch if only a local ref exists, looks for a PR already on it, and only when none is found answers with where to open one.
+- On a `PR` line, found or created, feed `<n>` back through `resolve-pr-entry.sh` above so the rest of the run binds from one place; on any other `STOP`, report it and end the run.
 
 ### 0-3. Prepare the workspace
 

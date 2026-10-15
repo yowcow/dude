@@ -5,11 +5,10 @@ around it. A slug not on this list must not be printed; add it here first.
 
 Slugs are owned by their printing script. `fetch-to-sha.sh`, `origin-repo.sh` and
 `resolve-default-branch.sh` print no slug: they exit 1 with empty stdout and
-the caller prints its own slug from this list. Two scripts print through a
-variable: `ensure-draft-pr.sh`'s `echo "STOP $stop_slug"`, whose slugs are
-listed by call-site argument, and `tools/facts.sh`'s `echo "STOP ${slug}"`. A
-literal `STOP <slug>` grep therefore misses `pr-readback-failed`,
-`fact-count`, `fact-enum`, `fact-mismatch` and `fact-missing`.
+the caller prints its own slug from this list. One script prints through a
+variable: `tools/facts.sh`'s `echo "STOP ${slug}"`. A literal `STOP <slug>`
+grep therefore misses `fact-count`, `fact-enum`, `fact-mismatch` and
+`fact-missing`.
 
 Scripts on the facts contract relay the line `tools/facts.sh check` prints
 verbatim, so its slugs are listed as printed by `tools/facts.sh` and reach
@@ -44,6 +43,7 @@ stdout through every such script.
 | `fact-mismatch` | `tools/facts.sh` |
 | `fact-missing` | `tools/facts.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `tools/resolve-range.sh` |
+| `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `head-moved` | `pr-to-ready/mark-ready.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
 | `merge-base-failed` | `tools/resolve-range.sh` |
@@ -54,12 +54,10 @@ stdout through every such script.
 | `no-prereq-pr` | `tools/read-base-trailer.sh` |
 | `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
-| `pr-create-failed` | `tools/ensure-draft-pr.sh` |
-| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh`, `tools/ensure-draft-pr.sh` |
+| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
-| `pr-readback-failed` | `tools/ensure-draft-pr.sh` |
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |

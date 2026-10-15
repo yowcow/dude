@@ -35,6 +35,9 @@ number resolves there, and the same number names a different PR.
 The number on the PR record read. Pinned from the script's argument or the
 `NEED` line.
 
+Read in the repository its list was read in: `target` for `head.open-pr`,
+`repo` for `prereq.head-pr` and `prereq.closing-pr`.
+
 ### `pr.author.login`
 
 The login of the PR record's author.
@@ -100,3 +103,44 @@ from the record, never from the list or the `NEED` line.
 The base commit OID on that one PR's record. It may be the base branch's
 current tip rather than the point the PR was cut from; the script takes the
 merge-base itself.
+
+### `target`
+
+`<owner>/<repo>`, lower-case: the repository a branch's own PR is looked up
+and opened in — the base repository a person chose, else origin's. Pinned
+from the `NEED` line.
+
+### `head`
+
+`<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
+origin's owner. Pinned from the `NEED` line. Filter with the owner (see
+`prereq.head`), and by head, never by looking the branch name up as a PR
+reference: a numeric branch name reads as that PR's number.
+
+### `head.open-pr` (list)
+
+The number of each open PR in `target` whose head is `head`, with
+`head.open-pr.total` the count the source reports. A read that failed is
+written as an empty total, never as `0`: "no PR" opens a second PR on top of
+one that could not be seen.
+
+### `pr.draft`
+
+`true` or `false`, from the PR record.
+
+### `pr.url`
+
+The PR record's web URL.
+
+### `pr.base.ref`
+
+The PR record's base branch, as the bare name. A `NEED` line may pin it;
+written from the record.
+
+### `repo.fork` (list)
+
+`true` or `false` for each repository record read for `repo`: whether it is a
+fork. `repo.fork.total` is the number of records the read returned — 1 for
+the repository's own record. A repository search returns a fork only when
+the query includes forks; a search that misses it reports total 0, written
+as read: the script stops on it, never reading it as "not a fork".
