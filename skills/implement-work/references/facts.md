@@ -20,6 +20,9 @@ and **Waiting**.
   the check whichever record was read.
 - A fact that could not be read is written with an empty value; an empty
   value or `null` stops the script. Never fill it from elsewhere.
+- A file serves one call sequence — one script with the same arguments; a
+  call with other arguments, or to another script, starts a new file: its
+  pins name other records and the check stops.
 
 ## Facts
 

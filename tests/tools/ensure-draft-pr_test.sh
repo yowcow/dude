@@ -277,8 +277,8 @@ assert_row 'head-filter-ignored-stops' 0 'STOP fact-mismatch\n' 0
 
 row_start
 fixture numeric 1234 remote
-run_in "$FIXTURE_WORK" 1234 --facts "$({ printf 'target=acme/numeric\nhead=acme:1234\nhead.open-pr.total=1\nhead.open-pr=12\n'; record 12 true 1234; } | facts_file)"
-assert_row 'a-numeric-branch-name-is-a-head-not-a-pr-number' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 0
+run_in "$FIXTURE_WORK" 1234
+assert_row 'a-numeric-branch-name-is-pinned-as-a-head' 0 'NEED target=acme/numeric head=acme:1234 head.open-pr\n' 0
 
 row_start
 fixture other-repo feature remote
