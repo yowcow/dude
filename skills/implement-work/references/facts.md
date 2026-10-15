@@ -16,8 +16,9 @@ and **Waiting**.
   `<name>.total=<n>`, the count the source reported — not the count of lines
   written. `<name>.total=0` with no element lines is an empty list.
 - An identifier the `NEED` line pinned as `name=value` is written from the
-  record actually read, never copied from the `NEED` line: the copy passes
-  the check whichever record was read.
+  record actually read — or, for a parameter of the read (`target`, `head`,
+  `prereq.head`), from the read actually made — never copied from the `NEED`
+  line: the copy passes the check whichever record was read.
 - A fact that could not be read is written with an empty value; an empty
   value or `null` stops the script. Never fill it from elsewhere.
 - A file serves one call sequence — one script with the same arguments; a
@@ -76,8 +77,8 @@ elements than the total stops the script, never one PR read as the only one.
 ### `prereq.head`
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
-`repo`'s owner. Pinned from the `NEED` line. Filter on the head with its
-owner: a filter without one has been measured ignored, returning unrelated
+`repo`'s owner. Pinned from the `NEED` line; written as the head filter
+actually sent. Filter on the head with its owner: a filter without one has been measured ignored, returning unrelated
 PRs. The PR record read next pins its own head, which is what catches a
 filter the means ignored.
 
@@ -111,12 +112,14 @@ merge-base itself.
 
 `<owner>/<repo>`, lower-case: the repository a branch's own PR is looked up
 and opened in — the base repository a person chose, else origin's. Pinned
-from the `NEED` line.
+from the `NEED` line; written as the repository the list was actually read
+in.
 
 ### `head`
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
-origin's owner. Pinned from the `NEED` line. Filter with the owner (see
+origin's owner. Pinned from the `NEED` line; written as the head filter
+actually sent. Filter with the owner (see
 `prereq.head`), and by head, never by looking the branch name up as a PR
 reference: a numeric branch name reads as that PR's number.
 
@@ -125,7 +128,11 @@ reference: a numeric branch name reads as that PR's number.
 The number of each open PR in `target` whose head is `head`, with
 `head.open-pr.total` the count the source reports. A read that failed is
 written as an empty total, never as `0`: "no PR" opens a second PR on top of
-one that could not be seen.
+one that could not be seen. Read it from the repository's open-PR list
+filtered on `head` (REST `GET /repos/<target>/pulls?state=open&head=<head>`,
+or any means backed by that list), never from a search: a search index may
+not yet hold a PR just opened, and the read-back after `--created` would then
+answer `pr-not-created` for a PR that exists.
 
 ### `pr.draft`
 
