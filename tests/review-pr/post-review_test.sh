@@ -2,9 +2,9 @@
 # Table test for skills/review-pr/scripts/post-review.sh: the guard before the
 # agent writes (a choice outside APPROVE, COMMENT, PENDING never reaches a
 # write) and the read-back after it (the review record, read by its id, must
-# be anchored to the reviewed head, in the state the choice asks for, with
-# every inline comment the payload carried). The script reads facts and origin
-# only: every row asserts 0 gh calls, and stubs none.
+# be anchored to the reviewed head, in the state the choice asks for, with the
+# body the payload carried). The script reads facts and origin only: every row
+# asserts 0 gh calls, and stubs none.
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:skills/review-pr/scripts/post-review.sh`) the guard rows
@@ -13,8 +13,9 @@
 # `review.commit=` from the check fails 'review pinned to another commit',
 # 'commit unreadable' and 'no facts: NEED pins';
 # mapping PENDING-with-APPROVE to `review-state-mismatch` fails 'submit
-# failed'; dropping the count compare fails 'comment add failed midway, draft
-# only' and 'submitted with a comment dropped'.
+# failed'; dropping the body compare fails 'submitted with the body dropped',
+# 'draft only, body not carried' and 'body read back differs'; comparing the
+# bodies byte-exact (`cmp`) fails 'body read back with a trailing newline'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -48,15 +49,26 @@ printf '%s\n' '{"body":"Summary.","comments":[]}' >"$EMPTY"
 NOTJSON="${HARNESS_TMP}/notjson.json"
 printf 'not json\n' >"$NOTJSON"
 
-# rb <state> <count> [<commit> [<repo> [<id>]]]  prints a read-back fixture path
+# The body the payload carries, as the record would hold it, and two bodies a
+# write can leave behind: none (a step that dropped it) and another text.
+BODY_OK="${HARNESS_TMP}/body-ok.txt"
+printf '%s' 'Summary.' >"$BODY_OK"
+BODY_NONE="${HARNESS_TMP}/body-none.txt"
+: >"$BODY_NONE"
+BODY_OTHER="${HARNESS_TMP}/body-other.txt"
+printf '%s' 'Another summary.' >"$BODY_OTHER"
+BODY_NL="${HARNESS_TMP}/body-nl.txt"
+printf '%s\n' 'Summary.' >"$BODY_NL"
+
+# rb <state> [<commit> [<repo> [<id> [<body-file>]]]]  prints a read-back fixture path
 rb() {
   facts_file <<EOF
-repo=${4:-acme/widgets}
+repo=${3:-acme/widgets}
 pr.number=12
-review.id=${5:-777}
-review.commit=${3-$HEAD_SHA}
+review.id=${4:-777}
+review.commit=${2-$HEAD_SHA}
 review.state=$1
-review.comment-count=$2
+review.body-file=${5-$BODY_OK}
 review.url=${URL}
 EOF
 }
@@ -126,70 +138,74 @@ assert_row 'unknown option' 2 '' 0
 # Read-back.
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777
-assert_row 'no facts: NEED pins' 0 "NEED repo=acme/widgets pr.number=12 review.id=777 review.commit=${HEAD_SHA} review.state review.comment-count review.url\n" 0
+assert_row 'no facts: NEED pins' 0 "NEED repo=acme/widgets pr.number=12 review.id=777 review.commit=${HEAD_SHA} review.state review.body-file review.url\n" 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED)"
 assert_row 'approve posted' 0 "POSTED APPROVED ${URL}\n" 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED 1)"
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED)"
 assert_row 'comment posted' 0 "POSTED COMMENTED ${URL}\n" 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING 1)"
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
 assert_row 'draft left pending' 0 "POSTED PENDING ${URL}\n" 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" PENDING "$EMPTY" --posted 777 --facts "$(rb PENDING 0)"
-assert_row 'draft with no inline comments' 0 "POSTED PENDING ${URL}\n" 0
-
-row_start
-run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb PENDING 0)"
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
 assert_row 'comment add failed midway' 0 'STOP review-pending-left\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING 0)"
-assert_row 'comment add failed midway, draft only' 0 'STOP review-pending-left\n' 0
-
-row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb PENDING 1)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb PENDING)"
 assert_row 'submit failed' 0 'STOP review-pending-left\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1)"
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb APPROVED)"
 assert_row 'draft only but submitted' 0 'STOP review-state-mismatch\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED 1)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED)"
 assert_row 'approve asked, commented' 0 'STOP review-state-mismatch\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 0)"
-assert_row 'submitted with a comment dropped' 0 'STOP review-state-mismatch\n' 0
-
-row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1 "$OTHER_SHA")"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$OTHER_SHA")"
 assert_row 'review pinned to another commit' 0 'STOP fact-mismatch\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1 "$HEAD_SHA" upstream/widgets)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" upstream/widgets)"
 assert_row 'review read in another repo' 0 'STOP fact-mismatch\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1 "$HEAD_SHA" acme/widgets 778)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 778)"
 assert_row "another review's record" 0 'STOP fact-mismatch\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb CHANGES_REQUESTED 1)"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb CHANGES_REQUESTED)"
 assert_row 'state outside the flow' 0 'STOP fact-enum\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED 1 '')"
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED '')"
 assert_row 'commit unreadable' 0 'STOP fact-missing\n' 0
 
 row_start
-run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED null)"
-assert_row 'count written as null' 0 'STOP fact-missing\n' 0
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 '')"
+assert_row 'body unreadable' 0 'STOP fact-missing\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NONE")"
+assert_row 'submitted with the body dropped' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" PENDING "$PAYLOAD" --posted 777 --facts "$(rb PENDING "$HEAD_SHA" acme/widgets 777 "$BODY_NONE")"
+assert_row 'draft only, body not carried' 0 'STOP review-pending-left\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" COMMENT "$PAYLOAD" --posted 777 --facts "$(rb COMMENTED "$HEAD_SHA" acme/widgets 777 "$BODY_OTHER")"
+assert_row 'body read back differs' 0 'STOP review-state-mismatch\n' 0
+
+row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NL")"
+assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n" 0
 
 harness_exit "$failed" "$total"

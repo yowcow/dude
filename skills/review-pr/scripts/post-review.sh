@@ -18,13 +18,13 @@
 #     gets each comment on whatever line now sits at that number;
 #   - a draft that was submitted, or an APPROVE/COMMENT left pending
 #     (`review.state` against the choice);
-#   - a comment dropped mid-write (`review.comment-count` against the
-#     payload's);
+#   - a body dropped by a step that did not carry it (`review.body-file`
+#     against the payload's);
 #   - the record of another repository, PR or review (the pins).
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: ../../implement-work/references/facts.md.
+# Conventions: ../../implement-work/references/script-conventions.md.
+# STOP slugs: ../../implement-work/references/stop-registry.md.
 #
 # Usage: post-review.sh <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]
 # Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT> comments=<k>
@@ -63,14 +63,17 @@ PAYLOAD_FILE="${POSITIONAL[3]}"
 [[ "$PR" =~ ^[0-9]+$ ]] || usage
 [[ "$HEAD" =~ ^[0-9a-f]{40}$ ]] || usage
 case "$EVENT" in
-  APPROVE | COMMENT | PENDING) ;;
+  APPROVE) WANT=APPROVED ;;
+  COMMENT) WANT=COMMENTED ;;
+  PENDING) WANT=PENDING ;;
   *) usage ;;
 esac
 [ -r "$PAYLOAD_FILE" ] || usage
 COMMENTS="$(jq -e '.comments | length' "$PAYLOAD_FILE" 2>/dev/null)" || usage
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
+TOOLS="${SCRIPT_DIR}/../../../tools"
+if ! REPO="$(bash "${TOOLS}/origin-repo.sh")"; then
   echo "STOP repo-lookup-failed"
   exit 0
 fi
@@ -80,23 +83,18 @@ if [ -z "$POSTED" ]; then
   exit 0
 fi
 
-VERDICT="$(bash "${SCRIPT_DIR}/../../../tools/facts.sh" check "$FACTS" \
+VERDICT="$(bash "${TOOLS}/facts.sh" check "$FACTS" \
   "repo=${REPO}" "pr.number=${PR}" "review.id=${POSTED}" "review.commit=${HEAD}" \
-  'review.state:PENDING,APPROVED,COMMENTED' review.comment-count review.url)"
+  'review.state:PENDING,APPROVED,COMMENTED' review.body-file review.url)"
 if [ "$VERDICT" != OK ]; then
   echo "$VERDICT"
   exit 0
 fi
 
-fact() { bash "${SCRIPT_DIR}/../../../tools/facts.sh" get "$FACTS" "$1"; }
+fact() { bash "${TOOLS}/facts.sh" get "$FACTS" "$1"; }
 STATE="$(fact review.state)"
-COUNT="$(fact review.comment-count)"
-case "$EVENT" in
-  APPROVE) WANT=APPROVED ;;
-  COMMENT) WANT=COMMENTED ;;
-  PENDING) WANT=PENDING ;;
-esac
-if [ "$STATE" != "$WANT" ] || [ "$COUNT" != "$COMMENTS" ]; then
+BODY="$(jq -j '.body' "$PAYLOAD_FILE")"
+if [ "$STATE" != "$WANT" ] || [ "$BODY" != "$(cat -- "$(fact review.body-file)")" ]; then
   if [ "$STATE" = PENDING ]; then
     echo "STOP review-pending-left"
   else

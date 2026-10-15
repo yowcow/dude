@@ -160,10 +160,12 @@ written from the record.
 
 ### `review.id`
 
-The id of the review record read, written exactly as the create call
-returned it and read by that id — never the PR's newest review, which may be
-someone else's. Pinned from
-the script's `--posted` argument.
+The id of the review the create made, and the record is read by that id —
+never the PR's newest review, which may be someone else's. Written as the
+create call returned it; when the create returns none, it is the id of the
+viewer's one `PENDING` review on the PR, read right after the create
+succeeded and before any other step, since a submitted review is no longer
+pending. Pinned from the script's `--posted` argument.
 
 ### `review.commit`
 
@@ -179,11 +181,11 @@ the create call's arguments.
 inferred from the submit call having returned. Any other value
 (`CHANGES_REQUESTED`, `DISMISSED`) is outside what this flow posts.
 
-### `review.comment-count`
+### `review.body-file`
 
-The number of inline comments on that review record, once every page has
-been read. Counted from the record, never from the add calls made: an add
-that failed leaves the count short, which is what the read-back catches.
+The path of a file holding that review record's body exactly as read, from
+the record — never from the arguments of a create or submit call: a body the
+write steps dropped reads back empty, which is what the read-back catches.
 
 ### `review.url`
 
