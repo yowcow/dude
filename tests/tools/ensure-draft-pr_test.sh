@@ -296,9 +296,7 @@ fixture fork-unread feature remote
 run_in "$FIXTURE_WORK" feature --facts "$({ own fork-unread 0; fork fork-unread ''; } | facts_file)"
 assert_row 'fork-fact-unread-stops' 0 'STOP fact-missing\n' 0
 
-# A repository search that missed the fork reports total 0, written as read:
-# "not a fork" would open the PR against the fork when its owner meant the
-# parent.
+# A repository search that missed the fork reports total 0, written as read.
 row_start
 fixture fork-none feature remote
 run_in "$FIXTURE_WORK" feature --facts "$({ own fork-none 0; fork fork-none 0; } | facts_file)"

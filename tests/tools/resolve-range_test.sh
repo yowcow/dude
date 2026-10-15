@@ -361,9 +361,6 @@ git -C "$W" remote set-url origin "${HARNESS_TMP}/remotes/acme/nosuch.git"
 run_in "$W"
 assert_row 'default-branch-lookup-fails' 0 'STOP ask-default-branch\n' 0
 
-# Exit 0 with no `ref:` line is a separate case from the failure above: the
-# remote answered, and named no default. Only the SUT's `[ -z "$REF" ]`
-# separates them, and without this row the two are one branch.
 row_start
 W="$(work_repo dflt-unborn "$REMOTE" plain -)"
 git -C "$W" remote set-url origin "$(git_repo_bare acme unborn)"

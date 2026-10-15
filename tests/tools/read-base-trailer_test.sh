@@ -8,8 +8,6 @@
 # arrive from the caller and go straight to `git log` -- and a git stub would
 # encode the test author's belief about that range rather than git's own
 # behaviour, the same reason tests/tools/resolve-pr-base_test.sh gives.
-# Each row builds a real repository under $HARNESS_TMP, with an origin URL so
-# the facts can be pinned to a repository. No fetch happens in this file.
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:tools/read-base-trailer.sh`) the `--facts` rows fail

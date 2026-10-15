@@ -60,9 +60,6 @@ run_in "$W"
 assert_row 'stale-local-symref-is-ignored' 0 'trunk\n' 0
 
 # ---- the ways of not knowing ---------------------------------------------
-#
-# Each answers exit 1 with nothing on stdout: any byte there is a branch name
-# as far as a caller's command substitution is concerned.
 
 row_start
 UNBORN="$(git_repo_bare acme empty)"
