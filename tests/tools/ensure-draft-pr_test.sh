@@ -117,9 +117,10 @@ own() {
   for n in "$@"; do printf 'head.open-pr=%s\n' "$n"; done
 }
 
-# record <pr> <draft> [<head> [<base>]] -- that PR's record lines
+# record <pr> <draft> [<head> [<base>]] -- that PR's record lines; its head
+# owner is acme unless HEAD_OWNER says otherwise
 record() {
-  printf 'pr.number=%s\npr.head.ref=%s\npr.draft=%s\npr.url=https://example.invalid/pull/%s\n' "$1" "${3:-feature}" "$2" "$1"
+  printf 'pr.number=%s\npr.head.ref=%s\npr.head.owner=%s\npr.draft=%s\npr.url=https://example.invalid/pull/%s\n' "$1" "${3:-feature}" "${HEAD_OWNER:-acme}" "$2" "$1"
   if [ "$#" -ge 4 ]; then printf 'pr.base.ref=%s\n' "$4"; fi
 }
 
@@ -134,7 +135,7 @@ fork() {
 # one_repo_fork <isFork> -- the fork list when a row's file already holds a `repo=` line (from prereq_facts)
 one_repo_fork() { printf 'repo.fork.total=1\nrepo.fork=%s\n' "$1"; }
 
-# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head>]]] -- the
+# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- the
 # prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
 # concatenate with other lines first).
 prereq_facts() {
@@ -143,7 +144,7 @@ prereq_facts() {
     printf 'prereq.head-pr=%s\n' "$4"
   fi
   if [ "$#" -ge 5 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$4" "$5" "${6-${2#*:}}"
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$4" "$5" "${6-${2#*:}}" "${7-${2%%:*}}"
   fi
 }
 
@@ -243,7 +244,7 @@ assert_row 'existing-ready-pr-is-reported' 0 'PR 12 found draft=false url=https:
 row_start
 fixture one-pr feature remote
 run_in "$FIXTURE_WORK" feature --facts "$(own one-pr 1 12 | facts_file)"
-assert_row 'one-pr-asks-for-its-record' 0 'NEED pr.number=12 pr.head.ref=feature pr.draft pr.url\n' 0
+assert_row 'one-pr-asks-for-its-record' 0 'NEED pr.number=12 pr.head.ref=feature pr.head.owner=acme pr.draft pr.url\n' 0
 
 row_start
 fixture list-unread feature remote
@@ -264,6 +265,17 @@ row_start
 fixture head-ignored feature remote
 run_in "$FIXTURE_WORK" feature --facts "$({ own head-ignored 1 12; record 12 true other; } | facts_file)"
 assert_row 'head-filter-ignored-stops' 0 'STOP fact-mismatch\n' 0
+
+# the same branch name under another owner is a different head
+row_start
+fixture owner-ignored feature remote
+run_in "$FIXTURE_WORK" feature --facts "$({ own owner-ignored 1 12; HEAD_OWNER=other-fork record 12 true; } | facts_file)"
+assert_row 'same-named-head-from-another-owner-stops' 0 'STOP fact-mismatch\n' 0
+
+row_start
+fixture owner-ignored-created feature remote
+run_in "$FIXTURE_WORK" feature --created main --facts "$({ own owner-ignored-created 1 7; HEAD_OWNER=other-fork record 7 true feature main; } | facts_file)"
+assert_row 'created-from-another-owner-stops' 0 'STOP fact-mismatch\n' 0
 
 row_start
 fixture numeric 1234 remote
@@ -434,7 +446,7 @@ assert_row 'created-pr-reads-back' 0 'PR 7 created draft=true base=main url=http
 row_start
 fixture created-ask feature remote
 run_in "$FIXTURE_WORK" feature --created main --facts "$(own created-ask 1 7 | facts_file)"
-assert_row 'read-back-asks-for-the-record' 0 'NEED pr.number=7 pr.head.ref=feature pr.base.ref=main pr.draft pr.url\n' 0
+assert_row 'read-back-asks-for-the-record' 0 'NEED pr.number=7 pr.head.ref=feature pr.head.owner=acme pr.base.ref=main pr.draft pr.url\n' 0
 
 row_start
 fixture not-created feature remote

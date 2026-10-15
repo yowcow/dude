@@ -113,7 +113,7 @@ PR="$(fact prereq.head-pr)"
 # need opposite answers: a PR closed without merging is abandoned work, not
 # work still in flight. CLOSED is answered here rather than by the callers
 # because both callers answer it with the same byte.
-SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' "pr.head.ref=${RECORDED}")
+SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' "pr.head.ref=${RECORDED}" "pr.head.owner=${REPO%%/*}")
 need "${SPECS[@]}"
 STATE="$(fact pr.state)"
 case "$STATE" in

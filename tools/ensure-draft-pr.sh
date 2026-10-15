@@ -144,7 +144,7 @@ if [ -n "$CREATED" ]; then
     exit 0
   fi
   NUM="$(fact head.open-pr)"
-  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.base.ref=${CREATED}" 'pr.draft:true,false' pr.url
+  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.head.owner=${OWNER}" "pr.base.ref=${CREATED}" 'pr.draft:true,false' pr.url
   echo "PR ${NUM} created draft=$(fact pr.draft) base=${CREATED} url=$(fact pr.url)"
   exit 0
 fi
@@ -155,7 +155,7 @@ if [ "$COUNT" -ge 2 ]; then
 fi
 if [ "$COUNT" -eq 1 ]; then
   NUM="$(fact head.open-pr)"
-  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" 'pr.draft:true,false' pr.url
+  need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.head.owner=${OWNER}" 'pr.draft:true,false' pr.url
   echo "PR ${NUM} found draft=$(fact pr.draft) url=$(fact pr.url)"
   exit 0
 fi

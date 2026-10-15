@@ -78,9 +78,10 @@ elements than the total stops the script, never one PR read as the only one.
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
 `repo`'s owner. Pinned from the `NEED` line; written as the head filter
-actually sent. Filter on the head with its owner: a filter without one has been measured ignored, returning unrelated
-PRs. The PR record read next pins its own head, which is what catches a
-filter the means ignored.
+actually sent. Filter on the head with its owner: a filter without one has
+been measured ignored, returning unrelated PRs. The PR record read next pins
+its own head — branch and owner — which is what catches a filter the means
+ignored.
 
 ### `prereq.head-pr` (list)
 
@@ -101,6 +102,13 @@ says `closed` with a merged flag set is `MERGED`; with the flag unset,
 The PR record's head branch, as the bare name: no `owner:` prefix, no
 `refs/heads/`. A `NEED` line may pin it (`pr.head.ref=<branch>`); written
 from the record, never from the list or the `NEED` line.
+
+### `pr.head.owner`
+
+The login of the owner of the PR record's head repository, lower-case. A
+`NEED` line may pin it (`pr.head.owner=<owner>`); written from the record,
+never from the list or the `NEED` line. The branch name alone does not tell
+two heads apart: `other-fork:feature` and `acme:feature` share it.
 
 ### `pr.base.sha`
 

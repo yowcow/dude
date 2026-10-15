@@ -29,13 +29,13 @@ SUT="${SUT:-${REPO_ROOT}/tools/read-base-trailer.sh}"
 failed=0
 total=0
 
-# rounds <owner:branch> <total> [<pr> [<state> [<head>]]] -- prints a facts path
+# rounds <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- prints a facts path
 rounds() {
   {
     printf 'repo=acme/widgets\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2"
     if [ "$#" -ge 3 ]; then printf 'prereq.head-pr=%s\n' "$3"; fi
     if [ "$#" -ge 4 ]; then
-      printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$3" "$4" "${5-${1#*:}}"
+      printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$3" "$4" "${5-${1#*:}}" "${6-${1%%:*}}"
     fi
   } | facts_file
 }
@@ -186,7 +186,7 @@ assert_row 'prereq-state-unrecognised' 0 'STOP fact-enum\n' 0
 
 row_start
 run_in "$DEP" --facts "$(rounds acme:dep 1 9)" HEAD
-assert_row 'one-pr-asks-for-its-record' 0 'NEED pr.number=9 pr.state pr.head.ref=dep\n' 0
+assert_row 'one-pr-asks-for-its-record' 0 'NEED pr.number=9 pr.state pr.head.ref=dep pr.head.owner=acme\n' 0
 
 # One element of a list that reports three is a truncated page, not the list.
 row_start
@@ -204,6 +204,12 @@ assert_row 'prereq-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
 row_start
 run_in "$DEP" --facts "$(rounds acme:dep 1 9 OPEN other)" HEAD
 assert_row 'head-filter-ignored-stops' 0 'STOP fact-mismatch\n' 0
+
+# the same branch name under another owner is a different head: the filter
+# the means ignored can return it, and only the owner tells it apart.
+row_start
+run_in "$DEP" --facts "$(rounds acme:dep 1 9 OPEN dep other-fork)" HEAD
+assert_row 'same-named-head-from-another-owner-stops' 0 'STOP fact-mismatch\n' 0
 
 # state comes from the record only, and a lower-case copy is not in the set.
 row_start

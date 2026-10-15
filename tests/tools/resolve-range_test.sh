@@ -226,7 +226,7 @@ pr.base.sha=$2
 EOF
 }
 
-# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head>]]] -- the
+# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- the
 # prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
 # concatenate with other lines first).
 prereq_facts() {
@@ -235,7 +235,7 @@ prereq_facts() {
     printf 'prereq.head-pr=%s\n' "$4"
   fi
   if [ "$#" -ge 5 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$4" "$5" "${6-${2#*:}}"
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$4" "$5" "${6-${2#*:}}" "${7-${2%%:*}}"
   fi
 }
 
