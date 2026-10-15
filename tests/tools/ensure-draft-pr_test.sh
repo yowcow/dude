@@ -377,7 +377,7 @@ assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url
 #
 # ensure-draft-pr.sh does not take a base as an argument: once it has decided
 # a PR must be created, it asks its sibling resolve-pr-base.sh for one --
-# reached the same way, through dirname "${BASH_SOURCE[0]}" -- and passes the
+# reached the same way, through dirname -- "$0" -- and passes the
 # answer straight through unchanged. The sibling is not stubbed, so these rows
 # drive its own decision tree through fixtures, a facts file and the remote's
 # HEAD; the text each row expects on stdout is the sibling's
