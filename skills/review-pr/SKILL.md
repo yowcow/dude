@@ -22,7 +22,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 
 1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is this checkout's `origin`. On `STOP <slug>`, report it and end the run.
 2. Run `tools/check-pr-author.sh <n>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, write them to a file, and run it again with `--facts <file>` added. On `SELF`, stop and report it. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
-3. Put the reviewer's 👀 reaction on the PR itself. From here on, remove the reviewer's 👀 when the run ends, however it ends, whether or not this run put it there. If it can't be removed, don't stop the run; the Report tells the user to remove it by hand.
+3. Put the reviewer's 👀 reaction on the PR itself, in the repository item 1 answered. From here on, remove the reviewer's 👀 from it when the run ends, however it ends, whether or not this run put it there. If it can't be removed, don't stop the run; the Report tells the user to remove it by hand.
 
 ### 2. Resolve the range, the purpose, and the requirements
 
