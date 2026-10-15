@@ -27,7 +27,10 @@
 # stdout; that failure mode is invisible to `bash -n`, since it never
 # executes a call into another directory.
 #
-# Usage: ensure-draft-pr.sh <branch> <title> <body-file> [base-repo]
+# `NEED` from the base resolution is passed through: the caller reads those
+# facts and calls again with `--facts`.
+#
+# Usage: ensure-draft-pr.sh <branch> <title> <body-file> [base-repo] [--facts <file>]
 #
 # Output contract (single source; skills/implement-work/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
@@ -35,6 +38,8 @@
 #   STOP ask-base-repo child=<child> parent=<parent> -- the repo is a fork and
 #     no base-repo was given; re-run with the user-selected repo (fork child
 #     first, then its parent) as [base-repo].
+#   NEED <token>... -- facts the base resolution lacks; read them, then run
+#     again with `--facts <file>`.
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
 #
 # Parent-targeted limitation: [base-repo] reaches only the default-branch name
@@ -48,15 +53,30 @@
 # found-PR row into a stop. Non-fork repos take the exact pre-fork path.
 set -euo pipefail
 
-if [ "$#" -ne 3 ] && [ "$#" -ne 4 ]; then
-  echo "Usage: $0 <branch> <title> <body-file> [base-repo]" >&2
+usage() {
+  echo "Usage: $0 <branch> <title> <body-file> [base-repo] [--facts <file>]" >&2
   exit 2
-fi
+}
 
-BRANCH="$1"
-TITLE="$2"
-BODY_FILE="$3"
-BASE_REPO="${4:-}"
+# Only `--facts` is an option: a title may legitimately start with `-`.
+FACTS=''
+POSITIONAL=()
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = --facts ]; then
+    if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+    FACTS="$2"
+    shift 2
+  else
+    POSITIONAL+=("$1")
+    shift
+  fi
+done
+if [ "${#POSITIONAL[@]}" -lt 3 ] || [ "${#POSITIONAL[@]}" -gt 4 ]; then usage; fi
+
+BRANCH="${POSITIONAL[0]}"
+TITLE="${POSITIONAL[1]}"
+BODY_FILE="${POSITIONAL[2]}"
+BASE_REPO="${POSITIONAL[3]:-}"
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -191,24 +211,13 @@ fi
 # --- Step 3: no PR exists. Only now is a base resolved, and only by asking
 # the sibling script — never guessed here. ---
 
-# Guarded rather than left to `set -e`: the sibling exits 1 with nothing on
-# stdout on an unrecognised prerequisite state, its message already on stderr.
-# Only that exit-1 path becomes STOP -- any other non-zero status is a real
-# failure (bad invocation, runtime error) and is propagated unchanged so it is
-# not misreported as an unrecognised state.
-sibling_status=0
 SIBLING_ARGS=("$BRANCH")
 if [ -n "$BASE_REPO" ]; then SIBLING_ARGS+=("$BASE_REPO"); fi
-RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${SIBLING_ARGS[@]}")" || sibling_status=$?
-if [ "$sibling_status" -eq 1 ]; then
-  echo "STOP unrecognised-pr-state"
-  exit 0
-elif [ "$sibling_status" -ne 0 ]; then
-  exit "$sibling_status"
-fi
+if [ -n "$FACTS" ]; then SIBLING_ARGS+=(--facts "$FACTS"); fi
+RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${SIBLING_ARGS[@]}")"
 
 case "$RESOLVED" in
-  STOP*)
+  STOP* | NEED*)
     # Passed through unchanged: this is how base-branch.md's stop rows come
     # to bite before `gh pr create` ever runs.
     echo "$RESOLVED"

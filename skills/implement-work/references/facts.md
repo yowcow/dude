@@ -67,6 +67,21 @@ The number of each PR that record names as closing it, open or merged, with
 the count beside a shortened reference list is written as read — fewer
 elements than the total stops the script, never one PR read as the only one.
 
+### `prereq.head`
+
+`<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
+`repo`'s owner. Pinned from the `NEED` line. Filter on the head with its
+owner: a filter without one has been measured ignored, returning unrelated
+PRs. The PR record read next pins its own head, which is what catches a
+filter the means ignored.
+
+### `prereq.head-pr` (list)
+
+The number of each PR in `repo`, in any state, whose head is `prereq.head`,
+with `prereq.head-pr.total` the count the source reports. Read by the head
+branch's name, which a PR record keeps after the branch is deleted. Only the
+numbers come from the list; the state comes from each PR's own record.
+
 ### `pr.state`
 
 `OPEN`, `MERGED` or `CLOSED`, from that one PR's record — never from a list,
@@ -77,4 +92,5 @@ says `closed` with a merged flag set is `MERGED`; with the flag unset,
 ### `pr.head.ref`
 
 The PR record's head branch, as the bare name: no `owner:` prefix, no
-`refs/heads/`.
+`refs/heads/`. A `NEED` line may pin it (`pr.head.ref=<branch>`); written
+from the record, never from the list or the `NEED` line.

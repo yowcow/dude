@@ -21,10 +21,10 @@
 # lives in tools/read-base-trailer.sh and is covered
 # by tests/tools/read-base-trailer_test.sh's `trailer-read-fails` row.
 #
-# Limitation: the SUT no longer calls `gh` or `--jq` at all -- that filter now
-# lives in read-base-trailer.sh, and is covered there, raw-stubbed, by
-# tests/tools/read-base-trailer_test.sh (which is why that file's own
-# header carries the `--jq`-defect Limitation instead).
+# The prerequisite's PR comes as facts: the trailer rows pass a facts file
+# (prereq_facts below) and the SUT makes no `gh pr list` call; the
+# default-branch `gh repo view` stubs stay until resolve-default-branch.sh
+# leaves `gh`.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
 # root, so a branch that recorded nothing picked up whatever Base-Branch it
@@ -50,8 +50,6 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/tools/resolve-pr-base.sh}"
-
-PR_JQ='.[] | "\(.number) \(.state)"'
 
 failed=0
 total=0
@@ -96,11 +94,17 @@ stub_default_branch() {
   gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
-# stub_pr_list <head-branch> <exit-status> -- the prerequisite lookup, body on
-# stdin. Each line is "<number> <state>", the shape read-base-trailer.sh's
-# --jq emits and this fixture still stubs.
-stub_pr_list() {
-  gh_stub_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_JQ"
+# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head>]]] -- the
+# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
+# concatenate with other lines first).
+prereq_facts() {
+  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
+  if [ "$#" -ge 4 ]; then
+    printf 'prereq.head-pr=%s\n' "$4"
+  fi
+  if [ "$#" -ge 5 ]; then
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$4" "$5" "${6-${2#*:}}"
+  fi
 }
 
 # `feature` records nothing; `main` records nothing either.
@@ -163,90 +167,77 @@ assert_row 'default-branch-lookup-empty' 0 'STOP ask-default-branch\n' 1
 # ---- the trailer the task branch only inherits ---------------------------
 #
 # `main`'s commit carries `Base-Branch: ancestor-base` and `feature` records
-# nothing, so the answer is the default branch. The prerequisite lookup for
-# `ancestor-base` is stubbed even though a correct SUT never makes it: without
-# the entry the pre-fix script fails as "an argv no case stubbed", which names
-# the mechanism rather than the defect, while with it the row fails as
-# `BASE ancestor-base` against `BASE main` -- the range defect itself. The
-# `gh calls` assertion is what holds the entry to being unused.
+# nothing, so the answer is the default branch and nothing is asked for: a
+# scan reaching the inherited trailer would answer NEED instead. The default
+# branch's lookup is the one `gh` call.
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 OPEN\n' | stub_pr_list ancestor-base 0
 W="$(work_repo ancestor "$REMOTE_ANCESTOR" main)"
 run_in "$W" feature
 assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 1
 
 # ---- a trailer the task branch recorded itself --------------------------
 #
-# Both branches' lookups are stubbed, so a scan reading the stack oldest-first
-# fails as `BASE older-base` against `BASE newer-base` rather than as an argv
-# no case stubbed. The `gh calls` assertion holds the unused entry to being
-# unused: a correct scan asks about `newer-base` and nothing else.
+# Without facts the NEED names the newer branch, so a scan reading the stack
+# oldest-first fails as `older-base` rather than as a missing stub; with the
+# newer branch's facts the answer is its PR.
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 OPEN\n' | stub_pr_list newer-base 0
-printf '8 OPEN\n' | stub_pr_list older-base 0
 W="$(work_repo shadow "$REMOTE_SHADOW" main)"
 run_in "$W" feature
-assert_row 'newest-trailer-shadows-older' 0 'BASE newer-base\n' 2
+assert_row 'newest-trailer-shadows-older' 0 'NEED repo=acme/shadow prereq.head=acme:newer-base prereq.head-pr\n' 1
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 OPEN\n' | stub_pr_list dep 0
+W="$(work_repo shadow-facts "$REMOTE_SHADOW" main)"
+run_in "$W" feature --facts "$(prereq_facts acme/shadow acme:newer-base 1 9 OPEN | facts_file)"
+assert_row 'newest-trailer-wins-with-facts' 0 'BASE newer-base\n' 1
+
+row_start
+printf 'main\n' | stub_default_branch 0
 W="$(work_repo prereq-open "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 2
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 OPEN | facts_file)"
+assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 1
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 MERGED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-merged "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 2
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 MERGED | facts_file)"
+assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 1
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-closed "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 2
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 CLOSED | facts_file)"
+assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 1
 
 row_start
 printf 'main\n' | stub_default_branch 0
-: | stub_pr_list dep 0
 W="$(work_repo prereq-none "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 2
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 0 | facts_file)"
+assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 1
 
+# Changed answer: was prereq-lookup-failed, when the `gh` call failed.
 row_start
 printf 'main\n' | stub_default_branch 0
-: | stub_pr_list dep 1
 W="$(work_repo prereq-unreadable "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep '' | facts_file)"
+assert_row 'prerequisite-lookup-unread' 0 'STOP fact-missing\n' 1
 
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 OPEN\n8 CLOSED\n' | stub_pr_list dep 0
 W="$(work_repo prereq-multiple "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
+run_in "$W" feature --facts "$({ prereq_facts acme/dep acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
+assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 1
 
+# Changed answer: was exit 1 with an empty stdout.
 row_start
 printf 'main\n' | stub_default_branch 0
-printf '9 DRAFT\n' | stub_pr_list dep 0
 W="$(work_repo prereq-unknown-state "$REMOTE_DEP" main)"
-run_in "$W" feature
-assert_row 'prerequisite-state-unrecognised' 1 '' 2
-
-total=$((total + 1))
-if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
-  printf 'FAIL prerequisite-state-unrecognised: stderr does not name the state:\n%s\n' \
-    "$(head -c 400 "$SUT_STDERR")"
-  failed=$((failed + 1))
-fi
+run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 DRAFT | facts_file)"
+assert_row 'prerequisite-state-unrecognised' 0 'STOP fact-enum\n' 1
 
 # ---- fetches that fail --------------------------------------------------
 #
@@ -292,5 +283,10 @@ row_start
 W="$(work_repo args-three "$REMOTE_PLAIN" main)"
 run_in "$W" feature extra another
 assert_row 'three-arguments' 2 '' 0
+
+row_start
+W="$(work_repo args-facts-bare "$REMOTE_PLAIN" main)"
+run_in "$W" feature --facts
+assert_row 'facts-flag-without-file' 2 '' 0
 
 harness_exit "$failed" "$total"

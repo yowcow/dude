@@ -61,14 +61,12 @@ stdout through every such script.
 | `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
 | `pr-readback-failed` | `tools/ensure-draft-pr.sh` |
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
-| `prereq-lookup-failed` | `tools/read-base-trailer.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
 | `ready-failed` | `pr-to-ready/mark-ready.sh` |
-| `repo-lookup-failed` | `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
+| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/ensure-draft-pr.sh`, `review-pr/check-pr-repo.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh` |
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-post-failed` | `review-pr/post-review.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh` |
-| `unrecognised-pr-state` | `tools/ensure-draft-pr.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |

@@ -18,16 +18,43 @@
 # back" and "### Why the state is re-read and the branch is not" — this
 # script implements that table's `pr-to-ready`'s `--base` column.
 #
-# Usage: resolve-pr-base.sh <branch> [repo]
+# `NEED` from the trailer reader is passed through: the caller reads those
+# facts and calls again with `--facts`.
+#
+# Usage: resolve-pr-base.sh <branch> [repo] [--facts <file>]
+# Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
 
-if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <branch> [repo]" >&2
+usage() {
+  echo "Usage: $0 <branch> [repo] [--facts <file>]" >&2
   exit 2
-fi
+}
 
-BRANCH="$1"
-BASE_REPO="${2:-}"
+BRANCH=''
+BASE_REPO=''
+FACTS=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      FACTS="$2"
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      if [ -z "$1" ]; then usage; fi
+      if [ -z "$BRANCH" ]; then
+        BRANCH="$1"
+      elif [ -z "$BASE_REPO" ]; then
+        BASE_REPO="$1"
+      else
+        usage
+      fi
+      shift
+      ;;
+  esac
+done
+if [ -z "$BRANCH" ]; then usage; fi
 
 # The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
@@ -79,12 +106,10 @@ fi
 # `gh pr create --base`, opening the PR against a branch this task never sat
 # on.
 #
-# The call is guarded rather than left to `set -e` so that its exit-1 path --
-# an unrecognised PR state, whose message it has already put on stderr --
-# leaves this script exiting 1 with nothing on stdout, instead of a second
-# message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"; then
-  exit 1
+if [ -n "$FACTS" ]; then
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" FETCH_HEAD "^${DEFAULT_SHA}")"
+else
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"
 fi
 
 read -r KIND RECORDED _ STATE <<<"$ANSWER"
@@ -93,9 +118,9 @@ case "${KIND}" in
   NO-TRAILER)
     echo "BASE ${DEFAULT}"
     ;;
-  STOP)
+  STOP | NEED)
     # Passed through unchanged: the slugs are this script's output contract,
-    # and these five cases are answered identically by both readers,
+    # and these cases are answered identically by both readers,
     # which is why they are answered once, over there.
     printf '%s\n' "$ANSWER"
     ;;

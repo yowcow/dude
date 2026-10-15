@@ -34,13 +34,14 @@
 #   mkdir -p "$tmp/tools"
 #   cp tools/resolve-pr-base.sh "$tmp/tools/"
 #   cp tools/resolve-default-branch.sh "$tmp/tools/"
-#   cp tools/read-base-trailer.sh "$tmp/tools/"
+#   cp tools/read-base-trailer.sh tools/facts.sh tools/origin-repo.sh "$tmp/tools/"
 #   cp tools/ensure-draft-pr.sh "$tmp/tools/mut.sh"
 #   # apply exactly one edit to "$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
-# Measured (#381): with the pre-fix SUT the new
-# `an-unrecognised-prerequisite-state-stops` row fails alone (1/33) -- want
-# exit 0 `STOP unrecognised-pr-state`, got exit 1 with empty stdout.
+# The prerequisite's PR comes as facts: step 3's rows hand the SUT one
+# `--facts` file (prereq_facts) and the sibling makes no `gh pr list --head
+# <trailer-branch>` call. An unrecognised prerequisite state is the facts
+# contract's `STOP fact-enum`; the sibling no longer exits 1 for it.
 #
 # Limitations:
 #   - `STOP fetch-failed` from the sibling is unreachable through this SUT:
@@ -67,10 +68,9 @@ set -euo pipefail
 
 SUT="${SUT:-${REPO_ROOT}/tools/ensure-draft-pr.sh}"
 
-# The two --jq filters the SUT and its sibling pass, spelled here exactly as
-# they appear in those scripts: the stub matches an argv on its exact bytes.
+# The --jq filter the SUT passes, spelled here exactly as it appears in the
+# script: the stub matches an argv on its exact bytes.
 LIST_JQ='.[] | "\(.number) \(.isDraft) \(.url)"'
-STATE_JQ='.[] | "\(.number) \(.state)"'
 
 TITLE='tests: a title'
 BODY_FILE="${HARNESS_TMP}/body.md"
@@ -153,12 +153,17 @@ stub_pr_create() {
     --title "$TITLE" --body-file "$BODY_FILE"
 }
 
-# The sibling's prerequisite-PR lookup: `gh pr list --head <trailer-branch>
-# --state all`, raw like stub_pr_list -- the state comparison it feeds
-# (OPEN/MERGED/CLOSED/other) is what step 3's rows put under test, so a
-# pre-reduced fixture would decide the very answer they check.
-stub_prereq_list() {
-  gh_stub_raw_response "$1" "$3" pr list --head "$2" --state all --json number,state --jq "$STATE_JQ"
+# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head>]]] -- the
+# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
+# concatenate with other lines first).
+prereq_facts() {
+  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
+  if [ "$#" -ge 4 ]; then
+    printf 'prereq.head-pr=%s\n' "$4"
+  fi
+  if [ "$#" -ge 5 ]; then
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$4" "$5" "${6-${2#*:}}"
+  fi
 }
 
 # The sibling's default-branch rung, reached unconditionally every time base
@@ -449,87 +454,85 @@ printf 'nosuch\n' | stub_default_branch 3 0
 run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
 assert_row 'base-stop-default-branch-named-but-absent' 0 'STOP default-fetch-failed\n' 3
 
+# The sibling's prerequisite facts arrive in one --facts file, so the sibling
+# adds no `gh pr list --head <trailer-branch>` call: its only call is the
+# default-branch lookup (call 3), and a create and its readback are calls 4
+# and 5.
+
+row_start
+fixture prereq-ask feature remote dep
+printf '[]\n' | stub_pr_list 1 feature 0
+printf 'false  acme/repo\n' | stub_fork 2 0
+printf 'main\n' | stub_default_branch 3 0
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
+assert_row 'base-resolution-asks-for-the-prerequisite' 0 'NEED repo=acme/prereq-ask prereq.head=acme:dep prereq.head-pr\n' 3
+
+# Changed answer: was STOP prereq-lookup-failed, when the `gh` call failed.
 row_start
 fixture prereq-lookup-failed feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-: | gh_stub_response 4 1 pr list --head dep --state all --json number,state --jq "$STATE_JQ"
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-lookup-failed' 0 'STOP prereq-lookup-failed\n' 4
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-lookup-failed acme:dep '' | facts_file)"
+assert_row 'base-stop-prerequisite-lookup-failed' 0 'STOP fact-missing\n' 3
 
 row_start
 fixture prereq-none feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[]\n' | stub_prereq_list 4 dep 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 4
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-none acme:dep 0 | facts_file)"
+assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 3
 
 row_start
 fixture prereq-several feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[{"number":9,"state":"OPEN"},{"number":8,"state":"CLOSED"}]\n' | stub_prereq_list 4 dep 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$({ prereq_facts acme/prereq-several acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
 # Prints the same slug, STOP ask-multiple-prs, as Task 2's
 # several-prs-for-one-branch-stop -- both are intended, and deliberately not
 # redundant: one comes from the SUT's own branch lookup, the other from the
-# sibling's prerequisite lookup, and they are told apart by gh call count (1
+# sibling's prerequisite facts, and they are told apart by gh call count (1
 # there, 3 here).
-assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 4
+assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 3
 
 row_start
 fixture prereq-abandoned feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[{"number":9,"state":"CLOSED"}]\n' | stub_prereq_list 4 dep 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 4
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-abandoned acme:dep 1 9 CLOSED | facts_file)"
+assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 3
 
+# Changed answer: was STOP unrecognised-pr-state (the sibling exited 1).
 row_start
 fixture prereq-unrecognised feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[{"number":9,"state":"DRAFT"}]\n' | stub_prereq_list 4 dep 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-# The sibling exits 1 with nothing on stdout on an unrecognised prerequisite
-# state, its message already on stderr -- the SUT guards the call and answers
-# STOP instead of dying bare under set -e.
-assert_row 'an-unrecognised-prerequisite-state-stops' 0 'STOP unrecognised-pr-state\n' 4
-
-total=$((total + 1))
-if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
-  printf 'FAIL an-unrecognised-prerequisite-state-stops: stderr does not name the state:\n%s\n' \
-    "$(head -c 400 "$SUT_STDERR")"
-  failed=$((failed + 1))
-fi
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-unrecognised acme:dep 1 9 DRAFT | facts_file)"
+assert_row 'an-unrecognised-prerequisite-state-is-an-enum-stop' 0 'STOP fact-enum\n' 3
 
 row_start
 fixture prereq-open feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[{"number":9,"state":"OPEN"}]\n' | stub_prereq_list 4 dep 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 5 feature dep 0
-printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 6 feature 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep url=https://example.invalid/pull/7\n' 6
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature dep 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 5 feature 0
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-open acme:dep 1 9 OPEN | facts_file)"
+assert_row 'an-open-prerequisite-becomes-the-base' 0 'PR 7 created draft=true base=dep url=https://example.invalid/pull/7\n' 5
 
 row_start
 fixture prereq-merged feature remote dep
 printf '[]\n' | stub_pr_list 1 feature 0
 printf 'false  acme/repo\n' | stub_fork 2 0
 printf 'main\n' | stub_default_branch 3 0
-printf '[{"number":9,"state":"MERGED"}]\n' | stub_prereq_list 4 dep 0
-printf 'https://example.invalid/pull/7\n' | stub_pr_create 5 feature main 0
-printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 6 feature 0
-run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE"
-assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 6
+printf 'https://example.invalid/pull/7\n' | stub_pr_create 4 feature main 0
+printf '[{"number":7,"isDraft":true,"url":"https://example.invalid/pull/7"}]\n' | stub_pr_list 5 feature 0
+run_in "$FIXTURE_WORK" feature "$TITLE" "$BODY_FILE" --facts "$(prereq_facts acme/prereq-merged acme:dep 1 9 MERGED | facts_file)"
+assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 5
 
 # ---- steps 4-5: create, then read the record back -----------------------
 #

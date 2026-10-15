@@ -19,21 +19,37 @@
 # is not" and "## Resolving the default branch" — this script implements that
 # table's `review-code`'s `<base>` column.
 #
-# Usage: resolve-range.sh [pr-number]
+# `NEED` from the trailer reader is passed through: the caller reads those
+# facts and calls again with `--facts`.
+#
+# Usage: resolve-range.sh [pr-number] [--facts <file>]
+# Output: RANGE <sha>..<sha> | EMPTY | NEED <token>... | STOP <slug>
 set -euo pipefail
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [pr-number]" >&2
+usage() {
+  echo "Usage: $0 [pr-number] [--facts <file>]" >&2
   exit 2
-fi
+}
 
-PR="${1:-}"
+PR=''
+FACTS=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --facts)
+      if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
+      FACTS="$2"
+      shift 2
+      ;;
+    -*) usage ;;
+    *)
+      if [ -n "$PR" ] || ! [[ "$1" =~ ^[0-9]+$ ]]; then usage; fi
+      PR="$1"
+      shift
+      ;;
+  esac
+done
+
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-
-if [ -n "$PR" ] && ! [[ "$PR" =~ ^[0-9]+$ ]]; then
-  echo "Usage: $0 [pr-number]" >&2
-  exit 2
-fi
 
 # Both shapes answer through here, so an empty range is EMPTY however it was
 # resolved. Handed `RANGE <sha>..<sha>` for a PR whose endpoints coincide, the
@@ -96,13 +112,10 @@ fi
 # The revs are chosen here rather than there because it is this caller's
 # question: local HEAD, bounded by the fetched default tip, since this skill
 # reviews the checkout it is in.
-#
-# The call is guarded rather than left to `set -e` so that its exit-1 path --
-# an unrecognised PR state, whose message it has already put on stderr --
-# leaves this script exiting 1 with nothing on stdout, instead of a second
-# message about the same thing.
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"; then
-  exit 1
+if [ -n "$FACTS" ]; then
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" HEAD "^${TIP_SHA}")"
+else
+  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"
 fi
 
 read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
@@ -120,9 +133,9 @@ case "${KIND}" in
     emit_range "${BASE_SHA}" "${HEAD_SHA}"
     exit 0
     ;;
-  STOP)
+  STOP | NEED)
     # Passed through unchanged: the slugs are this script's output contract,
-    # and these five cases are answered identically by both readers,
+    # and these cases are answered identically by both readers,
     # which is why they are answered once, over there.
     printf '%s\n' "$ANSWER"
     exit 0

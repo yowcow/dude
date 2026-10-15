@@ -16,6 +16,10 @@
 # The stub bodies here are already filtered, so a defect that lives only
 # inside the filter string is invisible to this file.
 #
+# The no-argument shape reads the prerequisite's PR as facts (prereq_facts
+# below), so its trailer rows make no `gh pr list` call; the rows without a
+# trailer pass no facts, which is what shows that path asks for nothing.
+#
 # RED verification (see tests/README.md). resolve-range.sh has never been
 # tested before this file, so there is no pre-fix commit to point SUT= at the
 # way this suite's other table tests do. Guards named in the script's own
@@ -255,18 +259,17 @@ stub_default_branch() {
   gh_stub_response '*' "$1" repo view --json defaultBranchRef --jq .defaultBranchRef.name
 }
 
-PR_LIST_JQ='.[] | "\(.number) \(.state)"'
-
-# stub_pr_list <head-branch> <exit-status> -- the prerequisite lookup, raw
-# body on stdin. Raw, not filtered, because the filter is itself one of the
-# guards read-base-trailer.sh's header names: `.[]` rather than `.[0]` is what
-# makes an empty list yield zero lines instead of one interpolated
-# "null null", and a pre-filtered fixture would decide that rather than test
-# it. Measured through this stub's own jq: `.[0] | "\(.number) \(.state)"` on
-# `[]` prints `null null`, which the SUT would read as one PR in an unknown
-# state.
-stub_pr_list() {
-  gh_stub_raw_response '*' "$2" pr list --head "$1" --state all --json number,state --jq "$PR_LIST_JQ"
+# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head>]]] -- the
+# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
+# concatenate with other lines first).
+prereq_facts() {
+  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
+  if [ "$#" -ge 4 ]; then
+    printf 'prereq.head-pr=%s\n' "$4"
+  fi
+  if [ "$#" -ge 5 ]; then
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$4" "$5" "${6-${2#*:}}"
+  fi
 }
 
 # ---- the PR-number shape: the PR's own endpoints, fetched --------------
@@ -407,30 +410,19 @@ TASK_SHA="$(bare_sha "$REMOTE" task)"
 
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-open "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-open-uses-its-branch' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 OPEN | facts_file)"
+assert_row 'prereq-open-uses-its-branch' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 1
 
 # `task` records `older-base` on its first commit and `dep` on its second, so
-# the two orders of reading the stack disagree about the answer. Two things
-# make an oldest-first scan fail *on the range* here rather than for an
-# incidental reason: the `older-base` lookup is stubbed, so it does not fail as
-# "an argv no case stubbed", which would name the mechanism instead of the
-# defect; and `older-base` is a real ref on the fixture remote, so the fetch
-# behind it succeeds and the scan gets far enough to print a range at all --
-# without the ref it would stop at `STOP fetch-failed`, pinning the branch's
-# absence instead of the scan's order. Measured: deleting the scan's `break`
-# fails this row on stdout, `RANGE <trunk>..<task>` against
-# `RANGE <dep>..<task>`. The gh-call assertion holds the second entry to being
-# unused by a correct scan.
+# the two orders of reading the stack disagree about the answer. The facts name
+# `dep`, so an oldest-first scan asks about `older-base` and stops on the
+# pinned head (`STOP fact-mismatch`) instead of printing the range.
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list dep 0
-printf '[{"number":8,"state":"OPEN"}]\n' | stub_pr_list older-base 0
 W="$(work_repo shadow "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'newest-trailer-shadows-older' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 OPEN | facts_file)"
+assert_row 'newest-trailer-shadows-older' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 1
 
 # ---- MERGED: the boundary is the prerequisite's own head ----------------
 #
@@ -448,10 +440,9 @@ MERGED_TRUNK_SHA="$(bare_sha "$REMOTE_MERGED" trunk)"
 
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"MERGED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-merged "$REMOTE_MERGED" task trunk)"
-run_in "$W"
-assert_row 'prereq-merged-uses-the-pr-head' 0 "RANGE ${PULL9_SHA}..${MERGED_TASK_SHA}\n" 2
+run_in "$W" --facts "$(prereq_facts acme/merged acme:dep 1 9 MERGED | facts_file)"
+assert_row 'prereq-merged-uses-the-pr-head' 0 "RANGE ${PULL9_SHA}..${MERGED_TASK_SHA}\n" 1
 
 # The measurement the row above is for, asserted on that same run: the base
 # must not be the default branch's tip. The first branch is not decoration --
@@ -475,45 +466,44 @@ fi
 
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"CLOSED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-closed "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-closed-stops' 0 'STOP abandoned-prerequisite\n' 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 CLOSED | facts_file)"
+assert_row 'prereq-closed-stops' 0 'STOP abandoned-prerequisite\n' 1
 
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-none "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-has-no-pr' 0 'STOP no-prereq-pr\n' 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 0 | facts_file)"
+assert_row 'prereq-has-no-pr' 0 'STOP no-prereq-pr\n' 1
 
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"OPEN"},{"number":8,"state":"CLOSED"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-multiple "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-has-several-prs' 0 'STOP ask-multiple-prs\n' 2
+run_in "$W" --facts "$({ prereq_facts acme/ranged acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
+assert_row 'prereq-has-several-prs' 0 'STOP ask-multiple-prs\n' 1
 
+# Changed answer: was prereq-lookup-fails / STOP prereq-lookup-failed, when the
+# `gh` call failed.
 row_start
 printf 'trunk\n' | stub_default_branch 0
-: | stub_pr_list dep 1
 W="$(work_repo prereq-unreadable "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-lookup-fails' 0 'STOP prereq-lookup-failed\n' 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep '' | facts_file)"
+assert_row 'prereq-lookup-unread' 0 'STOP fact-missing\n' 1
 
+# Changed answer: was exit 1 with an empty stdout.
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":9,"state":"DRAFT"}]\n' | stub_pr_list dep 0
 W="$(work_repo prereq-unknown-state "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'prereq-state-unrecognised' 1 '' 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 DRAFT | facts_file)"
+assert_row 'prereq-state-unrecognised' 0 'STOP fact-enum\n' 1
 
-total=$((total + 1))
-if ! grep -q "unexpected PR state 'DRAFT'" "$SUT_STDERR"; then
-  printf 'FAIL prereq-state-unrecognised: stderr does not name the state:\n%s\n' \
-    "$(head -c 400 "$SUT_STDERR")"
-  failed=$((failed + 1))
-fi
+# A recorded trailer with no facts yet asks for them; the default branch's
+# lookup is the one `gh` call, and the trailer path adds none.
+row_start
+printf 'trunk\n' | stub_default_branch 0
+W="$(work_repo trailer-asks "$REMOTE" task trunk)"
+run_in "$W"
+assert_row 'trailer-without-facts-asks' 0 'NEED repo=acme/ranged prereq.head=acme:dep prereq.head-pr\n' 1
 
 # ---- the three git failures the script converts into STOP ---------------
 #
@@ -548,10 +538,9 @@ assert_row 'default-fetch-fails' 0 'STOP default-fetch-failed\n' 1
 # remote, so the spec that fails is the one the MERGED path builds itself.
 row_start
 printf 'trunk\n' | stub_default_branch 0
-printf '[{"number":77,"state":"MERGED"}]\n' | stub_pr_list dep 0
 W="$(work_repo fetch-pull "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'merged-pull-ref-absent' 0 'STOP fetch-failed\n' 2
+run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 77 MERGED | facts_file)"
+assert_row 'merged-pull-ref-absent' 0 'STOP fetch-failed\n' 1
 
 # Unrelated roots, the spelling absorb-base_test.sh uses: two repositories
 # that share no history, so the fetch succeeds and `git merge-base` is what
@@ -559,7 +548,6 @@ assert_row 'merged-pull-ref-absent' 0 'STOP fetch-failed\n' 2
 # from an answer unless the exit status is read.
 row_start
 printf 'unrelated\n' | stub_default_branch 0
-printf '[{"number":9,"state":"OPEN"}]\n' | stub_pr_list unrelated 0
 LONELY="$(git_repo_bare acme lonely)"
 LSEED="$(git_repo_scratch lonely-seed)"
 git_repo_init "$LSEED" unrelated
@@ -569,7 +557,7 @@ W="$(git_repo_scratch lonely-work)"
 git_repo_init "$W" task
 git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' unrelated)"
 git_repo_remote "$W" origin "$LONELY"
-run_in "$W"
-assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 2
+run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
+assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 1
 
 harness_exit "$failed" "$total"
