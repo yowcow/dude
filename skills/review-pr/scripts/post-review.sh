@@ -94,7 +94,11 @@ fi
 fact() { bash "${TOOLS}/facts.sh" get "$FACTS" "$1"; }
 STATE="$(fact review.state)"
 BODY="$(jq -j '.body' "$PAYLOAD_FILE")"
-if [ "$STATE" != "$WANT" ] || [ "$BODY" != "$(cat -- "$(fact review.body-file)")" ]; then
+if ! READ_BACK="$(cat -- "$(fact review.body-file)")"; then
+  echo "STOP body-unreadable"
+  exit 0
+fi
+if [ "$STATE" != "$WANT" ] || [ "$BODY" != "$READ_BACK" ]; then
   if [ "$STATE" = PENDING ]; then
     echo "STOP review-pending-left"
   else

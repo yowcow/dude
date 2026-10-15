@@ -28,7 +28,7 @@ stdout through every such script.
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
-| `body-unreadable` | `implement-work/resolve-base.sh` |
+| `body-unreadable` | `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
 | `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
 | `conditions-unmet` | `pr-to-ready/mark-ready.sh` |

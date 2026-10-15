@@ -193,6 +193,10 @@ run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPR
 assert_row 'body unreadable' 0 'STOP fact-missing\n' 0
 
 row_start
+run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "${HARNESS_TMP}/absent-body.txt")"
+assert_row 'body file absent' 0 'STOP body-unreadable\n' 0
+
+row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NONE")"
 assert_row 'submitted with the body dropped' 0 'STOP review-state-mismatch\n' 0
 
