@@ -58,8 +58,8 @@ Run `<skill-dir>/scripts/post-review.sh <n> <head> <event> <payload-file>` for t
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event> comments=<k>` — write the review in that repository by your own means, in steps: create a pending review anchored to `<head>`, add each inline comment to it, and, unless the event is `PENDING`, submit it with that event; the payload's body goes on whichever of those steps your means lets set it, and on the submit as well when the submit replaces it. A step that fails ends the write there: take no later step. When the create itself fails, report that nothing was posted. When the create succeeded but no review id can be read, take no later step, and report that a pending review may be on the PR, not confirmed, and that the user must check it and submit or delete it. Otherwise take the review's id as `implement-work`'s `references/facts.md` defines `review.id`, right after the create, and read the review back by it whether the write finished or stopped, and run the script again with `--posted <review-id>` and `--facts <file>` for facts read afresh.
 - `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - `POSTED <state> <url>` — report the URL, and the step that failed when one did.
-- `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, and that the user must submit or delete it.
-- any other `STOP <slug>` from the read-back — report it and that a review may be on the PR in a state not confirmed.
+- `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, that its body may not be the draft's, and that the user must check the body, then submit or delete it.
+- any other `STOP <slug>` from the read-back — report it and that a review may be on the PR in a state not confirmed, with a body not confirmed to be the draft's.
 
 ## Report
 
