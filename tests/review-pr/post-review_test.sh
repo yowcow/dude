@@ -7,8 +7,10 @@
 # asserts 0 gh calls, and stubs none.
 #
 # RED verification (see tests/README.md): against the pre-port script
-# (`git show master:skills/review-pr/scripts/post-review.sh`) the guard rows
-# fail (old arity answers usage 2, or a gh call) and the read-back rows fail.
+# (`git show master:skills/review-pr/scripts/post-review.sh`) 24 of 34 rows
+# fail, the guard and read-back rows, each on the old six-argument arity
+# answering usage 2. The ten usage rows pass, 'request changes' and 'no choice'
+# among them, since the old arity answers usage 2 for each.
 # Mutants measured in a copy under `mktemp -d` (siblings beside it): dropping
 # `review.commit=` from the check fails 'review pinned to another commit',
 # 'commit unreadable' and 'no facts: NEED pins';
