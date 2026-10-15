@@ -4,10 +4,9 @@
 # whether a PR already exists for it, who decides the target repository, and
 # only then how the base is resolved.
 #
-# The script reads facts, git and origin; it opens no PR and reads none, so
-# every row asserts 0 gh calls except the rows that reach base resolution,
-# where the sibling still makes its one default-branch call (stubbed below;
-# a later change removes it).
+# The script reads facts, git and origin; it opens no PR and reads none, and
+# the sibling reads the default branch from the remote's HEAD, so every row
+# asserts 0 gh calls.
 #
 # git is not stubbed. The ordering guard #205 asks for is about a real `git
 # push` landing on a real remote before anything is asked, and a git stub
@@ -23,13 +22,6 @@
 # directory: the SUT finds its sibling through dirname "${BASH_SOURCE[0]}", so
 # a row run from the scripts directory would pass even against a cwd-relative
 # call to the sibling -- one of the guards the SUT's own header names.
-#
-# fixture() below sets refs/remotes/origin/HEAD by hand after cloning, purely
-# for realism -- git_repo_bare leaves the bare repo's HEAD on
-# refs/heads/master, a branch these fixtures never create, so a real clone of
-# it records no refs/remotes/origin/HEAD at all, and a real one would. The
-# sibling's default-branch resolution never reads this symref, so no row's
-# answer depends on the call; see fixture()'s own comment for why it stays.
 #
 # RED verification (see tests/README.md). Against
 # `git show master:tools/ensure-draft-pr.sh` every row fails: the old usage
@@ -93,21 +85,9 @@ total=0
 # The work repo is a real clone rather than init + remote add, so it has the
 # remote-tracking refs, the upstream and the fetch refspec a real checkout has.
 #
-# refs/remotes/origin/HEAD is then set by hand: git_repo_bare leaves the bare
-# repo's HEAD on refs/heads/master, a branch these fixtures never create, so
-# the clone finds no advertised HEAD to record and the symref would otherwise
-# be absent. Measured -- `git symbolic-ref --short refs/remotes/origin/HEAD`
-# fails with "is not a symbolic ref" without this call.
-#
-# The sibling's default-branch resolution no longer reads this symref at all,
-# so this call is not load-bearing for any row's answer -- yet it stays. It
-# reproduces the state a real clone has, and leaving it planted while every
-# row's answer is unaffected is itself the evidence that the rung reading it
-# is really gone: if a rung consulting this symref were reintroduced, every
-# row that reaches base resolution would stop calling `gh repo view`, the `gh
-# calls` count each row asserts would come back wrong, and this table would
-# catch it. A fixture with the symref removed could not catch that
-# regression -- it would answer the same whether or not such a rung existed.
+# The remote's HEAD is pointed at `main` before the clone: git_repo_bare leaves
+# it on an unborn `master`, which is what the sibling reads as the default
+# branch, and a clone of it would record no refs/remotes/origin/HEAD.
 fixture() {
   local name="$1" branch="$2" where="$3" trailer="${4:--}" bare seed work
   bare="$(git_repo_bare acme "$name")"
@@ -115,8 +95,8 @@ fixture() {
   git_repo_init "$seed" main
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
   git_repo_push "$seed" "$bare" main
+  git_repo_bare_head "$bare" main
   work="$(git_repo_clone "work-${name}" "$bare" main)"
-  git_repo_origin_head "$work" main
   if [ "$where" != nowhere ]; then
     git_repo_checkout "$work" "$branch" main
     git_repo_commit "$work" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
@@ -178,18 +158,20 @@ prereq_facts() {
   fi
 }
 
-# The sibling's default-branch rung, reached unconditionally every time base
-# resolution runs: `gh repo view --json defaultBranchRef --jq
-# .defaultBranchRef.name`.
-stub_default_branch() {
-  gh_stub_response "$1" "$2" repo view --json defaultBranchRef --jq .defaultBranchRef.name
+# parent_bare <default> -- acme/parent as a bare repo holding `main` and
+# `trunk`, HEAD on <default>. Origin's sibling path, so a row that names
+# acme/parent without adding a remote reaches it there.
+parent_bare() {
+  local bare seed
+  bare="$(git_repo_bare acme parent)"
+  seed="$(git_repo_scratch seed-parent)"
+  git_repo_init "$seed" main
+  git_repo_commit "$seed" README.md 'base\n' 'base commit'
+  git_repo_checkout "$seed" trunk main
+  git_repo_push "$seed" "$bare" main trunk
+  git_repo_bare_head "$bare" "$1"
+  printf '%s\n' "$bare"
 }
-
-
-stub_default_branch_repo() {
-  gh_stub_response "$1" "$3" repo view "$2" --json defaultBranchRef --jq .defaultBranchRef.name
-}
-
 
 remote_has_branch() {
   if git -C "$1" show-ref --verify --quiet "refs/heads/$2"; then
@@ -354,21 +336,44 @@ assert_row 'another-remote-without-base-repo-stops' 0 'STOP ask-base-repo\n' 0
 # `repo.fork` line and no trailer exists.
 row_start
 fixture base-eq feature remote
-printf 'main\n' | stub_default_branch_repo 1 acme/base-eq 0
 run_in "$FIXTURE_WORK" feature acme/base-eq --facts "$(own base-eq 0 | facts_file)"
-assert_row 'base-repo-equal-to-origin-is-unqualified' 0 'CREATE repo=acme/base-eq head=feature base=main\n' 1
+assert_row 'base-repo-equal-to-origin-is-unqualified' 0 'CREATE repo=acme/base-eq head=feature base=main\n' 0
 
 row_start
 fixture base-case feature remote
-printf 'main\n' | stub_default_branch_repo 1 acme/base-case 0
 run_in "$FIXTURE_WORK" feature ACME/BASE-CASE --facts "$(own base-case 0 | facts_file)"
-assert_row 'base-repo-is-lower-cased' 0 'CREATE repo=acme/base-case head=feature base=main\n' 1
+assert_row 'base-repo-is-lower-cased' 0 'CREATE repo=acme/base-case head=feature base=main\n' 0
 
+# The one parent-target row that adds the remote. The bare is also origin's
+# sibling path, so it does not tell the two rungs apart:
+# resolve-default-branch_test.sh `repo-arg-selects-its-remote` pins the match.
 row_start
 fixture parent-q feature remote
-printf 'main\n' | stub_default_branch_repo 1 acme/parent 0
+git_repo_remote "$FIXTURE_WORK" upstream "$(parent_bare main)"
 run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
-assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 1
+assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
+
+# The second call after `origin-only-fork-without-base-repo-stops`, the path
+# #571 exists to serve: no `upstream` remote, so the parent's default branch is
+# read at origin's sibling path.
+row_start
+fixture fork-parent feature remote
+parent_bare main >/dev/null
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
+assert_row 'origin-only-fork-parent-chosen-creates' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
+
+row_start
+fixture parent-gone feature remote
+run_in "$FIXTURE_WORK" feature acme/nosuch --facts "$(printf 'target=acme/nosuch\nhead=acme:feature\nhead.open-pr.total=0\n' | facts_file)"
+assert_row 'parent-unreachable-stops' 0 'STOP ask-default-branch\n' 0
+
+# The parent's default (`trunk`) is one origin does not have, so the default
+# fetch is what fails.
+row_start
+fixture parent-trunk feature remote
+parent_bare trunk >/dev/null
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
+assert_row 'parent-default-absent-on-origin' 0 'STOP default-fetch-failed\n' 0
 
 row_start
 fixture parent-found feature remote
@@ -381,67 +386,59 @@ assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url
 # a PR must be created, it asks its sibling resolve-pr-base.sh for one --
 # reached the same way, through dirname "${BASH_SOURCE[0]}" -- and passes the
 # answer straight through unchanged. The sibling is not stubbed, so these rows
-# drive its own decision tree through fixtures, a facts file and the
-# default-branch stub; the text each row expects on stdout is the sibling's
+# drive its own decision tree through fixtures, a facts file and the remote's
+# HEAD; the text each row expects on stdout is the sibling's
 # own text. #205 puts an exhaustive test of the sibling out of scope -- #186
 # owns that -- so what is under test here is only that each answer arrives and
 # that no CREATE is printed when the answer is a stop.
 #
 # Every fixture below is `fixture <name> feature remote [<trailer>]`, and
 # every row's file says no PR and "not a fork", so control always reaches the
-# sibling. Its default-branch lookup is its one gh call, always call 1.
+# sibling.
 
 row_start
 fixture prereq-ask feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-ask 0; fork prereq-ask 1 false; } | facts_file)"
-assert_row 'base-resolution-asks-for-the-prerequisite' 0 'NEED prereq.head=acme:dep prereq.head-pr\n' 1
+assert_row 'base-resolution-asks-for-the-prerequisite' 0 'NEED prereq.head=acme:dep prereq.head-pr\n' 0
 
 row_start
 fixture prereq-open feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-open 0; one_repo_fork false; prereq_facts acme/prereq-open acme:dep 1 9 OPEN; } | facts_file)"
-assert_row 'an-open-prerequisite-becomes-the-base' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 1
+assert_row 'an-open-prerequisite-becomes-the-base' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
 
 row_start
 fixture prereq-merged feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-merged 0; one_repo_fork false; prereq_facts acme/prereq-merged acme:dep 1 9 MERGED; } | facts_file)"
-assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'CREATE repo=acme/prereq-merged head=feature base=main\n' 1
+assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'CREATE repo=acme/prereq-merged head=feature base=main\n' 0
 
 row_start
 fixture prereq-abandoned feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-abandoned 0; one_repo_fork false; prereq_facts acme/prereq-abandoned acme:dep 1 9 CLOSED; } | facts_file)"
-assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 1
+assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 0
 
 row_start
 fixture prereq-none feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-none 0; one_repo_fork false; prereq_facts acme/prereq-none acme:dep 0; } | facts_file)"
-assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 1
+assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 0
 
 row_start
 fixture prereq-several feature remote dep
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-several 0; one_repo_fork false; prereq_facts acme/prereq-several acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
 # Prints the same slug, STOP ask-multiple-prs, as several-prs-for-one-branch-
 # stop -- both are intended, and deliberately not redundant: one comes from
-# the SUT's own branch list, the other from the sibling's prerequisite facts,
-# and they are told apart by gh call count (0 there, 1 here).
-assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 1
+# the SUT's own branch list, the other from the sibling's prerequisite facts.
+assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 0
 
 row_start
 fixture default-unknown feature remote
-: | stub_default_branch 1 1
+git_repo_bare_head "$FIXTURE_BARE" nosuch
 run_in "$FIXTURE_WORK" feature --facts "$({ own default-unknown 0; fork default-unknown 1 false; } | facts_file)"
-assert_row 'base-stop-default-branch-unknown' 0 'STOP ask-default-branch\n' 1
+assert_row 'base-stop-default-branch-unknown' 0 'STOP ask-default-branch\n' 0
 
 row_start
 fixture empty-list feature remote
-printf 'main\n' | stub_default_branch 1 0
 run_in "$FIXTURE_WORK" feature --facts "$({ own empty-list 0; fork empty-list 1 false; } | facts_file)"
-assert_row 'an-empty-list-is-no-pr-and-the-base-is-resolved' 0 'CREATE repo=acme/empty-list head=feature base=main\n' 1
+assert_row 'an-empty-list-is-no-pr-and-the-base-is-resolved' 0 'CREATE repo=acme/empty-list head=feature base=main\n' 0
 
 # ---- the read-back after the agent's own create --------------------------
 #

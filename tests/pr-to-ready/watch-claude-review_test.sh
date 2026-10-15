@@ -69,7 +69,7 @@ fi
 
 BRANCH=188-watch-claude-review-tests
 # Deliberately not `master` or `main`: the script filters on the default branch
-# it read from `gh repo view`, and a regression that dropped that read and
+# it read from origin's HEAD, and a regression that dropped that read and
 # hardcoded the usual literal instead would produce byte-identical output on
 # every row here if the fixtures used that same literal. A name nobody would
 # hardcode is what makes the dynamic read observable.
@@ -89,12 +89,6 @@ LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
 failed=0
 total=0
 
-# stub_default_branch [<exit-status>] -- the opening `gh repo view`
-stub_default_branch() {
-  printf '%s\n' "$DEFAULT_BRANCH" |
-    gh_stub_response '*' "${1:-0}" repo view --json defaultBranchRef --jq .defaultBranchRef.name
-}
-
 # stub_listing <body-file> [<limit>] [<exit-status>] -- one `gh run list` page.
 #
 # The limit is a parameter because a row may need to answer more than one depth:
@@ -113,12 +107,13 @@ stub_watch() {
 }
 
 # repo_with_workflow <name> <kind> -- a real repository whose root holds the
-# workflow shape a row wants; prints its path.
+# workflow shape a row wants; prints its path. The `claude` kind also gets an
+# origin whose HEAD names $DEFAULT_BRANCH, which is where the script reads it.
 #   claude   -- .github/workflows/$WORKFLOW_FILE mentioning @claude
 #   noclaude -- .github/workflows/ci.yml with no @claude anywhere
 #   nodir    -- no .github/ at all
 repo_with_workflow() {
-  local name="$1" kind="$2" dir
+  local name="$1" kind="$2" dir bare
   dir="$(git_repo_scratch "$name")"
   git_repo_init "$dir" "$DEFAULT_BRANCH"
   case "$kind" in
@@ -126,6 +121,10 @@ repo_with_workflow() {
       git_repo_commit "$dir" ".github/workflows/${WORKFLOW_FILE}" \
         'name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n' \
         'add claude workflow'
+      bare="$(git_repo_bare acme "$name")"
+      git_repo_push "$dir" "$bare" "$DEFAULT_BRANCH"
+      git_repo_bare_head "$bare" "$DEFAULT_BRANCH"
+      git_repo_remote "$dir" origin "$bare"
       ;;
     noclaude)
       git_repo_commit "$dir" .github/workflows/ci.yml \
@@ -205,6 +204,9 @@ fi
 
 # Built once and shared: none of the rows writes to them.
 REPO_CLAUDE="$(repo_with_workflow claude-ok claude)"
+# origin's HEAD is unborn: the remote names no default branch.
+REPO_CLAUDE_NOHEAD="$(repo_with_workflow claude-nohead claude)"
+git_repo_remote "$REPO_CLAUDE_NOHEAD" origin "$(git_repo_bare acme nohead-empty)"
 REPO_NOCLAUDE="$(repo_with_workflow claude-absent noclaude)"
 REPO_NODIR="$(repo_with_workflow no-github nodir)"
 REPO_OUTSIDE="$(git_repo_scratch outside)"
@@ -228,25 +230,21 @@ mkdir -p "$SUBDIR"
 # unstubbed call the harness let through.
 
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE"
 assert_row 'usage-no-args' 2 '-' 0
 
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID" extra
 assert_row 'usage-three-args' 2 '-' 0
 
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_NOCLAUDE" "$BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_NODIR" "$BRANCH"
 assert_row 'no-workflows-dir' 3 '-' 0
@@ -256,7 +254,6 @@ assert_row 'no-workflows-dir' 3 '-' 0
 # skip the review. 128 is what `git rev-parse --show-toplevel` exits with there,
 # and `set -e` on the assignment propagates it unchanged.
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_OUTSIDE" "$BRANCH"
 assert_row 'outside-a-repository' 128 '-' 0
@@ -273,32 +270,28 @@ assert_row 'outside-a-repository' 128 '-' 0
 # there for the same reason — an unfinished run is not hidden from the caller.
 
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH"
-assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-mixed.expected" 2
+assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # Same expectation from a subdirectory: the workflow search is anchored at the
 # repository root, so where the caller stands cannot change the answer.
 row_start
-stub_default_branch
 stub_listing "$MIXED"
 run_in "$SUBDIR" "$BRANCH"
-assert_row 'from-a-subdirectory' 0 "${FIXTURES}/claude-runs-mixed.expected" 2
+assert_row 'from-a-subdirectory' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 row_start
-stub_default_branch 1
-run_in "$REPO_CLAUDE" "$BRANCH"
-assert_row 'default-branch-read-fails' 1 '-' 1
+run_in "$REPO_CLAUDE_NOHEAD" "$BRANCH"
+assert_row 'default-branch-read-fails' 1 '-' 0
 
 # The listing call fails with an empty body; `set -o pipefail` carries gh's
 # status out through the jq pipeline, so nothing is printed and the status is
 # neither 0 nor the availability answer.
 row_start
-stub_default_branch
 stub_listing /dev/null 100 1
 run_in "$REPO_CLAUDE" "$BRANCH"
-assert_row 'listing-call-fails' 1 '-' 2
+assert_row 'listing-call-fails' 1 '-' 1
 
 # The depth of the listing, i.e. #173. Two listing stubs, one per depth: the
 # depth this script asks for (100) is answered with the whole 21-run page, and
@@ -308,12 +301,11 @@ assert_row 'listing-call-fails' 1 '-' 2
 # the answer, the filter prints [], and the row fails on the real symptom
 # rather than on an unstubbed argv.
 row_start
-stub_default_branch
 stub_listing "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"
 stub_listing "$TRUNCATED" 20
 run_in "$REPO_CLAUDE" "$BRANCH"
-assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.expected" 2
+assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.expected" 1
 
 # ---- watch mode ----------------------------------------------------------
 #

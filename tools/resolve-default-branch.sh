@@ -1,50 +1,34 @@
 #!/usr/bin/env bash
-# Print this repository's default branch by its bare name on stdout, or exit 1
+# Print a repository's default branch by its bare name on stdout, or exit 1
 # having printed nothing.
 #
-# Called as a subprocess by four scripts --
-# skills/implement-work/scripts/resolve-base.sh, tools/resolve-pr-base.sh,
-# tools/resolve-range.sh, skills/pr-to-ready/scripts/watch-claude-review.sh
-# -- and by no SKILL.md.
-# There is deliberately no caller contract for it in any SKILL.md:
-# it is one answer several skills need, and it lives here because the spec
-# it implements does -- skills/implement-work/references/base-branch.md,
-# "## Resolving the default branch". Without this paragraph the next reader
-# takes the absent caller for an oversight and either wires a contract for it
-# into a SKILL.md that never calls it, or deletes the script as unreferenced.
+# Called as a subprocess by skills/implement-work/scripts/resolve-base.sh,
+# tools/resolve-pr-base.sh, tools/resolve-range.sh and
+# skills/pr-to-ready/scripts/watch-claude-review.sh -- and by no SKILL.md:
+# it is one answer several skills need, and the spec it implements lives in
+# skills/implement-work/references/base-branch.md, "## Resolving the default
+# branch". Without this paragraph the next reader takes the absent caller for
+# an oversight.
 #
-# The `STOP ask-default-branch` slug is each caller's own output contract and
-# stays with the caller: the three base-resolving callers print it on stdout
-# as their answer, and a slug printed from here would land in the caller's
-# command substitution and be read back as a branch name.
+# The answer is the remote's own HEAD, read live with `git ls-remote
+# --symref`. refs/remotes/origin/HEAD is deliberately not read: a clone sets
+# it once and never refreshes it, so after the repository renames its default
+# branch it keeps naming the old one, and every base-resolving caller would
+# decide a base from it with nothing reporting the mistake.
 #
-# Canonical source: this script is the one implementation of "default branch
-# name" other scripts call; conventions and the
-# STOP registry live at skills/implement-work/references/script-conventions.md
-# and skills/implement-work/references/stop-registry.md. Do not add rungs here
-# and do not print a slug here — both stay with the caller per the paragraphs
-# above.
+# With [repo], the remote read is the configured one whose URL reduces to
+# that repository (origin-repo.sh); else origin's URL with its last two
+# segments replaced by that repository, which reaches a fork's parent on the
+# host and transport the fork uses. One that answers no HEAD there is exit 1,
+# and the caller asks a person.
 #
-# Two rungs, never guessing a branch name: the GitHub API, then give up and let
-# the caller ask a person. `.defaultBranchRef.name` is the bare name, which is
-# what every caller takes -- one compares it against branch names, three hand it
-# straight to `git fetch origin --`.
+# The exit status and the `ref:` line are read together: a failing ls-remote
+# prints nothing useful, and a remote whose HEAD is unborn or detached exits 0
+# with no `ref:` line -- an empty answer a caller would fetch as
+# `git fetch origin -- ''`.
 #
-# refs/remotes/origin/HEAD is deliberately not a rung. A clone sets that symref
-# once and never refreshes it, so after the repository renames its default
-# branch it keeps naming the old one; while that branch still exists this
-# script would answer with it. Every base-resolving caller decides a base from
-# this answer, so a wrong answer here is a wrong base used with nothing
-# anywhere reporting the mistake. Reading it saved one `gh` call and nothing
-# else -- every base-resolving caller path that reaches here fetches
-# immediately afterwards, so there was no offline case to keep.
-#
-# The exit status and the emptiness are read together, not separately. `gh`
-# exits non-zero and prints its error text on an auth, network, or
-# repo-context failure, and exits 0 with an empty answer where the API named no
-# default branch; tolerating the status hands that error text back as a branch
-# name, and tolerating an empty answer hands back the empty string, which a
-# caller fetches as `git fetch origin -- ''`.
+# The STOP each caller prints on exit 1 is its own output contract
+# (script-conventions.md, STOP contract).
 #
 # Usage: resolve-default-branch.sh [repo]
 set -euo pipefail
@@ -54,14 +38,39 @@ if [ "$#" -gt 1 ]; then
   exit 2
 fi
 
-REPO="${1:-}"
-VIEW_ARGS=(repo view)
-if [ -n "$REPO" ]; then VIEW_ARGS+=("$REPO"); fi
-VIEW_ARGS+=(--json defaultBranchRef --jq .defaultBranchRef.name)
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-if ref="$(gh "${VIEW_ARGS[@]}" 2>/dev/null)" && [ -n "$ref" ]; then
-  printf '%s\n' "$ref"
-  exit 0
+REMOTE=origin
+if [ -n "${1:-}" ]; then
+  WANT="$(printf '%s\n' "$1" | tr '[:upper:]' '[:lower:]')"
+  REMOTE=''
+  while IFS= read -r r; do
+    if [ "$(bash "${SCRIPT_DIR}/origin-repo.sh" "$r" 2>/dev/null)" = "$WANT" ]; then
+      REMOTE="$r"
+      break
+    fi
+  done < <(git remote 2>/dev/null)
+  if [ -z "$REMOTE" ]; then
+    # origin-only checkout (a fork asking for its parent): the inverse of
+    # origin-repo.sh's reduction -- swap origin's last two path segments.
+    if ! URL="$(git remote get-url origin 2>/dev/null)"; then
+      exit 1
+    fi
+    u="${URL%/*}"
+    o="${u##*/}"
+    o="${o##*:}"
+    if [ -z "$o" ]; then
+      exit 1
+    fi
+    REMOTE="${u%"$o"}${WANT}.git"
+  fi
 fi
 
-exit 1
+if ! OUT="$(git ls-remote --symref "$REMOTE" HEAD 2>/dev/null)"; then
+  exit 1
+fi
+REF="$(awk -F'\t' '$2 == "HEAD" && $1 ~ /^ref: refs\/heads\// { sub(/^ref: refs\/heads\//, "", $1); print $1; exit }' <<<"$OUT")"
+if [ -z "$REF" ]; then
+  exit 1
+fi
+printf '%s\n' "$REF"

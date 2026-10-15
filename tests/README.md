@@ -133,6 +133,10 @@ exit codes, a real `git merge` producing a genuine conflict. Source
   identity**: `resolve-pr-entry.sh` reduces a remote URL to its last two
   segments, so this repo reads as `<owner>/<repo>` while still being a local
   directory `git fetch` can reach offline.
+- `git_repo_bare_head <bare> <branch>` — points a bare repo's `HEAD` at
+  `<branch>`, which is what `git ls-remote --symref` reports as the remote's
+  default. `git_repo_bare` leaves `HEAD` on an unborn `master`, so a remote
+  whose default a row reads must set it.
 - `git_repo_scratch <name>` — a fresh empty directory; prints the path.
 - `git_repo_init <dir> <initial-branch>` — an empty non-bare repo with `HEAD`
   on that branch.
@@ -151,8 +155,8 @@ exit codes, a real `git merge` producing a genuine conflict. Source
   it either to reproduce that real-clone state for realism, or to prove a
   stale or wrong value here is ignored — the proving kind names a branch that
   exists on the remote and is the wrong answer, which is the shape the removed
-  rung got wrong. A row wanting "the default branch is named but absent from
-  the remote" builds it by stubbing `gh repo view` with that name, not here.
+  rung got wrong. A row wanting "the remote names no default branch" leaves the
+  bare repo's HEAD unborn (`git_repo_bare`'s default) instead.
 - `git_repo_merge <dir> <ref>` — merges `<ref>` into `<dir>`'s current branch
   with the same fixed clock `git_repo_commit` uses.
 - `git_repo_deny_push <bare>` / `git_repo_allow_push <bare>` — install and

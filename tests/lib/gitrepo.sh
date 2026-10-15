@@ -98,6 +98,15 @@ git_repo_bare() {
   printf '%s\n' "$dir"
 }
 
+# git_repo_bare_head <bare> <branch>   points the bare repo's HEAD at <branch>
+#
+# What `git ls-remote --symref` reports as the remote's default branch. A bare
+# repo made by git_repo_bare starts on refs/heads/master, which no fixture
+# creates, so its HEAD is unborn and ls-remote names no default at all.
+git_repo_bare_head() {
+  git -C "$1" symbolic-ref HEAD "refs/heads/$2"
+}
+
 # git_repo_init <dir> <initial-branch>
 git_repo_init() {
   local dir="$1" branch="$2"
@@ -146,9 +155,8 @@ git_repo_remote() {
 # kind names a branch that exists on the remote and is the wrong answer, since
 # that is the shape the removed rung got wrong: a symref left over from before
 # a rename keeps naming a branch that is still there, so it resolves and
-# nothing reports the mistake. A row wanting "the default branch is named but
-# absent from the remote" builds it by stubbing `gh repo view` with that name,
-# not here.
+# nothing reports the mistake. A row wanting "the remote names no default
+# branch" leaves the bare repo's HEAD unborn (git_repo_bare's default) instead.
 git_repo_origin_head() {
   local dir="$1" branch="$2"
   git -C "$dir" symbolic-ref refs/remotes/origin/HEAD "refs/remotes/origin/${branch}"
