@@ -10,8 +10,8 @@
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:tools/resolve-default-branch.sh` in a copy under
-# `mktemp -d`, run as `SUT=<copy> tests/run.sh <this file>`) every row fails on
-# an unstubbed `gh repo view`.
+# `mktemp -d`, run as `SUT=<copy> tests/run.sh <this file>`) every row but the
+# usage row fails on an unstubbed `gh repo view`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -137,5 +137,18 @@ assert_row 'repo-arg-unreachable' 1 '' 0
 row_start
 run_in "$W" acme/parent extra
 assert_row 'two-arguments-is-usage-error' 2 '' 0
+
+# A relative two-segment origin URL leaves nothing in front of the [repo]
+# swap, so the remote handed to git is the argument itself plus `.git`; a
+# leading dash makes that an option. The marker is relative and lower-case
+# because the argument is lower-cased and git runs from the work dir.
+row_start
+DASH="$(git_repo_scratch dash)"
+git_repo_init "$DASH" trunk
+git -C "$DASH" remote add origin a/b
+run_in "$DASH" '--upload-pack=touch m'
+assert_row 'repo-arg-with-leading-dash-is-no-option' 1 '' 0
+tally check_eq 'repo-arg-with-leading-dash-is-no-option: no side effect' absent \
+  "$([ -e "${DASH}/m.git" ] && echo ran || echo absent)"
 
 harness_exit "$failed" "$total"

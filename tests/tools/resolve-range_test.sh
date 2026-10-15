@@ -26,8 +26,8 @@
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
-# 4 alone mutates this script by itself and stays single-file both before and
-# after Task 2: it mutates emit_range, its own guard, and fails a PR-shape row
+# 4 alone mutates this script by itself and stays single-file: it mutates
+# emit_range, its own guard, and fails a PR-shape row
 # that returns before the trailer scan is ever reached. Every other record
 # (1-3 and 5-8) mutates a guard that either lives in, or is reached through,
 # the shared tools/read-base-trailer.sh and/or
@@ -39,20 +39,15 @@
 # only partly observable is recorded as such below, rather than counted as
 # covered. What each mutant actually produced, measured:
 #
-#   1. The trailer read guarded as well as captured. This guard now lives in
-#      tools/read-base-trailer.sh (its own :48-61), so
-#      the mutant is applied there, in a copy of the tools/ tree
-#      with read-base-trailer.sh in place. Replacing the
-#      `if ! TRAILER_LOG=...` block with
-#      `TRAILER_LOG="$(git log ... 2>/dev/null || true)"` failed
-#      `trailer-read-fails` alone: want `STOP trailer-read-failed`, got
-#      `STOP merge-base-failed`, with the mutant's stderr showing it had
-#      fetched `trunk` on the way. That is the widening this file exists to
-#      pin -- a read that failed, taken for a trailer that was absent, sends
-#      the range to the default branch. The guard moved; this record's
-#      measurement was not re-run against the new location.
+#   1. The trailer read guarded as well as captured. This guard lives in
+#      tools/read-base-trailer.sh, so the mutant is applied there, in a copy
+#      of the tools/ tree. Appending `|| true` to the `git log` inside the
+#      `if ! TRAILER_LOG=...` test failed `trailer-read-fails` alone: want
+#      `STOP trailer-read-failed`, got `STOP merge-base-failed`. That is the
+#      widening this file exists to pin -- a read that failed, taken for a
+#      trailer that was absent, sends the range to the default branch.
 #   2. The MERGED boundary being the prerequisite's own head
-#      (resolve-range.sh:93-98). Replacing
+#      (the PREREQ_PR fetch spec). Replacing
 #      `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
 #      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")"`
 #      in a copy of the tools/ tree (the call resolves through `dirname "$0"`)
@@ -61,16 +56,14 @@
 #      `merged-base-is-not-the-default-branch`, flagged that the range then
 #      started at the default branch tip -- the widening this guard exists to
 #      prevent.
-#   3. An empty PR list being "no prerequisite PR". This guard now lives in
-#      read-base-trailer.sh (its own :93-96), so the mutant is applied there,
-#      in the same two-file tree copy as record 1. Deleting the
-#      `[ "$LINE_COUNT" -eq 0 ]` block failed `prereq-has-no-pr` on both exit
-#      status (want 0, got 1) and stdout: the empty list fell through to the
-#      unexpected-state branch instead. The guard moved; this record's
-#      measurement was not re-run against the new location.
-#   4. Both shapes answering through emit_range (:32-42, unmoved by Task 2).
-#      Replacing its body with an unconditional `echo "RANGE $1..$2"` failed
-#      both EMPTY rows -- `pr-shape-empty-when-ends-coincide` and
+#   3. A count of zero PRs being "no prerequisite PR". This guard lives in
+#      read-base-trailer.sh, so the mutant is applied there, in the same
+#      tree copy as record 1. Deleting the `[ "$COUNT" -eq 0 ]` block failed
+#      `prereq-has-no-pr` alone: want `STOP no-prereq-pr`, got a `NEED` for the
+#      PR record the empty list never named.
+#   4. Both shapes answering through emit_range. Replacing its body with an
+#      unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
+#      `pr-shape-empty-when-head-is-the-base` and
 #      `no-trailer-empty-when-head-is-the-default-tip`.
 #   5. The default branch being read rather than guessed. That read lives in
 #      the shared tools/resolve-default-branch.sh this script reaches by its
@@ -81,24 +74,23 @@
 #      branch and whose stdout already expects `STOP default-fetch-failed`.
 #      This is why build_remote's default branch is called `trunk`: with the
 #      conventional name, this mutant passes every row.
-#   6. OPEN fetching the branch the trailer recorded (resolve-range.sh:90-92).
+#   6. OPEN fetching the branch the trailer recorded (the OPEN arm).
 #      Replacing `FETCH_SPEC="${RECORDED}"` with the MERGED path's
 #      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
 #      two others. `RECORDED` now comes from read-base-trailer.sh's answer, so
 #      this record needs the tree copy, not a single-file copy of
 #      resolve-range.sh alone. This is why `refs/pull/9/head` is a decoy under
 #      `with-dep`: pointed at dep's own commit, this mutant passes.
-#   7. The trailer scan keeping the newest trailer. This guard now lives in
-#      read-base-trailer.sh (its own :64-69), so the mutant is applied there,
-#      in the same two-file tree copy as records 1 and 3. Deleting the
-#      `break` leaves the loop holding the last non-empty line -- the oldest,
-#      since the log is newest-first -- and `newest-trailer-shadows-older`
-#      then failed on the range it printed. This is why `older-base` exists as
-#      a ref on the fixture remote: without it the mutant stops at
-#      `STOP fetch-failed`, which pins the branch's absence rather than the
-#      scan's order. The guard moved; this record's measurement was not re-run
-#      against the new location.
-#   8. The trailer scan stopping at the default tip (resolve-range.sh:88).
+#   7. The trailer scan keeping the newest trailer. This guard lives in
+#      read-base-trailer.sh (`awk 'NF{print;exit}'`), so the mutant is applied
+#      there, in the same tree copy as records 1 and 3. Replacing it with
+#      `awk 'NF{l=$0}END{print l}'` holds the last non-empty line -- the
+#      oldest, since the log is newest-first -- and failed ten rows, among them
+#      `newest-trailer-shadows-older`, which answered `STOP fact-mismatch`
+#      rather than the range: the facts name `dep`, the oldest trailer names
+#      `older-base`. `older-base` is also a ref on the fixture remote, so a
+#      mutant that fetched it would not stop at `STOP fetch-failed`.
+#   8. The trailer scan stopping at the default tip.
 #      build_remote's `trunk` advances one commit past `older-base` recording
 #      `Base-Branch: older-base`, so `plain`'s only trailer is the poisoned
 #      trunk history below its own tip. Removing `^${TIP_SHA}` from the
@@ -109,7 +101,7 @@
 #      nothing of their own.
 #
 # Partly covered, and measured to be no more coverable than this: reading
-# FETCH_HEAD rather than a remote-tracking ref (resolve-range.sh:142).
+# FETCH_HEAD rather than a remote-tracking ref.
 # Replacing `git merge-base FETCH_HEAD HEAD` with
 # `git merge-base "origin/${FETCH_SPEC}" HEAD` failed exactly one row,
 # `prereq-merged-uses-the-pr-head` -- `refs/pull/<n>/head` lies outside every
@@ -384,7 +376,7 @@ assert_row 'remote-head-unborn' 0 'STOP ask-default-branch\n' 0
 
 # `fresh` sits exactly on trunk's tip, so the merge-base *is* HEAD -- the empty
 # range, reached through the no-argument shape. Its counterpart for the PR
-# shape is `pr-shape-empty-when-ends-coincide` above; both spellings have to
+# shape is `pr-shape-empty-when-head-is-the-base` above; both spellings have to
 # collapse to EMPTY, since a caller handed `RANGE <sha>..<sha>` would dispatch
 # a reviewer over an empty diff and read the no-findings back as a clean
 # review.

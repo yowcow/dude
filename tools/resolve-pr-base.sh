@@ -102,9 +102,9 @@ fi
 # default branch, and the exclusion names the saved default-branch SHA rather than a remote-tracking ref a narrowed clone need not have updated. Unbounded,
 # the scan walks to root, so a branch that recorded nothing picks up whatever
 # Base-Branch some unrelated commit left in shared history and hands that
-# branch back as --base -- which ensure-draft-pr.sh then passes to
-# `gh pr create --base`, opening the PR against a branch this task never sat
-# on.
+# branch back as the base -- which ensure-draft-pr.sh then answers as
+# `CREATE ... base=<base>`, so the caller opens the PR against a branch this
+# task never sat on.
 #
 if [ -n "$FACTS" ]; then
   ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" FETCH_HEAD "^${DEFAULT_SHA}")"

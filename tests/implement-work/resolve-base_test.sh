@@ -8,10 +8,11 @@
 # fixture (facts_file). The shared tools/resolve-default-branch.sh reads the
 # remote's HEAD, so the file stubs nothing; every row asserts 0 gh calls.
 #
-# There is no row for a default branch absent on the remote: ls-remote can no
-# longer name a branch the remote lacks (a HEAD naming an absent branch is
-# unborn and prints nothing). The fetch-failure exit is still covered by
-# `open head absent on remote`, which goes through the same `base` function.
+# There is no row for a default branch absent on the remote: a HEAD naming an
+# absent branch is unborn and prints nothing, so ls-remote answers no default
+# rather than a branch the fetch then fails on. The fetch-failure exit is still
+# covered by `open head absent on remote`, which goes through the same `base`
+# function.
 #
 # git is not stubbed. Which ref a fetch updates is git's own behaviour, so a
 # git stub would encode the test author's belief about that rather than git's

@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Table test for tools/origin-repo.sh: origin's fetch URL reduced to the
-# lowercase `<owner>/<repo>` a facts contract script pins its reads to. Each
-# URL shape git accepts for GitHub gets a row, and "no origin" exits 1 with
-# nothing on stdout, because the caller prints its own slug.
+# Table test for tools/origin-repo.sh: a remote's fetch URL (origin's unless one
+# is named) reduced to the lowercase `<owner>/<repo>` a facts contract script
+# pins its reads to. Each URL shape git accepts for GitHub gets a row, and "no
+# origin" exits 1 with nothing on stdout, because the caller prints its own
+# slug.
 #
 # RED verification (see tests/README.md): the script is new. Mutants measured
 # in a copy under `mktemp -d`: dropping `${owner##*:}` fails 'scp-like url';

@@ -66,7 +66,7 @@ if [ -n "${1:-}" ]; then
   fi
 fi
 
-if ! OUT="$(git ls-remote --symref "$REMOTE" HEAD 2>/dev/null)"; then
+if ! OUT="$(git ls-remote --symref -- "$REMOTE" HEAD 2>/dev/null)"; then
   exit 1
 fi
 REF="$(awk -F'\t' '$2 == "HEAD" && $1 ~ /^ref: refs\/heads\// { sub(/^ref: refs\/heads\//, "", $1); print $1; exit }' <<<"$OUT")"

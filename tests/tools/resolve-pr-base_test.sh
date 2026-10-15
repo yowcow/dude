@@ -33,11 +33,12 @@
 #   git show bb8d8b8^:skills/pr-to-ready/scripts/resolve-pr-base.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/tools/resolve-pr-base_test.sh
 #
-#   A copy of the *current* script needs two siblings beside it in tools/:
-#   it resolves both paths through dirname "$0",
+#   A copy of the *current* script needs its siblings beside it in tools/
+#   (read-base-trailer.sh, resolve-default-branch.sh, fetch-to-sha.sh,
+#   facts.sh and origin-repo.sh): it resolves their paths through dirname "$0",
 #   so a lone copy answers STOP ask-default-branch (or fails outright) on
 #   every row and the failures say nothing about the mutation. The bb8d8b8^
-#   version above predates both extractions and needs no sibling.
+#   version above predates the extractions and needs no sibling.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR

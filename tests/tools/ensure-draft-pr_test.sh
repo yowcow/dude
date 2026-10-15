@@ -19,14 +19,17 @@
 # fixture standing in for it.
 #
 # Every row runs from inside its own work repository, never from the scripts
-# directory: the SUT finds its sibling through dirname "${BASH_SOURCE[0]}", so
-# a row run from the scripts directory would pass even against a cwd-relative
-# call to the sibling -- one of the guards the SUT's own header names.
+# directory: the SUT finds its sibling through dirname -- "$0", so a row run
+# from the scripts directory would pass even against a cwd-relative call to
+# the sibling -- one of the guards the SUT's own header names.
 #
 # RED verification (see tests/README.md). Against
-# `git show master:tools/ensure-draft-pr.sh` every row fails: the old usage
-# needs a title and a body file, and the old script calls `gh pr list`. The
-# tree has to be copied with its shape intact: ensure-draft-pr.sh reaches
+# `git show master:tools/ensure-draft-pr.sh` every row fails but four: the old
+# usage needs a title and a body file, and the old script calls `gh pr list`.
+# The four that pass hold for the old script too: no-arguments,
+# facts-flag-without-file and created-flag-without-base (it also exits 2) and
+# the no-redundant-push tally (it does not push either). The tree has to be
+# copied with its shape intact: ensure-draft-pr.sh reaches
 # resolve-pr-base.sh, facts.sh and origin-repo.sh through dirname "$0", and
 # resolve-pr-base.sh sits beside tools/resolve-default-branch.sh,
 # tools/fetch-to-sha.sh and tools/read-base-trailer.sh, so a flat copy answers
@@ -130,16 +133,6 @@ fork() {
   shift 2
   printf 'repo=acme/%s\nrepo.fork.total=%s\n' "$n" "$t"
   for v in "$@"; do printf 'repo.fork=%s\n' "$v"; done
-}
-
-# parent_own <total> [<pr>...] -- the same lines for a lookup in acme/parent
-parent_own() {
-  local t="$1"
-  shift
-  printf 'target=acme/parent\nhead=acme:feature\nhead.open-pr.total=%s\n' "$t"
-  if [ "$#" -gt 0 ]; then
-    for n in "$@"; do printf 'head.open-pr=%s\n' "$n"; done
-  fi
 }
 
 # one_repo_fork <isFork> -- the fork list when a row's file already holds a `repo=` line (from prereq_facts)
@@ -350,7 +343,7 @@ assert_row 'base-repo-is-lower-cased' 0 'CREATE repo=acme/base-case head=feature
 row_start
 fixture parent-q feature remote
 git_repo_remote "$FIXTURE_WORK" upstream "$(parent_bare main)"
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
 assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
 
 # The second call after `origin-only-fork-without-base-repo-stops`, the path
@@ -359,7 +352,7 @@ assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=ac
 row_start
 fixture fork-parent feature remote
 parent_bare main >/dev/null
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
 assert_row 'origin-only-fork-parent-chosen-creates' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
 
 row_start
@@ -372,12 +365,12 @@ assert_row 'parent-unreachable-stops' 0 'STOP ask-default-branch\n' 0
 row_start
 fixture parent-trunk feature remote
 parent_bare trunk >/dev/null
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(parent_own 0 | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
 assert_row 'parent-default-absent-on-origin' 0 'STOP default-fetch-failed\n' 0
 
 row_start
 fixture parent-found feature remote
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$({ parent_own 1 12; record 12 true; } | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$({ own parent 1 12; record 12 true; } | facts_file)"
 assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 0
 
 # ---- step 3: the base, resolved by the real sibling ----------------------
@@ -492,7 +485,7 @@ assert_row 'stale-file-on-read-back-stops' 0 'STOP pr-not-created\n' 0
 
 row_start
 fixture parent-rb feature remote
-run_in "$FIXTURE_WORK" feature acme/parent --created main --facts "$({ parent_own 1 7; record 7 true feature main; } | facts_file)"
+run_in "$FIXTURE_WORK" feature acme/parent --created main --facts "$({ own parent 1 7; record 7 true feature main; } | facts_file)"
 assert_row 'parent-target-read-back' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 0
 
 # ---- argument validation -------------------------------------------------
