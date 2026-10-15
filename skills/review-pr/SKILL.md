@@ -20,7 +20,7 @@ Review a PR somebody else opened, have every finding judged against the PR's own
 
 Take the PR number or URL from the caller; if none was given, ask.
 
-1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is both this checkout's `origin` and the repository `gh` resolves here. On `STOP <slug>`, report it and end the run.
+1. Run `<skill-dir>/scripts/check-pr-repo.sh <pr-ref>`. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is this checkout's `origin`. On `STOP <slug>`, report it and end the run.
 2. Run `tools/check-pr-author.sh <n>`. On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, write them to a file, and run it again with `--facts <file>` added. On `SELF`, stop and report it. On `OTHER`, go on. On `STOP <slug>`, report it and end the run.
 3. Put the reviewer's 👀 reaction on the PR itself. From here on, remove the reviewer's 👀 when the run ends, however it ends, whether or not this run put it there. If it can't be removed, don't stop the run; the Report tells the user to remove it by hand.
 
@@ -53,15 +53,18 @@ Recommend approve when no accepted finding is Critical or Important and no verdi
 
 ### 6. Post
 
-Run `<skill-dir>/scripts/post-review.sh <owner> <repo> <n> <head> <event> <payload-file>` once, for the choice the user made: `APPROVE`, `COMMENT`, or `PENDING` for draft only. Nothing else in this run writes to the PR but the 👀 of Step 1. When the user chose none of the three, post nothing.
+Run `<skill-dir>/scripts/post-review.sh <n> <head> <event> <payload-file>` for the choice the user made: `APPROVE`, `COMMENT`, or `PENDING` for draft only. Nothing else in this run writes to the PR but the 👀 of Step 1. When the user chose none of the three, post nothing. A `STOP <slug>` from this first call means nothing was posted: report it.
 
+- `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event> comments=<k>` — write the review in that repository by your own means, in steps: create a pending review anchored to `<head>` that carries the payload's body, add each inline comment to it, and, unless the event is `PENDING`, submit it with that event. A step that fails ends the write there: take no later step. When the create itself fails, report that nothing was posted. Otherwise read the review back by the id the create returned whether the write finished or stopped, and run the script again with `--posted <review-id>` and `--facts <file>` for facts read afresh.
+- `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - `POSTED <state> <url>` — report the URL.
-- `STOP <slug>` — report it; nothing was posted.
+- `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, and that the user must submit or delete it.
+- any other `STOP <slug>` from the read-back — report it and that a review may be on the PR in a state not confirmed.
 
 ## Report
 
 - the PR and the range reviewed, and whether requirements were available
 - whether the purpose was checked against the means, and when it was settled but no facts outside the repository were given, that no check against such facts was made
-- what was posted — its state and URL — or that nothing was
+- what was posted — its state and URL — or that nothing was, or that a pending review was left
 - the rejected findings with their reasons, and the `needs-user` questions
 - when the 👀 could not be removed, that it is still on the PR and the user has to remove it by hand
