@@ -10,8 +10,11 @@
 # offline (see ../lib/gitrepo.sh).
 #
 # RED verification (see tests/README.md): against the pre-port script every row
-# fails on an unstubbed `gh repo view` (`SUT=<old> tests/run.sh ...`); dropping
-# the origin comparison makes 'url naming another repository' answer a PR line.
+# fails but four (`SUT=<old> tests/run.sh ...`, not ok 5/9): the rows that reach
+# gh fail on an unstubbed `gh repo view`, and 'url naming another repository',
+# 'no origin', 'unparseable reference' and 'no argument' pass because the old
+# script answered them before gh. Dropping the origin comparison makes 'url
+# naming another repository' answer a PR line.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
