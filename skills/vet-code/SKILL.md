@@ -33,7 +33,7 @@ The caller hands the scope in one of these four shapes:
 
 For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. This is not a rewrite of What to Check, Calibration, or Output Format.
 
-When the caller's scope includes a read-root — a directory already bound as the only place to read the head — pass it beside the filled SHAs. For that dispatch it outranks the template's this-checkout and any instruction that the reviewer create its own worktree. SHA fill is not the whole scope.
+When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs. For that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory. SHA fill is not the whole scope.
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
