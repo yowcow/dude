@@ -9,36 +9,48 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: a read-only reviewer, and one verdict worker per finding.** Nothing else leaves the main loop.
+**This skill dispatches two kinds of worker: a read-only reviewer, and verdict workers.** Nothing else leaves the main loop.
 
-- The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns findings only. It never edits code, never runs the project's checks, never commits, and never declares the code clean.
+- The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns that template's output. It never edits code, never runs the project's checks, and never commits.
 - The reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
 - **Judging a finding never happens in the main loop**, and goes out at that same `high` tier.
   - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
-  - One worker per finding, launched together, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`.
-  - Each gets the finding, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
+  - One worker per Issues finding, and one more for the reviewer's whole Declined to judge list when it has a line, all launched together, each applying `superpowers:receiving-code-review` and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`. The Declined worker returns that verdict for each line, taking each line as a candidate finding: `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict, and `reject` leaves it declined. A line sitting outside the plan or spec is why the reviewer set it aside, not a ground to reject it. Every worker judges by the template's "The spec is a vision document" paragraph, which it gets verbatim, so a behavior the spec does not mention is not beyond the request when a reasonable person would expect it.
+  - Each gets its finding or the list, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
 ## Reviewer prompt
 
-`superpowers:requesting-code-review` is the dispatch mechanism; what the reviewer is told is this skill's own. Whatever shape that dispatch offers to carry it, the prompt is complete when it holds these four, all from the caller:
+`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, and the read-root with its precedence passed beside the SHAs. The caller's four inputs fill placeholders and may append after the template.
 
-1. **The scope** — as the caller resolved it, in one of these four shapes:
-   - **a committed range** — the two SHAs bounding it;
-   - **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Don't send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none;
-   - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched;
-   - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
-2. **What was implemented** — what the change does, or for a paths-only scope what the code is for.
-3. **The requirements** — the plan, or the original request. When there is none, say so in the prompt: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
-   - **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
-4. **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
+The caller hands the scope in one of these four shapes:
 
-Confine every search to the project root or narrower.
+- **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` only.
+- **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Do not send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none.
+- **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched.
+- **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
+
+For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. From that same constructed prompt, drop the template Read-Only Review sentence that tells the reviewer to create a worktree, or replace it — for uncommitted changes: review this checkout's current dirty state; do not create a worktree; for paths with no range: review this checkout's current state; do not create a worktree.
+
+When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs and tell the reviewer that for that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory.
+
+**What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
+
+**The requirements** fill `PLAN_OR_REQUIREMENTS` — the plan, or the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+
+After the template, append only these viewpoint extras:
+
+- **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
+- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
+
+Also after the template: Confine every search to the project root or narrower. Answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
 
 ## Output
 
-For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict.
+Receive the template output as-is. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
+
+For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line rejected, the line as the reviewer stated it and its verdict, still declined.
 
 - A worker verifies the claim against the code before accepting it, and rejects — with a stated reason — a finding that is wrong, that only reflects reviewer preference, or that asks for work beyond the request.
 - Where the call is a person's rather than a technical one, it returns `needs-user`, with the question to put to that person and why the decision is theirs.
