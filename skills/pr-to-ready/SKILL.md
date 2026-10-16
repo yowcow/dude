@@ -14,19 +14,13 @@ Take an open PR to a reviewed one: resolve the run from the PR's number or URL, 
 
 ## Orchestration model
 
-Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the six conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, plus the requesting-code-review dispatch where selected, Step 3's re-confirmation script together with condition 6's read (condition 2's read waits until that script returns), and evaluating independent review findings, where one subagent per finding is launched together in Step 2.
+Run this skill as an orchestrator: the main loop owns control flow, every decision, and every state-mutating action. **Steps that change state** run sequentially, never in parallel; what may go out together in one message is exactly this — the clean judgment's reads of the six conditions, Step 2-1's Claude availability check and Copilot baseline for whichever of Copilot and Claude Step 0 selected, plus 2-1's `vet-code` call where requesting-code-review is selected, which goes out as soon as 2-1's selected requests have been sent and runs on through 2-2's waits, Step 3's re-confirmation script together with condition 6's read (condition 2's read waits until that script returns), and the `judge-findings` call on the external findings, which starts the moment those are in without waiting for `vet-code`.
 
 **Never delegate:** the clean judgment and stop conditions, including reading whether checks pass; any change that touches the worktree, together with committing and pushing it; and any write to the PR itself — comments, thread replies, thread resolution, marking it ready.
 
-**Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; the requesting-code-review reviewer where selected — the reviewer that procedure dispatches, never the procedure itself, which the orchestrator applies; collecting reviewer comments into a structured list of findings; and evaluating each finding. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
+**Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; and collecting reviewer comments into a structured list of findings. The requesting-code-review review and the judging of findings are `vet-code`'s and `judge-findings`'s. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
-**Two workers here are marked** — their miss passes as "nothing found", so each goes out at the `high` tier in `using-dude`'s **Worker tier**: the requesting-code-review reviewer in 2-1, and each finding's evaluator in 2-3. Both are fresh-context, read-only workers that take the round's inputs from 2-1 and nothing of the main loop's own account.
-
-**Evaluating a finding never happens in the main loop**, on any round.
-
-- The main loop carries this run's own account of why the code reads as it does — it applied every fix on this branch, and where the run continued from `implement-work` it wrote the branch too.
-- A verdict reached there is anchored on that account, which a read-only worker in a fresh context escapes.
-- A real finding rejected on such a verdict is replied to and resolved on it, and no later round reads the thread again.
+This skill dispatches no marked worker of its own: the reviewer and the judging workers are `vet-code`'s and `judge-findings`'s, and it re-judges none of their verdicts.
 
 ## Step 0: Set up the run
 
@@ -113,7 +107,7 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 
 If the reviewers set is empty, skip this step and 2-2; go to Step 3.
 
-Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts or dispatch its subagent.
+Request only the names in the reviewers set. A name not in the set is a skip with no script exit — record that skip for the Request identity row, and do not call that reviewer's scripts or `vet-code`.
 
 Capture the round-request SHA once before any selected request goes out.
 
@@ -124,7 +118,7 @@ Right after it, settle the round's inputs, whether or not requesting-code-review
   - It answers `RANGE <base>..<head>`, `EMPTY`, or `STOP <slug>`, and only `RANGE` settles the scope. On `EMPTY` or `STOP`, take the **third terminal state**, reporting what it printed; a range built any other way, or a reviewer dispatched over an empty one, reads as a clean review.
   - A returned head that differs from the round-request SHA means the range does not cover what this round requests: take the **third terminal state**, reporting both SHAs.
 - **Requirements**: the PR body, plus the issue 2-0 confirmed behind a closing keyword. Where there is neither, say so, and carry that as a caveat in the round's report to the caller.
-- **Verdict record**: every reviewer's findings this run's 2-3 has judged, each `accept` or `reject` with its reason. Earlier runs' verdicts are not rebuilt.
+- **Verdict record**: the verdicts this run's `vet-code` and `judge-findings` calls returned — each finding's `accept` or `reject` with its reason, and each Declined to judge line rejected, with its reason. Earlier runs' verdicts are not rebuilt. It goes to the next round's `vet-code` and `judge-findings` calls as the earlier rounds.
 
 Then request each name in the set:
 
@@ -136,7 +130,7 @@ Then request each name in the set:
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
   - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the Request identity row.
-- **requesting-code-review**: only if requesting-code-review is in the set. The orchestrator itself applies `superpowers:requesting-code-review` to the PR diff at the round-request SHA, and the reviewer that procedure dispatches is the one read-only advisory worker, marked — dispatched from the main loop, never wrapped in a worker that applies the procedure. The reviewer returns a structured list of findings, each with `file:line` and a one-line summary. Name the procedure and stop — no local copy of it. Hand the reviewer the round's scope, requirements, and verdict record, and what was implemented as the PR body states it; without requirements it cannot fault a mismatch with the purpose, and without the record it raises a rejected claim again every round. The reviewer posts nothing to the PR; the orchestrator posts its return in 2-2 and records the identity there. That procedure's own act-on-feedback step is 2-2 and 2-3 here: the orchestrator fixes nothing on the reviewer's return before 2-3 judges it.
+- **requesting-code-review**: only if requesting-code-review is in the set. Call `vet-code` once for the round, handing it the round's scope (the range settled above, as a committed range), the PR body as what was implemented, the requirements, and the verdict record; call it right after the selected Claude/Copilot requests are sent, never after their wait.
 
 If this step requested nobody, skip 2-2 and go to Step 3.
 
@@ -144,29 +138,30 @@ If this step requested nobody, skip 2-2 and go to Step 3.
 
 - **Claude**: only if 2-1 found the workflow and posted a request. Tie completion to the run itself, never to comment counts: list runs again with `<skill-dir>/scripts/watch-claude-review.sh <branch>`, match the run by `displayTitle`, a `createdAt` after the request comment was posted, and a conclusion that isn't `skipped` — branch and time alone each match the wrong run or none, per that script's own header — then block on it with `<skill-dir>/scripts/watch-claude-review.sh <branch> <run-id>` — exit 0 means it succeeded, non-zero means it didn't, or the call itself failed.
 - **Copilot**: only if 2-1 requested Copilot. Wait for a review carrying an `id` the 2-1 baseline didn't have — `<skill-dir>/scripts/watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file>`, which polls `list-copilot-reviews.sh` and answers with the reviews that baseline didn't hold. Compare against that baseline, never against your own handling history. Identify the reviewer by author login (`gh-mechanics.md`'s "## Identifying a bot"), never by timestamp. Don't wait for a formal approval — Copilot commonly only ever returns a comment-only verdict.
-- **requesting-code-review**: only if 2-1 dispatched its reviewer. Await the subagent's return inside the bound below. On return, the orchestrator posts the returned findings as one PR comment carrying that round-request SHA, then records the round identity: the subagent return + the posted comment id/URL + the request SHA. Split any `@claude` inside the returned text (`@ claude`) before posting, so quoting the findings can never re-trigger the workflow.
+- **requesting-code-review**: only if 2-1 called `vet-code`. Await its return inside the bound below; nothing is posted here. Its wait and the externals' are independent: external findings go on to 2-3 as soon as the externals' waits complete, without waiting for `vet-code`.
 - **Always bound the wait**, poll or subagent return alike, with an iteration cap and an explicit bail-out. On timeout, stop and tell the user rather than looping forever.
 
 ### 2-3. Evaluate and address feedback
 
 Delegate collection to a subagent:
 
-- Gather from the Copilot review 2-2 waited for, from the Claude run 2-2 waited for, and from this round's requesting-code-review comment 2-2 posted under this round's identity — not every comment left after the latest push — together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh --full <owner> <repo> <pr-number>` printed.
+- Gather from the Copilot review 2-2 waited for, and from the Claude run 2-2 waited for — not every comment left after the latest push — together with whatever `<skill-dir>/scripts/list-suppressed-comments.sh --full <owner> <repo> <pr-number>` printed.
 - Call that one only where 2-2 came back with a Copilot review the 2-1 baseline didn't hold, since the script reads whichever Copilot review is latest and knows nothing of rounds, so on a round where Copilot was skipped its block is an earlier round's, already dealt with and left to the clean judgment's leftover handling.
-- The requesting-code-review collection reads only the comment posted for this round's identity, never an earlier round's requesting-code-review comment.
 - Dedupe, and return a structured list of findings, each with `file:line`, the thread or comment id where it has one — a suppressed finding has none — and a one-line summary.
 - Do not re-collect a thread this run already resolved. A new review that repeats the same claim at the same place is a new finding; Loop convergence still identifies two findings as the same one by place and claim.
-- Then fan out one subagent per finding, launched together in a single message, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` (with the fix), `reject` (with the technical reason), or `needs-user`. Each is marked, and receives its one finding with the round's scope, requirements, and verdict record, never the main loop's account.
+- Hand the collected external findings to `judge-findings` as items, with the round's scope, requirements, and verdict record, and, as the acceptance criteria, the "The spec is a vision document" paragraph of `superpowers:requesting-code-review`'s reviewer template, verbatim. Call it only when there is at least one external finding (LGTM and empty reviews skip it), and start it as soon as collection returns, without waiting for `vet-code`.
 
-**Count the `needs-user` verdicts back in the orchestrator before anything else.** One or more ends the round before anything is applied: it takes the **third terminal state**.
+**Nothing is fixed, committed, pushed, posted, or walked on the stop list until every verdict of the round is in — `vet-code`'s and `judge-findings`'s alike — and the `needs-user` verdicts are counted over all of them first.** One or more ends the round before anything is applied: it takes the **third terminal state**.
 
 - Nothing is fixed, nothing is committed or pushed, and nothing is written to the PR — no thread reply, no resolution, no verdict comment; the values actually read go in the hand-over with the verdicts below.
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
+A `vet-code` finding and an external finding of the same round that make the same claim about the same place are one finding. Where their verdicts agree, its fix is applied once. Where they disagree, the round takes the **third terminal state** with the same hand-over as a `needs-user`, both verdicts included: this skill re-judges neither.
+
 Otherwise branch on this round's findings.
 
-When there is no finding (LGTM or empty reviews): go to the clean judgment.
+When there is no finding from any reviewer (LGTM or empty reviews): go to the clean judgment.
 
 When there is at least one `accept` (pure accept or mixed): walk row 2 of the stop list first, across every finding of the round — a fix pushed before that check is already published, and **Escalation** leaves the PR as it is. If it does not stop: sequentially — fix every `accept`, on the discipline the next paragraph sets; commit and push; then post per **Posting** below. Do not evaluate the six clean conditions. Walk only rows 4 and 6 of the stop list. If that walk does not stop, go back to 2-1.
 
@@ -199,8 +194,8 @@ Every round's report to the caller carries these rows; the Request identity and 
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the subagent return reference plus the posted comment id/URL, and any caveat on the round's inputs (no requirements, say). |
-| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the posted comment id. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference plus the verdict comment id/URL where one was posted, and any caveat on the round's inputs (no requirements, say). |
+| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the verdict comment id where one was posted. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding. |
 
 #### What not to write
@@ -210,7 +205,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 | Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
 | Verdict comment | May not mention `@claude`, which would re-trigger the workflow. |
 
-Any `@claude` inside finding summaries/bodies or verdict reasoning copied into thread replies, the verdict comment, or the 2-2 requesting-code-review post is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+Any `@claude` inside finding summaries/bodies or verdict reasoning copied into thread replies or the verdict comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
 
 No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
@@ -227,7 +222,7 @@ No line of the verdict comment carries a SKILL-internal word such as a round num
 4. the PR's base is the one Step 1 most recently resolved;
 5. mergeability came back **`MERGEABLE`** — the field `gh-mechanics.md`'s "## Mergeability" says to trust. `UNKNOWN` is not a pass: it means the remote couldn't settle it even after the bounded re-read, so nothing is known yet.
 
-6. this round's requesting-code-review block leaves no actionable finding — every finding from this round's requesting-code-review identity (subagent return + posted comment id + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting-code-review passes this condition. On the no-finding path this is definitional — it never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
+6. this round's requesting-code-review block leaves no actionable finding — every finding from this round's requesting-code-review identity (`vet-code`'s return + the verdict comment id where one was posted + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting-code-review passes this condition. On the no-finding path this is definitional — it never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
 
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Record the measured-tip SHA with the values read for this judgment in the round's report to the caller (the Measured evidence row), so Clean on that SHA can be re-derived later.
 
@@ -262,7 +257,7 @@ Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>`
 - condition 2 — read only once the script has returned;
 - condition 6.
 
-The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (requesting-code-review comment id included), with what the script printed, in the report to the caller. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (the verdict comment id included where one was posted), with what the script printed, in the report to the caller. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the ready-on-clean flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready with `<skill-dir>/scripts/mark-ready.sh <owner> <repo> <pr-number>` — the only way this flow marks a PR ready. **Never mark it ready by any other means**: that marks the PR ready with no re-confirmation recorded, or on one about a commit the PR no longer points at. On `READY <n>`, Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed. On `STOP <slug>`, take the third terminal state: report the slug and where the PR stands.
