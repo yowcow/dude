@@ -9,18 +9,14 @@ Use on planning work before any code is written, or on a revision of it. This re
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: read-only reviewers, and one verdict worker per finding.** Everything else — gathering the inputs, sizing the fan-out, writing the report, and calling the pass clean — stays in the main loop.
+**This skill dispatches read-only reviewers; judging goes to `judge-findings`.** Everything else — gathering the inputs, sizing the fan-out, writing the report, and calling the pass clean — stays in the main loop.
 
 - A reviewer takes its assigned lenses, reports findings, and hands back.
   - It never edits what it reviewed and never declares the plan clean.
   - **Dispatch** sizes the fan-out.
   - Each reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
-- **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the `high` tier in `using-dude`'s **Worker tier** — per `judge-findings`'s **Verdicts**.
-  - What that buys here is that the main loop owns the very artifact under review — the TODO list or implementation plan the caller declared — folding every accepted finding into that artifact.
-  - A verdict reached there rests on its own account of the design.
-  - A real design flaw rejected on it flows into the implementation, which is all any later gate reads.
-  - The orchestrator writes the report from the verdicts and re-judges none of them.
+- **Judging a finding never happens in the main loop** either: it goes to `judge-findings`, and the orchestrator writes the report from the verdicts it returns and re-judges none of them.
 - One invocation is one pass, and it never re-reviews on its own. Revising and re-running until it comes back clean belongs to the caller.
 
 ## What counts as a finding
@@ -101,10 +97,9 @@ Report "no findings" explicitly rather than inventing one. Confine every search 
 
 1. Gather the inputs: the declared target, the artifact, the original request, the paths it touches, and the record of an earlier pass if the caller supplied one.
 2. Dispatch reviewers, sized per **Dispatch**.
-3. Dispatch one verdict worker per finding, per the verdict-worker contract above, and take back what each returns.
-   - A worker verifies the claim against the repo before accepting it.
-   - It rejects — with a stated reason — a finding that is wrong, that asks for work beyond the request, or that fails the test in **What counts as a finding**.
-   - Where the call is a person's rather than a technical one, it returns `needs-user` instead.
+3. Hand the reviewers' findings to `judge-findings`, and take back its verdicts.
+   - The target it judges against is the plan and the repo, the requirements are the original request, and the earlier rounds are the caller's record.
+   - The caller's acceptance criteria are **What counts as a finding**.
 4. Report per **Report**, and stop there — revising and re-reviewing are the caller's job.
 
 This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding goes to a person, with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — here no edit to the plan settles it. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
