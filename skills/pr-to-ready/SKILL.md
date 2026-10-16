@@ -29,7 +29,7 @@ This skill dispatches no marked worker of its own: the reviewer and the judging 
 Ask the user two things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
-- Which of Copilot, Claude, and requesting-code-review should this run request, from none to all three? Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+- Which of Copilot, Claude, and requesting-code-review should this run request? Ask it as a pick-any choice prompt — any number of them, from none to all three, with none as an option. Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
 
 ### 0-2. Resolve the run from the PR reference
 
