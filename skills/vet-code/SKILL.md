@@ -26,7 +26,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 The caller hands the scope in one of these four shapes:
 
-- **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` only, including those same SHAs wherever the template Git Range to Review section repeats them.
+- **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` only.
 - **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Do not send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none.
 - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched.
 - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
