@@ -48,7 +48,7 @@ Also after the template: Confine every search to the project root or narrower.
 
 ## Output
 
-Receive the template output as-is. Hand verdict workers the Issues (Critical / Important / Minor) and the Declined to judge list. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
+Receive the template output as-is. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
 For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line rejected, the line as the reviewer stated it and its verdict, still declined.
 
