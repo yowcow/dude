@@ -9,31 +9,31 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: a read-only reviewer, and one verdict worker per finding.** Nothing else leaves the main loop.
+**This skill dispatches two kinds of worker: a read-only reviewer, and verdict workers.** Nothing else leaves the main loop.
 
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns that template's output. It never edits code, never runs the project's checks, and never commits.
 - The reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
 - **Judging a finding never happens in the main loop**, and goes out at that same `high` tier.
   - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
-  - One worker per finding, launched together, each applying `superpowers:receiving-code-review` to its one finding and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`.
-  - Each gets the finding, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
+  - One worker per Issues finding, and one more for the reviewer's whole Declined to judge list when it has a line, all launched together, each applying `superpowers:receiving-code-review` and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`. The Declined worker returns that verdict for each line, taking each line as a candidate finding: `accept` makes it a finding at the severity the worker assigns, and `reject` leaves it declined.
+  - Each gets its finding or the list, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
 ## Reviewer prompt
 
-`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when What to Check, Calibration, and Output Format are verbatim except placeholder fill. The caller's four inputs fill placeholders and may append after the template; they are not an alternate completeness test.
+`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, and the read-root passed beside the SHAs. The caller's four inputs fill placeholders and may append after the template.
 
 The caller hands the scope in one of these four shapes:
 
 - **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` only, including those same SHAs wherever the template Git Range to Review section repeats them.
-- **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Do not send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none. That outranks the template Read-Only Review worktree line.
+- **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Do not send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none.
 - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched.
 - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
 
-For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. From that same constructed prompt, drop the template Read-Only Review sentence that tells the reviewer to create a worktree, or replace it — for uncommitted changes: review this checkout's current dirty state; do not create a worktree; for paths with no range: review this checkout's current state; do not create a worktree. Git Range replacement alone leaves that sentence in the reviewer's prompt. This is not a rewrite of What to Check, Calibration, or Output Format.
+For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. From that same constructed prompt, drop the template Read-Only Review sentence that tells the reviewer to create a worktree, or replace it — for uncommitted changes: review this checkout's current dirty state; do not create a worktree; for paths with no range: review this checkout's current state; do not create a worktree.
 
-When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs. For that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory. SHA fill is not the whole scope.
+When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs. For that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory.
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
@@ -48,7 +48,7 @@ Also after the template: Confine every search to the project root or narrower.
 
 ## Output
 
-Receive the template output as-is. Hand verdict workers Issues only (Critical / Important / Minor). Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
+Receive the template output as-is. Hand verdict workers the Issues (Critical / Important / Minor) and the Declined to judge list. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
 For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict.
 
