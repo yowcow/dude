@@ -42,7 +42,7 @@ Name the procedure, never the runtime that provides it. Everything in this repos
 
 ## Dependencies point down
 
-Skills stack in four dependency layers, top down: `using-dude` (workflow rules), flows, parts, and components (the behavior parts share). A skill names `using-dude` from anywhere, shared `tools/` and its own `scripts/` for mechanism, and skills in lower layers by name for procedure. It never names another skill's `scripts/` by path or another skill's **Orchestration model**, and it names a skill in its own layer or above only on an edge `tests/skill-deps_test.sh` lists with its reason — that file holds which skill sits in which layer and those reasons.
+Skills stack in five dependency layers, top down: `using-dude` (workflow rules), flows, parts, components (the behavior parts share), and primitives (the judging every layer above calls). A skill names `using-dude` from anywhere, shared `tools/` and its own `scripts/` for mechanism, and skills in lower layers by name for procedure. It never names another skill's `scripts/` by path or another skill's **Orchestration model**, and it names a skill in its own layer or above only on an edge `tests/skill-deps_test.sh` lists with its reason — that file holds which skill sits in which layer and those reasons.
 
 Shared mechanism lives once, in top-level `tools/`, called through `SCRIPT_DIR` rather than by bare name or cwd-relative path. What stays a script is what the Keep rule keeps: a dude contract (Base-Branch trailer, prerequisite-line base resolution, tree records, recheck records, repo identity checks, merge guards) or a concrete silent failure the script's header names. A generic operation — neither — stays abstract prose under rule 1 and never becomes a script.
 

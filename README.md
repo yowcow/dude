@@ -12,22 +12,23 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 ## Skills
 
-| Skill                     | What it produces                                                                   |
-| ------------------------- | ---------------------------------------------------------------------------------- |
-| `audit-code`              | A repository or path scanned, with what to fix reported and nothing changed        |
-| `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task           |
-| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric             |
-| `investigate-performance` | An evidence-backed explanation of a performance shortfall                          |
-| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                       |
-| `pr-to-ready`             | A PR whose CI passes and whose review is clean                                     |
-| `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved |
-| `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record  |
-| `review-plan`             | Findings on a TODO list or an implementation plan                                  |
-| `review-pr`               | Someone else's PR reviewed, its judged findings returned to it as one PR review    |
-| `settle-question`         | A judgment on an open question, with the evidence that settles it                  |
-| `simplify-code`           | Recently changed code simplified, behavior preserved                               |
-| `using-dude`              | The workflow rules the other skills are wired by                                   |
-| `vet-code`                | One round of code review findings, each judged, handed to the skill that called it |
+| Skill                     | What it produces                                                                    |
+| ------------------------- | ----------------------------------------------------------------------------------- |
+| `audit-code`              | A repository or path scanned, with what to fix reported and nothing changed         |
+| `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task            |
+| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric              |
+| `investigate-performance` | An evidence-backed explanation of a performance shortfall                           |
+| `judge-findings`          | Review findings judged accept, reject, or needs-user outside the caller's main loop |
+| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                        |
+| `pr-to-ready`             | A PR whose CI passes and whose review is clean                                      |
+| `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved  |
+| `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record   |
+| `review-plan`             | Findings on a TODO list or an implementation plan                                   |
+| `review-pr`               | Someone else's PR reviewed, its judged findings returned to it as one PR review     |
+| `settle-question`         | A judgment on an open question, with the evidence that settles it                   |
+| `simplify-code`           | Recently changed code simplified, behavior preserved                                |
+| `using-dude`              | The workflow rules the other skills are wired by                                    |
+| `vet-code`                | One round of code review findings, each judged, handed to the skill that called it  |
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —

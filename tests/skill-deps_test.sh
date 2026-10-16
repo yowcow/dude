@@ -19,7 +19,7 @@ set -euo pipefail
 
 ROOT="${1:-$REPO_ROOT}"
 
-# <skill or glob> <layer>. Layers, top down: flow, part, component.
+# <skill or glob> <layer>. Layers, top down: flow, part, component, primitive.
 LAYERS='plan-work flow
 implement-work flow
 pr-to-ready flow
@@ -31,7 +31,8 @@ audit-code part
 investigate-* part
 settle-question part
 vet-code component
-review-findings component'
+review-findings component
+judge-findings primitive'
 
 # <owner> <target> <reason>. Every upward or lateral edge must have a row, and
 # every row must still have a mention.
@@ -47,7 +48,7 @@ audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-sh
 failed=0
 total=0
 
-# rank_of <skill> — 1 flow, 2 part, 3 component; prints nothing when unmapped.
+# rank_of <skill> — 1 flow, 2 part, 3 component, 4 primitive; prints nothing when unmapped.
 rank_of() {
   local pat layer
   while read -r pat layer; do
@@ -58,6 +59,7 @@ rank_of() {
           flow) echo 1 ;;
           part) echo 2 ;;
           component) echo 3 ;;
+          primitive) echo 4 ;;
         esac
         return 0
         ;;
