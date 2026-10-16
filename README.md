@@ -30,7 +30,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `using-dude`              | The workflow rules the other skills are wired by                                    |
 | `vet-code`                | One round of code review findings, each judged, handed to the skill that called it  |
 
-Skills by layer and the dependencies between them. Solid arrows point down a
+Skills by layer and the dependencies between them. Solid arrows point to a lower
 layer; dashed arrows are the upward and lateral edges. `using-dude` is left out because every skill may
 name it.
 
