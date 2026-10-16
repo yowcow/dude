@@ -1,0 +1,35 @@
+---
+name: judge-findings
+description: Use when another skill needs review findings judged accept, reject, or needs-user outside its own main loop.
+---
+
+# Judge Findings
+
+The reviewer, applying a fix, every round decision, and posting anything anywhere are the caller's. This skill edits nothing and posts nothing.
+
+## Inputs
+
+- **The items** — each finding as the reviewer stated it, with its severity and location; and each candidate, a line the reviewer raised but declined to judge, marked as a candidate.
+- **What to judge against** — the scope (a committed range, uncommitted changes, or paths, with the read-root when the caller has one), or the artifact under review.
+- **The requirements.**
+- **The earlier rounds' record** — findings accepted and fixed, findings rejected with the reason, and candidates rejected with the reason.
+- **The caller's own acceptance criteria**, which every worker gets verbatim.
+
+## Orchestration model
+
+**Judging never happens in the caller's main loop.** The main loop may have written the code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
+
+- No items, no worker.
+- Otherwise group the items into a few workers launched together — one when the items are few — keeping items at nearby locations, such as the same file or the same section, in the same worker.
+- Each worker applies `superpowers:receiving-code-review` to each of its items and returns one verdict per item. It gets its items and every input above, never the main loop's history. It is read-only: it edits nothing and returns the fix as text; applying it is the caller's.
+- Workers go out at the `high` tier in `using-dude`'s **Worker tier**.
+
+## Verdicts
+
+- **`accept`** with the fix — only after verifying the claim against what is judged.
+- **`reject`** with the stated reason — the finding is wrong, only reflects reviewer preference, asks for work beyond the request, or fails the caller's criteria.
+- **`needs-user`** — the call is a person's rather than a technical one: the question to put to that person and why the decision is theirs.
+
+For a candidate, `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict; `reject` leaves it declined.
+
+Return each item as given, with its verdict. The caller re-judges none.

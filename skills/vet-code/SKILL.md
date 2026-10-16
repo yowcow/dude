@@ -9,15 +9,12 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Orchestration model
 
-**This skill dispatches two kinds of worker: a read-only reviewer, and verdict workers.** Nothing else leaves the main loop.
+**This skill dispatches one read-only reviewer; judging goes to `judge-findings`.** Nothing else leaves the main loop.
 
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns that template's output. It never edits code, never runs the project's checks, and never commits.
 - The reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
-- **Judging a finding never happens in the main loop**, and goes out at that same `high` tier.
-  - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
-  - One worker per Issues finding, and one more for the reviewer's whole Declined to judge list when it has a line, all launched together, each applying `superpowers:receiving-code-review` and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`. The Declined worker returns that verdict for each line, taking each line as a candidate finding: `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict, and `reject` leaves it declined. A line sitting outside the plan or spec is why the reviewer set it aside, not a ground to reject it. Every worker judges by the template's "The spec is a vision document" paragraph, which it gets verbatim, so a behavior the spec does not mention is not beyond the request when a reasonable person would expect it.
-  - Each gets its finding or the list, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
+- Once the reviewer returns, hand `judge-findings` every Issues finding, and every Declined to judge line as a candidate, with the scope and requirements the reviewer got and the earlier rounds' record. As the acceptance criteria, hand it the template's "The spec is a vision document" paragraph verbatim, plus: a candidate sitting outside the plan or spec is why the reviewer set it aside, not a ground to reject it.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
 ## Reviewer prompt
@@ -42,7 +39,7 @@ When the caller's scope includes a read-root — a directory already bound as th
 After the template, append only these viewpoint extras:
 
 - **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
-- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. A reviewer not shown the rejections re-litigates them.
+- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, findings rejected with the reason, and Declined to judge lines rejected with the reason. A reviewer not shown the rejections re-litigates them.
 
 Also after the template: Confine every search to the project root or narrower. Answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
 
@@ -52,7 +49,6 @@ Receive the template output as-is. Strengths, Recommendations, and Assessment ar
 
 For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line rejected, the line as the reviewer stated it and its verdict, still declined.
 
-- A worker verifies the claim against the code before accepting it, and rejects — with a stated reason — a finding that is wrong, that only reflects reviewer preference, or that asks for work beyond the request.
-- Where the call is a person's rather than a technical one, it returns `needs-user`, with the question to put to that person and why the decision is theirs.
+Verdicts carry the meanings `judge-findings`'s **Verdicts** gives them.
 
 Alongside the findings, return whichever caveat **Reviewer prompt** asks for: a paths-only scope, or no requirements.
