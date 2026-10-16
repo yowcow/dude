@@ -16,7 +16,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
 - **Judging a finding never happens in the main loop**, and goes out at that same `high` tier.
   - The main loop may have written this code or fixed it, so a verdict reached there rests on its own account of why the code reads this way, and a real finding rejected on that account is rejected for good — no later round reads it again.
-  - One worker per Issues finding, and one more for the reviewer's whole Declined to judge list when it has a line, all launched together, each applying `superpowers:receiving-code-review` and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`. The Declined worker returns that verdict for each line, taking each line as a candidate finding: `accept` makes it a finding at the severity the worker assigns, and `reject` leaves it declined.
+  - One worker per Issues finding, and one more for the reviewer's whole Declined to judge list when it has a line, all launched together, each applying `superpowers:receiving-code-review` and returning `accept` with the fix, `reject` with the technical reason, or `needs-user`. The Declined worker returns that verdict for each line, taking each line as a candidate finding: `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict, and `reject` leaves it declined.
   - Each gets its finding or the list, the scope and requirements the reviewer got, and the earlier rounds' record **Reviewer prompt** already defines; the main loop's own history is what it does not get.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
@@ -50,7 +50,7 @@ Also after the template: Confine every search to the project root or narrower.
 
 Receive the template output as-is. Hand verdict workers the Issues (Critical / Important / Minor) and the Declined to judge list. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
-For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line not accepted, the line as the reviewer stated it and its verdict, still declined.
+For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line rejected, the line as the reviewer stated it and its verdict, still declined.
 
 - A worker verifies the claim against the code before accepting it, and rejects — with a stated reason — a finding that is wrong, that only reflects reviewer preference, or that asks for work beyond the request.
 - Where the call is a person's rather than a technical one, it returns `needs-user`, with the question to put to that person and why the decision is theirs.
