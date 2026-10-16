@@ -157,6 +157,8 @@ Delegate collection to a subagent:
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
+A `vet-code` finding and an external finding of the same round that make the same claim about the same place are one finding. Where their verdicts agree, its fix is applied once. Where they disagree, the round takes the **third terminal state** with the same hand-over as a `needs-user`, both verdicts included: this skill re-judges neither.
+
 Otherwise branch on this round's findings.
 
 When there is no finding from any reviewer (LGTM or empty reviews): go to the clean judgment.
