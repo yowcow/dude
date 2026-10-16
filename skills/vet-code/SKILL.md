@@ -22,7 +22,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Reviewer prompt
 
-`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, and the read-root passed beside the SHAs. The caller's four inputs fill placeholders and may append after the template.
+`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, and the read-root with its precedence passed beside the SHAs. The caller's four inputs fill placeholders and may append after the template.
 
 The caller hands the scope in one of these four shapes:
 
@@ -33,7 +33,7 @@ The caller hands the scope in one of these four shapes:
 
 For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. From that same constructed prompt, drop the template Read-Only Review sentence that tells the reviewer to create a worktree, or replace it — for uncommitted changes: review this checkout's current dirty state; do not create a worktree; for paths with no range: review this checkout's current state; do not create a worktree.
 
-When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs. For that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory.
+When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs and tell the reviewer that for that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory.
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
@@ -50,7 +50,7 @@ Also after the template: Confine every search to the project root or narrower.
 
 Receive the template output as-is. Hand verdict workers the Issues (Critical / Important / Minor) and the Declined to judge list. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
-For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict.
+For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line not accepted, the line as the reviewer stated it and its verdict, still declined.
 
 - A worker verifies the claim against the code before accepting it, and rejects — with a stated reason — a finding that is wrong, that only reflects reviewer preference, or that asks for work beyond the request.
 - Where the call is a person's rather than a technical one, it returns `needs-user`, with the question to put to that person and why the decision is theirs.
