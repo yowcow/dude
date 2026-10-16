@@ -11,9 +11,9 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 
 ## Orchestration model
 
-**This skill dispatches two kinds of read-only worker: proposers, and one verdict worker per proposal.** Everything else runs in the main loop.
+**This skill dispatches one kind of read-only worker, proposers; judging goes to `judge-findings`.** Everything else runs in the main loop.
 
-- The orchestrator owns this pass: it dispatches both, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
+- The orchestrator owns this pass: it dispatches the proposers, hands their proposals to `judge-findings`, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
 - Proposers are read-only workers: each gets the diff, the paths it touches, and its assigned lenses, and returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean — at the `high` tier in `using-dude`'s **Worker tier**. What that buys is a fresh context unanchored on why the code ended up this way; a proposal it doesn't return reads as nothing actionable.
 - Proposers stay read-only for one reason beyond that contract: `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
@@ -72,7 +72,7 @@ Report "no proposals" explicitly rather than inventing one.
 
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
-3. Dispatch one verdict worker per proposal, without the tier mark: launched together, each applies `superpowers:receiving-code-review` to its one proposal without the main loop's history, and the main loop re-judges no verdict. It gets what a proposer gets, the proposal, and the earlier rounds' accepted proposals and reasoned rejections; it returns only `accept`, or `reject` with its reason — something **Scope** or **Don't over-simplify** rules out, or mere proposer preference — per `judge-findings`'s **Verdicts**. The tier mark is left out because proposals are not findings: a proposal no worker returns must not read as clean.
+3. Hand `judge-findings` every proposal of the round as an item, the lens in place of severity and no candidates, judged against the **Scope** range with **Scope**'s "preserve behavior exactly" as the requirement. Hand it the earlier rounds' record — proposals accepted, proposals rejected with the reason, proposals set aside with the question put to the person — and, as the acceptance criteria, **Scope** and **Don't over-simplify**. A proposal it returns as `needs-user` is not applied: it is set aside, its question joins that record, and it is not actionable for step 5, so a round left with only set-aside proposals ends the pass clean.
 4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
@@ -87,4 +87,4 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 - what changed, and what behavior was preserved
 - proposals rejected, with the reason
 - the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over
-- any simplification left undone, including anything reported instead of changed
+- any simplification left undone, including anything reported instead of changed, and each proposal set aside as `needs-user` with its question
