@@ -16,7 +16,7 @@ Use on planning work before any code is written, or on a revision of it. This re
   - **Dispatch** sizes the fan-out.
   - Each reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
-- **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the `high` tier in `using-dude`'s **Worker tier** — per `vet-code`'s **Output**.
+- **Judging a finding never happens in the main loop** either: one verdict worker per finding, each applying `superpowers:receiving-code-review` to its one finding and returning `accept`, `reject` with its reason, or `needs-user` — at the `high` tier in `using-dude`'s **Worker tier** — per `judge-findings`'s **Verdicts**.
   - What that buys here is that the main loop owns the very artifact under review — the TODO list or implementation plan the caller declared — folding every accepted finding into that artifact.
   - A verdict reached there rests on its own account of the design.
   - A real design flaw rejected on it flows into the implementation, which is all any later gate reads.
@@ -107,7 +107,7 @@ Report "no findings" explicitly rather than inventing one. Confine every search 
    - Where the call is a person's rather than a technical one, it returns `needs-user` instead.
 4. Report per **Report**, and stop there — revising and re-reviewing are the caller's job.
 
-This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding goes to a person, with the meaning `vet-code`'s **Output** gives `needs-user` — here no edit to the plan settles it. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
+This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding goes to a person, with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — here no edit to the plan settles it. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
 
 ## Report
 
