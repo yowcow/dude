@@ -30,6 +30,67 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `using-dude`              | The workflow rules the other skills are wired by                                    |
 | `vet-code`                | One round of code review findings, each judged, handed to the skill that called it  |
 
+Skills by layer and the dependencies between them. Solid arrows point down a
+layer; dashed arrows are the upward and lateral edges. `using-dude` is left out because every skill may
+name it.
+
+```mermaid
+flowchart TB
+  subgraph Flows
+    plan-work
+    implement-work
+    pr-to-ready
+  end
+  subgraph Parts
+    review-code
+    review-plan
+    simplify-code
+    review-pr
+    audit-code
+    settle-question
+    investigate-anomaly
+    investigate-performance
+  end
+  subgraph Components
+    vet-code
+    review-findings
+  end
+  subgraph Primitives
+    judge-findings
+  end
+
+  plan-work -.-> implement-work
+  implement-work -.-> plan-work
+  implement-work -.-> pr-to-ready
+  pr-to-ready -.-> implement-work
+  pr-to-ready -.-> plan-work
+  review-code -.-> implement-work
+  review-pr -.-> implement-work
+  audit-code -.-> plan-work
+
+  plan-work --> review-plan
+  plan-work --> settle-question
+  implement-work --> review-code
+  implement-work --> review-plan
+  implement-work --> review-pr
+  implement-work --> simplify-code
+  pr-to-ready --> review-code
+  pr-to-ready --> simplify-code
+  audit-code --> review-findings
+  investigate-anomaly --> review-findings
+  investigate-performance --> review-findings
+  settle-question --> review-findings
+  review-code --> vet-code
+  review-pr --> vet-code
+  vet-code --> judge-findings
+  review-code --> judge-findings
+  review-plan --> judge-findings
+  simplify-code --> judge-findings
+```
+
+The canonical source is `tests/skill-deps_test.sh` and the skills' own
+mentions of each other; the figure copies them.
+
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —
 `settle-question`, `investigate-anomaly`, or `investigate-performance` —
