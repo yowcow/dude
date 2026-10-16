@@ -417,12 +417,11 @@ The subagent default also carries the roles that no skill marks —
 `implement-work`'s plan drafter and the execution method's per-task reviewer
 and per-task implementer. Dispatched without a `model` of its own, each rides
 the same ceiling that **What tier a marked worker runs at** above sets for the
-marked workers' sake. Across 158
-Claude Code dispatches of `implement-work`'s plan drafter, `simplify-code`'s
-proposer, and the execution method's per-task reviewer and per-task
-implementer, the 58 with no `model` argument all landed on Opus, at $61 over a
-four-day window, and the 100 with one all landed off Opus — the
-`implement-work` plan drafter alone accounted for $35 of that $61
+marked workers' sake. Across 158 Claude Code dispatches of `implement-work`'s
+plan drafter, `simplify-code`'s proposer, and the execution method's per-task
+reviewer and per-task implementer, the 58 with no `model` argument all landed
+on Opus, at $61 over a four-day window, and the 100 with one all landed off
+Opus — the `implement-work` plan drafter alone accounted for $35 of that $61
 ([measurements](https://github.com/yowcow/dude/pull/514)).
 Lowering the default would pull every marked worker dispatched as neither
 `dude:high-tier` nor `dude:highest-tier` down with it
