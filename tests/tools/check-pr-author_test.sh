@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Table test for tools/check-pr-author.sh: whether the PR's author is the user
-# the agent's GitHub means acts as. review-pr stops on SELF and review-code
-# stops on OTHER, so both answers, the NEED that asks for the facts, and each
-# way a read can be wrong get a row. The script reads facts and origin only:
+# the agent's GitHub means acts as. review-code stops on OTHER, so both
+# answers, the NEED that asks for the facts, and each way a read can be wrong
+# get a row. The script reads facts and origin only:
 # every row asserts 0 gh calls, and stubs none.
 #
 # RED verification (see tests/README.md): against the pre-port script

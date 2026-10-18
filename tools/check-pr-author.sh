@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 # Answer whether a PR's author is the user the agent's GitHub means acts as.
 #
-# One answer, two callers that stop on opposite sides of it: review-pr stops on
-# SELF (your own PR belongs to pr-to-ready), and review-code stops on OTHER,
-# since its loop applies fixes to the working tree and would rewrite somebody
-# else's code.
+# review-code is the caller: it stops on OTHER, since its loop applies fixes to
+# the working tree and would rewrite somebody else's code.
 #
 # It reads no GitHub itself. Without facts it answers NEED, pinning the PR to
 # origin's repository and the number given: a PR read under the same number
 # in another repository (an upstream the means defaults to) is a mismatch and
 # stops, never an answer about the wrong PR. A login that could not be read is
 # a STOP, never a guess: reading it as OTHER sends review-code's caller away
-# from their own PR, and reading it as SELF sends review-pr's caller to
-# pr-to-ready, which would push to somebody else's branch.
+# from their own PR.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

@@ -24,7 +24,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved  |
 | `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record   |
 | `review-plan`             | Findings on a TODO list or an implementation plan                                   |
-| `review-pr`               | Someone else's PR reviewed, its judged findings returned to it as one PR review     |
+| `review-pr`               | A PR reviewed, its judged findings returned to it as one PR review                  |
 | `settle-question`         | A judgment on an open question, with the evidence that settles it                   |
 | `simplify-code`           | Recently changed code simplified, behavior preserved                                |
 | `using-dude`              | The workflow rules the other skills are wired by                                    |
