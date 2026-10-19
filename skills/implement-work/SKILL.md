@@ -84,7 +84,7 @@ If the verified baseline contradicts what the plan assumes — an existing failu
 After Isolation, before **Plan gate**. The small-change lane still runs this, then **Execution**.
 
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
-- **Read-root:** the same base **Base branch** would settle. Resolve it on `REUSE` and `ATTACHED` too — Isolation itself settles a base only on `CREATE`. Never the workspace path, HEAD, or the session checkout.
+- **Read-root:** the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a chat-only task — with `NEED` and `STOP` handled as there. Hand `origin/<base>`, fetched to its current tip, never the bare name, the workspace path, HEAD, or the session checkout.
 - Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost). Only a material regression, or a purpose that is invalid or unmet, is a finding.
 - Empty finding → no `review-findings`; do not wait; continue; chat.
