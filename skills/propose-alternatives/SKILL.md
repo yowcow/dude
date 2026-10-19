@@ -5,13 +5,12 @@ description: Use as a component when another skill needs the most direct route t
 
 # Propose Alternatives
 
-This skill edits nothing and posts nothing; comparing the proposal to the current artifact, waiting on a person, and every round decision are the caller's.
+This skill edits nothing and posts nothing.
 
 ## Orchestration model
 
-**Always dispatch one read-only worker in a fresh context; never propose inline.**
+**No named purpose, no worker. Otherwise always dispatch one read-only worker in a fresh context; never propose inline.**
 
-- Fan-out is fixed at one.
 - The worker is read-only: it edits nothing, commits nothing, creates no worktree, and returns a proposal only.
 - The worker goes out at the `high` tier in `using-dude`'s **Worker tier**. `using-dude` would mark a missed alternative `highest` (it never appears downstream); this skill is the exception, citing `yowcow/dude#630`.
 
@@ -25,9 +24,8 @@ The caller hands both:
 ## Pass
 
 - Unnamed purpose: skip; do not dispatch; return that skip. This is the only skip.
-- Otherwise dispatch once. The brief is the purpose only. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
-- Confine every search to the caller-supplied read-root.
-- Return the worker's proposal as-is. Do not apply the bar. Do not rewrite a proposal into "the current direction is fine".
+- Otherwise dispatch once. Besides the purpose, the worker is handed only the read-root (it reads that ref, not the session work tree, and creates no worktree) and the proposal shape: the most direct route to the purpose (including doing nothing / doing something else), what it reuses, and its trade-offs. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
+- Return the worker's proposal as-is. Do not rewrite a proposal into "the current direction is fine".
 
 ## Output
 
@@ -41,7 +39,7 @@ The caller compares the proposal with the current artifact on purpose, means, an
 
 - **Purpose:** whether the named purpose is a real problem; doing nothing or doing something else included.
 - **Means:** whether the current work is warranted for that purpose and reaches it.
-- **Cost:** whether it includes a quantitative or qualitative regression (testability, coupling, entropy, performance, irreversibility, security, defect tolerance). A loss is a regression.
+- **Cost:** whether it includes a quantitative or qualitative regression.
 
 Only a material regression, or a purpose that is invalid or unmet, is a finding. An alternative that reaches the same result and differs only in preference is not.
 
