@@ -14,7 +14,7 @@ This skill holds two gates: one on the detailed plan, before any code, and the c
 **This skill dispatches one worker of its own: the plan drafter.**
 
 - It goes out at **Plan gate** step 2.
-- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
+- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `propose-alternatives`, `review-findings`, `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
 
 The orchestrator owns the task, the workspace, both gates, the execution-method choice, every commit, and the hand-off, and decides when a gate is clean. Workers do bounded, single-task work and hand back — never an objective spanning more than one task, and never a gate declared clean by a worker.
 
@@ -78,6 +78,17 @@ Run `<skill-dir>/scripts/resolve-base.sh <issue-number>`.
 **Record a non-default base** as a single `Base-Branch: <base>` line in the trailer block of this task's **first** commit — `<base>` the bare branch name, no `origin/` prefix and no `refs/heads/` path. Branching from the default branch records nothing.
 
 If the verified baseline contradicts what the plan assumes — an existing failure, missing tooling — go back to **Plan gate** before starting tasks, or take **Escalation** where the small-change lane in `using-dude`'s **Workflow selection** skipped that gate.
+
+## Alternatives
+
+After Isolation (the base is settled), before **Plan gate**. The small-change lane still runs this, then **Execution**.
+
+- **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
+- **Read-root:** the same base **Base branch** would settle. Resolve it on `REUSE` and `ATTACHED` too — Isolation itself settles a base only on `CREATE`. Never the workspace path, HEAD, or the session checkout.
+- Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
+- Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost). Only a material regression, or a purpose that is invalid or unmet, is a finding.
+- Empty finding → no `review-findings`; do not wait; continue; chat.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 
 ## Plan gate
 
@@ -208,6 +219,7 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**, han
 ## Report
 
 - whether the small-change lane in `using-dude`'s **Workflow selection** was taken, and the one-line basis if it was
+- whether `propose-alternatives` was invoked or skipped and why; empty finding or finding; on a finding, that the run waited
 - the execution method chosen, and why
 - the base branch the task was created from, and which of **Base branch**'s outcomes chose it
 - the `review-plan` rounds run on the detailed plan, and the final verdict

@@ -78,6 +78,8 @@ flowchart TB
   implement-work --> review-plan
   implement-work --> review-pr
   implement-work --> simplify-code
+  implement-work --> propose-alternatives
+  implement-work --> review-findings
   pr-to-ready --> review-code
   pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
