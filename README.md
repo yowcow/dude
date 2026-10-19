@@ -72,6 +72,8 @@ flowchart TB
 
   plan-work --> review-plan
   plan-work --> settle-question
+  plan-work --> propose-alternatives
+  plan-work --> review-findings
   implement-work --> review-code
   implement-work --> review-plan
   implement-work --> review-pr

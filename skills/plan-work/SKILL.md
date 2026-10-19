@@ -12,7 +12,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - The orchestrator owns everything that decides: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, folding the accepted findings in, calling convergence or escalation, and publishing.
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
-- **This skill dispatches one worker of its own: the alternative proposer.** It is dispatched at the `highest` tier in `using-dude`'s **Worker tier**: a route it misses reads as "nothing beats the human's means", and the comparison ends by ratifying that means.
+- This skill dispatches no worker of its own. Invoke `propose-alternatives` and, on a finding, `review-findings` by name; those skills own their procedures.
 
 ## Boundaries
 
@@ -24,15 +24,13 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 ## Entry
 
 - **An issue number** — read the issue and its comments before anything else.
-- **A planning request with no tracking issue** — the research in **Pass** step 2 still runs. **Splitting into sub-issues** asks for a tracking issue before anything is published.
-- **Investigation findings** — arrives with three things: the findings report, the reproduction or observation baseline, and the fix options the investigation proposed. A **question-shaped** report (`settle-question`) carries no reproduction: its **Verdict** and **Next items** arrive in place of the baseline and the fix options, and the findings-report citation suffices to receive it. The three option names (`Remediation options` / `Fix options` / `Verdict`+`Next items`) read as that same input under their source skill's name. Enter at research like the entries above rather than at **Design agreement**: the root cause is established, so what research settles is the shape of the fix, and those options are input to that agreement, never the agreement itself. Should research contradict the root cause, don't re-diagnose it here — take `using-dude`'s **Escalation** back to the investigation.
-- **A design invalidated downstream** — arrives with three things: the finding and which part of the design it undoes, the existing branch's name, and that branch's state, meaning whether it is pushed and whether a PR is open on it. Re-enter at **Design agreement**, since the design is what needs re-approval. Where an issue tracks the work it is still the canonical record, so the re-approved design edits that same comment in place rather than adding another.
+- **A planning request with no tracking issue** — the research in **Pass** step 3 still runs. **Splitting into sub-issues** asks for a tracking issue before anything is published.
+- **Investigation findings** — arrives with three things: the findings report, the reproduction or observation baseline, and the fix options the investigation proposed. A **question-shaped** report (`settle-question`) carries no reproduction: its **Verdict** and **Next items** arrive in place of the baseline and the fix options, and the findings-report citation suffices to receive it. The three option names (`Remediation options` / `Fix options` / `Verdict`+`Next items`) read as that same input under their source skill's name. Enter at research (**Pass** step 3), skipping **Pass** step 2, rather than at **Design agreement**: the root cause is established, so what research settles is the shape of the fix, and those options are input to that agreement, never the agreement itself. Should research contradict the root cause, don't re-diagnose it here — take `using-dude`'s **Escalation** back to the investigation.
+- **A design invalidated downstream** — arrives with three things: the finding and which part of the design it undoes, the existing branch's name, and that branch's state, meaning whether it is pushed and whether a PR is open on it. Re-enter at **Design agreement**, skipping **Pass** steps 2 and 3, since the design is what needs re-approval. Where an issue tracks the work it is still the canonical record, so the re-approved design edits that same comment in place rather than adding another.
 
 ## Design agreement
 
 Reach it with `superpowers:brainstorming`, run to its own self-review and the user's confirmation. **Don't follow it onward to the next skill**, however emphatically it says to. What this flow takes from it is that draft alone. Then come back and draft the TODO list yourself.
-
-Where **Pass** step 2 dispatched the alternative proposer, take the human's means and its proposal into `superpowers:brainstorming` as candidates side by side; which one the design takes is the user's choice.
 
 ## Output contract
 
@@ -88,16 +86,20 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 
 ## Pass
 
-1. Resolve **Entry**. A design invalidated downstream skips step 2.
-2. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
-   - **Only where the issue or request prescribes a means** — how to do it, not only what to achieve — dispatch the alternative proposer. Fix options carried in by investigation findings are not such a means: they are already candidates for **Design agreement**.
-   - **The brief carries only the goal, rewritten by you with the means stripped out — never the issue's URL or body.** A reference hands the means straight to the worker and its independence is silently gone; for the same reason, a dispatch form that carries this session's context forward is barred.
-   - The worker is read-only and returns a proposal only: the most direct route to the goal, what already-existing thing it reuses, and its trade-offs.
-3. Reach **Design agreement**.
-4. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 5.
-5. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
-6. Don't leave step 5 while a blocking finding remains.
-7. **Publish**.
+1. Resolve **Entry**. A design invalidated downstream skips steps 2 and 3. Investigation findings skip step 2.
+2. Invoke `propose-alternatives` once when the purpose is named.
+   - **Purpose:** the tracking issue's problem; with no issue, the request's problem. Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
+   - **Read-root:** the default branch. Use the session checkout only when it is already that branch; otherwise read the default-branch ref and do not pass the session tree. Do not create a worktree, read-only or not.
+   - Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
+   - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost). Only a material regression, or a purpose that is invalid or unmet, is a finding.
+   - Empty finding → no `review-findings`; do not wait; continue; chat.
+   - Finding → `review-findings` one pass; chat; do not proceed to **Design agreement** until the person answers. The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+3. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
+4. Reach **Design agreement**.
+5. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 6.
+6. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
+7. Don't leave step 6 while a blocking finding remains.
+8. **Publish**.
 
 This is clean per `using-dude`'s **Loop convergence** loop-clean when the published artifact satisfies **Output contract** and the last `review-plan` pass returned no blocking finding.
 
@@ -108,7 +110,7 @@ This loop's stopping conditions are `using-dude`'s **Loop convergence**. One rou
 ## Report
 
 - the entry, and what it carried — for findings, the investigation's report; for an invalidated design, the finding and the branch it came back with
-- where step 2 ran: whether the alternative proposer was dispatched, and the one-line reason: the issue or request prescribed a means, or it did not
+- where step 2 ran: invoked or skipped and why; empty finding or finding; on a finding, that the run waited
 - where the result was published: the comment URL, or that chat is the record and why
 - the `review-plan` rounds run and the final verdict, with accepted findings folded in and rejected findings given their reason
 - the sub-issues created — on re-entry, the breakdown of children left alone, updated, and created — or that there are none because no tracking issue backs the work and the user declined to create one
