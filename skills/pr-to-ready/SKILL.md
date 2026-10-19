@@ -20,7 +20,7 @@ Run this skill as an orchestrator: the main loop owns control flow, every decisi
 
 **Delegate:** diagnosing *why* a check failed, wherever that comes up — deciding whether checks are green stays above, only the diagnosis of a red one is handed off; and collecting reviewer comments into a structured list of findings. The requesting-code-review review and the judging of findings are `vet-code`'s and `judge-findings`'s. Every delegated subagent is read-only and advisory: it investigates and proposes, and the orchestrator is the one that applies a change, commits, and pushes.
 
-This skill dispatches no marked worker of its own: the reviewer and the judging workers are `vet-code`'s and `judge-findings`'s, and it re-judges none of their verdicts.
+This skill dispatches no marked worker of its own: the reviewer and the judging workers are `vet-code`'s and `judge-findings`'s, and it re-judges none of their verdicts. Invoke `propose-alternatives` and, on a finding, `review-findings` by name; those skills own their procedures.
 
 ## Step 0: Set up the run
 
@@ -102,6 +102,15 @@ Before reviewers are asked to read it: for every issue reference in the body, re
 - The record's web URL is what separates them — `/issues/` against `/pull/` — and a closing keyword on a PR number closes nothing, leaving the issue open after the merge.
 - Ask the user when the intended repository is ambiguous rather than guessing.
 - Correct any wrong link before continuing.
+
+Then invoke `propose-alternatives` once when the purpose is named. "Run 2-0" includes this invoke, including the empty-reviewers jump that skips 2-1.
+
+- **Purpose:** what the issue behind a closing keyword states. Not the PR body, not a prescribed means, not a parent design in place of that issue. If that issue states no purpose → skip; do not invoke; chat the skip; continue. No new prompt.
+- **Read-root:** the PR's base (the base the PR points at / Step 1 settled) — not head, not the 0-3 workspace, not the session checkout.
+- Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
+- Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost). Only a material regression, or a purpose that is invalid or unmet, is a finding.
+- Empty finding → no `review-findings`; do not wait; continue; chat.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed to the review request or `vet-code` (2-1) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR (body or inline).
 
 ### 2-1. Request the reviewers
 

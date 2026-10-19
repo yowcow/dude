@@ -84,6 +84,8 @@ flowchart TB
   pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
   pr-to-ready --> judge-findings
+  pr-to-ready --> propose-alternatives
+  pr-to-ready --> review-findings
   audit-code --> review-findings
   investigate-anomaly --> review-findings
   investigate-performance --> review-findings
