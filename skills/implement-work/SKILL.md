@@ -81,7 +81,7 @@ If the verified baseline contradicts what the plan assumes — an existing failu
 
 ## Alternatives
 
-After Isolation (the base is settled), before **Plan gate**. The small-change lane still runs this, then **Execution**.
+After Isolation, before **Plan gate**. The small-change lane still runs this, then **Execution**.
 
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the same base **Base branch** would settle. Resolve it on `REUSE` and `ATTACHED` too — Isolation itself settles a base only on `CREATE`. Never the workspace path, HEAD, or the session checkout.

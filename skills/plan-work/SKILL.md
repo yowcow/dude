@@ -93,7 +93,7 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
    - Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
    - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost). Only a material regression, or a purpose that is invalid or unmet, is a finding.
    - Empty finding → no `review-findings`; do not wait; continue; chat.
-   - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed to **Design agreement** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+   - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: take the finding to **Design agreement**). Do not proceed to step 3 except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 3. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
 4. Reach **Design agreement**.
 5. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 6.
