@@ -109,18 +109,12 @@ dude requires [Superpowers](https://github.com/obra/superpowers#installation). I
 
 OpenCode:
 
-```jsonc
-{
-  "$schema": "https://opencode.ai/config.json",
-  "plugins": [
-    "dude@git+https://github.com/yowcow/dude.git",
-    "superpowers@git+https://github.com/obra/superpowers.git",
-  ],
-}
+```
+opencode plugin add github:obra/superpowers
+opencode plugin add github:yowcow/dude
 ```
 
-Put `$schema` and both `plugins` entries in the global
-`~/.config/opencode/opencode.jsonc`, then restart OpenCode.
+Both land in the global OpenCode config. Restart OpenCode afterward.
 
 Claude Code:
 
@@ -209,11 +203,10 @@ previous/new manifest shas.
 because their formats require one. Codex keeps a per-version
 cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`),
 but `marketplace upgrade` plus re-adding still advances the checkout to the new
-commit. OpenCode caches the commit first installed for an unchanged git spec; restarting,
-removing and re-adding the config entry, or rerunning `opencode plugin` with that
-spec does not refresh it. To update to HEAD, quit OpenCode, remove
-`~/.cache/opencode/packages/dude@git+https:/github.com/yowcow/dude.git`, and
-restart.
+commit.
+
+OpenCode: run `opencode plugin update` after a bump (or
+`opencode plugin update github:yowcow/dude` for one package).
 
 What each runtime printed when this was measured — and the throwaway plugins the
 version-less control was taken with — is recorded in
