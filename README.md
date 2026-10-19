@@ -20,6 +20,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `investigate-performance` | An evidence-backed explanation of a performance shortfall                           |
 | `judge-findings`          | Review findings judged accept, reject, or needs-user outside the caller's main loop |
 | `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                        |
+| `propose-alternatives`    | The most direct route to a named purpose, including doing nothing or doing something else |
 | `pr-to-ready`             | A PR whose CI passes and whose review is clean                                      |
 | `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved  |
 | `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record   |
@@ -54,6 +55,7 @@ flowchart TB
   subgraph Components
     vet-code
     review-findings
+    propose-alternatives
   end
   subgraph Primitives
     judge-findings
