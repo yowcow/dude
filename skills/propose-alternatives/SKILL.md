@@ -12,7 +12,7 @@ This skill edits nothing and posts nothing.
 **No named purpose, no worker. Otherwise always dispatch one read-only worker in a fresh context; never propose inline.**
 
 - The worker is read-only: it edits nothing, commits nothing, creates no worktree, and returns a proposal only.
-- The worker goes out at the `high` tier in `using-dude`'s **Worker tier**. `using-dude` would mark a missed alternative `highest` (it never appears downstream); this skill is the exception, citing `yowcow/dude#630`.
+- The worker goes out at the `highest` tier in `using-dude`'s **Worker tier**: a missed alternative never appears downstream.
 
 ## Inputs
 
