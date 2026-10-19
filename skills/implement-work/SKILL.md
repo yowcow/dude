@@ -88,7 +88,7 @@ After Isolation, before **Plan gate**. The small-change lane still runs this, th
 - Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
 - Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 
 ## Plan gate
 

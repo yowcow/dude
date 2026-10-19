@@ -110,7 +110,7 @@ Then invoke `propose-alternatives` once when the purpose is named. "Run 2-0" inc
 - Else invoke `propose-alternatives` once with that purpose and read-root. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
 - Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed past 2-0 — to 2-1, `vet-code`, or Step 3 — except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR (body or inline).
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed past 2-0 — to 2-1, `vet-code`, or Step 3 — except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR (body or inline).
 
 ### 2-1. Request the reviewers
 

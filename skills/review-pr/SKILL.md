@@ -34,7 +34,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 - **Purpose settled:** invoke `propose-alternatives` once with that settled purpose. **Read-root:** the PR's base at its current tip, the `pr.base.sha` fact fetched as a SHA — not the range's `<base>` merge-base, not `<head>`, not the head worktree Step 3 creates, not the session checkout. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
 - Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work`). Do not proceed to diff review (`vet-code`) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to the review body or inline comments.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to diff review (`vet-code`) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to the review body or inline comments.
 
 ### 3. Vet
 
