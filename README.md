@@ -203,7 +203,9 @@ previous/new manifest shas.
 because their formats require one. Codex keeps a per-version
 cache directory (e.g. `~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/`),
 but `marketplace upgrade` plus re-adding still advances the checkout to the new
-commit. OpenCode: run `opencode plugin update` after a bump (or
+commit.
+
+OpenCode: run `opencode plugin update` after a bump (or
 `opencode plugin update github:yowcow/dude` for one package).
 
 What each runtime printed when this was measured — and the throwaway plugins the
