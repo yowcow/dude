@@ -32,6 +32,7 @@ investigate-* part
 settle-question part
 vet-code component
 review-findings component
+propose-alternatives component
 judge-findings primitive'
 
 # <owner> <target> <reason>. Every upward or lateral edge must have a row, and

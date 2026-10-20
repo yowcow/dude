@@ -35,6 +35,10 @@
         "path": "skills/plan-work/SKILL.md"
       },
       {
+        "id": "propose-alternatives",
+        "path": "skills/propose-alternatives/SKILL.md"
+      },
+      {
         "id": "pr-to-ready",
         "path": "skills/pr-to-ready/SKILL.md"
       },
