@@ -83,7 +83,7 @@ jobs:
 
       - name: make test (bash 3.2)
         run: |
-          bash --version | head -1
+          bash --version
           got="$(bash -c 'printf "%s.%s" "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}"')"
           if [ "$got" != 3.2 ]; then
             echo "bash on PATH is $got, not 3.2 — the suite below would measure the image's bash" >&2

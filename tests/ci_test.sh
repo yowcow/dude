@@ -59,7 +59,7 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not run on schedules\n' >&2
   failed=1
 fi
-uses_lines="$(grep -c 'uses:' <<<"$gated_blocks" || true)"
+uses_lines="$(grep -c '^ *- uses:' <<<"$gated_blocks" || true)"
 pinned_lines="$(grep -cE 'uses: [^[:space:]]+@[0-9a-f]{40} # ' <<<"$gated_blocks" || true)"
 if [ "$uses_lines" -eq 0 ]; then
   printf 'FAIL: lint/test jobs declare no uses: lines — the selection is broken\n' >&2
