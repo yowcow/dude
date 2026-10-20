@@ -7,9 +7,11 @@
 # encode the test author's belief about what a range should be rather than
 # git's own behaviour -- exactly the failure mode tests/tools'
 # resolve-pr-base_test.sh documents for the same reason. Each row that reaches
-# the no-PR path therefore builds a real bare repository to play the remote
-# and a real work repository cloned from it, both under $HARNESS_TMP and both
-# offline.
+# the no-PR path with the real reader therefore builds a real bare repository
+# to play the remote and a real work repository cloned from it, both under
+# $HARNESS_TMP and both offline. The three rows at the end stub the reader, the
+# default-branch lookup and the fetch in a copy of tools/, and build no
+# repository.
 #
 # The PR shape reads the PR record's base oid as a fact (pr_facts below), so
 # its rows make no `gh` call at all; the gh call count is 0 throughout.
@@ -17,8 +19,9 @@
 # The no-argument shape reads the prerequisite's PR as facts (prereq_facts
 # below), so its trailer rows make no `gh pr list` call; the rows without a
 # trailer pass no facts, which is what shows that path asks for nothing. Its
-# default branch is the remote's own HEAD (resolve-default-branch.sh), so the
-# file stubs nothing.
+# default branch is the remote's own HEAD (resolve-default-branch.sh) in every
+# row but the three at the end, which stub that lookup along with the fetch and
+# the reader in a copy of tools/; no row stubs `gh`.
 #
 # RED verification (see tests/README.md). resolve-range.sh has never been
 # tested before this file, so there is no pre-fix commit to point SUT= at the
@@ -97,6 +100,10 @@
 #      `no-trailer-uses-the-remote-head` and
 #      `no-trailer-empty-when-head-is-the-default-tip`, which also record
 #      nothing of their own.
+#
+#   The reader-boundary rows at the end of this file are RED against the
+#   pre-fix script through `SUT=` (measured: exit 1 with empty stdout, and
+#   STOP fetch-failed from an unset FETCH_SPEC).
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
@@ -524,5 +531,50 @@ git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' unrelated)"
 git_repo_remote "$W" origin "$LONELY"
 run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
+
+# ---- the reader's answers this caller cannot act on ----------------------
+#
+# Same boundary as tests/tools/resolve-pr-base_test.sh's closing rows, and the
+# same fixture: a copy of tools/ with this file's subject dropped in and
+# read-base-trailer.sh replaced. The real reader cannot produce these answers
+# (a state outside OPEN/MERGED stops earlier as STOP fact-enum), so the reader
+# is stubbed. Measured before the fix: a reader exiting 1 made this script exit
+# 1 with empty stdout; an unknown KIND or STATE answered STOP fetch-failed
+# while the script was in fact reading an unset FETCH_SPEC -- a person sent to
+# re-run a fetch that was never attempted.
+CONTRACT="${HARNESS_TMP}/tools-contract"
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/resolve-range.sh"
+mkdir -p "${CONTRACT}/stub"
+printf '#!/usr/bin/env bash\necho trunk\n' >"${CONTRACT}/resolve-default-branch.sh"
+printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
+# The stub prints <stub>/answer and exits <stub>/status; `reader` sets both.
+cat >"${CONTRACT}/read-base-trailer.sh" <<EOF
+#!/usr/bin/env bash
+status="\$(cat '${CONTRACT}/stub/status')"
+[ "\$status" -eq 0 ] || exit "\$status"
+cat '${CONTRACT}/stub/answer'
+EOF
+
+# reader <answer> <exit-status>
+reader() {
+  printf '%s\n' "$1" >"${CONTRACT}/stub/answer"
+  printf '%s' "$2" >"${CONTRACT}/stub/status"
+}
+
+row_start
+reader '' 1
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
+
+row_start
+reader 'WHAT' 0
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+
+row_start
+reader 'PREREQ task 9 DRAFT' 0
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"
