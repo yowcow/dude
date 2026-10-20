@@ -41,12 +41,14 @@
 #     >"$tmp/skills/pr-to-ready/scripts/old.sh"
 #   SUT="$tmp/skills/pr-to-ready/scripts/old.sh" \
 #     tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
-#     -> deep-listing-keeps-the-target-run fails: --limit 20 is answered with a
-#        page the target run has fallen out of, and the filter prints [] (#173).
-#        Three more listing rows fail there as collateral — they stub only
-#        --limit 100, so the pre-fix depth reaches them as an unstubbed argv.
-#        Only the deep row fails on the symptom itself, which is the one to
-#        read: exit 0, empty stderr, [] where the run belongs.
+#     -> against these stubs every row that reaches gh (six of them) fails as an
+#        unstubbed argv: the pre-fix copy predates -R, so `gh run list` /
+#        `gh run watch` carry an argv no stub answers. That is not the depth
+#        symptom. To see #173 itself, use the test file as it stood before -R
+#        (`git show 253c615^:tests/pr-to-ready/watch-claude-review_test.sh`) in
+#        the staged tree, or temporarily drop -R from stub_listing/stub_watch:
+#        then only deep-listing-keeps-the-target-run fails — exit 0, empty
+#        stderr, [] where the run belongs.
 #   git show e14114a^:skills/pr-to-ready/scripts/watch-claude-review.sh \
 #     >"$tmp/skills/pr-to-ready/scripts/old.sh"
 #     -> from-a-subdirectory fails with exit 3: the search was cwd-relative.
@@ -325,9 +327,9 @@ assert_row 'listing-call-fails' 1 '-' 1
 # depth this script asks for (100) is answered with the whole 21-run page, and
 # the depth the pre-fix script asked for (20) with that page truncated — which
 # is what the API itself would have done. The second stub is the mechanism of
-# the RED, not dead weight: against 2bd1745^ the target run has fallen out of
-# the answer, the filter prints [], and the row fails on the real symptom
-# rather than on an unstubbed argv.
+# the RED, not dead weight: against 2bd1745^ with the -R-free stubs above, the
+# target run has fallen out of the answer, the filter prints [], and the row
+# fails on the real symptom rather than on an unstubbed argv.
 row_start
 stub_listing acme/claude-ok "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"

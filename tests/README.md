@@ -225,8 +225,11 @@ this repository's own code: `.git`, `.worktrees`, `.claude/worktrees`, and
 **A run from inside a linked worktree cannot verify that prune.** There `.git`
 is a file rather than a directory and neither worktree directory exists, so
 nothing matches and the expression prunes nothing — a wrong expression still
-looks green. To exercise it where it bites, build a checkout that has the real
-shapes and run the script there:
+looks green. Only `.opencode/node_modules` can match there, and only if the
+plugin SDK's npm tree is installed in that worktree — so at most one of the
+four prunes is exercised, and a wrong expression for the other three still
+looks green. To exercise them where they bite, build a checkout that has the
+real shapes and run the script there:
 
 ```bash
 probe="$(mktemp -d)"

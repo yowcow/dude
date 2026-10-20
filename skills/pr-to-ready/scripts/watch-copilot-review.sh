@@ -95,7 +95,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 ID_FILTER='if (.id | type) == "string" then .id else error("not a listing line") end'
 
 # Read once, before the first poll: a baseline that is not a listing is a usage
-# error, and finding that out after 20 minutes of polling would be no better
+# error, and finding that out after 19m30s of polling would be no better
 # than not finding it out at all.
 if ! BASELINE_IDS="$(jq -r "$ID_FILTER" <"$BASELINE_FILE" 2>/dev/null)"; then
   echo "baseline file is not a list-copilot-reviews.sh listing: $BASELINE_FILE" >&2
