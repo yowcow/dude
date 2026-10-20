@@ -598,4 +598,35 @@ if ! check_stderr_has 'symlinked skill dir: names it' \
   'skills/beta is a symlink to a directory'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 31: two scripts that map to one test path are an error -------------
+# ${rel%.sh} makes `foo` and `foo.sh` want the same file, so one test counts as
+# coverage for both and the second script is never separately exercised.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'foo'
+mk_script "$root" alpha 'foo.sh'
+mk_test "$root" alpha 'foo_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'test path collision: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'test path collision: names both and the path' \
+  'skills/alpha/scripts/foo and skills/alpha/scripts/foo.sh share the expected test path tests/alpha/foo_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 32: the same collision under hooks/ -------------------------------
+# The rule lives in one helper called from every loop, not in the skills loop.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_hook "$root" 'foo'
+mk_hook "$root" 'foo.sh'
+mk_hook_test "$root" 'foo_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'hook test path collision: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'hook test path collision: names both and the path' \
+  'hooks/foo and hooks/foo.sh share the expected test path tests/hooks/foo_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

@@ -55,7 +55,8 @@ ROOT_SCRIPTS="${ROOT}/scripts"
 # A missing skills reaches the same message rather than an empty enumeration,
 # and that is correct — the tree really was not read.
 LISTING="$(mktemp)"
-trap 'rm -f "$LISTING"' EXIT
+PAIRS="$(mktemp)"
+trap 'rm -f "$LISTING" "$PAIRS"' EXIT
 
 # Symlinks are enumerated alongside regular files, which is where this parts
 # company with tests/lint.sh. That script records leaving symlinks out as a
@@ -215,11 +216,28 @@ fi
 problems=0
 with_tests=0
 
+# claim_test_path <want> <key>
+# One test file cannot be two scripts' coverage: <rel>%.sh makes `foo` and
+# `foo.sh` want the same path, which would count one test twice and leave the
+# second script exercised by nothing.
+claim_test_path() {
+  local want="$1" key="$2" other
+  other="$(awk -F'\t' -v w="$want" '$1 == w { print $2; exit }' "$PAIRS")"
+  if [ -n "$other" ]; then
+    printf 'scripts-have-tests: %s and %s share the expected test path %s — one test cannot cover two scripts\n' \
+      "$other" "$key" "$want" >&2
+    problems=$((problems + 1))
+    return
+  fi
+  printf '%s\t%s\n' "$want" "$key" >>"$PAIRS"
+}
+
 for rel in "${scripts[@]}"; do
   key="skills/${rel}"
   skill="${rel%%/*}"
   rest="${rel#*/scripts/}"
   want="tests/${skill}/${rest%.sh}_test.sh"
+  claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
   # Non-empty and readable, not merely present. run.sh collects an empty
   # *_test.sh and `bash <empty>` exits 0, so an empty file is a passing test with
@@ -236,6 +254,7 @@ done
 for rel in "${hooks[@]}"; do
   key="hooks/${rel}"
   want="tests/hooks/${rel%.sh}_test.sh"
+  claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
   if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))
@@ -248,6 +267,7 @@ done
 for rel in "${tools[@]}"; do
   key="tools/${rel}"
   want="tests/tools/${rel%.sh}_test.sh"
+  claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
   if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))
@@ -260,6 +280,7 @@ done
 for rel in "${root_scripts[@]}"; do
   key="scripts/${rel}"
   want="tests/${rel%.sh}_test.sh"
+  claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
   if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))

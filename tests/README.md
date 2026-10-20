@@ -271,6 +271,11 @@ tree rather than stating as prose:
   non-empty file that reaches `harness_exit` with a tally of zero now exits 1,
   so the suite catches it — but `-s` alone still accepts a file that never
   sources the harness, or exits before its tally.
+- Two scripts whose relative paths differ only by a trailing `.sh` map to one
+  expected test path, because the suffix is stripped before `_test.sh` is
+  appended. That is an **error** naming both scripts and the path: counting the
+  one file as coverage for both would leave the second script exercised by
+  nothing.
 - A `find` that dies partway through `skills` is a **failure**, never a
   green over the part it managed to read. A missing `hooks/` directory is
   a listing failure, same as a missing `skills/` — same `if ! find` branch,
