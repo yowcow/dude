@@ -190,9 +190,9 @@ too-many-args|copilot-reviews-two|empty|acme widgets 7 %B 1 1 extra|2|0|
 non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|2|0|
 ROWS
 
-# The defaults are half the header's 19m30s. Running them pins the claim's
-# inputs: 40 polls, 39 gaps, 30 s each. A default change fails here instead of
-# leaving the header's number behind.
+# Running the defaults pins the three numbers behind the header's 19m30s: 40
+# polls, 39 gaps of 30 s each. A default change fails here instead of leaving
+# the header's number behind.
 row_start
 gh_stub_response '*' 0 pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$TWO"
 default_baseline="$(make_baseline all)"

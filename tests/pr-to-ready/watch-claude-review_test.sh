@@ -33,25 +33,22 @@
 #
 # RED verification (see tests/README.md). SUT must name a copy whose
 # `../../../tools/` resolves, because the script calls resolve-default-branch.sh
-# and origin-repo.sh through SCRIPT_DIR:
+# and origin-repo.sh through SCRIPT_DIR. Setting the depth back to the pre-fix
+# `--limit 20` is the mutation, because a copy that predates the `-R` pin fails
+# every gh-reaching row as an unstubbed argv before the depth is reached:
 #   tmp="$(mktemp -d)"
 #   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/tools"
 #   cp tools/resolve-default-branch.sh tools/origin-repo.sh "$tmp/tools/"
-#   git show 2bd1745^:skills/pr-to-ready/scripts/watch-claude-review.sh \
+#   sed 's/--limit 100/--limit 20/' \
+#     skills/pr-to-ready/scripts/watch-claude-review.sh \
 #     >"$tmp/skills/pr-to-ready/scripts/old.sh"
 #   SUT="$tmp/skills/pr-to-ready/scripts/old.sh" \
 #     tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
-#     -> against these stubs every row that reaches gh (six of them) fails as an
-#        unstubbed argv: the pre-fix copy predates -R, so `gh run list` /
-#        `gh run watch` carry an argv no stub answers. That is not the depth
-#        symptom. To see #173 itself, use the test file as it stood before -R
-#        (`git show 253c615^:tests/pr-to-ready/watch-claude-review_test.sh`) in
-#        the staged tree, or temporarily drop -R from stub_listing/stub_watch:
-#        then only deep-listing-keeps-the-target-run fails — exit 0, empty
-#        stderr, [] where the run belongs.
-#   git show e14114a^:skills/pr-to-ready/scripts/watch-claude-review.sh \
-#     >"$tmp/skills/pr-to-ready/scripts/old.sh"
-#     -> from-a-subdirectory fails with exit 3: the search was cwd-relative.
+#     -> deep-listing-keeps-the-target-run is answered with the truncated page,
+#        so it exits 0 printing [] where the run belongs (#173); the rows that
+#        stub only --limit 100 fail as unstubbed argv.
+#   The from-a-subdirectory row pins the cwd-relative regression on the current
+#   script; a copy that predates that fix also predates `-R`.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
