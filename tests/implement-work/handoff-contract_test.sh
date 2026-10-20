@@ -25,11 +25,22 @@ else
   failed=$((failed + 1))
 fi
 
-# Row 2: the Hand off section restates no output literal (PR forms or STOP).
+# Row 2: the range the next row inspects is the section it names. An empty
+# extraction — either heading renamed — made the negative check below pass
+# vacuously, and a range running to EOF would inspect text this gate does not own.
+total=$((total + 1))
+HANDOFF="$(sed -n '/^## Hand off/,/^## Report/p' "$SKILL")"
+fails_here=0
+if ! check_eq 'scope: the section starts at ## Hand off' \
+  '## Hand off' "${HANDOFF%%$'\n'*}"; then fails_here=1; fi
+if ! check_eq 'scope: the section ends at ## Report' \
+  '## Report' "${HANDOFF##*$'\n'}"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Row 3: the Hand off section restates no output literal (PR forms or STOP).
 # Scoped to ## Hand off: STOP <slug> appears legitimately in the Completion
 # gate above, so a whole-file grep would fail on text this gate does not own.
 total=$((total + 1))
-HANDOFF="$(sed -n '/^## Hand off/,/^## Report/p' "$SKILL")"
 if printf '%s' "$HANDOFF" | grep -qF -e 'PR <n> found' -e 'PR <n> created' -e 'STOP <slug>'; then
   printf 'FAIL literal: Hand off restates the script output contract\n'
   failed=$((failed + 1))
@@ -37,7 +48,7 @@ else
   : ok
 fi
 
-# Row 3: the script header owns the contract (all three forms named in comments).
+# Row 4: the script header owns the contract (all three forms named in comments).
 # Header-only: body echos use PR ${NUM} spelling, header uses PR <n>, so grepping
 # comment lines distinguishes the contract from the implementation.
 total=$((total + 1))
