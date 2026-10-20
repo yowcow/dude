@@ -1,6 +1,6 @@
 {
   "name": "dude",
-  "version": "1.8.2",
+  "version": "1.9.0",
   "type": "module",
   "main": ".opencode/plugins/dude.js",
   "dependencies": {
