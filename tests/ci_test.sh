@@ -15,6 +15,8 @@ schedule_cron="cron: '17 3 * * 1'"
 fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
 gated_blocks="$(awk '/^  [A-Za-z0-9_-]+:/{job=$1} job=="lint:" || job=="test:"' "$workflow")"
+bash32_job="$(awk '/^  [A-Za-z0-9_-]+:/{job=$1} job=="test-bash32:"' "$workflow")"
+bash32_sha='3fa9daf85ebf35068f090ce51283ddeeb3c75eb5bc70b1a4a7cb05868bfe06a4'
 
 total=1
 failed=0
@@ -66,6 +68,35 @@ if [ "$uses_lines" != "$pinned_lines" ]; then
 fi
 if grep -E -q 'uses: [^[:space:]]+@(v[0-9]|main|master|latest)' <<<"$gated_blocks"; then
   printf 'FAIL: lint/test uses: must not float on a mutable tag\n' >&2
+  failed=1
+fi
+
+if [ -z "$bash32_job" ]; then
+  printf 'FAIL: no test-bash32 job — the selector is broken or the job is gone\n' >&2
+  failed=1
+fi
+if ! grep -Fq 'https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 fetches the bash 3.2.57 tarball\n' >&2
+  failed=1
+fi
+if ! grep -Fq "$bash32_sha" <<<"$bash32_job" || ! grep -Fq 'sha256sum -c -' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 pins the fetched tarball by sha256\n' >&2
+  failed=1
+fi
+if ! grep -Fq '$GITHUB_PATH' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 puts the built bash on PATH\n' >&2
+  failed=1
+fi
+if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 asserts the suite runs under bash 3.2\n' >&2
+  failed=1
+fi
+if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 runs on pull requests\n' >&2
+  failed=1
+fi
+if ! grep -Fq 'run: make test' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 runs the suite\n' >&2
   failed=1
 fi
 
