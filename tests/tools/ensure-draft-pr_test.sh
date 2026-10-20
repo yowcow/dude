@@ -6,8 +6,7 @@
 #
 # The script reads facts, git and origin; it opens no PR and reads none, and
 # through the real sibling it reads the default branch from the remote's HEAD.
-# The two rows at the end stub that sibling (which calls no gh either), and
-# every row asserts 0 gh calls.
+# Every row asserts 0 gh calls.
 #
 # git is not stubbed. The ordering guard #205 asks for is about a real `git
 # push` landing on a real remote before anything is asked, and a git stub

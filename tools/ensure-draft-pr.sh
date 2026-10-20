@@ -181,8 +181,6 @@ if [ -z "$BASE_REPO" ]; then
 fi
 
 # --- Step 3: the base, from the sibling only. ---
-# An unguarded capture takes the sibling's exit status for this script's own
-# under `set -e`, and the run ends at exit 1 with nothing on stdout.
 RESOLVED_ARGS=("$BRANCH" --facts "$FACTS")
 if [ -n "$BASE_REPO" ]; then
   RESOLVED_ARGS=("$BRANCH" "$TARGET" --facts "$FACTS")

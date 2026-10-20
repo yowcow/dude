@@ -20,8 +20,7 @@
 # below), so its trailer rows make no `gh pr list` call; the rows without a
 # trailer pass no facts, which is what shows that path asks for nothing. Its
 # default branch is the remote's own HEAD (resolve-default-branch.sh) in every
-# row but the three at the end, which stub that lookup along with the fetch and
-# the reader in a copy of tools/; no row stubs `gh`.
+# row but the three stubbed ones at the end; no row stubs `gh`.
 #
 # RED verification (see tests/README.md). resolve-range.sh has never been
 # tested before this file, so there is no pre-fix commit to point SUT= at the
@@ -102,10 +101,6 @@
 #      `no-trailer-uses-the-remote-head` and
 #      `no-trailer-empty-when-head-is-the-default-tip`, which also record
 #      nothing of their own.
-#
-#   The reader-boundary rows at the end of this file are RED against the
-#   pre-fix script through `SUT=` (measured: exit 1 with empty stdout, and
-#   STOP fetch-failed from an unset FETCH_SPEC).
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
@@ -547,35 +542,24 @@ assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 
 CONTRACT="${HARNESS_TMP}/tools-contract"
 cp -R "${REPO_ROOT}/tools" "$CONTRACT"
 cp "$SUT" "${CONTRACT}/resolve-range.sh"
-mkdir -p "${CONTRACT}/stub"
 printf '#!/usr/bin/env bash\necho trunk\n' >"${CONTRACT}/resolve-default-branch.sh"
 printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
-# The stub prints <stub>/answer and exits <stub>/status; `reader` sets both.
-cat >"${CONTRACT}/read-base-trailer.sh" <<EOF
-#!/usr/bin/env bash
-status="\$(cat '${CONTRACT}/stub/status')"
-[ "\$status" -eq 0 ] || exit "\$status"
-cat '${CONTRACT}/stub/answer'
-EOF
 
-# reader <answer> <exit-status>
-reader() {
-  printf '%s\n' "$1" >"${CONTRACT}/stub/answer"
-  printf '%s' "$2" >"${CONTRACT}/stub/status"
-}
+# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
 
 row_start
-reader '' 1
+reader 'exit 1'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
 
 row_start
-reader 'WHAT' 0
+reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 row_start
-reader 'PREREQ task 9 DRAFT' 0
+reader 'echo "PREREQ task 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 

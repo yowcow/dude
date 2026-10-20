@@ -128,8 +128,6 @@ fi
 # The revs are chosen here rather than there because it is this caller's
 # question: local HEAD, bounded by the fetched default tip, since this skill
 # reviews the checkout it is in.
-# An unguarded capture takes the reader's exit status for this script's own
-# under `set -e`, and the run ends at exit 1 with nothing on stdout.
 READ_ARGS=(HEAD "^${TIP_SHA}")
 if [ -n "$FACTS" ]; then
   READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")

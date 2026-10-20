@@ -23,9 +23,8 @@
 # `trailer-read-fails` row.
 #
 # The prerequisite's PR comes as facts (prereq_facts below) and, in every row
-# but the three at the end, the default branch from the remote's own HEAD
-# (resolve-default-branch.sh). Those three stub that lookup, the fetch and the
-# reader in a copy of tools/; every row, stubbed or not, asserts 0 gh calls.
+# but the three stubbed ones at the end, the default branch from the remote's
+# own HEAD (resolve-default-branch.sh); every row asserts 0 gh calls.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
 # root, so a branch that recorded nothing picked up whatever Base-Branch it
@@ -305,40 +304,28 @@ assert_row 'facts-flag-without-file' 2 '' 0
 # guard: a reader exiting 1 made this script exit 1 with empty stdout; an
 # unknown KIND or STATE exited 0 with empty stdout.
 #
-# The default-branch lookup and the fetch are stubbed too, so these rows need
-# no repository; both keep their own rows above.
+# The default-branch lookup and the fetch keep their own rows above.
 CONTRACT="${HARNESS_TMP}/tools-contract"
 cp -R "${REPO_ROOT}/tools" "$CONTRACT"
 cp "$SUT" "${CONTRACT}/resolve-pr-base.sh"
-mkdir -p "${CONTRACT}/stub"
 printf '#!/usr/bin/env bash\necho main\n' >"${CONTRACT}/resolve-default-branch.sh"
 printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
-# The stub prints <stub>/answer and exits <stub>/status; `reader` sets both.
-cat >"${CONTRACT}/read-base-trailer.sh" <<EOF
-#!/usr/bin/env bash
-status="\$(cat '${CONTRACT}/stub/status')"
-[ "\$status" -eq 0 ] || exit "\$status"
-cat '${CONTRACT}/stub/answer'
-EOF
 
-# reader <answer> <exit-status>
-reader() {
-  printf '%s\n' "$1" >"${CONTRACT}/stub/answer"
-  printf '%s' "$2" >"${CONTRACT}/stub/status"
-}
+# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
 
 row_start
-reader '' 1
+reader 'exit 1'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
 assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
 
 row_start
-reader 'WHAT' 0
+reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
 assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 row_start
-reader 'PREREQ feature 9 DRAFT' 0
+reader 'echo "PREREQ feature 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
 assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 

@@ -102,9 +102,6 @@ fi
 # branch back as the base -- which ensure-draft-pr.sh then answers as
 # `CREATE ... base=<base>`, so the caller opens the PR against a branch this
 # task never sat on.
-
-# An unguarded capture takes the reader's exit status for this script's own
-# under `set -e`, and the run ends at exit 1 with nothing on stdout.
 READ_ARGS=(FETCH_HEAD "^${DEFAULT_SHA}")
 if [ -n "$FACTS" ]; then
   READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")
