@@ -177,6 +177,11 @@ count_run() {
 # check_bytes: this script prints a multi-line pretty JSON array, and the same
 # expectation written as a printf '%b' string would be one unreadable line. `-`
 # means stdout must be empty.
+#
+# The fourth argument is required, deliberately not defaulted — same reasoning
+# as harness.sh's assert_row. This local copy had reintroduced the defaulting
+# that file removed; a `-n` test is the same silently-skipped assertion a
+# `${4:-}` produced.
 assert_row() {
   local name="$1" want_exit="$2" want_file="$3" want_calls="$4" fails=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
@@ -187,7 +192,7 @@ assert_row() {
     diff -u "$want_file" "$SUT_STDOUT" | head -40 || true
     fails=1
   fi
-  if [ -n "$want_calls" ] && ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
+  if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
   if ! check_no_violations "${name}: argv"; then fails=1; fi
   if [ "$fails" -ne 0 ]; then
     failed=$((failed + 1))
