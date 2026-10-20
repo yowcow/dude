@@ -65,7 +65,8 @@ stdout through every such script.
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
-| `trailer-read-failed` | `tools/read-base-trailer.sh` |
+| `trailer-answer-malformed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
+| `trailer-read-failed` | `tools/read-base-trailer.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
