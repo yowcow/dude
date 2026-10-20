@@ -33,8 +33,10 @@ else
   # it asks `-f`, which follows the link. Discovery with only `-type f`
   # classified the link instead, leaving such a file covered but never run — a
   # suite that reports itself passed. A dangling link is collected by the same
-  # expression and then run, where `bash` exits 127; it must fail the run
-  # loudly rather than be counted by the gate and skipped here.
+  # expression and then run, where `bash` exits 127: the gate's `-f` fails on
+  # the link, so the gate reports no test for that script rather than counting
+  # it, and the link must still fail the run at `bash` rather than vanish from
+  # discovery.
   LISTING="$(mktemp)"
   trap 'rm -f "$LISTING"' EXIT
 

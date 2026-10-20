@@ -5,9 +5,10 @@
 # Usage: scripts-have-tests.sh [<repo-root>]
 #
 # Why this exists: without it a script can land under skills/*/scripts/,
-# tools/, or hooks/ with no test, nobody observes the absence, and the suite
-# reports green — the amplifier #180 identified (nobody is running the code)
-# reappearing through a door the per-script tests do not cover. The gate is
+# tools/, hooks/, or the repository-root scripts/ with no test, nobody observes
+# the absence, and the suite reports green — the amplifier #180 identified
+# (nobody is running the code) reappearing through a door the per-script tests
+# do not cover. The gate is
 # permanent: it stays after coverage is complete, because the property it
 # holds is about the *next* script, not the current ones.
 #
