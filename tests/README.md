@@ -314,9 +314,12 @@ tree rather than stating as prose:
 - A symlink to a **directory** under any of these positions is an **error**
   naming the link: `find` lists it but never descends into it, so its contents
   cannot be enumerated while the rest of the tree reports itself covered. A
-  position that is itself a symlink to a directory is an **error** naming the
-  link. The target's contents are never read either: the target is only asked
-  whether it is a directory, never descended into. The one exception is a link
+  position that is itself a symlink is an **error** naming the link: a link to
+  a directory stops the walk before the subtree it hides, and a link to
+  anything else hides that position just as completely — `find` lists the
+  link, descends into nothing, and the subtree is silently absent. The target's
+  contents are never read either: the target is only asked whether it is a
+  directory, never descended into. The one exception is a link
   to a directory *inside* `skills/<skill>/` but outside its `scripts/` subtree:
   a linked `references/` directory holds nothing this gate reads and stays
   green. The skill directory itself is refused the same way: a link at

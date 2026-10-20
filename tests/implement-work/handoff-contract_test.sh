@@ -52,7 +52,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # Scoped to ## Hand off: STOP <slug> appears legitimately in the Completion
 # gate above, so a whole-file grep would fail on text this gate does not own.
 total=$((total + 1))
-if printf '%s' "$HANDOFF" | grep -qF -e 'PR <n> found' -e 'PR <n> created' -e 'STOP <slug>'; then
+if grep -qF -e 'PR <n> found' -e 'PR <n> created' -e 'STOP <slug>' <<<"$HANDOFF"; then
   printf 'FAIL literal: Hand off restates the script output contract\n'
   failed=$((failed + 1))
 else
