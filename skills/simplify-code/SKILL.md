@@ -72,14 +72,23 @@ Each proposer returns proposals only — never an edited file — with:
 - **change** — what the code should say instead.
 - **behavior preservation** — why the change cannot alter behavior, and which existing check would catch it if it did. When no existing check can prove it, propose the minimal characterization test that would, per **Scope**.
 
+**For human-facing docs, preservation is a judged claims table, not a check.** A doc proposal returns its before range, its exact after text, and two tables:
+
+- **before and after tables** — one row per fact a reader acts on or relies on, each labelled with the category it belongs to: instruction, default, prerequisite, condition, side effect, warning, opt-in / opt-out, failure behavior. Both tables cover the before range the proposal replaces.
+- **row-set equality is the proof** — order does not matter and a duplicated fact folds into one row. A fact the after text states that the before did not is an addition and out of scope. A fact that leaves the replaced range is preserved only when the after table names where it still stands, as `path:line`; that is how removing a duplicate stays inside row-set equality.
+- **byte-identical tokens** — commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at.
+- **the exact after text**, which the judge returns unchanged when it accepts. Different wording is a reject, or a fresh after table verified again.
+
+Two accepted proposals never land in the same round when they touch the same before range, or when a residual location one names falls inside the other's before range: apply one, and let the next round propose the other against the file as it now stands. Applied text then always matches the table the judge verified.
+
 Report "no proposals" explicitly rather than inventing one.
 
 ## Pass
 
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
-3. Hand `judge-findings` every proposal of the round as an item, the lens in place of severity and no candidates, judged against the resolved **Scope** with **Scope**'s "preserve behavior exactly" as the requirement. Hand it the earlier rounds' record — proposals accepted, proposals rejected with the reason, proposals set aside with the question put to the person — and, as the acceptance criteria, **Scope**, **Lenses**, and **Don't over-simplify**. A proposal it returns as `needs-user` is not applied: it is set aside, its question joins that record, and it is not actionable for step 5, so a round left with only set-aside proposals ends the pass clean.
-4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
+3. Hand `judge-findings` every proposal of the round as an item, the lens in place of severity and no candidates, judged against the resolved **Scope** — with **Scope**'s "preserve code behavior exactly" as the requirement for code, and, for a human-facing doc, the judged claims table that proves its facts. For a doc proposal, hand it the before range, both claims tables, and the exact after text as well. Hand it the earlier rounds' record — proposals accepted, proposals rejected with the reason, proposals set aside with the question put to the person — and, as the acceptance criteria, **Scope**, **Lenses**, and **Don't over-simplify**. A proposal it returns as `needs-user` is not applied: it is set aside, its question joins that record, and it is not actionable for step 5, so a round left with only set-aside proposals ends the pass clean.
+4. Apply the accepted proposals yourself, then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. For a doc proposal no project check covers the prose, so the proof is the judged table's agreement with the text you applied. Code proposals keep the check or the characterization test, and a claims table never stands in for either. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
 
@@ -90,7 +99,7 @@ This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is 
 ## Report
 
 - the fan-out used
-- what changed, and what behavior was preserved
+- what changed, and what behavior was preserved — or, for a human-facing doc, the judged claims table that proved its facts survived, naming that the applied text is the text the judge accepted
 - proposals rejected, with the reason
-- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over
+- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over, and for a doc change where no project check covers the prose, say the judged table is the proof rather than claiming a check
 - any simplification left undone, including anything reported instead of changed, and each proposal set aside as `needs-user` with its question
