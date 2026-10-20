@@ -10,7 +10,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 ## Orchestration model
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
-- Hand each worker its axis as the pair it was selected as — the invariant attacked and how it is expected to break — never as a field's name alone. Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
+- Hand each worker its axis as the pair written for it — the invariant attacked and how it is expected to break — never as a field's name alone. Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
 - **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
@@ -31,7 +31,7 @@ Keep it as your own list, separate from the axes: it is what the report's **Inva
 
 ### Step 2: Select axes
 
-- Select 3–5 axes by whether they attack a high-value invariant from Step 1, not by spreading across fields; sweep what the caller named, if any; otherwise sweep the selection. Write each axis as the pair it is — the invariant it attacks, and how it is expected to break. Record axes considered but not swept under Not measured.
+- Select 3–5 axes by whether they attack a high-value invariant from Step 1, not by spreading across fields; sweep what the caller named, if any; otherwise sweep the selection. Write every axis (a caller-named one included) as the pair it is — the invariant it attacks, and how it is expected to break. The invariant is a promise the artifact makes about its output, state, or time, not a rule the codebase happens to follow. Record axes considered but not swept under Not measured.
 - An axis nothing can measure is not an axis. It is a question to hand back to a person.
 
 ### Step 3: Fix the measurement base
@@ -43,9 +43,10 @@ Keep it as your own list, separate from the axes: it is what the report's **Inva
 
 - Sweep each selected axis against the tree from Step 3. Separate evidence that establishes a finding from evidence that only suggests one.
 - Assume every contract external to the scanned tree is honored, and keep only the findings that hold under that assumption. A suspected contract violation — a field that may be named differently, a response shape that may change — is not a finding: it goes to Not measured as one line, and neither findings nor invariants carry a label for which layer declared them. What breaks while the contract holds is a finding: a non-zero exit swallowed as success, a write left half done at failure, state created and never removed, a wait that never ends. So is what a boundary can judge without a spec: how failure is handled, whether the artifact validates input against the shape it itself expects, whether one assumption contradicts itself in two places, whether a retry is idempotent.
-- An axis whose invariant is behaviour — output, state, or time — gets one probe of the expected break actually run. Running is not editing: the probe changes neither the artifact nor external state, through an unmodified throwaway copy or a read-only route. An axis whose invariant only mutation could settle, or whose artifact cannot be run, goes to Not measured with the reason. Invariants that only reading can settle — documentation, or the presence of a declared field — are not probed: one search would count as a probe and leave only the impression of having checked.
-- The evidence is what was observed — the output, the ending exit state, the state left behind, the time taken, the line quoted. A path from trigger to wrong result is the shape of the claim, not evidence for it.
-- A probe that found nothing still leaves one line under its axis's findings, `no finding`, with what it observed. A behaviour axis with no trace of a run is an axis not swept.
+- An axis whose invariant is behaviour — output, state, or time — gets one probe of the expected break actually run. Running is not editing: the probe changes neither the artifact nor external state, through an unmodified throwaway copy or a read-only route. When the artifact cannot be run, or only mutation could settle the invariant, what the artifact does goes to Not measured with the reason. Invariants that only reading can settle — documentation, or the presence of a declared field — are not probed: one search would count as a probe and leave only the impression of having checked.
+- The evidence is what was observed — the output, the ending exit state, the state left behind, the time taken — and, for a claim a boundary can judge without a spec, the line quoted. A path from trigger to wrong result is the shape of the claim, not evidence for it.
+- A probe that found nothing still leaves one line under its axis's findings, `no finding`, with what it observed. A behaviour axis with no trace of a run is not swept as to what the artifact does; what a boundary can judge without a spec still stands as a finding on the line quoted.
+- A finding that attacks another axis's invariant is reported under that axis; a finding that attacks an invariant no axis attacked goes to Not measured, with the invariant named there.
 
 ## Synthesize
 
@@ -58,12 +59,12 @@ Once the report below is drafted, run `review-findings` on it for one pass, rest
 
 ### Report format
 
-  1. **Verdict** — what to fix, in priority order, in one paragraph.
+  1. **Verdict** — what to fix, in priority order, in one paragraph; a candidate that rests on an assumed contract is named here as conditional.
   2. **Measurement base** — the revision, tree, or path measured, and the sweep behind each claim of absence.
-  3. **Invariants attacked** — per axis, the pair written at Step 2. An invariant left untouched belongs to Not measured instead.
+  3. **Invariants attacked** — per axis, the pair handed to the worker. An invariant left untouched belongs to Not measured instead.
   4. **Findings** — per axis, the verdict and the observation that decided it, plus, for each finding, the `path:line` where it breaks.
   5. **Next items** — concrete next actions in order. Not work to start here.
-  6. **Not measured** — a first line `Assumed: <what was treated as holding as a contract external to the scanned tree>`, or `Assumed: none` when no candidate rested on such a contract; then the invariants, axes, and claims left unaudited, and what would settle each.
+  6. **Not measured** — a first line `Assumed: <what was treated as holding as a contract external to the scanned tree>`, or `Assumed: none — no candidate rested on an external contract`; then the invariants, axes, and claims left unaudited, and what would settle each.
 
 **Verdict** and **Next items** arrive shaped for `plan-work`'s question-shaped input — never work this one starts. A scan has no reproduction to carry forward.
 
