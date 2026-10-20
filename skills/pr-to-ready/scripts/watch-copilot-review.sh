@@ -37,7 +37,9 @@
 #
 # Usage: watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file> \
 #          [max-iterations] [interval-seconds]
-#        defaults: max-iterations 40, interval-seconds 30 (= 20 minutes)
+#        defaults: max-iterations 40, interval-seconds 30 (= 19m30s: the 39 gaps
+#        between the 40 polls at 30 s each — tools/poll.sh puts no sleep after
+#        the last poll)
 #
 # Exit: 0 = a review not in the baseline arrived — its listing printed
 #       1 = none arrived before the iteration cap ran out
