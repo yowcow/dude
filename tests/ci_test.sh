@@ -99,7 +99,9 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
   failed=1
 fi
 bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,$p' <<<"$bash32_job")"
-if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite"; then
+if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
+  || ! grep -Eq '!=[[:space:]]*"?3\.2' <<<"$bash32_suite" \
+  || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite"; then
   printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
   failed=1
 fi
