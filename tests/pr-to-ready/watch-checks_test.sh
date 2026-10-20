@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/watch-checks.sh: each row is a
 # sequence of `gh` responses plus an argv, against the exit status, the number
-# of `gh` calls, and the exact bytes on stdout.
+# of `gh` calls, the exact bytes on stdout, and the sleeps it performed.
 #
 # The call count is part of the expectation, not decoration: a status here says
 # how far the watch got. A non-numeric cap is a usage error (exit 2) that never
@@ -141,8 +141,9 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
 
   # The bound alone cannot see a guard that never sleeps — zero satisfies every
   # upper bound — so pin the count where it is deterministic. Measured with the
-  # fix: 0, 1 and 5 respectively; `the-default-branch-is-read-once` polls 6
-  # times and sleeps 5.
+  # fix: `one-poll-cannot-settle` sleeps 0, `settled-prints-rows` and
+  # `still-unsettled-at-cap` sleep 1, and `the-default-branch-is-read-once` —
+  # 6 polls — sleeps 5.
   case "$name" in
     one-poll-cannot-settle) want_sleeps=0 ;;
     settled-prints-rows | still-unsettled-at-cap) want_sleeps=1 ;;

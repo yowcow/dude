@@ -14,8 +14,8 @@
 # as its own exit status for the wait it saves, not a wrong answer it stops:
 # once total_count is demanded that 422 body is no listing at all, so without
 # the test the watch polls to its cap and answers exit 4 — measured on the
-# `missing-commit` row — handing the same person the same PR twenty minutes
-# later, with a generic listing-read failure in place of the specific
+# `missing-commit` row — handing the same person the same PR 19m40s later, with
+# a generic listing-read failure in place of the specific
 # missing-commit diagnosis.
 #
 # Whether the checks *pass* is the caller's judgement, never this script's: it
