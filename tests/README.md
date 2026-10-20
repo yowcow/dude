@@ -290,6 +290,12 @@ tree rather than stating as prose:
   reported as one script, one with tests, and exit 0, naming the symlink
   nowhere. The target is never resolved or read — only visibility is at
   stake — so a dangling link is reported rather than fatal.
+- A symlink to a **directory** under any of these positions is an **error** naming
+  the link: `find` lists it but never descends into it, so its contents cannot
+  be enumerated while the rest of the tree reports itself covered. The link
+  target is still never resolved. The one exception is `skills/<skill>/`
+  outside its `scripts/` subtree: a linked `references/` directory holds
+  nothing this gate reads and stays green.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so

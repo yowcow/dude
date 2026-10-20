@@ -69,7 +69,9 @@ trap 'rm -f "$LISTING"' EXIT
 # reached through the same door the shebang note below refuses to leave open, so
 # a symlink under scripts/ needs a test like anything else.
 # The target is never resolved and never read; only visibility is at stake, so a
-# dangling link is reported rather than fatal.
+# dangling link is reported rather than fatal. A link to a directory is visible
+# but not descended into, so its contents cannot be enumerated at all; such a
+# link is refused outright rather than half-read as an empty tree.
 if ! find "$SKILLS_ROOT" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
   printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$SKILLS_ROOT" >&2
   exit 1
@@ -87,10 +89,19 @@ fi
 # skills/<skill>/references/scripts/x.sh, which is not a skill's script
 # directory.
 scripts=()
+hidden_dirs=()
 while IFS= read -r -d '' abs; do
   rel="${abs#"${SKILLS_ROOT}/"}"
   if [ "$rel" = "$abs" ]; then
     continue
+  fi
+  # Only where this listing could have descended: the skill directory itself,
+  # which find never enters, and the scripts/ subtree this gate reads. A linked
+  # references/ directory holds nothing here and stays green.
+  if [ -L "$abs" ] && [ -d "$abs" ]; then
+    case "${rel#*/}" in
+      scripts | scripts/* | "$rel") hidden_dirs+=("skills/${rel}"); continue ;;
+    esac
   fi
   case "${rel#*/}" in
     scripts/*) ;;
@@ -108,6 +119,10 @@ hooks=()
 while IFS= read -r -d '' abs; do
   rel="${abs#"${HOOKS_ROOT}/"}"
   if [ "$rel" = "$abs" ]; then
+    continue
+  fi
+  if [ -L "$abs" ] && [ -d "$abs" ]; then
+    hidden_dirs+=("hooks/${rel}")
     continue
   fi
   if [ "$rel" = "hooks.json" ]; then
@@ -131,6 +146,10 @@ while IFS= read -r -d '' abs; do
   if [ "$rel" = "$abs" ]; then
     continue
   fi
+  if [ -L "$abs" ] && [ -d "$abs" ]; then
+    hidden_dirs+=("tools/${rel}")
+    continue
+  fi
   tools+=("$rel")
 done <"$LISTING"
 
@@ -150,8 +169,23 @@ while IFS= read -r -d '' abs; do
   if [ "$rel" = "$abs" ]; then
     continue
   fi
+  if [ -L "$abs" ] && [ -d "$abs" ]; then
+    hidden_dirs+=("scripts/${rel}")
+    continue
+  fi
   root_scripts+=("$rel")
 done <"$LISTING"
+
+# A link to a directory is listed by find but never descended into, so whatever
+# it holds is invisible while the rest of the tree reports itself covered. The
+# target is not followed (-L would let the walk leave the tree and loop back in);
+# the link is named and refused instead.
+if [ "${#hidden_dirs[@]}" -gt 0 ]; then
+  for key in "${hidden_dirs[@]}"; do
+    printf 'scripts-have-tests: %s is a symlink to a directory — its contents cannot be enumerated\n' "$key" >&2
+  done
+  exit 1
+fi
 
 # An empty enumeration can only mean the selection above broke: this repository
 # has skill scripts, and a gate that reports "nothing to check, all good" is

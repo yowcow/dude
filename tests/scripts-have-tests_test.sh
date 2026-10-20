@@ -524,4 +524,78 @@ if ! check_stderr_has 'no root script found: broken enumeration' 'the enumeratio
 if ! check_stderr_has 'no root script found: names scripts root' "${root}/scripts"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 27: a symlinked scripts/ directory is refused ----------------------
+# find lists the link but never descends, so every script inside it is invisible
+# and the visible half reports itself fully covered — hence the second covered
+# skill, without which the empty enumeration guard would fire instead and this
+# case would pass for the wrong reason. Refused rather than followed: -L would
+# let the enumeration leave the tree and loop back into it.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_script "$root" beta 'b.sh'
+mk_test "$root" beta 'b_test.sh'
+mv "${root}/skills/alpha/scripts" "${root}/skills/alpha/real"
+ln -s real "${root}/skills/alpha/scripts"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked scripts dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked scripts dir: names it' \
+  'skills/alpha/scripts is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 28: a symlinked hooks/ subdirectory is refused ---------------------
+# The same predicate in the hooks loop: the hole is not skills-only. Before the
+# fix this tree was already red, but as `no test for hooks/lib` — the directory
+# itself charged with being an untested script. The assertion is on the message,
+# so the cause is what this case pins.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mkdir -p "${root}/hooked"
+printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/hooked/h.sh"
+ln -s ../hooked "${root}/hooks/lib"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked hooks dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked hooks dir: names it' \
+  'hooks/lib is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 29: a symlinked directory outside scripts/ is not refused ---------
+# The skills loop enumerates only skills/<skill>/scripts/**, so a link to a
+# references/ directory holds nothing this gate reads; refusing it would fail a
+# tree the gate has no business reading.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mkdir -p "${root}/elsewhere"
+printf 'prose\n' >"${root}/elsewhere/base.md"
+ln -s ../../elsewhere "${root}/skills/alpha/references"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked references dir: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 30: a symlinked skills/<skill> directory is refused ----------------
+# find lists the skill directory and never descends, so its scripts/ is
+# invisible while the visible skills report full coverage — the same hole as
+# case 27 one level up.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mkdir -p "${root}/elsewhere/beta/scripts"
+printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/elsewhere/beta/scripts/hidden.sh"
+ln -s ../elsewhere/beta "${root}/skills/beta"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked skill dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked skill dir: names it' \
+  'skills/beta is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
