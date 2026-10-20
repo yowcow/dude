@@ -20,9 +20,10 @@ installs the plugin. `tests/` at the repository root ships to none of them.
 - `tests/lib/bin-nosleep/sleep` — the instant `sleep`, put on `PATH` only by
   an explicit `stub_sleep_instant` call.
 - `tests/scripts-have-tests.sh` — the coverage gate: every script under
-  `skills/*/scripts/`, every file under `tools/`, and every file under `hooks/`
-  except `hooks.json` must have a test file. Not named `*_test.sh`, so `run.sh`
-  does not collect it directly; `scripts-have-tests_test.sh` is what runs it.
+  `skills/*/scripts/`, every file under `tools/`, every file under `hooks/`
+  except `hooks.json`, and every file under the repository-root `scripts/` must
+  have a test file. Not named `*_test.sh`, so `run.sh` does not collect it
+  directly; `scripts-have-tests_test.sh` is what runs it.
 - `tests/lib/harness_test.sh` — a self-test of the harness mechanism itself
   (no script under test).
 - `<name>_test.sh` anywhere under `tests/` — the actual test cases.
@@ -245,7 +246,9 @@ name from the prune raises the count, which is what makes the check meaningful;
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 `tests/<skill>/<name>_test.sh`. Every file under `tools/` must have a
-non-empty test file at `tests/tools/<name>_test.sh`. Every file under `hooks/`
+non-empty test file at `tests/tools/<name>_test.sh`. Every file under the
+repository-root `scripts/` must have a non-empty test file at
+`tests/<name>_test.sh`. Every file under `hooks/`
 except `hooks.json` must have a non-empty test file at
 `tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
 subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s native-write rule (rule 1): a write the agent makes natively has no script to count.
@@ -260,8 +263,9 @@ Its rules, each of which `scripts-have-tests_test.sh` asserts against a syntheti
 tree rather than stating as prose:
 
 - An empty enumeration is an **error**, independently for `skills/*/scripts/`,
-  `tools/`, and `hooks/`. A broken tools selector and fully covered skills and
-  hooks trees are otherwise the same green.
+  `tools/`, `hooks/`, and the repository-root `scripts/`. A broken tools
+  selector and fully covered skills and hooks trees are otherwise the same
+  green.
 - An empty test file is **not** coverage. `run.sh` collects it and
   `bash <empty>` exits 0, so it is a passing test with no detection power. A
   non-empty file that reaches `harness_exit` with a tally of zero now exits 1,

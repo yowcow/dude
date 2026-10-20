@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The coverage gate: every script under skills/*/scripts/, every file under
-# tools/, and every file under hooks/ except hooks.json must have a test file
-# under tests/.
+# tools/, every file under hooks/ except hooks.json, and every file under the
+# top-level scripts/ must have a test file under tests/.
 # Usage: scripts-have-tests.sh [<repo-root>]
 #
 # Why this exists: without it a script can land under skills/*/scripts/,
@@ -41,6 +41,7 @@ fi
 SKILLS_ROOT="${ROOT}/skills"
 TOOLS_ROOT="${ROOT}/tools"
 HOOKS_ROOT="${ROOT}/hooks"
+ROOT_SCRIPTS="${ROOT}/scripts"
 
 # The listing is a plain foreground pipeline into a temp file, not a process
 # substitution feeding the loop. In `done < <(find ...)` the producer's exit
@@ -133,6 +134,25 @@ while IFS= read -r -d '' abs; do
   tools+=("$rel")
 done <"$LISTING"
 
+# The top-level scripts/ holds repository mechanism that is not a skill's, not a
+# shared tool and not a hook — bump.sh is the one there today. It was the last
+# position the position rule skipped: an untested file here was reported as
+# nothing at all. Every file under it is enumerated, subdirectories mirrored into
+# tests/, by the same position rule as tools/.
+if ! find "$ROOT_SCRIPTS" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
+  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$ROOT_SCRIPTS" >&2
+  exit 1
+fi
+
+root_scripts=()
+while IFS= read -r -d '' abs; do
+  rel="${abs#"${ROOT_SCRIPTS}/"}"
+  if [ "$rel" = "$abs" ]; then
+    continue
+  fi
+  root_scripts+=("$rel")
+done <"$LISTING"
+
 # An empty enumeration can only mean the selection above broke: this repository
 # has skill scripts, and a gate that reports "nothing to check, all good" is
 # indistinguishable from a fully covered tree. That is the "absent" versus
@@ -150,6 +170,11 @@ fi
 
 if [ "${#tools[@]}" -eq 0 ]; then
   printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$TOOLS_ROOT" >&2
+  exit 1
+fi
+
+if [ "${#root_scripts[@]}" -eq 0 ]; then
+  printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$ROOT_SCRIPTS" >&2
   exit 1
 fi
 
@@ -198,10 +223,22 @@ for rel in "${tools[@]}"; do
   fi
 done
 
+for rel in "${root_scripts[@]}"; do
+  key="scripts/${rel}"
+  want="tests/${rel%.sh}_test.sh"
+  abs_test="${ROOT}/${want}"
+  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
+    with_tests=$((with_tests + 1))
+  else
+    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
+    problems=$((problems + 1))
+  fi
+done
+
 if [ "$problems" -ne 0 ]; then
   printf 'scripts-have-tests: %s problem(s)\n' "$problems" >&2
   exit 1
 fi
 
 printf 'scripts-have-tests: %s script(s), %s with tests\n' \
-  "$((${#scripts[@]} + ${#hooks[@]} + ${#tools[@]}))" "$with_tests"
+  "$((${#scripts[@]} + ${#hooks[@]} + ${#tools[@]} + ${#root_scripts[@]}))" "$with_tests"

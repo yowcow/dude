@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Tests tests/scripts-have-tests.sh — the coverage gate that fails the suite
-# when a script lands under skills/*/scripts/, tools/, or hooks/ with no test file.
+# when a script lands under skills/*/scripts/, tools/, hooks/, or scripts/ with
+# no test file.
 #
 # Cases 0 and 1 run the gate against the *real* repository tree. They are the
 # gate: they are what turns red when an untested script lands, and they are how
@@ -9,7 +10,7 @@
 #
 # Every other case drives the gate against a synthetic miniature repository under
 # $HARNESS_TMP: <root>/skills/<skill>/scripts/..., <root>/tools/...,
-# <root>/hooks/..., and <root>/tests/... built to order. A synthetic tree rather than the real one
+# <root>/hooks/..., <root>/scripts/..., and <root>/tests/... built to order. A synthetic tree rather than the real one
 # because the conditions under test — an empty enumeration, an unreadable
 # subdirectory, an empty test file — cannot be produced in the real tree without
 # either committing them or leaving the checkout dirty.
@@ -77,11 +78,24 @@ mk_tool_test() {
   printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/tools/$2"
 }
 
+# mk_root_script <root> <name>  — <name> is relative to scripts/, may contain slashes
+mk_root_script() {
+  mkdir -p "$1/scripts/$(dirname -- "$2")"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/scripts/$2"
+}
+
+# mk_root_test <root> <name>  — <name> is the test file's own basename under tests/
+mk_root_test() {
+  mkdir -p "$1/tests/$(dirname -- "$2")"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/$2"
+}
+
 # Each returns a fresh synthetic repo root. The shape mirrors the real one
-# because the gate derives skills, tools, hooks, and tests from the root it is handed.
-# A covered hook and a covered tool are planted here so existing cases do not
-# fail the independent empty-hooks and empty-tools guards once the gate lists
-# those roots.
+# because the gate derives skills, tools, hooks, scripts, and tests from the root it is handed.
+# A covered hook, a covered tool and a covered root script are planted here so
+# existing cases do not fail the independent empty-hooks, empty-tools and
+# empty-root-scripts guards once the gate lists those roots — the root-scripts
+# empty guard also runs in every synthetic case.
 tree_new() {
   local root
   root="$(mktemp -d "${HARNESS_TMP}/tree.XXXXXX")"
@@ -90,6 +104,8 @@ tree_new() {
   mk_hook_test "$root" session-start_test.sh
   mk_tool "$root" helper.sh
   mk_tool_test "$root" helper_test.sh
+  mk_root_script "$root" planted.sh
+  mk_root_test "$root" planted_test.sh
   printf '%s\n' "$root"
 }
 
@@ -136,8 +152,8 @@ fi
 
 # --- case 2: a covered script is a green --------------------------------------
 # The baseline the other synthetic cases are read against: one skill script
-# with a non-empty test file, plus the planted hook and tool, exit 0, and the
-# counts on stdout byte-for-byte.
+# with a non-empty test file, plus the planted hook, tool and root script, exit
+# 0, and the counts on stdout byte-for-byte.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
@@ -146,7 +162,7 @@ mk_test "$root" alpha 'a_test.sh'
 run_sut bash "$SUT" "$root"
 if ! check_eq 'covered: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'covered: stdout' \
-  'scripts-have-tests: 3 script(s), 3 with tests\n'; then fails_here=1; fi
+  'scripts-have-tests: 4 script(s), 4 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 3: an uncovered script is named -------------------------------------
@@ -236,8 +252,8 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # skills/<skill>/references/*.md and SKILL.md are not scripts, and demanding
 # a test for them would make the gate unusable. The references/scripts/ file is
 # the sharp half: a `*/scripts/*` glob would match it, and the second path
-# segment is what rules it out. Count 3 = one skill + planted session-start +
-# planted tool.
+# segment is what rules it out. Count 4 = one skill + planted session-start +
+# planted tool + planted root script.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
@@ -250,7 +266,7 @@ printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/skills/alpha/references/scripts
 run_sut bash "$SUT" "$root"
 if ! check_eq 'non-script files: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'non-script files: stdout' \
-  'scripts-have-tests: 3 script(s), 3 with tests\n'; then fails_here=1; fi
+  'scripts-have-tests: 4 script(s), 4 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 10: a symlinked script is enumerated, not silently exempt ---------
@@ -323,8 +339,8 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # --- case 14: hooks.json is not enumerated ----------------------------------
 # JSON manifest, already under `make manifest`. If it were listed, the
 # expected test would be tests/hooks/hooks.json_test.sh (${rel%.sh} does not
-# strip .json) and this row would go red. Count 3 = one skill + planted
-# session-start + planted tool; json must not bump it to 4.
+# strip .json) and this row would go red. Count 4 = one skill + planted
+# session-start + planted tool + planted root script; json must not bump it to 5.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
@@ -334,7 +350,7 @@ printf '{}\n' >"${root}/hooks/hooks.json"
 run_sut bash "$SUT" "$root"
 if ! check_eq 'hooks.json ignored: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'hooks.json ignored: stdout' \
-  'scripts-have-tests: 3 script(s), 3 with tests\n'; then fails_here=1; fi
+  'scripts-have-tests: 4 script(s), 4 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 15: a nested hook gets a nested expected test path ----------------
@@ -461,6 +477,35 @@ mkdir -p "${root}/tests/tools"
 run_sut bash "$SUT" "$root"
 if ! check_eq 'empty tool test file: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'empty tool test file: names the script' 'no test for tools/extra.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 24: a top-level scripts/ file needs a test -------------------------
+# The gate enumerated skills/*/scripts/, tools/ and hooks/ but not scripts/,
+# where bump.sh lives: an untested file there was reported as nothing at all.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_root_script "$root" 'untested.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'root script: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'root script: names the script' 'no test for scripts/untested.sh'; then fails_here=1; fi
+if ! check_stderr_has 'root script: names the expected test path' 'tests/untested_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 25: a missing top-level scripts/ is a listing failure --------------
+# Same rule as the other three roots: "could not ask" is not "nothing to cover".
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+rm -rf "${root}/scripts"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'no scripts dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'no scripts dir: listing failed' 'the tree was not fully read'; then fails_here=1; fi
+if ! check_stderr_has 'no scripts dir: names the root' "${root}/scripts"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
