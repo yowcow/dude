@@ -75,9 +75,6 @@ if ! [[ "$PR" =~ ^[0-9]+$ ]]; then
   exit 2
 fi
 
-# The block starts at the line carrying `Suppressed comments (N)` — a `###`
-# heading in one Copilot shape, a `<summary>` in another — and runs to the next
-# `</details>`.
 fetch_review() {
   gh pr view --repo "$OWNER/$REPO" --json reviews \
     --jq '.reviews
@@ -87,6 +84,9 @@ fetch_review() {
         | "\(.id)\n\(.body // "")"' -- "$PR"
 }
 
+# The block starts at the line carrying `Suppressed comments (N)` — a `###`
+# heading in one Copilot shape, a `<summary>` in another — and runs to the next
+# `</details>`.
 block_of() {
   awk '/Suppressed comments \([0-9]+\)/ { in_block = 1 }
        in_block && /^<\/details>/ { in_block = 0 }

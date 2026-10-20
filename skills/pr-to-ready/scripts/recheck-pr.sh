@@ -81,16 +81,14 @@ stage() {
 # covered <review-id> <entry> [<review-id> <entry> ...] -- the verdict record
 # holds this exact pair.
 covered() {
-  local review="$1" entry="$2" found=0
+  local review="$1" entry="$2"
   shift 2
   while [ "$#" -ge 2 ]; do
     if [ "$1" = "$review" ] && [ "$2" = "$entry" ]; then
-      found=1
-      break
+      return 0
     fi
     shift 2
   done
-  if [ "$found" -eq 1 ]; then return 0; fi
   return 1
 }
 
@@ -100,11 +98,8 @@ covered() {
 suppressed_met() {
   local listing="$1" review entry
   shift
-  if [ "$#" -eq 0 ]; then
-    if [ -z "$listing" ]; then return 0; fi
-    return 1
-  fi
   if [ -z "$listing" ]; then return 0; fi
+  if [ "$#" -eq 0 ]; then return 1; fi
   review="${listing%%$'\n'*}"
   printf '%s\n' "$listing" | tail -n +3 | {
     while IFS= read -r entry; do
