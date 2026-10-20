@@ -229,6 +229,9 @@ row_start
 BAD="$(printf 'reviews.total=0\n' | facts_file)"
 run_sut bash "$SUT" wait "$BAD" 3 5 TIMEOUT
 assert_row 'wait: a file it did not write' 0 'STOP wait-state-invalid\n' 0
+# The trap must never own a file the caller named: a STOP here still leaves it.
+tally check_eq 'wait: a caller-owned file survives the STOP' yes \
+  "$([ -e "$BAD" ] && echo yes || echo no)"
 
 row_start
 run_sut bash "$SUT" wait '' 1 5 TIMEOUT
