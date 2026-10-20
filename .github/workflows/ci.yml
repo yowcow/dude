@@ -45,7 +45,7 @@ jobs:
         run: make test
 
   # bash 3.2 is the floor the scripts under skills/<skill>/scripts/ and the
-  # hooks must run on (AGENTS.md; hooks/session-start), and the image ships
+  # hooks must run on (AGENTS.md; #646), and the image ships
   # 5.x: a 3.2-only regression is green in the jobs above and broken wherever
   # a macOS user's /bin/bash runs it. The version is asserted in the step that
   # runs the suite because a PATH that slipped would measure bash 5 and report

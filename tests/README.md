@@ -33,7 +33,8 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   `bash` process so one file's failure can't infect another, and reports how
   many files failed. CI runs the whole suite on bash 3.2 (`test-bash32`), test
   files and `lib/` helpers included, so a helper that reaches for a bash 4
-  feature (`mapfile`, `declare -A`) fails in a job named after the version.
+  feature (`mapfile`, `declare -A`) fails in a job named after the version
+  when the suite executes it.
   Discovery uses `find`, not bash 4's `globstar`: a degraded `**` would
   silently match only one nesting depth.
 - `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
