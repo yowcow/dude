@@ -130,7 +130,7 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   if ! check_no_violations "${name}: argv"; then fails_here=1; fi
   # The last poll is followed by nothing, so the loop can sleep at most
   # MAX_ITER - 1 times. A sleep after it is a wait no result will ever be read
-  # from, and it is what made the header's 20-minute claim true.
+  # from, and it is what made the old header's 20-minute claim true.
   slept="$(sleep_call_count)"
   if [ -n "$max_iter" ] && [ "$max_iter" -gt 0 ] &&
     [ "$slept" -gt $((max_iter - 1)) ]; then

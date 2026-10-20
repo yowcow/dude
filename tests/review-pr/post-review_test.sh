@@ -8,9 +8,9 @@
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show a7f4396:skills/review-pr/scripts/post-review.sh`) 25 of 35 rows
-# fail, the guard and read-back rows, each on the old six-argument arity
-# answering usage 2. The ten usage rows pass, 'request changes' and 'no choice'
-# among them, since the old arity answers usage 2 for each.
+# fail, the guard, read-back and missing-jq rows, each on the old six-argument
+# arity answering usage 2. The ten usage rows pass, 'request changes' and
+# 'no choice' among them, since the old arity answers usage 2 for each.
 # Mutants measured in a copy under `mktemp -d` (siblings beside it): dropping
 # `review.commit=` from the check fails 'review pinned to another commit',
 # 'commit unreadable' and 'no facts: NEED pins';
