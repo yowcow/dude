@@ -114,6 +114,13 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   stub_column "$DEFAULT_CHECKS_ENDPOINT" "$default_checks"
 
   read -ra argv <<<"$args"
+  # The row's own iteration cap, when it has one: the sleep bound below is the
+  # row's, not a constant that could drift away from the table.
+  max_iter=''
+  if [ "${#argv[@]}" -ge 4 ] && [[ "${argv[3]}" =~ ^[0-9]+$ ]]; then
+    max_iter="${argv[3]}"
+  fi
+
   run_sut bash "$SUT" "${argv[@]}"
 
   fails_here=0
@@ -121,6 +128,30 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails_here=1; fi
   if ! check_bytes "${name}: stdout" "$want_out"; then fails_here=1; fi
   if ! check_no_violations "${name}: argv"; then fails_here=1; fi
+  # The last poll is followed by nothing, so the loop can sleep at most
+  # MAX_ITER - 1 times. A sleep after it is a wait no result will ever be read
+  # from, and it is what made the header's 20-minute claim true.
+  if [ -n "$max_iter" ]; then
+    slept="$(sleep_call_count)"
+    if [ "$slept" -gt $((max_iter - 1)) ]; then
+      printf 'FAIL %s: sleeps: want at most %s, got %s\n' "$name" $((max_iter - 1)) "$slept"
+      fails_here=1
+    fi
+  fi
+
+  # The bound alone cannot see a guard that never sleeps — zero satisfies every
+  # upper bound — so pin the count where it is deterministic. Measured with the
+  # fix: 0, 1 and 5 respectively; `the-default-branch-is-read-once` polls 6
+  # times and sleeps 5.
+  case "$name" in
+    one-poll-cannot-settle) want_sleeps=0 ;;
+    settled-prints-rows | still-unsettled-at-cap) want_sleeps=1 ;;
+    the-default-branch-is-read-once) want_sleeps=5 ;;
+    *) want_sleeps='' ;;
+  esac
+  if [ -n "$want_sleeps" ]; then
+    if ! check_eq "${name}: sleeps" "$want_sleeps" "$(sleep_call_count)"; then fails_here=1; fi
+  fi
   if [ "$fails_here" -ne 0 ]; then
     failed=$((failed + 1))
     printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
