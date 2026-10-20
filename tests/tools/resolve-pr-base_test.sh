@@ -23,7 +23,7 @@
 # `trailer-read-fails` row.
 #
 # The prerequisite's PR comes as facts (prereq_facts below) and, in every row
-# but the three stubbed ones at the end, the default branch from the remote's
+# but the four stubbed ones at the end, the default branch from the remote's
 # own HEAD (resolve-default-branch.sh); every row asserts 0 gh calls.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
@@ -37,7 +37,7 @@
 #   (`cp -R tools "$tmp/tools"`, then `SUT="$tmp/tools/<copy>.sh"`): on every
 #   row that reaches a real sibling it resolves that sibling through dirname
 #   "$0", so a lone copy answers STOP ask-default-branch (or fails outright)
-#   there and the failures say nothing about the mutation. The three stubbed
+#   there and the failures say nothing about the mutation. The four stubbed
 #   rows at the end are the exception -- they copy the SUT into a tools/ tree
 #   that already holds every sibling, so a lone copy is enough for those. The
 #   bb8d8b8^ version above predates the extractions and needs no sibling.
@@ -324,10 +324,19 @@ row_start
 reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
 assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-kind: stderr' \
+  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'echo "PREREQ feature 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
 assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-state: stderr' \
+  'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'true'
+run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
+assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"

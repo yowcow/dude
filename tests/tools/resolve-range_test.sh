@@ -9,7 +9,7 @@
 # resolve-pr-base_test.sh documents for the same reason. Each row that reaches
 # the no-PR path with the real reader therefore builds a real bare repository
 # to play the remote and a real work repository cloned from it, both under
-# $HARNESS_TMP and both offline. The three rows at the end stub the reader, the
+# $HARNESS_TMP and both offline. The four rows at the end stub the reader, the
 # default-branch lookup and the fetch in a copy of tools/, and build no
 # repository.
 #
@@ -20,7 +20,7 @@
 # below), so its trailer rows make no `gh pr list` call; the rows without a
 # trailer pass no facts, which is what shows that path asks for nothing. Its
 # default branch is the remote's own HEAD (resolve-default-branch.sh) in every
-# row but the three stubbed ones at the end; no row stubs `gh`.
+# row but the four stubbed ones at the end; no row stubs `gh`.
 #
 # RED verification (see tests/README.md). resolve-range.sh has never been
 # tested before this file, so there is no pre-fix commit to point SUT= at the
@@ -37,7 +37,7 @@
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
 # every file the mutant's row needs in place -- in those rows a lone copy of
 # this script answers `STOP ask-default-branch` (or fails outright) instead,
-# which pins nothing about the mutation. The three stubbed rows at the end are
+# which pins nothing about the mutation. The four stubbed rows at the end are
 # the exception: they copy the SUT into a tools/ tree that already holds every
 # sibling, so a lone copy is enough for those. Eight were removed; the one that
 # is only partly observable is recorded as such below, rather than counted as
@@ -558,10 +558,19 @@ row_start
 reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-kind: stderr' \
+  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'echo "PREREQ task 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-state: stderr' \
+  'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'true'
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"
