@@ -24,8 +24,8 @@
 #
 # RED verification (see tests/README.md). The reader guard this file's last
 # rows pin is RED the ordinary way -- the recipe and the measured count are in
-# the record below. The other guards named in the script's own header were
-# removed instead, one at a time, in a copy under `mktemp -d` --
+# the reader-boundary record below. The other guards named in the script's own
+# header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
 # 4 alone mutates this script by itself and stays single-file: it mutates
