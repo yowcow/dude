@@ -148,4 +148,40 @@ rm -rf "$dir_sut"
 mkdir -p "$dir_sut"
 assert_refused 'directory SUT' "$dir_sut"
 
+# --- case 6: a symlinked test file is collected and run ----------------------
+# The gate accepts a symlinked test file as coverage (-f follows the link), so a
+# runner that skips it leaves a covered-but-never-run file. The runner under
+# test is copied into a synthetic root because discovery walks its own
+# directory, which is also what makes the pre-fix copy reproduce the hole.
+# `env -u SUT` because a RED run exports SUT for the file under test, and the
+# copy would then refuse two selected files for a reason unrelated to discovery.
+total=$((total + 1))
+fails_here=0
+disc="${HARNESS_TMP}/discovery"
+mkdir -p "$disc"
+cp "$SUT" "$disc/run.sh"
+printf '#!/usr/bin/env bash\nprintf "linked ran\\n"\n' >"$disc/linked-target.sh"
+ln -s "$disc/linked-target.sh" "$disc/linked_test.sh"
+printf '#!/usr/bin/env bash\nprintf "plain ran\\n"\n' >"$disc/plain_test.sh"
+run_sut env -u SUT bash "$disc/run.sh"
+if ! check_eq 'symlinked test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'symlinked test file: both files ran, in find order' \
+  'linked ran\nplain ran\nall 2 test files passed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 7: a dangling test-file symlink fails the run ---------------------
+# Collected rather than skipped, it reaches `bash` and exits 127 — loud. The
+# alternative, dropping it, is the same green the case above forbids.
+total=$((total + 1))
+fails_here=0
+dangle="${HARNESS_TMP}/dangling"
+mkdir -p "$dangle"
+cp "$SUT" "$dangle/run.sh"
+ln -s "${dangle}/nowhere.sh" "$dangle/dangling_test.sh"
+run_sut env -u SUT bash "$dangle/run.sh"
+if ! check_eq 'dangling test symlink: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'dangling test symlink: counted as a failed file' \
+  '1 of 1 test files failed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

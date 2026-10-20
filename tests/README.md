@@ -34,7 +34,10 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   `bash` process so one file's failure can't infect another, and reports how
   many files failed. Discovery uses `find`, not bash 4's `globstar`, because the
   scripts under test are kept running on bash 3.2 and a degraded `**` would
-  silently match only one nesting depth.
+  silently match only one nesting depth. It collects a `*_test.sh` whether it is
+  a regular file or a symlink — the coverage gate counts a symlink, since its
+  `-f` follows the link — and a dangling link is run and fails the run rather
+  than being silently skipped.
 - `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
 
 ## Writing a table-test case

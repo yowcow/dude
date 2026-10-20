@@ -28,10 +28,17 @@ else
   # `pipefail` (set above) is what makes the single `if !` sufficient — it
   # catches a failure in either stage, so neither `find` nor `sort` can fail
   # unnoticed.
+  #
+  # `-type l` is there because the coverage gate counts a symlinked test file:
+  # it asks `-f`, which follows the link. Discovery with only `-type f`
+  # classified the link instead, leaving such a file covered but never run — a
+  # suite that reports itself passed. A dangling link is collected by the same
+  # expression and then run, where `bash` exits 127; it must fail the run
+  # loudly rather than be counted by the gate and skipped here.
   LISTING="$(mktemp)"
   trap 'rm -f "$LISTING"' EXIT
 
-  if ! find "$ROOT" -type f -name '*_test.sh' -print0 | sort -z >"$LISTING"; then
+  if ! find "$ROOT" \( -type f -o -type l \) -name '*_test.sh' -print0 | sort -z >"$LISTING"; then
     echo "run.sh: listing ${ROOT} failed — the tree was not fully read" >&2
     exit 1
   fi
