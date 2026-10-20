@@ -62,8 +62,8 @@ trap 'rm -f "$LISTING"' EXIT
 #                      Matched by path, not by name: `worktrees` alone would
 #                      also prune a directory that happened to be called that,
 #                      and over-pruning is the one direction this must not fail
-#                      in. Note that .claude is *not* gitignored, so nothing
-#                      else keeps this content out of the walk.
+#                      in. `.claude` is gitignored by `/.claude/`, which means
+#                      nothing to a `find` walk.
 #   .opencode/node_modules
 #                      the OpenCode plugin SDK's npm tree (gitignored by
 #                      .opencode/.gitignore, which means nothing to a `find`

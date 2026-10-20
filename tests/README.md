@@ -245,7 +245,8 @@ printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.opencode/node_modules/dep/
 The selected count must match a run from the working tree, and no path under
 any of the four pruned directories may appear in the listing. Dropping any one
 name from the prune raises the count, which is what makes the check meaningful;
-`.claude` in particular is not gitignored, so nothing else keeps it out.
+`.claude` in particular is gitignored by `/.claude/`, but a `find` walk never
+reads `.gitignore`, so nothing else keeps it out.
 
 `tests/lint_test.sh` builds that probe for you.
 
