@@ -333,11 +333,8 @@ for i in $(seq 1 "$MAX_ITER"); do
   fi
 
   # No sleep after the final poll — the header's maximum counts the gaps only.
-  # The counter is named, not `_`: `$_` is bash's "last argument of the previous
-  # command", and every command in this body overwrites it, so `[ "$_" -lt … ]`
-  # would compare an empty string — always false, with `[: : integer expression
-  # expected` on stderr, and the watch would poll 60 times without pausing.
-  # tools/poll.sh spells the same loop with a named counter.
+  # The counter is named because `$_` is bash's "last argument of the previous
+  # command", so `[ "$_" -lt "$MAX_ITER" ]` would be false and skip every sleep.
   if [ "$i" -lt "$MAX_ITER" ]; then
     sleep "$INTERVAL"
   fi

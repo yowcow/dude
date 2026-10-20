@@ -175,7 +175,6 @@ wait_round() {
   round=$((round + 1))
   if [ "$round" -ge "$limit" ]; then
     rm -f -- "$state"
-    STATE_OWNED=''
     echo "$final"
     return
   fi

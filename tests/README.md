@@ -216,9 +216,11 @@ calls through `assert_row`, which is what shows the script reached no `gh`.
 ## The lint selection: `lint.sh`
 
 `lint.sh` selects by shebang, not by a `*.sh` glob, so the extensionless PATH
-stub `tests/lib/bin/gh` is checked like anything else. It walks from the
-repository root, and prunes four directories that are not this repository's own
-code: `.git`, `.worktrees`, `.claude/worktrees`, and `.opencode/node_modules`.
+stub `tests/lib/bin/gh` is checked like anything else.
+
+It walks from the repository root, and prunes four directories that are not
+this repository's own code: `.git`, `.worktrees`, `.claude/worktrees`, and
+`.opencode/node_modules`.
 
 **A run from inside a linked worktree cannot verify that prune.** There `.git`
 is a file rather than a directory and neither worktree directory exists, so

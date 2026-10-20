@@ -70,9 +70,6 @@ check_stdout_lacks() {
 SHELLCHECK_BIN="$(mktemp -d "${HARNESS_TMP}/bin-shellcheck.XXXXXX")"
 cat >"${SHELLCHECK_BIN}/shellcheck" <<'STUB'
 #!/usr/bin/env bash
-if [ "${1:-}" = '--version' ]; then
-  printf 'ShellCheck - shell script analysis tool\nversion: stub\n'
-fi
 exit 0
 STUB
 chmod +x "${SHELLCHECK_BIN}/shellcheck"

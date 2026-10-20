@@ -16,30 +16,26 @@ total=0
 
 # `gh` is deliberately absent from this list: it is the kept zero-gh guard's
 # domain. `hooks.json` is exempt (JSON manifest, covered by make manifest).
-# The matcher lives in network_hits: pattern matched against hooks/* file
-# contents, single FAIL for all hits combined.
 # network_hits <dir> -- the denylist hits under <dir> on stdout; 1 when grep
 # itself failed, so the caller can tell "no hits" from "never read".
-# shellcheck disable=SC2317 # reached only through the checks tally invokes
+# shellcheck disable=SC2317 # reached only from the checks `tally` invokes
 network_hits() {
-  local out status
-  if out="$(grep -R -E -n --exclude=hooks.json \
+  local out status=0
+  out="$(grep -R -E -n --exclude=hooks.json \
     -e '(^|[^a-zA-Z0-9_-])(curl|wget)([^a-zA-Z0-9_-]|$)' \
     -e '(^|[^a-zA-Z0-9_-])(ssh|nc|socat)([^a-zA-Z0-9_-]|$)' \
     -e 'urllib|HttpClient|socket\.|fetch[[:space:]]*\(|XMLHttpRequest' \
     -e 'git[[:space:]]+(ls-remote|clone|fetch|pull|push)[[:space:]]+[^.]*(https?://|ssh://|git@)' \
     -e '(^|[^a-zA-Z0-9_-])(npm|pip)[[:space:]]+install' \
-    "$1" 2>/dev/null)"; then
-    printf '%s' "$out"
-    return 0
-  else
-    status=$?
-  fi
+    "$1" 2>/dev/null)" || status=$?
   # 1 is "read, no match". Anything else — 2 on a bad pattern or a tree grep
   # could not read — means the scan never happened, and answering that with "no
   # hits" is a green gate over an unread tree.
-  if [ "$status" -eq 1 ]; then return 0; fi
-  return 1
+  case "$status" in
+    0) printf '%s' "$out" ;;
+    1) ;;
+    *) return 1 ;;
+  esac
 }
 
 # The three verdicts the scan can reach, one check each.

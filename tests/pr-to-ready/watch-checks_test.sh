@@ -131,12 +131,10 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   # The last poll is followed by nothing, so the loop can sleep at most
   # MAX_ITER - 1 times. A sleep after it is a wait no result will ever be read
   # from, and it is what made the header's 20-minute claim true.
-  if [ -n "$max_iter" ]; then
-    slept="$(sleep_call_count)"
-    if [ "$slept" -gt $((max_iter - 1)) ]; then
-      printf 'FAIL %s: sleeps: want at most %s, got %s\n' "$name" $((max_iter - 1)) "$slept"
-      fails_here=1
-    fi
+  slept="$(sleep_call_count)"
+  if [ -n "$max_iter" ] && [ "$slept" -gt $((max_iter - 1)) ]; then
+    printf 'FAIL %s: sleeps: want at most %s, got %s\n' "$name" $((max_iter - 1)) "$slept"
+    fails_here=1
   fi
 
   # The bound alone cannot see a guard that never sleeps — zero satisfies every
@@ -151,7 +149,7 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
     *) want_sleeps='' ;;
   esac
   if [ -n "$want_sleeps" ]; then
-    if ! check_eq "${name}: sleeps" "$want_sleeps" "$(sleep_call_count)"; then fails_here=1; fi
+    if ! check_eq "${name}: sleeps" "$want_sleeps" "$slept"; then fails_here=1; fi
   fi
   if [ "$fails_here" -ne 0 ]; then
     failed=$((failed + 1))

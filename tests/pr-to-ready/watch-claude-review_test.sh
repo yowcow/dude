@@ -89,6 +89,10 @@ TARGET_RUN_ID=5999
 # `claude.yml` on both sides, a hardcoded `--workflow=claude.yml` would match.
 WORKFLOW_FILE=ai-review.yml
 
+# The workflow both claude kinds commit; claude-noorigin differs only in having
+# no origin remote.
+CLAUDE_WORKFLOW='name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n'
+
 MIXED="${FIXTURES}/claude-runs-mixed.json"
 DEEP="${FIXTURES}/claude-runs-deep.json"
 LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
@@ -126,7 +130,7 @@ repo_with_workflow() {
   case "$kind" in
     claude)
       git_repo_commit "$dir" ".github/workflows/${WORKFLOW_FILE}" \
-        'name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n' \
+        "$CLAUDE_WORKFLOW" \
         'add claude workflow'
       bare="$(git_repo_bare acme "$name")"
       git_repo_push "$dir" "$bare" "$DEFAULT_BRANCH"
@@ -135,7 +139,7 @@ repo_with_workflow() {
       ;;
     claude-noorigin)
       git_repo_commit "$dir" ".github/workflows/${WORKFLOW_FILE}" \
-        'name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n' \
+        "$CLAUDE_WORKFLOW" \
         'add claude workflow'
       ;;
     noclaude)
@@ -243,22 +247,18 @@ mkdir -p "$SUBDIR"
 # unstubbed call the harness let through.
 
 row_start
-stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_CLAUDE"
 assert_row 'usage-no-args' 2 '-' 0
 
 row_start
-stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID" extra
 assert_row 'usage-three-args' 2 '-' 0
 
 row_start
-stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_NOCLAUDE" "$BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
 row_start
-stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_NODIR" "$BRANCH"
 assert_row 'no-workflows-dir' 3 '-' 0
 
@@ -267,7 +267,6 @@ assert_row 'no-workflows-dir' 3 '-' 0
 # skip the review. 128 is what `git rev-parse --show-toplevel` exits with there,
 # and `set -e` on the assignment propagates it unchanged.
 row_start
-stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_OUTSIDE" "$BRANCH"
 assert_row 'outside-a-repository' 128 '-' 0
 
@@ -360,7 +359,6 @@ assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
 # Availability is checked before the run-id branch is taken, so watch mode
 # cannot be reached in a repository with no @claude workflow.
 row_start
-stub_watch acme/claude-ok 0 "$WATCH_OK"
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-without-claude-workflow' 3 '-' 0
 
