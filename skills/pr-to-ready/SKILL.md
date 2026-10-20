@@ -186,7 +186,7 @@ When there is at least one finding and every finding is `reject`:
 
 #### Where to write
 
-- **The round's review comment** — the one 2-2 posts from `vet-code`'s return. It carries each finding's severity, location, and the reviewer's own claim, plus every Declined to judge line as the reviewer stated it, the review range, and the round-request SHA; it carries no verdict. A Declined line that became a finding appears only under the Declined heading, with no severity or verdict there; its severity and verdict go in the verdict line or the thread reply. Post it even when there are no findings: write "No findings" in place of the finding blocks, keep any Declined to judge line, and still give the range and the round-request SHA. A round that did not call `vet-code` posts none.
+- **The round's review comment** — the one 2-2 posts from `vet-code`'s return (posted once, there; 2-3 posts it no further). It carries each finding's severity, location, and the reviewer's own claim, plus every Declined to judge line as the reviewer stated it, the review range, and the round-request SHA; it carries no verdict. A Declined line that became a finding appears only under the Declined heading, with no severity or verdict there; its severity and verdict go in the verdict line or the thread reply. Post it even when there are no findings: write "No findings" in place of the finding blocks, keep any Declined to judge line, and still give the range and the round-request SHA. A round that did not call `vet-code` posts none.
 - Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`.
 - Record the verdict on every finding that has no thread — the requesting-code-review findings not merged into an external thread, Copilot's suppressed ones, Claude's non-inline ones — `accept` and `reject` alike, with the same reasoning, in one new PR comment per round: one line per finding, no fold, carrying that finding's severity where the reviewer gave one, its location, claim, verdict, and reason; record the comment's id/URL at post time. Threaded findings stay out of it. A round with no threadless finding posts no such comment.
 
@@ -198,7 +198,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the round-request SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference, the review comment id/URL, and the verdict comment id/URL where one was posted, plus any caveat on the round's inputs (no requirements, say). |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the round-request SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference, the review comment id/URL and the verdict comment id/URL, each included where one was posted, plus any caveat on the round's inputs (no requirements, say). |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the review comment id and the verdict comment id, each included where one was posted. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding. |
 
@@ -208,7 +208,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 |---|---|
 | Thread reply, verdict comment, review comment | May not mention `@claude`, which would re-trigger the workflow; any mention copied from a finding summary/body or verdict reasoning is written split (`@ claude`), so quoting a review can never re-trigger it. |
 
-No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
+No line of the verdict comment or the review comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
 ### Clean judgment & stop conditions
 
