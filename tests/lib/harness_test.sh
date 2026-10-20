@@ -491,7 +491,7 @@ git -C "$clone_work" merge-base --is-ancestor "$blob_sha" "$(git -C "$clone_work
 if ! check_eq 'gitrepo: is-ancestor on a blob is neither verdict' '128' "$blob_status"; then blob_fails=1; fi
 if [ "$blob_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# --- property 12: a fact fixture is the bytes given, in a file of its own -----
+# --- a fact fixture is the bytes given, in a file of its own ------------------
 #
 # Scripts on the facts contract read GitHub facts from a file the agent wrote,
 # so a fixture is that file. Two fixtures in one row must not share a path: a
@@ -522,7 +522,7 @@ case "$ff_one" in
 esac
 if [ "$ff_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# --- harness_exit: a tally of zero is a failure, not a green -------------------
+# --- property 12: a tally of zero is a failure, not a green -------------------
 # `ok 0/0` is the shape a file has after its row list is emptied: exit 0, and
 # nothing distinguishes it from a file that ran its rows except the count. The
 # coverage gate's `-s` accepts such a file as coverage, so the count has to be

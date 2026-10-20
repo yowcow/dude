@@ -282,7 +282,11 @@ tree rather than stating as prose:
   the expected path mirrors the script's position in the tree:
   `tools/helper.sh` and `scripts/tools/helper.sh` both want
   `tests/tools/helper_test.sh`. Counting the one file as coverage for both
-  would leave the second script exercised by nothing.
+  would leave the second script exercised by nothing. The same test cannot
+  cover a *root script* and a `tests/` subject either: `scripts/<x>.sh` whose
+  expected `tests/<x>_test.sh` is already the test of an existing
+  `tests/<x>.sh` is refused, naming both, because `tests/<x>_test.sh`
+  exercises `tests/<x>.sh` and the new script would be run by nothing.
 - A `find` that dies partway through a root is a **failure**, never a green
   over the part it managed to read. A missing directory reaches the same
   message through `list_root`, which lists every root, and each of the four
