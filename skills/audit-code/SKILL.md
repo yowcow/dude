@@ -11,7 +11,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
 - Hand each worker its axis as the pair written for it — the invariant attacked and how it is expected to break — never as a field's name alone. Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
-- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
+- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and a probe that never ran hands back a `no finding` line — neither the orchestrator nor any later reader of the report can tell that from a result.
 
 ## Entry
 
@@ -31,7 +31,7 @@ Keep it as your own list, separate from the axes: it is what the report's **Inva
 
 ### Step 2: Select axes
 
-- Select 3–5 axes by whether they attack a high-value invariant from Step 1, not by spreading across fields; sweep what the caller named, if any; otherwise sweep the selection. Write every axis (a caller-named one included) as the pair it is — the invariant it attacks, and how it is expected to break. The invariant is a promise the artifact makes about its output, state, or time, not a rule the codebase happens to follow. Record axes considered but not swept under Not measured.
+- Select 3–5 axes by whether they attack a high-value invariant from Step 1, not by spreading across fields; sweep what the caller named, if any; otherwise sweep the selection. Write every axis (a caller-named one included) as the pair it is — the invariant it attacks, and how it is expected to break. The invariant is a promise the artifact makes about its output, state, or time, not a rule the codebase invents for itself; a convention the genre expects is a promise the artifact is held to. Record axes considered but not swept under Not measured.
 - An axis nothing can measure is not an axis. It is a question to hand back to a person.
 
 ### Step 3: Fix the measurement base
