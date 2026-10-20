@@ -219,6 +219,10 @@ fi
 
 # Built once and shared: none of the rows writes to them.
 REPO_CLAUDE="$(repo_with_workflow claude-ok claude)"
+# A second origin name, for the same reason as $DEFAULT_BRANCH and
+# $WORKFLOW_FILE: with only acme/claude-ok, resolving origin and then
+# hardcoding `-R acme/claude-ok` would pass every row.
+REPO_CLAUDE_OTHER="$(repo_with_workflow claude-other claude)"
 # origin's HEAD is unborn: the remote names no default branch.
 REPO_CLAUDE_NOHEAD="$(repo_with_workflow claude-nohead claude)"
 git_repo_remote "$REPO_CLAUDE_NOHEAD" origin "$(git_repo_bare acme nohead-empty)"
@@ -285,6 +289,13 @@ stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH"
 assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
+# The `-R` value comes from origin, not from a literal: the same listing asked
+# of a differently named repository must be pinned to that name.
+row_start
+stub_listing acme/claude-other "$MIXED"
+run_in "$REPO_CLAUDE_OTHER" "$BRANCH"
+assert_row 'listing-pins-a-second-origin' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
+
 # Same expectation from a subdirectory: the workflow search is anchored at the
 # repository root, so where the caller stands cannot change the answer.
 row_start
@@ -350,6 +361,11 @@ row_start
 stub_watch acme/claude-ok 0 "$WATCH_OK"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-succeeds' 0 "$WATCH_OK" 1
+
+row_start
+stub_watch acme/claude-other 0 "$WATCH_OK"
+run_in "$REPO_CLAUDE_OTHER" "$BRANCH" "$RUN_ID"
+assert_row 'watch-pins-a-second-origin' 0 "$WATCH_OK" 1
 
 row_start
 stub_watch acme/claude-ok 1 "$WATCH_FAIL"

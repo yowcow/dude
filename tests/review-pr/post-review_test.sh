@@ -7,7 +7,7 @@
 # asserts 0 gh calls, and stubs none.
 #
 # RED verification (see tests/README.md): against the pre-port script
-# (`git show master:skills/review-pr/scripts/post-review.sh`) 24 of 34 rows
+# (`git show a7f4396:skills/review-pr/scripts/post-review.sh`) 25 of 35 rows
 # fail, the guard and read-back rows, each on the old six-argument arity
 # answering usage 2. The ten usage rows pass, 'request changes' and 'no choice'
 # among them, since the old arity answers usage 2 for each.

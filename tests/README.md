@@ -369,11 +369,12 @@ SUT="$tmp/old.sh" tests/run.sh <one-test-file>
 ```
 
 The specific commits named below, and in the `RED verification` headers of the
-test files under `tests/pr-to-ready/`, are from this suite's original home in
-`yowcow/dotfiles`. They do not resolve here — except `253c615`, this
-repository's own `-R` commit — so they record which fix each test was measured
-against, not a `git show` runnable in this repository. The recipe
-itself works as written against any commit that is in this history.
+test files under `tests/pr-to-ready/`, come from this suite's original home in
+`yowcow/dotfiles`. Some resolve in this repository and some do not, so check a
+hash before relying on it — `git cat-file -e <commit>:<path>` — and read the
+header as recording which fix the test was measured against, not necessarily as
+a `git show` runnable here. The recipe itself works as written against any
+commit that is in this history.
 
 The same goes for every bare issue number and TODO-item reference anywhere
 under `tests/`, wherever it appears: all of them point at that same tracker,
