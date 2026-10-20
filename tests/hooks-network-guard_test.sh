@@ -16,8 +16,9 @@ total=0
 
 # `gh` is deliberately absent from this list: it is the kept zero-gh guard's
 # domain. `hooks.json` is exempt (JSON manifest, covered by make manifest).
-# network_hits <dir> -- the denylist hits under <dir> on stdout; 1 when grep
-# itself failed, so the caller can tell "no hits" from "never read".
+# network_hits <dir> -- the denylist hits under <dir> on stdout; 0 on a read
+# (with or without hits), and grep's own status otherwise, so the caller can
+# tell "no hits" from "never read" and name the reason.
 # shellcheck disable=SC2317 # reached only from the checks `tally` invokes
 network_hits() {
   local out status=0
@@ -34,16 +35,18 @@ network_hits() {
   case "$status" in
     0) printf '%s' "$out" ;;
     1) ;;
-    *) return 1 ;;
+    *) return "$status" ;;
   esac
 }
 
 # The three verdicts the scan can reach, one check each.
 # shellcheck disable=SC2317 # reached as a command name by tally
 check_clean() {
-  local label="$1" dir="$2" hits
-  if ! hits="$(network_hits "$dir")"; then
-    printf 'FAIL %s: the scan could not read %s\n' "$label" "$dir" >&2
+  local label="$1" dir="$2" hits status=0
+  hits="$(network_hits "$dir")" || status=$?
+  if [ "$status" -ne 0 ]; then
+    printf 'FAIL %s: the scan could not complete for %s (grep exit %s)\n' \
+      "$label" "$dir" "$status" >&2
     return 1
   fi
   if [ -n "$hits" ]; then
@@ -53,9 +56,11 @@ check_clean() {
 }
 # shellcheck disable=SC2317
 check_hits() {
-  local label="$1" dir="$2" hits
-  if ! hits="$(network_hits "$dir")"; then
-    printf 'FAIL %s: the scan could not read %s\n' "$label" "$dir" >&2
+  local label="$1" dir="$2" hits status=0
+  hits="$(network_hits "$dir")" || status=$?
+  if [ "$status" -ne 0 ]; then
+    printf 'FAIL %s: the scan could not complete for %s (grep exit %s)\n' \
+      "$label" "$dir" "$status" >&2
     return 1
   fi
   if [ -z "$hits" ]; then

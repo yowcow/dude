@@ -132,7 +132,8 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   # MAX_ITER - 1 times. A sleep after it is a wait no result will ever be read
   # from, and it is what made the header's 20-minute claim true.
   slept="$(sleep_call_count)"
-  if [ -n "$max_iter" ] && [ "$slept" -gt $((max_iter - 1)) ]; then
+  if [ -n "$max_iter" ] && [ "$max_iter" -gt 0 ] &&
+    [ "$slept" -gt $((max_iter - 1)) ]; then
     printf 'FAIL %s: sleeps: want at most %s, got %s\n' "$name" $((max_iter - 1)) "$slept"
     fails_here=1
   fi
