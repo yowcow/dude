@@ -32,6 +32,13 @@
 #         | STOP review-pending-left | STOP review-state-mismatch | STOP <slug>
 set -euo pipefail
 
+# Checked before any argument: without jq the guard below answers usage, and the
+# caller edits its argv instead of the missing dependency.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required but was not found on PATH" >&2
+  exit 1
+fi
+
 usage() {
   echo "Usage: $0 <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]" >&2
   exit 2

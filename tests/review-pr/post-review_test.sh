@@ -30,6 +30,7 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/post-review.sh}"
+BASH_BIN="$(command -v bash)"
 
 failed=0
 total=0
@@ -120,6 +121,13 @@ assert_row 'missing payload' 2 '' 0
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$NOTJSON"
 assert_row 'payload not json' 2 '' 0
+
+row_start
+run_sut env PATH="${HARNESS_TMP}/no-path" "$BASH_BIN" "$SUT" \
+  12 "$HEAD_SHA" APPROVE "$PAYLOAD"
+assert_row 'missing jq: named, not usage' 1 '' 0
+tally check_eq 'missing jq: stderr' \
+  'error: jq is required but was not found on PATH' "$(cat "$SUT_STDERR")"
 
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE
