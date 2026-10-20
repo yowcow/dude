@@ -43,12 +43,14 @@ session_json="$("$ROOT/hooks/session-start")"
 
 node --import "$tmpdir/hooks.mjs" --input-type=module - "$PLUGIN_UNDER_TEST" "$ROOT" "$session_json" <<'JS'
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const pluginPath = process.argv[2];
-const root = process.argv[3];
+// Node resolves symlinks when importing, so the plugin's root (import.meta.url)
+// is physical while hooks/session-start prints the logical one (`pwd -L`).
+const root = realpathSync(process.argv[3]);
 const mod = await import(pathToFileURL(pluginPath));
 assert.ok(mod.default, 'V2 plugin must default-export a definition');
 assert.equal(mod.default.id, 'dude');
@@ -138,9 +140,9 @@ const stubText = freshEvent.system[0].text;
 // (`...<cksum>:<suffix>:`) cannot be spelled from the plugin side, so that
 // form alone is matched heading-wide: `[^\n]*` cannot cross into the body's
 // later `dude:using-dude` colon, so it stops at the terminator.
-const normalize = (s) => s
-  .replaceAll(`${root}/`, '<ROOT>')
-  .replaceAll(root, '<ROOT>')
+const roots = [...new Set([process.argv[3], root])];
+const normalize = (s) => roots
+  .reduce((out, r) => out.replaceAll(`${r}/`, '<ROOT>').replaceAll(r, '<ROOT>'), s)
   .replace(/from the dude install at \.\.\.[^\n]*:/g, 'from the dude install at <ROOT>:');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
