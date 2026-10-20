@@ -508,4 +508,20 @@ if ! check_stderr_has 'no scripts dir: listing failed' 'the tree was not fully r
 if ! check_stderr_has 'no scripts dir: names the root' "${root}/scripts"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 26: an empty top-level scripts/ enumeration is an error even when the rest is green
+# A broken root-scripts selector and fully covered skills+hooks+tools trees are
+# otherwise the same green — the defect case 12 closed for hooks and case 19 for
+# tools. The directory still exists here; only the last planted file is gone.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+rm -f "${root}/scripts/planted.sh" "${root}/tests/planted_test.sh"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'no root script found: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'no root script found: broken enumeration' 'the enumeration is broken'; then fails_here=1; fi
+if ! check_stderr_has 'no root script found: names scripts root' "${root}/scripts"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
