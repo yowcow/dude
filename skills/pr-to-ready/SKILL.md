@@ -138,7 +138,7 @@ If this step requested nobody, skip 2-2 and go to Step 3.
 
 - **Claude**: only if 2-1 found the workflow and posted a request. Tie completion to the run itself, never to comment counts: list runs again with `<skill-dir>/scripts/watch-claude-review.sh <branch>`, match the run by `displayTitle`, a `createdAt` after the request comment was posted, and a conclusion that isn't `skipped` — branch and time alone each match the wrong run or none, per that script's own header — then block on it with `<skill-dir>/scripts/watch-claude-review.sh <branch> <run-id>` — exit 0 means it succeeded, non-zero means it didn't, or the call itself failed.
 - **Copilot**: only if 2-1 requested Copilot. Wait for a review carrying an `id` the 2-1 baseline didn't have — `<skill-dir>/scripts/watch-copilot-review.sh <owner> <repo> <pr-number> <baseline-file>`, which polls `list-copilot-reviews.sh` and answers with the reviews that baseline didn't hold. Compare against that baseline, never against your own handling history. Identify the reviewer by author login (`gh-mechanics.md`'s "## Identifying a bot"), never by timestamp. Don't wait for a formal approval — Copilot commonly only ever returns a comment-only verdict.
-- **requesting-code-review**: only if 2-1 called `vet-code`. Await its return inside the bound below; nothing is posted here. Its wait and the externals' are independent: external findings go on to 2-3 as soon as the externals' waits complete, without waiting for `vet-code`.
+- **requesting-code-review**: only if 2-1 called `vet-code`. Await its return inside the bound below, then post the round's review comment per **Posting** below, recording its id/URL at post time for the Request identity row. Its wait and the externals' are independent: external findings go on to 2-3 as soon as the externals' waits complete, without waiting for `vet-code`.
 - **Always bound the wait**, poll or subagent return alike, with an iteration cap and an explicit bail-out. On timeout, stop and tell the user rather than looping forever.
 
 ### 2-3. Evaluate and address feedback
@@ -151,9 +151,10 @@ Delegate collection to a subagent:
 - Do not re-collect a thread this run already resolved. A new review that repeats the same claim at the same place is a new finding; Loop convergence still identifies two findings as the same one by place and claim.
 - Hand the collected external findings to `judge-findings` as items, with the round's scope, requirements, and verdict record, and, as the acceptance criteria, the "The spec is a vision document" paragraph of `superpowers:requesting-code-review`'s reviewer template, verbatim. Call it only when there is at least one external finding (LGTM and empty reviews skip it), and start it as soon as collection returns, without waiting for `vet-code`.
 
-**Nothing is fixed, committed, pushed, posted, or walked on the stop list until every verdict of the round is in — `vet-code`'s and `judge-findings`'s alike — and the `needs-user` verdicts are counted over all of them first.** One or more ends the round before anything is applied: it takes the **third terminal state**.
+**Nothing is fixed, committed, pushed, replied to, resolved, given a verdict comment, or walked on the stop list until every verdict of the round is in — `vet-code`'s and `judge-findings`'s alike — and the `needs-user` verdicts are counted over all of them first.** One or more ends the round before anything is applied: it takes the **third terminal state**.
 
-- Nothing is fixed, nothing is committed or pushed, and nothing is written to the PR — no thread reply, no resolution, no verdict comment; the values actually read go in the hand-over with the verdicts below.
+- The round's review comment 2-2 posted from `vet-code`'s return stays on the PR: it is the reviewer's own output, as though an external reviewer had posted it.
+- Nothing is fixed, nothing is committed or pushed, and nothing else is written to the PR; the values actually read go in the hand-over with the verdicts below.
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
@@ -185,8 +186,11 @@ When there is at least one finding and every finding is `reject`:
 
 #### Where to write
 
+- **The round's review comment** — the one 2-2 posts from `vet-code`'s return (posted once, there; 2-3 posts it no further). It carries each finding's severity, location, and the reviewer's own claim, plus every Declined to judge line as the reviewer stated it, the review range, and the round-request SHA; it carries no verdict. A Declined line that became a finding appears only under the Declined heading, with no severity or verdict there; its severity and verdict go in the verdict line or the thread reply. Post it even when there are no findings: write "No findings" in place of the finding blocks, keep any Declined to judge line, and still give the range and the round-request SHA. A round that did not call `vet-code` posts none.
 - Where the round has at least one thread, reply to every thread, `reject` included, explaining the pushback, and resolve the round's threads together in one call to `<skill-dir>/scripts/resolve-thread.sh <owner> <repo> <pr-number> <comment-id> [comment-id...]`.
-- Record the verdict on every finding that has no thread — every requesting-code-review finding, Copilot's suppressed ones, Claude's non-inline ones — `accept` and `reject` alike, with the same reasoning, in one new PR comment per round: one line per finding, no fold. Threaded findings stay out of it. A round with no threadless finding posts no such comment.
+- Record the verdict on every finding that has no thread — the requesting-code-review findings not merged into an external thread, Copilot's suppressed ones, Claude's non-inline ones — `accept` and `reject` alike, with the same reasoning, in one new PR comment per round: one line per finding, no fold, carrying that finding's severity where one was given, its location, claim, verdict, and reason; record the comment's id/URL at post time. Threaded findings stay out of it. A round with no threadless finding posts no such comment.
+
+The review comment and the verdict line or thread reply that judges one of its findings are an **intended pair**, not a double post: the comment carries the reviewer's original text with the range it was read over and the round-request SHA, the verdict line or thread reply carries that finding's verdict in a threadless external finding's line shape, so the verdict comment stands alone. Each finding's verdict lands exactly once — on its thread where it has one, otherwise in the verdict comment. Where the finding is the `vet-code` one merged into an external thread, that thread is its one place: reply to and resolve it, leave the merged finding out of the verdict comment, and let the review comment keep the reviewer's text.
 
 #### What the round's report carries
 
@@ -194,20 +198,17 @@ Every round's report to the caller carries these rows; the Request identity and 
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the request-mark SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference plus the verdict comment id/URL where one was posted, and any caveat on the round's inputs (no requirements, say). |
-| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the verdict comment id where one was posted. |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the round-request SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference, the review comment id/URL and the verdict comment id/URL, each included where one was posted, plus any caveat on the round's inputs (no requirements, say). |
+| Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the review comment id and the verdict comment id, each included where one was posted. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding. |
 
 #### What not to write
 
 | Route | Rule |
 |---|---|
-| Thread reply | May not mention `@claude`, which would re-trigger the workflow. |
-| Verdict comment | May not mention `@claude`, which would re-trigger the workflow. |
+| Thread reply, verdict comment, review comment | May not mention `@claude`, which would re-trigger the workflow; any mention copied from a finding summary/body or verdict reasoning is written split (`@ claude`), so quoting a review can never re-trigger it. |
 
-Any `@claude` inside finding summaries/bodies or verdict reasoning copied into thread replies or the verdict comment is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
-
-No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
+No line the skill writes into the verdict comment or the review comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
 ### Clean judgment & stop conditions
 
@@ -222,7 +223,7 @@ No line of the verdict comment carries a SKILL-internal word such as a round num
 4. the PR's base is the one Step 1 most recently resolved;
 5. mergeability came back **`MERGEABLE`** — the field `gh-mechanics.md`'s "## Mergeability" says to trust. `UNKNOWN` is not a pass: it means the remote couldn't settle it even after the bounded re-read, so nothing is known yet.
 
-6. this round's requesting-code-review block leaves no actionable finding — every finding from this round's requesting-code-review identity (`vet-code`'s return + the verdict comment id where one was posted + request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting-code-review passes this condition. On the no-finding path this is definitional — it never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
+6. this round's requesting-code-review block leaves no actionable finding — every finding from this round's requesting-code-review identity (`vet-code`'s return + the review comment id + the verdict comment id where one was posted + round-request SHA) carries an applied verdict: each `accept` fixed and pushed, each `reject` recorded. Read it off the round's own verdict record, never a fresh listing; a round that did not request requesting-code-review passes this condition. On the no-finding path this is definitional — the review comment never bars Clean by itself; rows 4/6 and row 5 enforce the leftover.
 
 **Clean is a property of one commit, not a total accumulated over rounds.** A push invalidates all six at once — nobody has read the new diff, and nothing has run against it — so a result from before a push is not evidence about what the branch carries now. Record the measured-tip SHA with the values read for this judgment in the round's report to the caller (the Measured evidence row), so Clean on that SHA can be re-derived later.
 
@@ -257,7 +258,7 @@ Call `<skill-dir>/scripts/recheck-pr.sh <owner> <repo> <pr-number> <sha> <base>`
 - condition 2 — read only once the script has returned;
 - condition 6.
 
-The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (the verdict comment id included where one was posted), with what the script printed, in the report to the caller. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
+The re-confirmation holds only on `RECORDED met` with all three. Keep the re-confirmed measured-tip SHA and values (the review comment id and the verdict comment id, each included where one was posted), with what the script printed, in the report to the caller. Anything short of that, and anything that needs fixing here, takes the third terminal state instead: report what was found and where the PR and branch stand, and stop — fixing at this point would flip the PR to a state nobody has actually reviewed.
 
 Otherwise branch on the ready-on-clean flag Step 0 recorded:
 - **ready-on-clean = yes**: mark the PR ready with `<skill-dir>/scripts/mark-ready.sh <owner> <repo> <pr-number>` — the only way this flow marks a PR ready. **Never mark it ready by any other means**: that marks the PR ready with no re-confirmation recorded, or on one about a commit the PR no longer points at. On `READY <n>`, Claude's LGTM is a comment, not a formal approval, so a branch-protection rule requiring an approving review may still block merge — flag that to the user, since a human approver may be needed. On `STOP <slug>`, take the third terminal state: report the slug and where the PR stands.

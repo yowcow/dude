@@ -47,7 +47,9 @@ Also after the template: Confine every search to the project root or narrower. A
 
 Receive the template output as-is. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
-For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line rejected, the line as the reviewer stated it and its verdict, still declined.
+For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict; for each Declined to judge line, the line as the reviewer stated it, its verdict, and whether it stayed declined or became a finding, with a line that became a finding staying in the finding list too, for its severity and verdict.
+
+Keep the reviewer's text, severity, and location whole and separate from the verdict: the caller passes them on as the reviewer's own output, so anything reworded here reaches its reader in place of the reviewer's claim.
 
 Verdicts carry the meanings `judge-findings`'s **Verdicts** gives them.
 
