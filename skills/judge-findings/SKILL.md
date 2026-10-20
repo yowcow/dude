@@ -28,6 +28,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 
 - **`accept`** with the fix — only after verifying the claim against what is judged.
 - **`reject`** with the stated reason — the finding is wrong, only reflects reviewer preference, asks for work beyond the request, or fails the caller's criteria.
+  - **A fix that changes nothing a reader takes away is reviewer preference** — a sentence reworded, a paragraph reflowed, a list reordered, a name or style the reviewer would have written differently. It takes `reject`, not `needs-user`, unless the caller's acceptance criteria make that class of change the work.
 - **`needs-user`** — the call is a person's rather than a technical one: the question to put to that person and why the decision is theirs.
 
 For a candidate, `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict; `reject` leaves it declined.
