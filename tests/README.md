@@ -271,7 +271,7 @@ tree rather than stating as prose:
   green.
 - An empty test file is **not** coverage. `run.sh` collects it and
   `bash <empty>` exits 0, so it is a passing test with no detection power. A
-  non-empty file that reaches `harness_exit` with a tally of zero now exits 1,
+  non-empty file that reaches `harness_exit` with a tally of zero exits 1,
   so the suite catches it — but `-s` alone still accepts a file that never
   sources the harness, or exits before its tally.
 - Two scripts whose expected test paths collide are an **error** naming both
@@ -281,11 +281,10 @@ tree rather than stating as prose:
   `tools/helper.sh` and `scripts/tools/helper.sh` both want
   `tests/tools/helper_test.sh`. Counting the one file as coverage for both
   would leave the second script exercised by nothing.
-- A `find` that dies partway through `skills` is a **failure**, never a
-  green over the part it managed to read. A missing `hooks/` directory is
-  a listing failure, same as a missing `skills/` — same `if ! find` branch,
-  asserted for hooks by the missing-directory case rather than a chmod-000
-  subdirectory.
+- A `find` that dies partway through a root is a **failure**, never a green
+  over the part it managed to read. A missing directory reaches the same
+  message through `list_root`, which lists every root, and each of the four
+  roots has its own missing-directory case.
 - Selection is by position in the tree, not by shebang: a script under
   `scripts/` or `tools/` in a language ShellCheck does not cover must not be silently
   exempt as well as unlinted, and a file under `hooks/` is not exempt for
@@ -303,9 +302,9 @@ tree rather than stating as prose:
 - A symlink to a **directory** under any of these positions is an **error** naming
   the link: `find` lists it but never descends into it, so its contents cannot
   be enumerated while the rest of the tree reports itself covered. The link
-  target is still never resolved. The one exception is `skills/<skill>/`
-  outside its `scripts/` subtree: a linked `references/` directory holds
-  nothing this gate reads and stays green.
+  target is still never resolved. The one exception is a link to a directory
+  *inside* `skills/<skill>/` but outside its `scripts/` subtree: a linked
+  `references/` directory holds nothing this gate reads and stays green.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so

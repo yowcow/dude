@@ -526,20 +526,15 @@ if [ "$ff_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 # nothing distinguishes it from a file that ran its rows except the count. The
 # coverage gate's `-s` accepts such a file as coverage, so the count has to be
 # the loud case here.
-row_start
+total=$((total + 1))
 he_fails=0
 he_status=0
-he_out="$( ( harness_exit 0 0 ) 2>&1 )" || he_status=$?
+he_out="$(harness_exit 0 0 2>&1)" || he_status=$?
 if ! check_eq 'empty tally: exit' 1 "$he_status"; then he_fails=1; fi
-case "$he_out" in
-  *'no assertion ran'*) ;;
-  *)
-    printf 'FAIL empty tally: message did not name the empty tally: [%s]\n' "$he_out"
-    he_fails=1
-    ;;
-esac
+if ! check_eq 'empty tally: output' \
+  'not ok 0/0 harness_test.sh: no assertion ran — the file is green without testing anything' "$he_out"; then he_fails=1; fi
 he_status=0
-he_out="$( ( harness_exit 0 3 ) 2>&1 )" || he_status=$?
+he_out="$(harness_exit 0 3 2>&1)" || he_status=$?
 if ! check_eq 'non-empty tally: exit' 0 "$he_status"; then he_fails=1; fi
 if ! check_eq 'non-empty tally: output' 'ok 3/3 harness_test.sh' "$he_out"; then he_fails=1; fi
 if [ "$he_fails" -ne 0 ]; then failed=$((failed + 1)); fi

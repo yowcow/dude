@@ -165,7 +165,7 @@ ln -s "$disc/linked-target.sh" "$disc/linked_test.sh"
 printf '#!/usr/bin/env bash\nprintf "plain ran\\n"\n' >"$disc/plain_test.sh"
 run_sut env -u SUT bash "$disc/run.sh"
 if ! check_eq 'symlinked test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_bytes 'symlinked test file: both files ran, in find order' \
+if ! check_bytes 'symlinked test file: both files ran, in sorted order' \
   'linked ran\nplain ran\nall 2 test files passed\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 

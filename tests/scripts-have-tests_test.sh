@@ -42,60 +42,41 @@ failed=0
 total=0
 
 # --- fixture builders --------------------------------------------------------
-# mk_script <root> <skill> <name>
-mk_script() {
-  mkdir -p "$1/skills/$2/scripts"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/skills/$2/scripts/$3"
+# mk_file <root> <path-relative-to-root>
+mk_file() {
+  mkdir -p "$1/$(dirname -- "$2")"
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/$2"
 }
+
+# mk_script <root> <skill> <name>
+mk_script() { mk_file "$1" "skills/$2/scripts/$3"; }
 
 # mk_test <root> <skill> <name>   — <name> is the test file's own basename
-mk_test() {
-  mkdir -p "$1/tests/$2"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/$2/$3"
-}
+mk_test() { mk_file "$1" "tests/$2/$3"; }
 
 # mk_hook <root> <name>  — <name> is relative to hooks/, may contain slashes
-mk_hook() {
-  mkdir -p "$1/hooks/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/hooks/$2"
-}
+mk_hook() { mk_file "$1" "hooks/$2"; }
 
 # mk_hook_test <root> <name>  — <name> is the test file's own basename under tests/hooks/
-mk_hook_test() {
-  mkdir -p "$1/tests/hooks/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/hooks/$2"
-}
+mk_hook_test() { mk_file "$1" "tests/hooks/$2"; }
 
 # mk_tool <root> <name>  — <name> is relative to tools/, may contain slashes
-mk_tool() {
-  mkdir -p "$1/tools/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tools/$2"
-}
+mk_tool() { mk_file "$1" "tools/$2"; }
 
 # mk_tool_test <root> <name>  — <name> is the test file's own basename under tests/tools/
-mk_tool_test() {
-  mkdir -p "$1/tests/tools/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/tools/$2"
-}
+mk_tool_test() { mk_file "$1" "tests/tools/$2"; }
 
 # mk_root_script <root> <name>  — <name> is relative to scripts/, may contain slashes
-mk_root_script() {
-  mkdir -p "$1/scripts/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/scripts/$2"
-}
+mk_root_script() { mk_file "$1" "scripts/$2"; }
 
 # mk_root_test <root> <name>  — <name> is the test file's own basename under tests/
-mk_root_test() {
-  mkdir -p "$1/tests/$(dirname -- "$2")"
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$1/tests/$2"
-}
+mk_root_test() { mk_file "$1" "tests/$2"; }
 
 # Each returns a fresh synthetic repo root. The shape mirrors the real one
 # because the gate derives skills, tools, hooks, scripts, and tests from the root it is handed.
 # A covered hook, a covered tool and a covered root script are planted here so
 # existing cases do not fail the independent empty-hooks, empty-tools and
-# empty-root-scripts guards once the gate lists those roots — the root-scripts
-# empty guard also runs in every synthetic case.
+# empty-root-scripts guards once the gate lists those roots.
 tree_new() {
   local root
   root="$(mktemp -d "${HARNESS_TMP}/tree.XXXXXX")"
@@ -555,8 +536,7 @@ fails_here=0
 root="$(tree_new)"
 mk_script "$root" alpha 'a.sh'
 mk_test "$root" alpha 'a_test.sh'
-mkdir -p "${root}/hooked"
-printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/hooked/h.sh"
+mk_file "$root" hooked/h.sh
 ln -s ../hooked "${root}/hooks/lib"
 run_sut bash "$SUT" "$root"
 if ! check_eq 'symlinked hooks dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
@@ -589,8 +569,7 @@ fails_here=0
 root="$(tree_new)"
 mk_script "$root" alpha 'a.sh'
 mk_test "$root" alpha 'a_test.sh'
-mkdir -p "${root}/elsewhere/beta/scripts"
-printf '#!/usr/bin/env bash\nexit 0\n' >"${root}/elsewhere/beta/scripts/hidden.sh"
+mk_file "$root" elsewhere/beta/scripts/hidden.sh
 ln -s ../elsewhere/beta "${root}/skills/beta"
 run_sut bash "$SUT" "$root"
 if ! check_eq 'symlinked skill dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi

@@ -179,9 +179,7 @@ count_run() {
 # means stdout must be empty.
 #
 # The fourth argument is required, deliberately not defaulted — same reasoning
-# as harness.sh's assert_row. This local copy had reintroduced the defaulting
-# that file removed; a `-n` test is the same silently-skipped assertion a
-# `${4:-}` produced.
+# as harness.sh's assert_row.
 assert_row() {
   local name="$1" want_exit="$2" want_file="$3" want_calls="$4" fails=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi

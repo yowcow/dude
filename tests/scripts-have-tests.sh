@@ -53,11 +53,22 @@ ROOT_SCRIPTS="${ROOT}/scripts"
 # hit this and record it. `pipefail` is what makes the single `if !` sufficient:
 # it catches a failure in either stage.
 #
-# A missing skills reaches the same message rather than an empty enumeration,
-# and that is correct — the tree really was not read.
 LISTING="$(mktemp)"
 PAIRS="$(mktemp)"
 trap 'rm -f "$LISTING" "$PAIRS"' EXIT
+
+# list_root <dir>
+# A root that cannot be read reaches this message rather than the empty
+# enumeration, and that is correct — the tree really was not read, so "nothing
+# found" would be the wrong diagnosis. `exit 1` here leaves the script, not just
+# the call: a root that could not be read is never followed by a report on half
+# of it.
+list_root() {
+  if ! find "$1" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
+    printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$1" >&2
+    exit 1
+  fi
+}
 
 # Symlinks are enumerated alongside regular files, which is where this parts
 # company with tests/lint.sh. That script records leaving symlinks out as a
@@ -74,10 +85,7 @@ trap 'rm -f "$LISTING" "$PAIRS"' EXIT
 # dangling link is reported rather than fatal. A link to a directory is visible
 # but not descended into, so its contents cannot be enumerated at all; such a
 # link is refused outright rather than half-read as an empty tree.
-if ! find "$SKILLS_ROOT" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
-  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$SKILLS_ROOT" >&2
-  exit 1
-fi
+list_root "$SKILLS_ROOT"
 
 # Selection is by position in the tree, not by shebang: the question is "did
 # something land in a scripts/ directory", and a shebang matcher restricted to
@@ -112,10 +120,7 @@ while IFS= read -r -d '' abs; do
   scripts+=("$rel")
 done <"$LISTING"
 
-if ! find "$HOOKS_ROOT" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
-  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$HOOKS_ROOT" >&2
-  exit 1
-fi
+list_root "$HOOKS_ROOT"
 
 hooks=()
 while IFS= read -r -d '' abs; do
@@ -137,10 +142,7 @@ done <"$LISTING"
 # creating a skill-to-skill edge. Selection is every file under it, by the
 # same position rule as hooks/ — a file landing here is a shared tool whether
 # or not it carries a shebang, and subdirectories mirror into tests/tools/.
-if ! find "$TOOLS_ROOT" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
-  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$TOOLS_ROOT" >&2
-  exit 1
-fi
+list_root "$TOOLS_ROOT"
 
 tools=()
 while IFS= read -r -d '' abs; do
@@ -160,10 +162,7 @@ done <"$LISTING"
 # position the position rule skipped: an untested file here was reported as
 # nothing at all. Every file under it is enumerated, subdirectories mirrored into
 # tests/, by the same position rule as tools/.
-if ! find "$ROOT_SCRIPTS" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then
-  printf 'scripts-have-tests: listing %s failed — the tree was not fully read\n' "$ROOT_SCRIPTS" >&2
-  exit 1
-fi
+list_root "$ROOT_SCRIPTS"
 
 root_scripts=()
 while IFS= read -r -d '' abs; do
@@ -189,36 +188,29 @@ if [ "${#hidden_dirs[@]}" -gt 0 ]; then
   exit 1
 fi
 
+# refuse_empty <count> <path-with-suffix>
 # An empty enumeration can only mean the selection above broke: this repository
 # has skill scripts, and a gate that reports "nothing to check, all good" is
 # indistinguishable from a fully covered tree. That is the "absent" versus
 # "could not ask" confusion this suite exists to catch, pointed at the gate
 # itself.
-if [ "${#scripts[@]}" -eq 0 ]; then
-  printf 'scripts-have-tests: no script found under %s/*/scripts/ — the enumeration is broken\n' "$SKILLS_ROOT" >&2
-  exit 1
-fi
+refuse_empty() {
+  if [ "$1" -eq 0 ]; then
+    printf 'scripts-have-tests: no script found under %s — the enumeration is broken\n' "$2" >&2
+    exit 1
+  fi
+}
 
-if [ "${#hooks[@]}" -eq 0 ]; then
-  printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$HOOKS_ROOT" >&2
-  exit 1
-fi
-
-if [ "${#tools[@]}" -eq 0 ]; then
-  printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$TOOLS_ROOT" >&2
-  exit 1
-fi
-
-if [ "${#root_scripts[@]}" -eq 0 ]; then
-  printf 'scripts-have-tests: no script found under %s/ — the enumeration is broken\n' "$ROOT_SCRIPTS" >&2
-  exit 1
-fi
+refuse_empty "${#scripts[@]}" "${SKILLS_ROOT}/*/scripts/"
+refuse_empty "${#hooks[@]}" "${HOOKS_ROOT}/"
+refuse_empty "${#tools[@]}" "${TOOLS_ROOT}/"
+refuse_empty "${#root_scripts[@]}" "${ROOT_SCRIPTS}/"
 
 problems=0
 with_tests=0
 
 # claim_test_path <want> <key>
-# One test file cannot be two scripts' coverage: <rel>%.sh makes `foo` and
+# One test file cannot be two scripts' coverage: ${rel%.sh} makes `foo` and
 # `foo.sh` want the same path, which would count one test twice and leave the
 # second script exercised by nothing.
 claim_test_path() {
@@ -233,62 +225,39 @@ claim_test_path() {
   printf '%s\t%s\n' "$want" "$key" >>"$PAIRS"
 }
 
-for rel in "${scripts[@]}"; do
-  key="skills/${rel}"
-  skill="${rel%%/*}"
-  rest="${rel#*/scripts/}"
-  want="tests/${skill}/${rest%.sh}_test.sh"
+# require_test <key> <want>
+# Non-empty and readable, not merely present. run.sh collects an empty
+# *_test.sh and `bash <empty>` exits 0, so an empty file is a passing test with
+# no detection power; counting it as coverage would let exactly the state this
+# gate exists to prevent through the front door.
+require_test() {
+  local key="$1" want="$2" abs_test
   claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
-  # Non-empty and readable, not merely present. run.sh collects an empty
-  # *_test.sh and `bash <empty>` exits 0, so an empty file is a passing test with
-  # no detection power; counting it as coverage would let exactly the state this
-  # gate exists to prevent through the front door.
   if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
     with_tests=$((with_tests + 1))
   else
     printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
     problems=$((problems + 1))
   fi
+}
+
+for rel in "${scripts[@]}"; do
+  skill="${rel%%/*}"
+  rest="${rel#*/scripts/}"
+  require_test "skills/${rel}" "tests/${skill}/${rest%.sh}_test.sh"
 done
 
 for rel in "${hooks[@]}"; do
-  key="hooks/${rel}"
-  want="tests/hooks/${rel%.sh}_test.sh"
-  claim_test_path "$want" "$key"
-  abs_test="${ROOT}/${want}"
-  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
-    with_tests=$((with_tests + 1))
-  else
-    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
-    problems=$((problems + 1))
-  fi
+  require_test "hooks/${rel}" "tests/hooks/${rel%.sh}_test.sh"
 done
 
 for rel in "${tools[@]}"; do
-  key="tools/${rel}"
-  want="tests/tools/${rel%.sh}_test.sh"
-  claim_test_path "$want" "$key"
-  abs_test="${ROOT}/${want}"
-  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
-    with_tests=$((with_tests + 1))
-  else
-    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
-    problems=$((problems + 1))
-  fi
+  require_test "tools/${rel}" "tests/tools/${rel%.sh}_test.sh"
 done
 
 for rel in "${root_scripts[@]}"; do
-  key="scripts/${rel}"
-  want="tests/${rel%.sh}_test.sh"
-  claim_test_path "$want" "$key"
-  abs_test="${ROOT}/${want}"
-  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
-    with_tests=$((with_tests + 1))
-  else
-    printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
-    problems=$((problems + 1))
-  fi
+  require_test "scripts/${rel}" "tests/${rel%.sh}_test.sh"
 done
 
 if [ "$problems" -ne 0 ]; then
