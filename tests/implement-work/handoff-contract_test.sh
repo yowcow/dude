@@ -38,7 +38,11 @@ if ! check_eq 'scope: the section ends at ## Report' \
 # Both headings in place still says nothing about the body between them: with
 # the text emptied out, row 3's negative grep matches nothing and goes green —
 # the same "a negative assertion passes on nothing" hole this PR closes.
-if ! printf '%s\n' "$HANDOFF" | sed '1d;$d' | grep -q '[^[:space:]]'; then
+# Captured before the match: `grep -q` exits on its first match, and a SIGPIPE
+# into `sed` fails the pipeline under `pipefail` — the hazard tests/lint.sh
+# records — turning a present body into a false red.
+handoff_body="$(printf '%s\n' "$HANDOFF" | sed '1d;$d')"
+if ! grep -q '[^[:space:]]' <<<"$handoff_body"; then
   printf 'FAIL scope: ## Hand off has no body\n'
   fails_here=1
 fi

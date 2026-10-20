@@ -107,6 +107,7 @@ list_root "$SKILLS_ROOT"
 # directory.
 scripts=()
 hidden_dirs=()
+dangling=()
 while IFS= read -r -d '' abs; do
   rel="${abs#"${SKILLS_ROOT}/"}"
   if [ "$rel" = "$abs" ]; then
@@ -118,6 +119,15 @@ while IFS= read -r -d '' abs; do
   if [ -L "$abs" ] && [ -d "$abs" ]; then
     case "${rel#*/}" in
       scripts | scripts/* | "$rel") hidden_dirs+=("skills/${rel}"); continue ;;
+    esac
+  fi
+  # A link whose target is not a directory is dropped by the selection below at
+  # those same two positions: `find` lists it, neither case branch takes it, and
+  # nothing says the subtree contributed nothing. A link under scripts/ is not
+  # this — it is enumerated and reported as untested.
+  if [ -L "$abs" ] && [ ! -d "$abs" ]; then
+    case "${rel#*/}" in
+      scripts | "$rel") dangling+=("skills/${rel}"); continue ;;
     esac
   fi
   case "${rel#*/}" in
@@ -191,6 +201,16 @@ done <"$LISTING"
 if [ "${#hidden_dirs[@]}" -gt 0 ]; then
   for key in "${hidden_dirs[@]}"; do
     printf 'scripts-have-tests: %s is a symlink to a directory — its contents cannot be enumerated\n' "$key" >&2
+  done
+  exit 1
+fi
+
+# A link whose target is not a directory loses its position just as quietly, so
+# it is named the same way. Not refused as "to a directory": that would say the
+# opposite of what was found.
+if [ "${#dangling[@]}" -gt 0 ]; then
+  for key in "${dangling[@]}"; do
+    printf 'scripts-have-tests: %s is a symlink whose target is not a directory — nothing is enumerated there\n' "$key" >&2
   done
   exit 1
 fi

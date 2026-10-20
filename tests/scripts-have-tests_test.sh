@@ -782,4 +782,40 @@ if ! check_bytes 'tests/ subdirectory is not a subject: stdout' \
   'scripts-have-tests: 5 script(s), 5 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 43: a link at a skill position whose target is gone is refused ------
+# find lists the link and descends into nothing, so a dangling skills/<skill> or
+# skills/<skill>/scripts contributed no script and said nothing; with one covered
+# skill beside it the gate exited 0. A dangling link under scripts/ is a
+# different case — it stays enumerated and is charged as untested.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_script "$root" beta 'b.sh'
+mk_test "$root" beta 'b_test.sh'
+rm -rf "${root}/skills/beta/scripts"
+ln -s nowhere "${root}/skills/beta/scripts"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'dangling skill scripts link: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'dangling skill scripts link: names it' \
+  'skills/beta/scripts is a symlink whose target is not a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 44: the skill directory itself as a dangling link -------------------
+# The other position the new arm covers: `skills/<skill>` is where find would
+# have entered the skill, so a link there that resolves to nothing hides every
+# script the skill has, and case 30's directory case does not see it.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+ln -s nowhere "${root}/skills/gamma"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'dangling skill link: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'dangling skill link: names it' \
+  'skills/gamma is a symlink whose target is not a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

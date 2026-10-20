@@ -19,7 +19,9 @@
 # charged to the script under test. And the payload of an `--input -` call must
 # be recorded, with its absence its own failure distinct from a byte mismatch —
 # without it, `review-pr`'s `post-review.sh` stdin-piped payload is
-# unobservable, since it never reaches the argv the stub matches on.
+# unobservable, since it never reaches the argv the stub matches on. And a file
+# whose tally is zero must fail rather than print `ok 0/0`: an emptied row list
+# is otherwise indistinguishable from a file that ran every row.
 #
 # The numbered blocks below run in that order; the numbered list in
 # tests/README.md describes the same properties. The unnumbered blocks cover the
