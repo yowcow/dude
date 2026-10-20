@@ -7,7 +7,7 @@ description: Use to simplify recently modified code and human-facing docs while 
 
 It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
 
-One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code is the caller's.
+One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code or a doc in scope is the caller's.
 
 ## Orchestration model
 
@@ -75,7 +75,7 @@ Each proposer returns proposals only — never an edited file — with:
 **For human-facing docs, preservation is a judged claims table, not a check.** A doc proposal returns its before range, its exact after text, and two tables:
 
 - **before and after tables** — one row per fact a reader acts on or relies on, each labelled with the category it belongs to: instruction, default, prerequisite, condition, side effect, warning, opt-in / opt-out, failure behavior. Both tables cover the before range the proposal replaces.
-- **row-set equality is the proof** — order does not matter and a duplicated fact folds into one row. A fact the after text states that the before did not is an addition and out of scope. A fact that leaves the replaced range is preserved only when the after table names where it still stands, as `path:line`; that is how removing a duplicate stays inside row-set equality.
+- **row-set equality is the proof** — order does not matter and a duplicated fact folds into one row. A fact the after text states that the before did not is an addition and out of scope. A fact that leaves the replaced range is preserved only when the after table names, as `path:line` in the same file and outside the replaced range, where it still stands; that is how removing a duplicate stays inside row-set equality.
 - **byte-identical tokens** — commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at.
 - **the exact after text**, which the judge returns unchanged when it accepts. Different wording is a reject, or a fresh after table verified again.
 
