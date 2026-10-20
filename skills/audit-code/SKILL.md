@@ -36,7 +36,7 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 
 ### Step 3: Fix the measurement base
 
-- Record what was actually read: the revision, tree, or path. An installed tree and the repository it came from are different artifacts, and so are a branch and its base.
+- Record what was actually read: the revision, tree, or path, including the source of Step 1's inventory. An installed tree and the repository it came from are different artifacts, and so are a branch and its base; a promise from a tree the record does not name is not this artifact's.
 - Every claim of absence, exhaustiveness, or "only" names the sweep that produced it — run to completion and read whole, never a truncated or paged view of the output.
 
 ### Step 4: Sweep each axis
@@ -45,8 +45,8 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 - Assume every contract external to the scanned tree is honored, and keep only the findings that hold under that assumption. A suspected contract violation — a field that may be named differently, a response shape that may change — is not a finding: it goes to Not measured as one line, and neither findings nor invariants carry a label for which layer declared them. A convention about the artifact's own behaviour is no such contract — nothing outside the tree can change whether the tree keeps it, so breaking it is a finding. What breaks while the contract holds is a finding: a non-zero exit swallowed as success, a write left half done at failure, state created and never removed, a wait that outlasts a stated deadline. So is what a boundary can judge without a spec: how failure is handled, whether the artifact validates input against the shape it itself expects, whether one assumption contradicts itself in two places, whether a retry is idempotent.
 - An axis whose invariant is behaviour — output, state, or time — gets one probe of the expected break actually run. Running is not editing: the probe changes neither the artifact nor external state, through an unmodified throwaway copy or a read-only route. The probe runs under a bound — the deadline the axis's promise states, or a bound the probe names when the promise states none — and the bound is named among the observations; a probe stopped at a bound its promise set has observed a wait outlasting that promise. When the artifact cannot be run, or only mutation could settle the invariant, what the artifact does goes to Not measured with the reason. Invariants that only reading can settle — documentation, or the presence of a declared field — are not probed: one search would count as a probe and leave only the impression of having checked.
 - The evidence is what was observed — the output, the ending exit state, the state left behind, the time taken — and, for a claim a boundary can judge without a spec, the line quoted. A path from trigger to wrong result is the shape of the claim, not evidence for it.
-- A probe that found nothing still leaves one line under its axis's findings, `no finding`, with what it observed — the trigger it exercised and the result. A behaviour axis with no trace of a run, or with a run that never exercised the trigger of the expected break, is not swept as to what the artifact does: what the artifact does goes to Not measured with the reason, and a wait that outlasts a deadline the axis's promise states is the break itself and stays a finding. What a boundary can judge without a spec still stands as a finding on the line quoted.
-- A finding that attacks another axis's invariant is reported under that axis; a finding that attacks an invariant no axis attacked goes to Not measured, with the invariant named there.
+- A probe that found nothing still leaves one line under its axis's findings, `no finding`, with what it observed — the trigger it exercised and the result. A behaviour axis with no trace of a run, or with a run that never exercised the trigger of the expected break, is not swept as to what the artifact does: what the artifact does goes to Not measured with the reason, and a wait that outlasts a deadline the axis's promise states is the break itself and stays a finding. A probe stopped at a bound it named, with the wait still running, settles nothing past that bound: that goes to Not measured with the bound named, not to `no finding`. What a boundary can judge without a spec still stands as a finding on the line quoted.
+- A finding that attacks another axis's invariant is reported under that axis; a finding that attacks an invariant no axis attacked is reported under that invariant in place of an axis, and Not measured records that no axis attacked it.
 
 ## Synthesize
 
@@ -61,8 +61,8 @@ Once the report below is drafted, run `review-findings` on it for one pass, rest
 
   1. **Verdict** — what to fix, in priority order, in one paragraph; a candidate that would be a finding only if an external contract is not honored is named here as conditional.
   2. **Measurement base** — the revision, tree, or path measured, and the sweep behind each claim of absence.
-  3. **Invariants attacked** — per axis, the pair handed to the worker. An invariant left untouched belongs to Not measured instead.
-  4. **Findings** — per axis, the verdict and the observation that decided it, plus, for each finding, the `path:line` where it breaks.
+  3. **Invariants attacked** — per axis, the pair handed to the worker. An invariant no axis attacked and no finding names belongs to Not measured instead.
+  4. **Findings** — per axis or invariant, the verdict and the observation that decided it, plus, for each finding, the `path:line` where it breaks.
   5. **Next items** — concrete next actions in order. Not work to start here.
   6. **Not measured** — a first line `Assumed: <what was treated as holding as a contract external to the scanned tree>`, or `Assumed: none — no candidate rested on an external contract`; then the invariants, axes, and claims left unaudited, and what would settle each.
 
