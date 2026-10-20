@@ -340,6 +340,10 @@ assert_row() {
 
 harness_exit() {
   local failed="$1" total="$2"
+  if [ "$total" -eq 0 ]; then
+    printf 'not ok 0/0 %s: no assertion ran — the file is green without testing anything\n' "${0##*/}"
+    exit 1
+  fi
   if [ "$failed" -eq 0 ]; then
     printf 'ok %s/%s %s\n' "$total" "$total" "${0##*/}"
     exit 0

@@ -263,7 +263,10 @@ tree rather than stating as prose:
   `tools/`, and `hooks/`. A broken tools selector and fully covered skills and
   hooks trees are otherwise the same green.
 - An empty test file is **not** coverage. `run.sh` collects it and
-  `bash <empty>` exits 0, so it is a passing test with no detection power.
+  `bash <empty>` exits 0, so it is a passing test with no detection power. A
+  non-empty file that reaches `harness_exit` with a tally of zero now exits 1,
+  so the suite catches it — but `-s` alone still accepts a file that never
+  sources the harness, or exits before its tally.
 - A `find` that dies partway through `skills` is a **failure**, never a
   green over the part it managed to read. A missing `hooks/` directory is
   a listing failure, same as a missing `skills/` — same `if ! find` branch,
