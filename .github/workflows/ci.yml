@@ -44,12 +44,13 @@ jobs:
       - name: make test
         run: make test
 
-  # bash 3.2 is the floor the scripts under skills/<skill>/scripts/ must run on
-  # (AGENTS.md), and the image ships 5.x: a 3.2-only regression is green in the
-  # jobs above and broken wherever a macOS user's /bin/bash runs it. The suite
-  # runs with the built bash first on PATH, and the version is asserted before
-  # it, because a PATH that slipped would measure bash 5 and report the same
-  # green. The same steps, run by hand, reproduce this locally.
+  # bash 3.2 is the floor the scripts under skills/<skill>/scripts/ and the
+  # hooks must run on (AGENTS.md; hooks/session-start), and the image ships 5.x: a
+  # 3.2-only regression is green in the jobs above and broken wherever a macOS
+  # user's /bin/bash runs it. The suite runs with the built bash first on PATH,
+  # and the version is asserted before it, because a PATH that slipped would
+  # measure bash 5 and report the same green. The same steps, run by hand on
+  # Linux, reproduce this locally.
   test-bash32:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -59,7 +60,8 @@ jobs:
       - name: build bash 3.2.57
         run: |
           set -o pipefail
-          curl -fsSLo "$RUNNER_TEMP/bash-3.2.57.tar.gz" \
+          curl -fsSL --retry 3 --retry-connrefused \
+            -o "$RUNNER_TEMP/bash-3.2.57.tar.gz" \
             https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz
           printf '%s  %s\n' \
             '3fa9daf85ebf35068f090ce51283ddeeb3c75eb5bc70b1a4a7cb05868bfe06a4' \
@@ -80,7 +82,7 @@ jobs:
           make
           echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"
 
-      - name: assert the suite will run under bash 3.2
+      - name: make test (bash 3.2)
         run: |
           bash --version | head -1
           got="$(bash -c 'printf "%s.%s" "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}"')"
@@ -88,9 +90,7 @@ jobs:
             echo "bash on PATH is $got, not 3.2 — the suite below would measure the image's bash" >&2
             exit 1
           fi
-
-      - name: make test (bash 3.2)
-        run: make test
+          make test
 
   manifest:
     if: github.event_name != 'schedule'

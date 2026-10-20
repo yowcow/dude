@@ -83,20 +83,21 @@ if ! grep -Fq "$bash32_sha" <<<"$bash32_job" || ! grep -Fq 'sha256sum -c -' <<<"
   printf 'FAIL: test-bash32 pins the fetched tarball by sha256\n' >&2
   failed=1
 fi
-if ! grep -Fq '$GITHUB_PATH' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 puts the built bash on PATH\n' >&2
+if grep -F 'sha256sum -c -' <<<"$bash32_job" | grep -Fq '||'; then
+  printf 'FAIL: test-bash32 must not swallow a sha256 mismatch\n' >&2
   failed=1
 fi
-if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 asserts the suite runs under bash 3.2\n' >&2
+if ! grep -Fq '$GITHUB_PATH' <<<"$bash32_job"; then
+  printf 'FAIL: test-bash32 puts the built bash on PATH\n' >&2
   failed=1
 fi
 if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
   printf 'FAIL: test-bash32 runs on pull requests\n' >&2
   failed=1
 fi
-if ! grep -Fq 'run: make test' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 runs the suite\n' >&2
+bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,$p' <<<"$bash32_job")"
+if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" || ! grep -Fxq '          make test' <<<"$bash32_suite"; then
+  printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
   failed=1
 fi
 
