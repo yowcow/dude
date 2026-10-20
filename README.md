@@ -27,7 +27,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | `review-plan`             | Findings on a TODO list or an implementation plan                                   |
 | `review-pr`               | A PR reviewed, its judged findings returned to it as one PR review                  |
 | `settle-question`         | A judgment on an open question, with the evidence that settles it                   |
-| `simplify-code`           | Recently changed code simplified, behavior preserved                                |
+| `simplify-code`           | Recently changed code and human-facing docs simplified, stated facts preserved      |
 | `using-dude`              | The workflow rules the other skills are wired by                                    |
 | `vet-code`                | One round of code review findings, each judged, handed to the skill that called it  |
 
