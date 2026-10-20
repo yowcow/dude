@@ -248,7 +248,8 @@ name from the prune raises the count, which is what makes the check meaningful;
 `.claude` in particular is gitignored by `/.claude/`, but a `find` walk never
 reads `.gitignore`, so nothing else keeps it out.
 
-`tests/lint_test.sh` builds that probe for you.
+`tests/lint_test.sh` builds an equivalent miniature probe for you; the snippet
+above is still what checks the count against the working tree.
 
 ## The coverage gate: `scripts-have-tests.sh`
 
@@ -369,9 +370,9 @@ SUT="$tmp/old.sh" tests/run.sh <one-test-file>
 
 The specific commits named below, and in the `RED verification` headers of the
 test files under `tests/pr-to-ready/`, are from this suite's original home in
-`yowcow/dotfiles`. They do not resolve here — this repository started fresh
-rather than importing that history — so they record which fix each test was
-measured against, not a `git show` runnable in this repository. The recipe
+`yowcow/dotfiles`. They do not resolve here — except `253c615`, this
+repository's own `-R` commit — so they record which fix each test was measured
+against, not a `git show` runnable in this repository. The recipe
 itself works as written against any commit that is in this history.
 
 The same goes for every bare issue number and TODO-item reference anywhere
