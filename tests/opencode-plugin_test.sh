@@ -6,7 +6,9 @@
 # so the stub is faithful for shape purposes). Nothing is installed and no
 # new file is committed for this.
 #
-# RED knob is PLUGIN_UNDER_TEST=<mutant .js>; SUT does not apply (subject is a JS module).
+# RED knob is PLUGIN_UNDER_TEST=<mutant .js>; put the mutant two directories under
+# the repo root (pluginRoot resolves from ../..), or loadSkills() fails on ENOENT.
+# SUT does not apply (subject is a JS module).
 set -euo pipefail
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -130,13 +132,16 @@ const sessionContext = JSON.parse(process.argv[4]).hookSpecificOutput.additional
 const freshEvent = { system: [] };
 await hookFn(freshEvent);
 const stubText = freshEvent.system[0].text;
-// To the heading line's last colon, its terminator: the truncated
-// session-start form is `...<cksum>:<suffix>:`, and a first-colon match would
-// leave `:suffix` behind. `[^\n]*` cannot cross into the body's later
-// `dude:using-dude` colon. Stopping at end-of-line instead would swallow
-// whatever follows the terminator, letting a divergent tail pass.
-const normalize = (s) =>
-  s.replace(/from the dude install at [^\n]*:/g, 'from the dude install at <ROOT>:');
+// The two emitters' real install paths are replaced first, so text added
+// between the path and the heading's terminator colon still reaches the
+// comparison. Only session-start's truncated form for a root past 100 chars
+// (`...<cksum>:<suffix>:`) cannot be spelled from the plugin side, so that
+// form alone is matched heading-wide: `[^\n]*` cannot cross into the body's
+// later `dude:using-dude` colon, so it stops at the terminator.
+const normalize = (s) => s
+  .replaceAll(`${root}/`, '<ROOT>')
+  .replaceAll(root, '<ROOT>')
+  .replace(/from the dude install at \.\.\.[^\n]*:/g, 'from the dude install at <ROOT>:');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
 // The hook's <EXTREMELY_IMPORTANT> wrapper is the one envelope the plugin
