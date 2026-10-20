@@ -563,5 +563,7 @@ fixture sibling-garbage feature remote
 sibling 'echo WHAT'
 run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-garbage 0; fork sibling-garbage 1 false; } | facts_file)"
 assert_row 'base-sibling-garbage-is-reported' 0 'STOP base-resolve-failed\n' 0
+tally check_eq 'base-sibling-garbage: stderr' \
+  'unexpected output from resolve-pr-base.sh: WHAT' "$(cat "$SUT_STDERR")"
 
 harness_exit "$failed" "$total"

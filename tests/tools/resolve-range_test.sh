@@ -22,10 +22,11 @@
 # default branch is the remote's own HEAD (resolve-default-branch.sh) in every
 # row but the four stubbed ones at the end; no row stubs `gh`.
 #
-# RED verification (see tests/README.md). resolve-range.sh has never been
-# tested before this file, so there is no pre-fix commit to point SUT= at the
-# way this suite's other table tests do. Guards named in the script's own
-# header were removed instead, one at a time, in a copy under `mktemp -d` --
+# RED verification (see tests/README.md). The reader guard this file's last
+# rows pin is RED the ordinary way: point SUT= at the pre-fix script
+# (9738174^) inside a copy of tools/ that holds every sibling, and only those
+# rows fail. The other guards named in the script's own header were removed
+# instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
 # 4 alone mutates this script by itself and stays single-file: it mutates
@@ -101,6 +102,15 @@
 #      `no-trailer-uses-the-remote-head` and
 #      `no-trailer-empty-when-head-is-the-default-tip`, which also record
 #      nothing of their own.
+#
+#   The reader-boundary rows at the end of this file are RED through SUT= the
+#   ordinary way, not by removing a guard: point it at the pre-fix script
+#   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
+#   that holds every sibling -- the same tree records 1-3 and 5-8 need -- and
+#   only those four rows and their two stderr tallies fail: `not ok 6/39`.
+#   Measured: the aborted reader exits 1 with empty stdout, and the answers
+#   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
+#   answers STOP fetch-failed.
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
