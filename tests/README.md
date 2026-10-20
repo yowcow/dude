@@ -37,7 +37,9 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   silently match only one nesting depth. It collects a `*_test.sh` whether it is
   a regular file or a symlink — the coverage gate counts a symlink, since its
   `-f` follows the link — and a dangling link is run and fails the run rather
-  than being silently skipped.
+  than being silently skipped. `find` does not descend a symlinked *directory*,
+  so a `*_test.sh` inside one under `tests/` is not run even though the coverage
+  gate counts it (`-f` follows the link); that gap is known and unfixed here.
 - `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
 
 ## Writing a table-test case
@@ -304,7 +306,10 @@ tree rather than stating as prose:
   be enumerated while the rest of the tree reports itself covered. The link
   target is still never resolved. The one exception is a link to a directory
   *inside* `skills/<skill>/` but outside its `scripts/` subtree: a linked
-  `references/` directory holds nothing this gate reads and stays green.
+  `references/` directory holds nothing this gate reads and stays green. The
+  skill directory itself is refused the same way: a link at `skills/<skill>`
+  stops the walk before its `scripts/` subtree, so the visible skills would
+  report full coverage of code the gate never read.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so
@@ -369,6 +374,10 @@ depends on:
     charged with sending different bytes, and an empty expectation would let it
     pass. Only a call carrying `--input -` has a payload, which is real gh's own
     rule.
+12. **A tally of zero is a failure, not a green** — `harness_exit` exits 1 with
+    `not ok 0/0 … no assertion ran` when no assertion ran, so a file whose rows
+    were emptied out cannot read as a pass, and the coverage gate's `-s` is not
+    the only thing standing behind an empty test file.
 
 ## RED verification
 

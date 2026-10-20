@@ -35,6 +35,13 @@ if ! check_eq 'scope: the section starts at ## Hand off' \
   '## Hand off' "${HANDOFF%%$'\n'*}"; then fails_here=1; fi
 if ! check_eq 'scope: the section ends at ## Report' \
   '## Report' "${HANDOFF##*$'\n'}"; then fails_here=1; fi
+# Both headings in place still says nothing about the body between them: with
+# the text emptied out, row 3's negative grep matches nothing and goes green —
+# the same "a negative assertion passes on nothing" hole this PR closes.
+if ! printf '%s\n' "$HANDOFF" | sed '1d;$d' | grep -q '[^[:space:]]'; then
+  printf 'FAIL scope: ## Hand off has no body\n'
+  fails_here=1
+fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # Row 3: the Hand off section restates no output literal (PR forms or STOP).

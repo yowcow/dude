@@ -338,4 +338,23 @@ stub_watch 0 "$WATCH_OK"
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-without-claude-workflow' 3 '-' 0
 
+# The fourth argument is required, not defaulted — a dropped one must abort the
+# file rather than skip the gh-call assertion. Probed in its own process
+# because that abort is the mechanism; a row cannot observe its own unbound
+# parameter. This defaulting already recurred once (harness.sh's assert_row was
+# fixed and this copy kept it), so the comment alone is not enough.
+total=$((total + 1))
+probe_status=0
+probe_out="$( ( assert_row 'dropped-calls-argument' 0 - ) 2>&1 )" || probe_status=$?
+probe_fails=0
+if ! check_eq 'required fourth argument: exit' 1 "$probe_status"; then probe_fails=1; fi
+case "$probe_out" in
+  *unbound*) ;;
+  *)
+    printf 'FAIL required fourth argument: %s\n' "$probe_out"
+    probe_fails=1
+    ;;
+esac
+if [ "$probe_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

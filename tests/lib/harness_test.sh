@@ -539,4 +539,22 @@ if ! check_eq 'non-empty tally: exit' 0 "$he_status"; then he_fails=1; fi
 if ! check_eq 'non-empty tally: output' 'ok 3/3 harness_test.sh' "$he_out"; then he_fails=1; fi
 if [ "$he_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- assert_row: the fourth argument is required, not defaulted ---------------
+# A defaulted count turns a dropped argument into a silently skipped gh-call
+# assertion. Probed in its own process: a three-argument call aborts the file
+# before any row could observe it, and that abort is the mechanism.
+total=$((total + 1))
+ar_fails=0
+ar_status=0
+ar_out="$( ( assert_row 'dropped-calls-argument' 0 '' ) 2>&1 )" || ar_status=$?
+if ! check_eq 'required fourth argument: exit' 1 "$ar_status"; then ar_fails=1; fi
+case "$ar_out" in
+  *unbound*) ;;
+  *)
+    printf 'FAIL required fourth argument: %s\n' "$ar_out"
+    ar_fails=1
+    ;;
+esac
+if [ "$ar_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

@@ -625,4 +625,37 @@ if ! check_stderr_has 'cross-root test path collision: names both and the path' 
   'tools/helper.sh and scripts/tools/helper.sh share the expected test path tests/tools/helper_test.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 34: a symlinked tools/ subdirectory is refused ---------------------
+# The same predicate in the tools loop. tools/helper.sh is planted by tree_new
+# and already covered, so the refusal cannot be the empty-enumeration guard
+# firing instead.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_file "$root" elsewhere/lib/x.sh
+ln -s ../elsewhere/lib "${root}/tools/lib"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked tools dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked tools dir: names it' \
+  'tools/lib is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 35: a symlinked scripts/ subdirectory is refused -------------------
+# The same predicate in the root-scripts loop. scripts/planted.sh is planted by
+# tree_new and already covered, so the refusal cannot be the empty enumeration.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_file "$root" elsewhere/slib/y.sh
+ln -s ../elsewhere/slib "${root}/scripts/slib"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked root-script dir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked root-script dir: names it' \
+  'scripts/slib is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
