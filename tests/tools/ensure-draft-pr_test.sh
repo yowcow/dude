@@ -30,9 +30,11 @@
 # The four that pass hold for the old script too: no-arguments,
 # facts-flag-without-file and created-flag-without-base (it also exits 2) and
 # the no-redundant-push tally (it does not push either). The tree has to be
-# copied with its shape intact (`cp -R tools`): the SUT resolves its siblings
-# through dirname "$0", so a flat copy answers on every row regardless of this
-# file's own mutation.
+# copied with its shape intact (`cp -R tools`): in every row that reaches the
+# real sibling the SUT resolves it through dirname "$0", so a flat copy answers
+# there regardless of this file's own mutation. The two stubbed rows at the end
+# are the exception -- they copy the SUT into a tools/ tree that already holds
+# every sibling, so a flat copy is enough for those too.
 #   tmp="$(mktemp -d)"
 #   cp -R tools "$tmp/tools"
 #   git show master:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"

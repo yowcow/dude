@@ -36,10 +36,12 @@
 # the shared tools/read-base-trailer.sh and/or
 # tools/resolve-default-branch.sh this script calls as
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
-# every file the mutant's row needs in place -- a lone copy of this script
-# answers `STOP ask-default-branch` (or fails outright) on every row instead,
-# which pins nothing about the mutation. Eight were removed; the one that is
-# only partly observable is recorded as such below, rather than counted as
+# every file the mutant's row needs in place -- in those rows a lone copy of
+# this script answers `STOP ask-default-branch` (or fails outright) instead,
+# which pins nothing about the mutation. The three stubbed rows at the end are
+# the exception: they copy the SUT into a tools/ tree that already holds every
+# sibling, so a lone copy is enough for those. Eight were removed; the one that
+# is only partly observable is recorded as such below, rather than counted as
 # covered. What each mutant actually produced, measured:
 #
 #   1. The trailer read guarded as well as captured. This guard lives in
