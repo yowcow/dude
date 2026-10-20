@@ -61,7 +61,7 @@ Proposers are read-only and share no mutable state, so they may run in parallel 
 
 **Prose is assigned only when the diff contains human-facing docs.** With none, no proposer takes it: the default proposer's lens set is one smaller, and per-lens fan-out gains no worker. With docs present, per-lens fan-out gains the one Prose proposer, and the default proposer adds the lens.
 
-Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Lenses**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
+Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Lenses**, **Proposal contract**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
 
 ## Proposal contract
 
