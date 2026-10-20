@@ -8,9 +8,8 @@
 # tools/, hooks/, or the repository-root scripts/ with no test, nobody observes
 # the absence, and the suite reports green — the amplifier #180 identified
 # (nobody is running the code) reappearing through a door the per-script tests
-# do not cover. The gate is
-# permanent: it stays after coverage is complete, because the property it
-# holds is about the *next* script, not the current ones.
+# do not cover. The gate is permanent: it stays after coverage is complete,
+# because the property it holds is about the *next* script, not the current ones.
 #
 # It is a script rather than a check inlined in scripts-have-tests_test.sh for
 # the same reason run.sh has run_test.sh: its own conditions — an empty
@@ -257,7 +256,18 @@ for rel in "${tools[@]}"; do
 done
 
 for rel in "${root_scripts[@]}"; do
-  require_test "scripts/${rel}" "tests/${rel%.sh}_test.sh"
+  want="tests/${rel%.sh}_test.sh"
+  # tests/ holds this position's tests *and* the harness's own scripts (run.sh,
+  # manifest.sh, scripts-have-tests.sh). Without this guard, a new scripts/run.sh
+  # would be "covered" by tests/run_test.sh, which exercises tests/run.sh — the
+  # script is run by nothing while the gate reports full coverage.
+  if [ -e "${ROOT}/tests/${rel%.sh}.sh" ]; then
+    printf 'scripts-have-tests: scripts/%s collides with tests/%s.sh, whose test %s would cover it\n' \
+      "$rel" "${rel%.sh}" "$want" >&2
+    problems=$((problems + 1))
+    continue
+  fi
+  require_test "scripts/${rel}" "$want"
 done
 
 if [ "$problems" -ne 0 ]; then

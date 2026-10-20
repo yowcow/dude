@@ -21,10 +21,11 @@
 # without it, `review-pr`'s `post-review.sh` stdin-piped payload is
 # unobservable, since it never reaches the argv the stub matches on.
 #
-# The eleven numbered blocks below run in that order, matching the numbered list
-# in tests/README.md. The blocks after them cover the other two pieces of
-# machinery the suite rests on: the disposable git repository helper and the
-# `sleep` stub.
+# The numbered blocks below run in that order; the numbered list in
+# tests/README.md describes the same properties. The unnumbered blocks cover the
+# rest of the machinery the suite rests on: the `facts_file` fixture, the
+# zero-tally failure in `harness_exit`, `assert_row`'s required fourth argument,
+# the disposable git repository helper and the `sleep` stub.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
