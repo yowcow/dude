@@ -217,8 +217,8 @@ calls through `assert_row`, which is what shows the script reached no `gh`.
 
 `lint.sh` selects by shebang, not by a `*.sh` glob, so the extensionless PATH
 stub `tests/lib/bin/gh` is checked like anything else. It walks from the
-repository root, and prunes three directories that hold checkouts rather than
-this repository's own code: `.git`, `.worktrees`, and `.claude/worktrees`.
+repository root, and prunes four directories that are not this repository's own
+code: `.git`, `.worktrees`, `.claude/worktrees`, and `.opencode/node_modules`.
 
 **A run from inside a linked worktree cannot verify that prune.** There `.git`
 is a file rather than a directory and neither worktree directory exists, so
@@ -230,14 +230,16 @@ shapes and run the script there:
 probe="$(mktemp -d)"
 git clone --quiet --no-hardlinks . "$probe/dude"   # a real .git directory
 cp -a tests Makefile .shellcheckrc "$probe/dude/"  # plus anything uncommitted
-mkdir -p "$probe/dude/.worktrees/x" "$probe/dude/.claude/worktrees/y"
+mkdir -p "$probe/dude/.worktrees/x" "$probe/dude/.claude/worktrees/y" \
+  "$probe/dude/.opencode/node_modules/dep"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.worktrees/x/leak.sh"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.claude/worktrees/y/leak.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$probe/dude/.opencode/node_modules/dep/leak.sh"
 "$probe/dude/tests/lint.sh"
 ```
 
 The selected count must match a run from the working tree, and no path under
-any of the three pruned directories may appear in the listing. Dropping any one
+any of the four pruned directories may appear in the listing. Dropping any one
 name from the prune raises the count, which is what makes the check meaningful;
 `.claude` in particular is not gitignored, so nothing else keeps it out.
 

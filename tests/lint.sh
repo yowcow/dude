@@ -50,9 +50,9 @@ REPO_ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 LISTING="$(mktemp)"
 trap 'rm -f "$LISTING"' EXIT
 
-# Three directories are pruned, none of which was an exclusion this needed while
+# Four directories are pruned, none of which was an exclusion this needed while
 # it scanned a subdirectory of the repository. The tree now starts at the
-# repository root, and all three hold files that are not this repository's code:
+# repository root, and all four hold files that are not this repository's code:
 #
 #   .git               a plain checkout — CI's and the main working tree alike —
 #                      carries it as a real directory, and its hooks/*.sample
@@ -64,6 +64,11 @@ trap 'rm -f "$LISTING"' EXIT
 #                      and over-pruning is the one direction this must not fail
 #                      in. Note that .claude is *not* gitignored, so nothing
 #                      else keeps this content out of the walk.
+#   .opencode/node_modules
+#                      the OpenCode plugin SDK's npm tree (gitignored by
+#                      .opencode/.gitignore, which means nothing to a `find`
+#                      walk). Matched by path, not by `-name node_modules`, for
+#                      the same over-pruning reason as above.
 #
 # Both worktree directories hold working copies of these same files, on other
 # branches. A run from inside a linked worktree cannot verify this prune at all;
@@ -74,7 +79,8 @@ trap 'rm -f "$LISTING"' EXIT
 # is spelled out rather than derived from something cleverer such as
 # `git check-ignore`, which would silently skip whatever is ignored.
 if ! find "$REPO_ROOT" \
-  -type d \( -name .git -o -name .worktrees -o -path '*/.claude/worktrees' \) -prune -o \
+  -type d \( -name .git -o -name .worktrees -o -path '*/.claude/worktrees' \
+    -o -path '*/.opencode/node_modules' \) -prune -o \
   -type f -print0 | sort -z >"$LISTING"; then
   echo "listing ${REPO_ROOT} failed — the tree was not fully read" >&2
   exit 1
