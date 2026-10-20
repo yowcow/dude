@@ -256,17 +256,26 @@ for rel in "${tools[@]}"; do
 done
 
 for rel in "${root_scripts[@]}"; do
-  want="tests/${rel%.sh}_test.sh"
-  # tests/ holds this position's tests *and* the harness's own scripts (run.sh,
+  stem="${rel%.sh}"
+  want="tests/${stem}_test.sh"
+  # tests/ holds this position's tests *and* the harness's own subjects (run.sh,
   # manifest.sh, scripts-have-tests.sh). Without this guard, a new scripts/run.sh
   # would be "covered" by tests/run_test.sh, which exercises tests/run.sh — the
   # script is run by nothing while the gate reports full coverage.
-  if [ -e "${ROOT}/tests/${rel%.sh}.sh" ]; then
-    printf 'scripts-have-tests: scripts/%s collides with tests/%s.sh, whose test %s would cover it\n' \
-      "$rel" "${rel%.sh}" "$want" >&2
-    problems=$((problems + 1))
-    continue
-  fi
+  #
+  # Both spellings of the subject are refused: `tests/x.sh` and the extensionless
+  # `tests/x`, each of which owns the test `tests/x_test.sh`. `-e` alone misses
+  # a dangling symlink, which still occupies the name and would leave the root
+  # script covered by a test that exercises something else — so `-L` is asked
+  # too.
+  for subject in "${ROOT}/tests/${stem}.sh" "${ROOT}/tests/${stem}"; do
+    if [ -e "$subject" ] || [ -L "$subject" ]; then
+      printf 'scripts-have-tests: scripts/%s collides with %s, whose test %s would cover it\n' \
+        "$rel" "${subject#"${ROOT}/"}" "$want" >&2
+      problems=$((problems + 1))
+      continue 2
+    fi
+  done
   require_test "scripts/${rel}" "$want"
 done
 

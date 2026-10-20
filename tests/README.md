@@ -38,9 +38,12 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   a regular file or a symlink — the coverage gate counts a symlink, since its
   `-f` follows the link — and a dangling link is run and fails the run rather
   than being silently skipped. A symlinked *directory* under `tests/` is refused
-  for the same reason: `find` never descends it, so a `*_test.sh` inside would be
-  counted as coverage without ever running.
-- `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
+  for the same reason when the suite discovers its own files: `find` never
+  descends it, so a `*_test.sh` inside would be counted as coverage without
+  ever running.
+- `tests/run.sh <file> [<file> ...]` — runs only the named file(s). The
+  symlinked-directory refusal above applies to discovery only: a named run
+  skips it, because a targeted run is not a coverage claim.
 
 ## Writing a table-test case
 
@@ -284,9 +287,11 @@ tree rather than stating as prose:
   `tests/tools/helper_test.sh`. Counting the one file as coverage for both
   would leave the second script exercised by nothing. The same test cannot
   cover a *root script* and a `tests/` subject either: `scripts/<x>.sh` whose
-  expected `tests/<x>_test.sh` is already the test of an existing
-  `tests/<x>.sh` is refused, naming both, because `tests/<x>_test.sh`
-  exercises `tests/<x>.sh` and the new script would be run by nothing.
+  expected `tests/<x>_test.sh` is already the test of an existing `tests/<x>.sh`
+  — or of an extensionless `tests/<x>` — is refused, naming both, because
+  `tests/<x>_test.sh` exercises that subject and the new script would be run by
+  nothing. A subject that is a dangling symlink still occupies the name and is
+  refused the same way.
 - A `find` that dies partway through a root is a **failure**, never a green
   over the part it managed to read. A missing directory reaches the same
   message through `list_root`, which lists every root, and each of the four
@@ -304,12 +309,13 @@ tree rather than stating as prose:
   answers the wrong question, since it classifies a symlink by the link.
   Measured: an untested symlink beside one covered regular script was
   reported as one script, one with tests, and exit 0, naming the symlink
-  nowhere. The target is never resolved or read — only visibility is at
+  nowhere. The target's contents are never read — only visibility is at
   stake — so a dangling link is reported rather than fatal.
 - A symlink to a **directory** under any of these positions is an **error** naming
   the link: `find` lists it but never descends into it, so its contents cannot
-  be enumerated while the rest of the tree reports itself covered. The link
-  target is still never resolved. The one exception is a link to a directory
+  be enumerated while the rest of the tree reports itself covered. The target's
+  contents are never read either: the target is only asked whether it is a
+  directory, never descended into. The one exception is a link to a directory
   *inside* `skills/<skill>/` but outside its `scripts/` subtree: a linked
   `references/` directory holds nothing this gate reads and stays green. The
   skill directory itself is refused the same way: a link at `skills/<skill>`

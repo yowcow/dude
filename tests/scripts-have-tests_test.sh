@@ -695,4 +695,54 @@ if ! check_stderr_has 'root script shadows a tests/ subject: names both' \
   'scripts/x.sh collides with tests/x.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 38: a root script sharing its test with an extensionless subject ---
+# The same rule for the other spelling: tests/x owns tests/x_test.sh, so a
+# scripts/x would be "covered" by a test that exercises tests/x.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_root_script "$root" 'x'
+mk_root_test "$root" 'x_test.sh'
+mk_file "$root" tests/x
+run_sut bash "$SUT" "$root"
+if ! check_eq 'root script shadows an extensionless tests/ subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'root script shadows an extensionless tests/ subject: names both' \
+  'scripts/x collides with tests/x'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 39: a dangling tests/ subject still occupies the name --------------
+# `-e` is false for a dangling symlink, so a subject that is a broken link
+# would slip past the guard and the root script would be "covered" by a test
+# that exercises nothing at all.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_root_script "$root" 'x.sh'
+mk_root_test "$root" 'x_test.sh'
+ln -s "${root}/tests/nowhere.sh" "${root}/tests/x.sh"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'root script shadows a dangling tests/ subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'root script shadows a dangling tests/ subject: names both' \
+  'scripts/x.sh collides with tests/x.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 40: a symlinked root script is enumerated, not silently exempt ------
+# Same door as cases 10, 16 and 22, at the fourth position: the root scripts/
+# loop reads the same listing, so a symlink there is enumerated like a regular
+# file and charged with needing a test.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+ln -s /nonexistent/elsewhere.sh "${root}/scripts/sneaky.sh"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked root script: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked root script: names the symlink' 'no test for scripts/sneaky.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

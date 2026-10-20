@@ -206,4 +206,22 @@ if ! grep -qF -- "${linktree}/tree/linked is a symlink to a directory" "$SUT_STD
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 9: a test file nested under the root is discovered and run ---------
+# Discovery must reach every depth the suite uses, not just the top level. The
+# repository nests 39 of its 47 test files; a discovery that matched one level
+# would run 8 files and report the whole suite green. A plain top-level test is
+# planted too, so a depth-blind runner reports one file rather than none.
+total=$((total + 1))
+fails_here=0
+deep="${HARNESS_TMP}/deep-discovery"
+mkdir -p "$deep/a/b"
+cp "$SUT" "$deep/run.sh"
+printf '#!/usr/bin/env bash\nprintf "deep ran\\n"\n' >"$deep/a/b/deep_test.sh"
+printf '#!/usr/bin/env bash\nprintf "top ran\\n"\n' >"$deep/top_test.sh"
+run_sut env -u SUT bash "$deep/run.sh"
+if ! check_eq 'nested test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'nested test file: both files ran, in sorted order' \
+  'deep ran\ntop ran\nall 2 test files passed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
