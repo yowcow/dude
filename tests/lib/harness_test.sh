@@ -23,9 +23,9 @@
 #
 # The numbered blocks below run in that order; the numbered list in
 # tests/README.md describes the same properties. The unnumbered blocks cover the
-# rest of the machinery the suite rests on: the `facts_file` fixture, the
-# zero-tally failure in `harness_exit`, `assert_row`'s required fourth argument,
-# the disposable git repository helper and the `sleep` stub.
+# rest of the machinery the suite rests on: the `facts_file` fixture,
+# `assert_row`'s required fourth argument, the disposable git repository helper
+# and the `sleep` stub.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The

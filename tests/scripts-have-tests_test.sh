@@ -745,4 +745,22 @@ if ! check_eq 'symlinked root script: exit' 1 "$SUT_STATUS"; then fails_here=1; 
 if ! check_stderr_has 'symlinked root script: names the symlink' 'no test for scripts/sneaky.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 41: a root that is itself a symlink is named, not the enumeration --
+# find does not descend into its own starting point, so a linked root enumerates
+# empty and the empty guard fires with "the enumeration is broken" — red, but
+# naming a cause that is not there. The root set is read through one list_root,
+# so this one case covers all four.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mv "${root}/scripts" "${root}/scripts-real"
+ln -s scripts-real "${root}/scripts"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked root: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked root: names it' \
+  'scripts is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

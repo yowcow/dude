@@ -311,16 +311,17 @@ tree rather than stating as prose:
   reported as one script, one with tests, and exit 0, naming the symlink
   nowhere. The target's contents are never read — only visibility is at
   stake — so a dangling link is reported rather than fatal.
-- A symlink to a **directory** under any of these positions is an **error** naming
-  the link: `find` lists it but never descends into it, so its contents cannot
-  be enumerated while the rest of the tree reports itself covered. The target's
-  contents are never read either: the target is only asked whether it is a
-  directory, never descended into. The one exception is a link to a directory
-  *inside* `skills/<skill>/` but outside its `scripts/` subtree: a linked
-  `references/` directory holds nothing this gate reads and stays green. The
-  skill directory itself is refused the same way: a link at `skills/<skill>`
-  stops the walk before its `scripts/` subtree, so the visible skills would
-  report full coverage of code the gate never read.
+- A symlink to a **directory** under any of these positions is an **error**
+  naming the link: `find` lists it but never descends into it, so its contents
+  cannot be enumerated while the rest of the tree reports itself covered. A
+  position that is itself a symlink to a directory is an **error** naming the
+  link. The target's contents are never read either: the target is only asked
+  whether it is a directory, never descended into. The one exception is a link
+  to a directory *inside* `skills/<skill>/` but outside its `scripts/` subtree:
+  a linked `references/` directory holds nothing this gate reads and stays
+  green. The skill directory itself is refused the same way: a link at
+  `skills/<skill>` stops the walk before its `scripts/` subtree, so the visible
+  skills would report full coverage of code the gate never read.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so
