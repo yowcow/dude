@@ -34,9 +34,10 @@
 # Separately, and only under bash 3.2, `control-chars-json-intact` is also the
 # RED for the escaper: against the pre-fix quoted replacement
 # (`s="${s//"$c"/"$u"}"`) bash 3.2 keeps the quotes as literal characters, the
-# object stops parsing, and the row fails on `check_json`. bash 5.x accepts
-# either spelling, so the row is green there -- which is why `test-bash32` is
-# what detects a re-quoted replacement.
+# object stops parsing, and the row fails on `check_json` and then on
+# `check_context` (the context cannot be read out of unparsable JSON). bash 5.x
+# accepts either spelling, so the row is green there -- which is why
+# `test-bash32` is what detects a re-quoted replacement.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
