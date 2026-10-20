@@ -63,7 +63,7 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not run on schedules\n' >&2
   failed=1
 fi
-uses_lines="$(grep -c '^ *- uses:' <<<"$gated_blocks" || true)"
+uses_lines="$(grep -cE '^ *(- )?uses:' <<<"$gated_blocks" || true)"
 pinned_lines="$(grep -cE 'uses: [^[:space:]]+@[0-9a-f]{40} # ' <<<"$gated_blocks" || true)"
 if [ "$uses_lines" -eq 0 ]; then
   printf 'FAIL: lint/test jobs declare no uses: lines — the selection is broken\n' >&2
@@ -81,37 +81,38 @@ fi
 if [ -z "$bash32_job" ]; then
   printf 'FAIL: no test-bash32 job — the selector is broken or the job is gone\n' >&2
   failed=1
-fi
-if ! grep -Fq 'https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 fetches the bash 3.2.57 tarball\n' >&2
-  failed=1
-fi
-if ! grep -Fq "$bash32_sha" <<<"$bash32_job" || ! grep -Fq 'sha256sum -c -' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 pins the fetched tarball by sha256 (bash32_sha here must match ci.yml)\n' >&2
-  failed=1
-fi
-if grep -Eq 'sha256sum -c -.*\|\|' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 must not swallow a sha256 mismatch\n' >&2
-  failed=1
-fi
-if ! grep -Fq '$GITHUB_PATH' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 puts the built bash on PATH\n' >&2
-  failed=1
-fi
-if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 runs on pull requests\n' >&2
-  failed=1
-fi
-bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,/^      - /p' <<<"$bash32_job")"
-if [ -z "$bash32_suite" ]; then
-  printf 'FAIL: test-bash32 has no "make test (bash 3.2)" step — the step name or the job is gone\n' >&2
-  failed=1
-elif ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
-  || ! grep -Eq '!=[[:space:]]*"?3\.2"?([^0-9.]|$)' <<<"$bash32_suite" \
-  || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite" \
-  || ! grep -Eq '^[[:space:]]*exit [1-9]' <<<"$bash32_suite"; then
-  printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
-  failed=1
+else
+  if ! grep -Fq 'https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz' <<<"$bash32_job"; then
+    printf 'FAIL: test-bash32 fetches the bash 3.2.57 tarball\n' >&2
+    failed=1
+  fi
+  if ! grep -Fq "$bash32_sha" <<<"$bash32_job" || ! grep -Fq 'sha256sum -c -' <<<"$bash32_job"; then
+    printf 'FAIL: test-bash32 pins the fetched tarball by sha256 (bash32_sha here must match ci.yml)\n' >&2
+    failed=1
+  fi
+  if grep -Eq 'sha256sum -c -.*\|\|' <<<"$bash32_job"; then
+    printf 'FAIL: test-bash32 must not swallow a sha256 mismatch\n' >&2
+    failed=1
+  fi
+  if ! grep -Fq '$GITHUB_PATH' <<<"$bash32_job"; then
+    printf 'FAIL: test-bash32 puts the built bash on PATH\n' >&2
+    failed=1
+  fi
+  if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
+    printf 'FAIL: test-bash32 runs on pull requests\n' >&2
+    failed=1
+  fi
+  bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,/^      - /p' <<<"$bash32_job")"
+  if [ -z "$bash32_suite" ]; then
+    printf 'FAIL: test-bash32 has no "make test (bash 3.2)" step — the step name or the job is gone\n' >&2
+    failed=1
+  elif ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
+    || ! grep -Eq '!=[[:space:]]*"?3\.2"?([^0-9.]|$)' <<<"$bash32_suite" \
+    || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite" \
+    || ! grep -Eq '^[[:space:]]*exit [1-9]' <<<"$bash32_suite"; then
+    printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
+    failed=1
+  fi
 fi
 
 harness_exit "$failed" "$total"
