@@ -49,8 +49,7 @@ jobs:
   # 3.2-only regression is green in the jobs above and broken wherever a macOS
   # user's /bin/bash runs it. The suite runs with the built bash first on PATH,
   # and the version is asserted before it, because a PATH that slipped would
-  # measure bash 5 and report the same green. The same steps, run by hand on
-  # Linux, reproduce this locally.
+  # measure bash 5 and report the same green.
   test-bash32:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
