@@ -763,4 +763,23 @@ if ! check_stderr_has 'symlinked root: names it' \
   'scripts is a symlink to a directory'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 42: a tests/ subdirectory is not a shadowing subject ---------------
+# tests/ names a subdirectory after each position it tests (`tests/hooks/`,
+# `tests/tools/`), so a root script whose stem matches one of those is the
+# ordinary case, not a collision: `scripts/hooks.sh` is covered by
+# `tests/hooks_test.sh` while `tests/hooks/` holds the hook tests. Asking `-e`
+# refused it with a message naming a test that would have covered it correctly.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_root_script "$root" 'hooks.sh'
+mk_root_test "$root" 'hooks_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'tests/ subdirectory is not a subject: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'tests/ subdirectory is not a subject: stdout' \
+  'scripts-have-tests: 5 script(s), 5 with tests\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

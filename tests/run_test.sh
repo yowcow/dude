@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Tests tests/run.sh itself — specifically that a $SUT that does not name a
-# readable non-empty file stops the run before any test file executes.
+# Tests tests/run.sh itself — that a `$SUT` that does not name a readable
+# non-empty file stops the run before any test file executes (cases 1-5), and
+# that discovery collects a symlinked test file, fails on a dangling link,
+# refuses a symlinked directory, and descends into subdirectories (cases 6-9).
 #
 # Why this file exists: a $SUT pointing at a path that isn't there makes every
 # `run_sut bash "$SUT"` in the selected test file exit 127, so nearly every row
@@ -8,10 +10,11 @@
 # "the test detects the defect" turns a zero-detection-power test into an
 # accepted one (#214, measured while implementing #187).
 #
-# Whether a test actually ran is asserted by the fixture's own marker file, not
-# by parsing the runner's output: a refused run under the guarded runner prints
-# no summary at all, while the pre-guard runner this file is also pointed at for
-# RED verification reaches its usual summary whether or not $SUT was honoured.
+# Whether a test actually ran (cases 1-5) is asserted by the fixture's own
+# marker file, not by parsing the runner's output: a refused run under the
+# guarded runner prints no summary at all, while the pre-guard runner this file
+# is also pointed at for RED verification reaches its usual summary whether or
+# not $SUT was honoured.
 # No one output-parsing rule holds for both, so only the marker separates
 # "refused before running anything" from "ran, whatever the rows did".
 #

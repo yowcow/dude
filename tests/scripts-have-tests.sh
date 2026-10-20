@@ -272,12 +272,15 @@ for rel in "${root_scripts[@]}"; do
   # script is run by nothing while the gate reports full coverage.
   #
   # Both spellings of the subject are refused: `tests/x.sh` and the extensionless
-  # `tests/x`, each of which owns the test `tests/x_test.sh`. `-e` alone misses
+  # `tests/x`, each of which owns the test `tests/x_test.sh`. `-f` alone misses
   # a dangling symlink, which still occupies the name and would leave the root
   # script covered by a test that exercises something else — so `-L` is asked
-  # too.
+  # too. `-e` is not asked: tests/ holds subdirectories named after positions
+  # (`tests/hooks/`, `tests/tools/`), and a directory there is not a subject —
+  # refusing it would report a collision that does not exist and skip the
+  # `tests/hooks_test.sh` that is the right test for `scripts/hooks.sh`.
   for subject in "${ROOT}/tests/${stem}.sh" "${ROOT}/tests/${stem}"; do
-    if [ -e "$subject" ] || [ -L "$subject" ]; then
+    if [ -f "$subject" ] || [ -L "$subject" ]; then
       printf 'scripts-have-tests: scripts/%s collides with %s, whose test %s would cover it\n' \
         "$rel" "${subject#"${ROOT}/"}" "$want" >&2
       problems=$((problems + 1))
