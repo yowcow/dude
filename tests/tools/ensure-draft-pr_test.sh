@@ -535,10 +535,7 @@ assert_row 'no-origin' 0 'STOP repo-lookup-failed\n' 0
 # exit 1 with empty stdout, and exit 1 with the error line on stderr -- no
 # STOP either way, so the orchestrator saw "aborted", never "stopped".
 #
-#   These two rows are RED the ordinary way: point SUT= at the pre-fix script
-#   (`git show e4395c8^:tools/ensure-draft-pr.sh`) dropped into a copy of
-#   tools/ that holds every sibling, and only those two rows and the one
-#   stderr tally fail: `not ok 3/59`.
+#   RED recipe and measured count: see the header.
 CONTRACT="${HARNESS_TMP}/tools-contract"
 cp -R "${REPO_ROOT}/tools" "$CONTRACT"
 cp "$SUT" "${CONTRACT}/ensure-draft-pr.sh"
