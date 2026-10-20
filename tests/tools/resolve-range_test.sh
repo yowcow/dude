@@ -23,10 +23,9 @@
 # row but the four stubbed ones at the end; no row stubs `gh`.
 #
 # RED verification (see tests/README.md). The reader guard this file's last
-# rows pin is RED the ordinary way: point SUT= at the pre-fix script
-# (9738174^) inside a copy of tools/ that holds every sibling, and only those
-# rows fail. The other guards named in the script's own header were removed
-# instead, one at a time, in a copy under `mktemp -d` --
+# rows pin is RED the ordinary way -- the recipe and the measured count are in
+# the record below. The other guards named in the script's own header were
+# removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
 # 4 alone mutates this script by itself and stays single-file: it mutates
@@ -110,7 +109,8 @@
 #   only those four rows and their two stderr tallies fail: `not ok 6/39`.
 #   Measured: the aborted reader exits 1 with empty stdout, and the answers
 #   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
-#   answers STOP fetch-failed.
+#   answers STOP fetch-failed, with bash's `FETCH_SPEC: unbound variable`
+#   diagnostic on stderr beside it.
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
@@ -548,8 +548,9 @@ assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 
 # CLOSED stops as STOP abandoned-prerequisite), so the reader
 # is stubbed. Measured before the fix: a reader exiting 1 made this script exit
 # 1 with empty stdout; an unknown KIND or STATE answered STOP fetch-failed
-# while the script was in fact reading an unset FETCH_SPEC -- a person sent to
-# re-run a fetch that was never attempted.
+# while the script was in fact reading an unset FETCH_SPEC -- with bash's
+# `FETCH_SPEC: unbound variable` diagnostic on stderr beside it -- a person
+# sent to re-run a fetch that was never attempted.
 CONTRACT="${HARNESS_TMP}/tools-contract"
 cp -R "${REPO_ROOT}/tools" "$CONTRACT"
 cp "$SUT" "${CONTRACT}/resolve-range.sh"
