@@ -71,9 +71,9 @@ jobs:
           # triplet is derived from uname rather than guessed; this job runs
           # x86_64, where both give x86_64-unknown-linux-gnu.
           # C23 reads `f ()` as `f (void)`, and this release declares
-          # list_reverse () while calling it with an argument (general.h:129);
-          # gcc 15, which ubuntu-latest moves to, defaults to gnu23, so the
-          # dialect is pinned.
+          # list_reverse () at externs.h:124 while general.h:129 calls it
+          # with an argument; gcc 15, which ubuntu-latest moves to, defaults
+          # to gnu23, so the dialect is pinned.
           triplet="$(uname -m)-unknown-linux-gnu"
           CFLAGS="-O2 -std=gnu89" ./configure \
             --build="$triplet" --host="$triplet" \
