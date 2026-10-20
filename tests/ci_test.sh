@@ -83,7 +83,7 @@ if ! grep -Fq 'https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz' <<<"$bash32_job"
   failed=1
 fi
 if ! grep -Fq "$bash32_sha" <<<"$bash32_job" || ! grep -Fq 'sha256sum -c -' <<<"$bash32_job"; then
-  printf 'FAIL: test-bash32 pins the fetched tarball by sha256\n' >&2
+  printf 'FAIL: test-bash32 pins the fetched tarball by sha256 (bash32_sha here must match ci.yml)\n' >&2
   failed=1
 fi
 if grep -Eq 'sha256sum -c -.*\|\|' <<<"$bash32_job"; then
@@ -99,7 +99,10 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
   failed=1
 fi
 bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,$p' <<<"$bash32_job")"
-if ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
+if [ -z "$bash32_suite" ]; then
+  printf 'FAIL: test-bash32 has no "make test (bash 3.2)" step — the step name or the job is gone\n' >&2
+  failed=1
+elif ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
   || ! grep -Eq '!=[[:space:]]*"?3\.2' <<<"$bash32_suite" \
   || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite"; then
   printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
