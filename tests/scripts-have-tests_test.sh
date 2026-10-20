@@ -658,4 +658,22 @@ if ! check_stderr_has 'symlinked root-script dir: names it' \
   'scripts/slib is a symlink to a directory'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 36: a symlinked subdirectory under a skill's scripts/ is refused ---
+# The third branch of the skills predicate, after the scripts/ directory itself
+# (case 27) and the skill directory (case 30). A skill that factors a shared
+# subdirectory under scripts/ would otherwise hide every script in it while the
+# covered sibling reports the subtree green.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_file "$root" elsewhere/lib/x.sh
+ln -s ../../../elsewhere/lib "${root}/skills/alpha/scripts/lib"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'symlinked scripts subdir: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'symlinked scripts subdir: names it' \
+  'skills/alpha/scripts/lib is a symlink to a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
