@@ -608,4 +608,21 @@ if ! check_stderr_has 'hook test path collision: names both and the path' \
   'hooks/foo and hooks/foo.sh share the expected test path tests/hooks/foo_test.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 33: the same collision across roots -------------------------------
+# The expected path mirrors the script's position in the tree, so a root script
+# under scripts/tools/ lands on the tools/ path. tools/helper.sh is planted by
+# tree_new and already covered; only the root script is added, so the one test
+# would count twice and the second script is exercised by nothing.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mk_root_script "$root" 'tools/helper.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'cross-root test path collision: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'cross-root test path collision: names both and the path' \
+  'tools/helper.sh and scripts/tools/helper.sh share the expected test path tests/tools/helper_test.sh'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
