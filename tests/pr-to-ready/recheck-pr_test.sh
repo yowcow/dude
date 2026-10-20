@@ -51,10 +51,12 @@
 #
 # The recorded-pair rows: `recorded-suppressed-is-met` and its mark-ready row
 # pin criterion (i) — a pair naming the listing's own id and entry is met and
-# goes ready. The near-miss (`README.md:180` against an entry that says
-# `README.md:179`, which is what copying from the --full block's
-# `**path:line**` markup produces), the other review id, and the second entry
-# pin (ii): the id is half the key, and coverage is per entry.
+# goes ready — and `second-pair-covers-is-met` pins the pair loop reaching a
+# later pair after an earlier one misses. The near-miss (`README.md:180`
+# against an entry that says `README.md:179` — a one-character near-miss at
+# the location string, not a copy of the --full markup, which prints
+# `**README.md:179**`), the other review id, and the second entry pin (ii):
+# the id is half the key, and coverage is per entry.
 # `second-entry-unrecorded-is-unmet` is also the row for the entry loop's bound:
 # a script that checks only the first entry passes every other row.
 # `clean-records-met` and `suppressed-finding-is-unmet` keep the argvs they had
@@ -274,6 +276,22 @@ stub_head deadbeef
 : | gh_stub_response '*' 0 pr ready -R acme/widgets -- 7
 ready_in "$W" acme widgets 7
 assert_row 'recorded-suppressed-is-met: mark-ready goes ready' 0 'READY 7\n' 2
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+gh_stub_raw_response '*' 0 pr view --repo acme/widgets --json reviews \
+  --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/reviews-suppressed.json"
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK8Ag-A README.md:179 PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'second-pair-covers-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+: | gh_stub_response '*' 0 pr ready -R acme/widgets -- 7
+ready_in "$W" acme widgets 7
+assert_row 'second-pair-covers-is-met: mark-ready goes ready' 0 'READY 7\n' 2
 
 row_start
 stub_head deadbeef

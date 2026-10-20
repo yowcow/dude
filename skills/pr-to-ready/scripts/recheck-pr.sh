@@ -36,9 +36,11 @@
 # already judged?" rather than "is there a finding at all": with nothing to
 # compare, an entry recorded under an older review reads as unknown and the
 # re-confirmation flips to unmet on a PR nobody changed. The listing's id is
-# split off by parameter expansion, not through `head`: `head` exits after the
-# first line, and `pipefail` turns the SIGPIPE a larger body leaves `printf`
-# with into a non-zero command the caller cannot tell from a failed read.
+# split off by parameter expansion, as ./list-suppressed-comments.sh does,
+# rather than by a needless `head` in the pipeline; the first newline is where
+# the id line ends and the block begins. The call site's `{ ...; } ||
+# verdict=unmet` already suppresses errexit for this body, so the choice is
+# consistency with the producer, not a guard against `head`'s SIGPIPE.
 #
 # Exit: 0 = measured and recorded, met or not
 #       2 = usage error, including an odd number of pair arguments
@@ -106,8 +108,9 @@ suppressed_met() {
   review="${listing%%$'\n'*}"
   printf '%s\n' "$listing" | tail -n +3 | {
     while IFS= read -r entry; do
-      # `if`, not `[ -z "$entry" ] && continue`: a failing test's status ends
-      # this subshell under `set -e`.
+      # `if`, not `[ -z "$entry" ] && continue`: the `if` keeps the intent
+      # explicit and does not lean on a failing test on the left of `&&`
+      # being exempt from `set -e`.
       if [ -n "$entry" ]; then
         covered "$review" "$entry" "$@" || exit 1
       fi
