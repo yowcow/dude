@@ -1,6 +1,6 @@
 ---
 name: simplify-code
-description: Use to simplify recently modified code while preserving behavior.
+description: Use to simplify recently modified code and human-facing docs while preserving behavior and stated facts.
 ---
 
 # Simplify Code
@@ -27,18 +27,22 @@ Resolve what to simplify in this order, and declare the resolved scope before di
 4. **Nothing to simplify** — no uncommitted change, and no range with anything in it. Ask the user what to simplify. Never widen to the whole repository on a guess.
 
 Kept as a second copy so this pass resolves the same scope without borrowing: the caller hands it the same range the review runs on.
+
+**Docs are in scope by role, not by path.** Human-facing docs — prose a person reads to install, operate, or understand the project, such as a README, a guide, usage docs, or explanatory text under `docs/` — are part of what this pass simplifies when the diff touches them. Agent-facing text, which selects or constrains an agent's behavior — `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, agent instructions, and the plans or design records an agent reads — is out of scope, as are structured records such as changelogs and licences and anything generated or vendored. Judge by what the text does, and when the role is unclear leave it out. Code comments are not docs here; a comment that only restates the code belongs to **Noise**.
+
 - Don't broaden cleanup unless the user asks.
 - If a worthwhile simplification needs files outside the diff, report it instead of changing it.
-- Preserve behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics.
-- When the existing checks can't prove a simplification behavior-preserving, add the minimal characterization test that can, and say so in the report. That's the proof, not scope creep.
+- Preserve code behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics. A human-facing doc keeps its facts instead, per **Proposal contract**'s claims table.
+- When the existing checks can't prove a code simplification behavior-preserving, add the minimal characterization test that can, and say so in the report. That's the proof, not scope creep. A doc change gets no test: its proof is the judged claims table, and no check stands in for it.
 
 ## Lenses
 
-Each lens is a distinct kind of avoidable complexity, and every one is behavior-preserving. How many proposers they map to is decided in **Dispatch** below.
+Each lens is a distinct kind of avoidable complexity, and every one preserves what it must: code behavior, or a human-facing doc's facts. How many proposers they map to is decided in **Dispatch** below.
 
 - **Structure** — unnecessary complexity, nesting, or branching; redundant or duplicated logic; unclear names; related logic that could be consolidated.
 - **Cost** — work the change itself added beyond what its result needs, where the excess is evident from reading the diff rather than from a measurement: per-iteration queries or IO that one call covers. Reshape to the same result at the lower cost.
 - **Noise** — formatting churn unrelated to the task; comments that merely restate the code.
+- **Prose** — human-facing docs only. Give a paragraph one topic; turn an enumeration into a list; keep a condition, exception, or qualifier beside the sentence it governs; use one name for one referent; state a fact once. A long sentence is a signal, not a rule. Reordering, emphasis, headings, sentence breaks, and paragraph breaks are free; the set of facts is not. Never drop an instruction or default, a prerequisite or condition, a side effect, a warning, an opt-in or opt-out entry, or what happens on failure.
 - **Reuse** — places where the diff reimplements what the repository already has. Grep the shared and utility modules and the files adjacent to the change, and name the existing helper it should call instead.
 
 ## Don't over-simplify
@@ -54,6 +58,8 @@ Proposers are read-only and share no mutable state, so they may run in parallel 
 
 - **Default** — one proposer takes every lens.
 - **Large diff, or one spanning subsystems** — one proposer per lens, dispatched together.
+
+**Prose is assigned only when the diff contains human-facing docs.** With none, no proposer takes it: the default proposer's lens set is one smaller, and per-lens fan-out gains no worker. With docs present, per-lens fan-out gains the one Prose proposer, and the default proposer adds the lens.
 
 Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Lenses**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
 
