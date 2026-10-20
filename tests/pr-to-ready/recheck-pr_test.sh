@@ -101,7 +101,7 @@ SUPPRESSED_JQ='.reviews
         | map(select((.author.login // "") | ascii_downcase | contains("copilot")))
         | sort_by(.submittedAt)
         | last
-        | .body // ""'
+        | "\(.id)\n\(.body // "")"'
 STATE_JQ='"\(.baseRefName) \(.mergeable)"'
 
 # stub_head <sha> -- every head read answers <sha>.
@@ -225,7 +225,7 @@ gh_stub_raw_response '*' 0 pr view --repo acme/widgets --json reviews \
   --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/reviews-suppressed.json"
 stub_state main MERGEABLE
 run_in "$W" acme widgets 7 deadbeef main
-assert_row 'suppressed-finding-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+assert_row 'suppressed-finding-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
 
 row_start
 ready_in "$W" acme widgets 7

@@ -1,9 +1,18 @@
 #!/usr/bin/env bash
 # Project the `Suppressed comments (N)` block of Copilot's latest review on a PR
-# down to what the clean judgment reads — `suppressed<TAB>N`, then one
-# `path:line` per entry — or print nothing when that review carries none.
-# `--full` prints the block verbatim instead, for the collection that has to read
-# the findings themselves.
+# down to what the clean judgment reads — the id of the review it read, then
+# `suppressed<TAB>N`, then one `path:line` per entry — or print nothing when that
+# review carries none. `--full` prints the block verbatim instead, for the
+# collection that has to read the findings themselves.
+#
+# The projection carries the id because the verdict record keys a suppressed
+# finding by `(review id, location)`: an entry recorded without the id lets a
+# later review's suppressed finding at the same place read as already judged.
+# `--full` keeps the block's own bytes, so the id is dropped there by `tail -n +2`
+# on the same call rather than by a second request. The id line is split off by
+# parameter expansion, not through `head`: `head` exits after the first line, and
+# `pipefail` turns the SIGPIPE a larger body leaves `printf` with into a non-zero
+# script with empty stdout, which the caller cannot tell from a failing gh call.
 #
 # This exists as a command because Copilot's findings arrive on two paths and
 # only one of them is a review thread. A finding Copilot judged low confidence is
@@ -69,16 +78,19 @@ fi
 # The block starts at the line carrying `Suppressed comments (N)` — a `###`
 # heading in one Copilot shape, a `<summary>` in another — and runs to the next
 # `</details>`.
-fetch_block() {
+fetch_review() {
   gh pr view --repo "$OWNER/$REPO" --json reviews \
     --jq '.reviews
         | map(select((.author.login // "") | ascii_downcase | contains("copilot")))
         | sort_by(.submittedAt)
         | last
-        | .body // ""' -- "$PR" \
-    | awk '/Suppressed comments \([0-9]+\)/ { in_block = 1 }
-         in_block && /^<\/details>/ { in_block = 0 }
-         in_block { print }'
+        | "\(.id)\n\(.body // "")"' -- "$PR"
+}
+
+block_of() {
+  awk '/Suppressed comments \([0-9]+\)/ { in_block = 1 }
+       in_block && /^<\/details>/ { in_block = 0 }
+       in_block { print }'
 }
 
 # Parsing the entries does tie this to Copilot's current formatting, and the
@@ -92,11 +104,13 @@ fetch_block() {
 # so it runs the pipeline directly rather than through a command substitution,
 # which would strip trailing blank lines the block may carry.
 if [ "$FULL" -eq 1 ]; then
-  fetch_block
+  fetch_review | tail -n +2 | block_of
   exit 0
 fi
 
-block="$(fetch_block)"
+raw="$(fetch_review)"
+review="${raw%%$'\n'*}"
+block="$(printf '%s\n' "$raw" | tail -n +2 | block_of)"
 if [ -z "$block" ]; then
   exit 0
 fi
@@ -104,7 +118,7 @@ fi
 # N is read off the block's own start line by the same markup-blind rule that
 # found it, so the `<summary>` shape reaches the clean judgment as its entries
 # rather than as a block whose declared count the guard cannot find.
-printf '%s\n' "$block" | awk '
+printf '%s\n' "$block" | awk -v review="$review" '
   !have_heading && match($0, /Suppressed comments \([0-9]+\)/) {
     n = substr($0, RSTART, RLENGTH)
     sub(/^Suppressed comments \(/, "", n)
@@ -122,6 +136,6 @@ printf '%s\n' "$block" | awk '
   }
   END {
     if (!have_heading || count != declared) { exit 4 }
-    printf "suppressed\t%s\n", declared
+    printf "%s\nsuppressed\t%s\n", review, declared
     for (i = 1; i <= count; i++) { print entries[i] }
   }'
