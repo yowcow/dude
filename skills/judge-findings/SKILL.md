@@ -9,7 +9,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 
 ## Inputs
 
-- **The items** — each finding as the reviewer stated it, with its severity and location; and each candidate, a line the reviewer raised but declined to judge, marked as a candidate.
+- **The items** — each finding as the reviewer stated it, with its severity and location; and each candidate, a line the reviewer raised but declined to judge, marked as a candidate. A doc proposal carries, in place of a fix, its before range, its before and after claims tables, and its exact after text.
 - **What to judge against** — the scope (a committed range, uncommitted changes, or paths, with the read-root when the caller has one), or the artifact under review.
 - **The requirements.**
 - **The earlier rounds' record** — findings accepted and fixed, findings rejected with the reason, and candidates rejected with the reason.
@@ -32,5 +32,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 - **`needs-user`** — the call is a person's rather than a technical one: the question to put to that person and why the decision is theirs.
 
 For a candidate, `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict; `reject` leaves it declined.
+
+**A doc proposal is judged against the file and the proposed text, never against its own table.** For a doc proposal, enumerate the facts of the replaced before range from the file yourself, and the facts of the proposed text from that text, then compare both directions against both tables — the categories the tables cover are not the measure. A fact the after text adds fails; one it removes fails unless the after table names the `path:line`, in the same file and outside the replaced range, where that same fact still stands. Confirm that commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at are byte-identical. A missing, empty, or thin table, or a dropped warning, condition, instruction, or opt-out, is not accepted. On `accept`, return the proposer's after text unchanged: different wording is a `reject`, or a fresh after table verified again.
 
 Return each item as given, with its verdict. The caller re-judges none.
