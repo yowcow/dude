@@ -67,9 +67,15 @@ check_stdout_lacks() {
 # as harness.sh putting the fake gh first on PATH. The resolution is asserted
 # rather than assumed, because a PATH mistake would leave the real tool in play
 # and the row could pass or fail for the wrong reason.
+#
+# The stub also logs its argv, so a lint.sh that stopped invoking ShellCheck at
+# all fails here instead of passing a file that asserts nothing about it.
 SHELLCHECK_BIN="$(mktemp -d "${HARNESS_TMP}/bin-shellcheck.XXXXXX")"
+SHELLCHECK_LOG="${HARNESS_TMP}/shellcheck.argv"
+export SHELLCHECK_LOG
 cat >"${SHELLCHECK_BIN}/shellcheck" <<'STUB'
 #!/usr/bin/env bash
+printf '%s\n' "$@" >>"$SHELLCHECK_LOG"
 exit 0
 STUB
 chmod +x "${SHELLCHECK_BIN}/shellcheck"
@@ -102,6 +108,12 @@ if ! check_stdout_lacks 'probe: .worktrees' "$PROBE/.worktrees/x/leak"; then fai
 if ! check_stdout_lacks 'probe: .claude/worktrees' "$PROBE/.claude/worktrees/y/leak"; then fails_here=1; fi
 if ! check_stdout_lacks 'probe: .opencode/node_modules' \
   "$PROBE/.opencode/node_modules/dep/leak"; then fails_here=1; fi
+for f in keep pkg/node_modules/keep tests/lint.sh; do
+  if ! grep -qxF -- "$PROBE/$f" "$SHELLCHECK_LOG"; then
+    printf 'FAIL probe: %s was not passed to ShellCheck\n' "$PROBE/$f"
+    fails_here=1
+  fi
+done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

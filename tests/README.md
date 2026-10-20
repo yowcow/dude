@@ -247,6 +247,8 @@ any of the four pruned directories may appear in the listing. Dropping any one
 name from the prune raises the count, which is what makes the check meaningful;
 `.claude` in particular is not gitignored, so nothing else keeps it out.
 
+`tests/lint_test.sh` builds that probe for you.
+
 ## The coverage gate: `scripts-have-tests.sh`
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
@@ -386,6 +388,11 @@ with the defect.
 ```bash
 cp skills/pr-to-ready/scripts/list-copilot-reviews.sh "$tmp/"
 ```
+
+`watch-claude-review.sh` needs a staged `skills/pr-to-ready/scripts/` beside
+`tools/`, not a lone copy, and only a copy at or after `253c615` pins `-R`:
+the runnable recipe is the `RED verification` header of
+`tests/pr-to-ready/watch-claude-review_test.sh`.
 
 `SUT` names one script under test in place of a test file's default. `run.sh`
 refuses to run more than one test file while `SUT` is set, since it names a
