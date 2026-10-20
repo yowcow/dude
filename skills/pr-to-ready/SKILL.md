@@ -198,7 +198,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 
 | Payload | Contents |
 |---|---|
-| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the round-request SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference, the review comment id/URL, and the verdict comment id/URL where one was posted, and any caveat on the round's inputs (no requirements, say). |
+| Request identity | Request/skip decision per reviewer (with the exit behind it, or 'not selected — no probe' where the name wasn't in the set), the round-request SHA, on a Claude-requested round the trigger comment reference, and on a requesting-code-review round the `vet-code` return reference, the review comment id/URL, and the verdict comment id/URL where one was posted, plus any caveat on the round's inputs (no requirements, say). |
 | Measured evidence | Measured-tip SHA where Clean was judged (omit it on rounds that never judged Clean), the listing exit codes and outputs actually read that round, and on a requesting-code-review round the review comment id and the verdict comment id where one was posted. |
 | Verdict | This round's verdict per finding (needs-user verdicts included), or LGTM where there was no finding. |
 
@@ -206,9 +206,7 @@ Every round's report to the caller carries these rows; the Request identity and 
 
 | Route | Rule |
 |---|---|
-| Thread reply, verdict comment, review comment | May not mention `@claude`, which would re-trigger the workflow. |
-
-Any `@claude` inside finding summaries/bodies or verdict reasoning copied into any of those three is recorded with the mention split (`@ claude`) so quoting a review can never re-trigger the workflow.
+| Thread reply, verdict comment, review comment | May not mention `@claude`, which would re-trigger the workflow; any mention copied from a finding summary/body or verdict reasoning is written split (`@ claude`), so quoting a review can never re-trigger it. |
 
 No line of the verdict comment carries a SKILL-internal word such as a round number or a step name, so the timeline reads to someone who never saw this skill.
 
