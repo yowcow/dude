@@ -45,11 +45,11 @@ jobs:
         run: make test
 
   # bash 3.2 is the floor the scripts under skills/<skill>/scripts/ and the
-  # hooks must run on (AGENTS.md; hooks/session-start), and the image ships 5.x: a
-  # 3.2-only regression is green in the jobs above and broken wherever a macOS
-  # user's /bin/bash runs it. The suite runs with the built bash first on PATH,
-  # and the version is asserted before it, because a PATH that slipped would
-  # measure bash 5 and report the same green.
+  # hooks must run on (AGENTS.md; hooks/session-start), and the image ships
+  # 5.x: a 3.2-only regression is green in the jobs above and broken wherever
+  # a macOS user's /bin/bash runs it. The version is asserted in the step that
+  # runs the suite because a PATH that slipped would measure bash 5 and report
+  # the same green.
   test-bash32:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
@@ -74,9 +74,9 @@ jobs:
           # list_reverse () while calling it with an argument (general.h:129);
           # gcc 15, which ubuntu-latest moves to, defaults to gnu23, so the
           # dialect is pinned.
+          triplet="$(uname -m)-unknown-linux-gnu"
           CFLAGS="-O2 -std=gnu89" ./configure \
-            --build="$(uname -m)-unknown-linux-gnu" \
-            --host="$(uname -m)-unknown-linux-gnu" \
+            --build="$triplet" --host="$triplet" \
             --without-bash-malloc --disable-nls
           make
           echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"

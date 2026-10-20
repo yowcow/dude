@@ -15,10 +15,10 @@ schedule_cron="cron: '17 3 * * 1'"
 fixed_manifest="$(sed -n '/^  manifest:/,/^  manifest-latest:/p' "$workflow")"
 latest_manifest="$(sed -n '/^  manifest-latest:/,$p' "$workflow")"
 job_block() {
-  awk -v jobs="$1" '/^  [A-Za-z0-9_-]+:/{job=$1} job ~ "^(" jobs ")$"' "$workflow"
+  awk -v jobs="$1" '/^  [A-Za-z0-9_-]+:/{job=$1} job ~ "^(" jobs "):$"' "$workflow"
 }
-gated_blocks="$(job_block 'lint:|test:')"
-bash32_job="$(job_block 'test-bash32:')"
+gated_blocks="$(job_block 'lint|test')"
+bash32_job="$(job_block 'test-bash32')"
 bash32_sha='3fa9daf85ebf35068f090ce51283ddeeb3c75eb5bc70b1a4a7cb05868bfe06a4'
 
 total=1
