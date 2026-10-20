@@ -98,13 +98,14 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$bash32_job"; then
   printf 'FAIL: test-bash32 runs on pull requests\n' >&2
   failed=1
 fi
-bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,$p' <<<"$bash32_job")"
+bash32_suite="$(sed -n '/- name: make test (bash 3.2)/,/^      - /p' <<<"$bash32_job")"
 if [ -z "$bash32_suite" ]; then
   printf 'FAIL: test-bash32 has no "make test (bash 3.2)" step — the step name or the job is gone\n' >&2
   failed=1
 elif ! grep -Fq 'BASH_VERSINFO' <<<"$bash32_suite" \
   || ! grep -Eq '!=[[:space:]]*"?3\.2' <<<"$bash32_suite" \
-  || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite"; then
+  || ! grep -Eq '^[[:space:]]*make test$' <<<"$bash32_suite" \
+  || ! grep -Eq '^[[:space:]]*exit [1-9]' <<<"$bash32_suite"; then
   printf 'FAIL: test-bash32 asserts bash 3.2 in the step that runs the suite\n' >&2
   failed=1
 fi
