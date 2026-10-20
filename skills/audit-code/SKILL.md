@@ -11,7 +11,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
 - Hand each worker its axis as the pair written for it — the invariant attacked and how it is expected to break — never as a field's name alone. Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
-- **Any worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and a probe that never ran hands back a `no finding` line — neither the orchestrator nor any later reader of the report can tell that from a result.
+- **Any worker that sweeps for absence or exhaustiveness, or probes a behaviour axis, is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and a probe that never ran hands back a `no finding` line — neither the orchestrator nor any later reader of the report can tell that from a result.
 
 ## Entry
 
