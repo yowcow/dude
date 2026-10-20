@@ -37,9 +37,9 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   silently match only one nesting depth. It collects a `*_test.sh` whether it is
   a regular file or a symlink — the coverage gate counts a symlink, since its
   `-f` follows the link — and a dangling link is run and fails the run rather
-  than being silently skipped. `find` does not descend a symlinked *directory*,
-  so a `*_test.sh` inside one under `tests/` is not run even though the coverage
-  gate counts it (`-f` follows the link); that gap is known and unfixed here.
+  than being silently skipped. A symlinked *directory* under `tests/` is refused
+  for the same reason: `find` never descends it, so a `*_test.sh` inside would be
+  counted as coverage without ever running.
 - `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
 
 ## Writing a table-test case
@@ -293,7 +293,8 @@ tree rather than stating as prose:
   lacking a shebang either. `hooks.json` is excluded by exact relative path
   because it is the JSON manifest `make manifest` already validates, not
   because of its suffix.
-- A **symlink** under `scripts/`, `tools/`, or `hooks/` is enumerated like a regular
+- A **symlink** under a skill's `scripts/`, the repository-root `scripts/`,
+  `tools/`, or `hooks/` is enumerated like a regular
   file, which is where this parts company with `lint.sh`'s deliberate
   `-type f`. For a linter that exclusion is right; for this gate `-type f`
   answers the wrong question, since it classifies a symlink by the link.

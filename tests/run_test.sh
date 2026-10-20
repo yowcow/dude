@@ -184,4 +184,26 @@ if ! check_bytes 'dangling test symlink: counted as a failed file' \
   '1 of 1 test files failed\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 8: a symlinked directory holding a test file is refused -------------
+# The gate counts a test through a symlinked directory (-f follows the link)
+# while find never descends one, so this file would be covered and never run —
+# the case-6 hole one level up. A plain test is planted too, so the pre-fix
+# runner goes green on it rather than falling into the zero-file refusal.
+total=$((total + 1))
+fails_here=0
+linktree="${HARNESS_TMP}/linked-dir"
+mkdir -p "$linktree/real" "$linktree/tree"
+cp "$SUT" "$linktree/tree/run.sh"
+printf '#!/usr/bin/env bash\nprintf "hidden ran\\n"\n' >"$linktree/real/hidden_test.sh"
+printf '#!/usr/bin/env bash\nprintf "plain ran\\n"\n' >"$linktree/tree/plain_test.sh"
+ln -s "$linktree/real" "$linktree/tree/linked"
+run_sut env -u SUT bash "$linktree/tree/run.sh"
+if ! check_eq 'symlinked test directory: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'symlinked test directory: nothing ran' ''; then fails_here=1; fi
+if ! grep -qF -- "${linktree}/tree/linked is a symlink to a directory" "$SUT_STDERR"; then
+  printf 'FAIL symlinked test directory: stderr does not name the link: %s\n' "$(head -c 400 "$SUT_STDERR")"
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"

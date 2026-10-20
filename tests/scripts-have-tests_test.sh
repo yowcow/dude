@@ -92,8 +92,8 @@ tree_new() {
 
 # check_stderr_has <label> <needle>
 # A file-local assertion, the way absorb-base_test.sh has check_contains:
-# eight rows here hold the gate to something it must say on stderr, and
-# inlining the grep-and-report at each of them buried the needle — the one
+# the rows here hold the gate to something it must say on stderr, and inlining
+# the grep-and-report at each of them buried the needle — the one
 # part that differs — in boilerplate. The needle stays at the call site, so
 # what a row asserts is still read there rather than here.
 #

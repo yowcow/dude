@@ -51,6 +51,25 @@ else
   done <"$LISTING"
 fi
 
+if [ "$#" -eq 0 ]; then
+  # A symlinked directory is listed by find but never descended into, so a
+  # *_test.sh inside it is neither discovered nor run while the coverage gate
+  # still counts it (-f follows the link) — the same covered-but-never-run file
+  # `-type l` collects above, one level up. Refused rather than followed: -L
+  # would let the walk leave the tree and loop back into it. The listing's
+  # contents are already in `files`, so the temp file is reused here.
+  if ! find "$ROOT" -type l -print0 >"$LISTING"; then
+    echo "run.sh: listing ${ROOT} failed — the tree was not fully read" >&2
+    exit 1
+  fi
+  while IFS= read -r -d '' link; do
+    if [ -d "$link" ]; then
+      printf 'run.sh: %s is a symlink to a directory — its tests are not run\n' "$link" >&2
+      exit 1
+    fi
+  done <"$LISTING"
+fi
+
 if [ "${#files[@]}" -eq 0 ]; then
   echo "run.sh: no test files found under ${ROOT}" >&2
   exit 1
