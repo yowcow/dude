@@ -66,8 +66,9 @@ jobs:
             "$RUNNER_TEMP/bash-3.2.57.tar.gz" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/bash-3.2.57.tar.gz" -C "$RUNNER_TEMP"
           cd "$RUNNER_TEMP/bash-3.2.57"
-          # This release's config.guess predates both runner architectures, so
-          # the triplet is derived rather than guessed.
+          # This release's config.guess does not recognise aarch64, so the
+          # triplet is derived rather than guessed; deriving it also keeps this
+          # recipe working on either runner architecture.
           # C23 reads `f ()` as `f (void)`, and this release declares
           # list_reverse () while calling it with an argument (general.h:129);
           # gcc 15, which ubuntu-latest moves to, defaults to gnu23, so the
