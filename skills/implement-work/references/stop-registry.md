@@ -26,6 +26,7 @@ stdout through every such script.
 | `ask-multiple-prs` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `tools/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
+| `base-resolve-failed` | `tools/ensure-draft-pr.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
 | `body-unreadable` | `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |

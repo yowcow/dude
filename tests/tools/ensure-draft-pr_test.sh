@@ -5,18 +5,19 @@
 # only then how the base is resolved.
 #
 # The script reads facts, git and origin; it opens no PR and reads none, and
-# the sibling reads the default branch from the remote's HEAD, so every row
-# asserts 0 gh calls.
+# through the real sibling it reads the default branch from the remote's HEAD.
+# The two rows at the end stub that sibling (which calls no gh either), and
+# every row asserts 0 gh calls.
 #
 # git is not stubbed. The ordering guard #205 asks for is about a real `git
 # push` landing on a real remote before anything is asked, and a git stub
 # would only encode the test author's belief about that ordering, not git's
 # actual behaviour.
 #
-# The sibling ./resolve-pr-base.sh is not stubbed either -- #205's scope says
-# so -- and the rows that pass a STOP or NEED straight through are only
-# meaningful if that text really came from the sibling rather than from a
-# fixture standing in for it.
+# The sibling ./resolve-pr-base.sh runs for real in every row but the two at
+# the end, which stub it to pin how this script answers a sibling that aborts
+# or answers out of contract. #205 left that boundary out; yowcow/dude#648
+# owns it.
 #
 # Every row runs from inside its own work repository, never from the scripts
 # directory: the SUT finds its sibling through dirname -- "$0", so a row run
@@ -47,13 +48,11 @@
 #     step 1 has just seen the branch on the remote (or pushed it there), so
 #     the sibling's fetch of it cannot fail without the branch disappearing
 #     mid-run. Not fixturable offline.
-#   - `STOP trailer-read-failed` from the sibling has no fixture, for the
-#     reason resolve-pr-base_test.sh records: both refs `git log` names were
-#     just created by the fetches that preceded it.
-#   - The SUT's `error: unexpected output from resolve-pr-base.sh` arm is
-#     unreachable while the real sibling is used: the sibling prints only
-#     `BASE ...`, `NEED ...` and `STOP ...` on exit 0. Reaching it would need
-#     the sibling stubbed, which #205 puts out of scope.
+#   - `STOP trailer-read-failed` from the sibling has no row: through the real
+#     sibling it needs `git log` to fail after the fetches that created the two
+#     refs it names, and the stubbed rows at the end answer
+#     `STOP base-resolve-failed` before any pass-through, so neither shape
+#     reaches it.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -527,5 +526,41 @@ NO_ORIGIN="$(git_repo_scratch no-origin)"
 git_repo_init "$NO_ORIGIN" main
 run_in "$NO_ORIGIN" feature
 assert_row 'no-origin' 0 'STOP repo-lookup-failed\n' 0
+
+# ---- a base sibling that does not answer --------------------------------
+#
+# The real sibling prints only BASE/NEED/STOP on exit 0, which is why the
+# step-3 rows above run it for real (#205 left the sibling unstubbed). These
+# two rows pin the other side of that boundary in a copy of tools/: a sibling
+# that aborts, and one that answers out of contract. Measured before the fix:
+# exit 1 with empty stdout, and exit 1 with the error line on stderr -- no
+# STOP either way, so the orchestrator saw "aborted", never "stopped".
+CONTRACT="${HARNESS_TMP}/tools-contract"
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/ensure-draft-pr.sh"
+
+# sibling <body> -- the copy's resolve-pr-base.sh becomes a script of <body>.
+sibling() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/resolve-pr-base.sh"; }
+
+# run_contract <work-dir> <argv...> -- run_in, for the copy's script.
+run_contract() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${CONTRACT}/ensure-draft-pr.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+fixture sibling-abort feature remote
+sibling 'exit 1'
+run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-abort 0; fork sibling-abort 1 false; } | facts_file)"
+assert_row 'base-sibling-abort-is-reported' 0 'STOP base-resolve-failed\n' 0
+
+row_start
+fixture sibling-garbage feature remote
+sibling 'echo WHAT'
+run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-garbage 0; fork sibling-garbage 1 false; } | facts_file)"
+assert_row 'base-sibling-garbage-is-reported' 0 'STOP base-resolve-failed\n' 0
 
 harness_exit "$failed" "$total"
