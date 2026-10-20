@@ -324,9 +324,10 @@ assert_row 'listing-call-fails' 1 '-' 1
 # depth this script asks for (100) is answered with the whole 21-run page, and
 # the depth the pre-fix script asked for (20) with that page truncated — which
 # is what the API itself would have done. The second stub is the mechanism of
-# the RED, not dead weight: against 2bd1745^ with the -R-free stubs above, the
-# target run has fallen out of the answer, the filter prints [], and the row
-# fails on the real symptom rather than on an unstubbed argv.
+# the RED, not dead weight: against 2bd1745^ with a copy of this file whose
+# stubs also predate `-R`, the target run has fallen out of the answer, the
+# filter prints [], and the row fails on the real symptom rather than on an
+# unstubbed argv.
 row_start
 stub_listing acme/claude-ok "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"
