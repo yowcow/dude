@@ -340,7 +340,7 @@ deleting the branch and worktree are yours.
 Each row's evidence is in the prose below.
 
 OpenCode's package plugin registers all of dude's skills via `ctx.skill.transform` and appends a summary
-stub of `using-dude` — the same stub sentences as the hook stub under a different envelope (compared normalized — marker, envelope, and install path stripped, per `tests/opencode-plugin_test.sh`) — to `event.system`
+stub of `using-dude` — the same stub sentences as the hook stub under a different envelope (the four stub sentences are compared whole across the two emitters, with only the install path normalized, per `tests/opencode-plugin_test.sh`) — to `event.system`
 through `ctx.session.hook("context", …)`, so the stub is in
 context at session start and the full rules load on a `dude:using-dude` skill
 call. The injected text uses a dude-only marker
@@ -455,7 +455,7 @@ every local skill.
 
 The checkout's plugin context hook and the hook emit the same stub: try hook changes by
 editing `hooks/session-start` and `tests/hooks/session-start_test.sh` in place,
-and keep `.opencode/plugins/dude.js` repeating those stub sentences (compared normalized, not byte-for-byte — see `tests/opencode-plugin_test.sh`).
+and keep `.opencode/plugins/dude.js` repeating those stub sentences (the four stub sentences are compared whole across the two emitters, with only the install path normalized — see `tests/opencode-plugin_test.sh`).
 
 Installing dude a second time under a throwaway name is not a way to try hook
 changes out. Two installs run the `SessionStart` hook twice, and both blocks

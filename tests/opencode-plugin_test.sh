@@ -6,7 +6,11 @@
 # so the stub is faithful for shape purposes). Nothing is installed and no
 # new file is committed for this.
 #
-# RED knob is PLUGIN_UNDER_TEST=<mutant .js>; SUT does not apply (subject is a JS module).
+# RED knob is PLUGIN_UNDER_TEST=<mutant .js>; put the mutant two directories under
+# the repo root, so pluginRoot (from ../..) resolves to a root this test normalizes.
+# Elsewhere reds on the install path alone: loadSkills() ENOENT, or a copy's own
+# root in the heading, neither of which is the mutation.
+# SUT does not apply (subject is a JS module).
 set -euo pipefail
 
 ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -41,12 +45,14 @@ session_json="$("$ROOT/hooks/session-start")"
 
 node --import "$tmpdir/hooks.mjs" --input-type=module - "$PLUGIN_UNDER_TEST" "$ROOT" "$session_json" <<'JS'
 import assert from 'node:assert/strict';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const pluginPath = process.argv[2];
-const root = process.argv[3];
+// Node resolves symlinks when importing, so the plugin's root (import.meta.url)
+// is physical while hooks/session-start prints the logical one (`pwd -L`).
+const root = realpathSync(process.argv[3]);
 const mod = await import(pathToFileURL(pluginPath));
 assert.ok(mod.default, 'V2 plugin must default-export a definition');
 assert.equal(mod.default.id, 'dude');
@@ -130,24 +136,33 @@ const sessionContext = JSON.parse(process.argv[4]).hookSpecificOutput.additional
 const freshEvent = { system: [] };
 await hookFn(freshEvent);
 const stubText = freshEvent.system[0].text;
-// To end-of-line, not to a colon: the truncated session-start form is
-// `...<cksum>:<suffix>` and the stub body itself holds a later
-// `dude:using-dude` colon, so a greedy `.*(?=:)` eats the `Before any task`
-// sentence and a first-colon match leaves `:suffix` behind.
-const normalize = (s) =>
-  s.replace(/from the dude install at [^\n]*/g, 'from the dude install at <ROOT>');
+// The two emitters' real install paths are replaced first, so text added
+// between the path and the heading's terminator colon still reaches the
+// comparison. Longest spelling first: a symlink above the checkout makes the
+// logical root a suffix of the physical one, and a shorter-first pass would
+// mangle the physical path into `prefix<ROOT>`. Only session-start's truncated
+// form for a root past 100 chars (`...<cksum>:<suffix>:`) cannot be spelled
+// from the plugin side, so that form alone is matched heading-wide: `[^\n]*`
+// cannot cross into the body's later `dude:using-dude` colon, so it stops at
+// the terminator. That branch is unexercised by this suite: it fires only for
+// a root past 100 chars, and no fixture here has one, so a change to it cannot
+// be verified here.
+const roots = [...new Set([process.argv[3], root])].sort((a, b) => b.length - a.length);
+const normalize = (s) => roots
+  .reduce((out, r) => out.replaceAll(`${r}/`, '<ROOT>').replaceAll(r, '<ROOT>'), s)
+  .replace(/from the dude install at \.\.\.[^\n]*:/g, 'from the dude install at <ROOT>:');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
-for (const line of [
-  'dude-bootstrap:using-dude',
-  'Before any task, read the `dude:using-dude` skill and follow it.',
-  "The orchestrator owns control flow and drives every transition",
-]) {
-  assert.ok(normStub.includes(line), `plugin stub must contain: ${line}`);
-  assert.ok(normSession.includes(line), `session-start context must contain: ${line}`);
-}
-assert.ok(normSession.includes(normStub.split('\n')[1].slice(0, 40)),
-  'session-start context must contain the stub body');
+// The hook's <EXTREMELY_IMPORTANT> wrapper is the one envelope the plugin
+// must not carry, so it is stripped from the hook side alone. Comparing the
+// sentences whole is what catches a copy that drifts.
+const stubSentences = (s) =>
+  s.replace(/^<!-- dude-bootstrap:using-dude -->\n/, '');
+const hookSentences = stubSentences(normSession)
+  .replace(/^<EXTREMELY_IMPORTANT>\n/, '')
+  .replace(/\n<\/EXTREMELY_IMPORTANT>$/, '');
+assert.equal(stubSentences(normStub), hookSentences,
+  'the four stub sentences must match between .opencode/plugins/dude.js and hooks/session-start');
 
 // V1 object form (OpenCode 1.18.29+): the same default export carries server().
 assert.equal(typeof mod.default.server, 'function',
