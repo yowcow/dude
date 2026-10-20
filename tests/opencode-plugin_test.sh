@@ -7,7 +7,9 @@
 # new file is committed for this.
 #
 # RED knob is PLUGIN_UNDER_TEST=<mutant .js>; put the mutant two directories under
-# the repo root (pluginRoot resolves from ../..), or loadSkills() fails on ENOENT.
+# the repo root, so pluginRoot (from ../..) resolves to a root this test normalizes.
+# Elsewhere reds on the install path alone: loadSkills() ENOENT, or a copy's own
+# root in the heading, neither of which is the mutation.
 # SUT does not apply (subject is a JS module).
 set -euo pipefail
 
