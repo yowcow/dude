@@ -68,24 +68,33 @@ flowchart TB
   pr-to-ready -.-> plan-work
   review-code -.-> implement-work
   review-pr -.-> implement-work
+  review-pr -.-> plan-work
   audit-code -.-> plan-work
 
   plan-work --> review-plan
   plan-work --> settle-question
+  plan-work --> propose-alternatives
+  plan-work --> review-findings
   implement-work --> review-code
   implement-work --> review-plan
   implement-work --> review-pr
   implement-work --> simplify-code
+  implement-work --> propose-alternatives
+  implement-work --> review-findings
   pr-to-ready --> review-code
   pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
   pr-to-ready --> judge-findings
+  pr-to-ready --> propose-alternatives
+  pr-to-ready --> review-findings
   audit-code --> review-findings
   investigate-anomaly --> review-findings
   investigate-performance --> review-findings
   settle-question --> review-findings
   review-code --> vet-code
   review-pr --> vet-code
+  review-pr --> propose-alternatives
+  review-pr --> review-findings
   vet-code --> judge-findings
   review-code --> judge-findings
   review-plan --> judge-findings

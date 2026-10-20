@@ -12,7 +12,7 @@ Review a PR, have every finding judged against the PR's own code, and return the
 
 ## Orchestration model
 
-**This skill dispatches no worker of its own: the reviewer and the verdict workers are `vet-code`'s.** The orchestrator resolves the PR, calls `vet-code` once, drafts the review, makes the one review write to the PR the user chose, and puts the reviewer's 👀 on the PR while the review runs, removing it when the run ends.
+**This skill dispatches no worker of its own: the reviewer and the verdict workers are `vet-code`'s.** Invoke `propose-alternatives` when the purpose is settled, before `vet-code`. The orchestrator resolves the PR, calls `vet-code` once, drafts the review, makes the one review write to the PR the user chose, and puts the reviewer's 👀 on the PR while the review runs, removing it when the run ends.
 
 ## Steps
 
@@ -29,8 +29,12 @@ Take the PR number or URL from the caller; if none was given, ask.
 - Take a candidate for the PR's purpose, the problem it should solve, from the issues it links and, for a sub-issue, its parent. The PR body is the author's claim, the means the author chose, and stays apart from the purpose.
 - Show the user the candidate and ask whether it is right, needs correcting, or is unknown. Ask with no candidate when there is no linked issue or the candidate only restates the PR body: an issue's text alone does not settle the purpose.
 - **Purpose settled** (confirmed or corrected): ask in plain chat for facts outside this repository that bear on whether the means is sound — callers in other repositories, an earlier attempt at the same approach that was reverted, another mechanism that already meets the purpose; the answer is optional, and the run goes on without one. The requirements are the settled purpose, what the linked issues state as requirements, and any facts the user gave; where the purpose and an issue's requirements differ, the settled purpose wins. The PR body is not a requirement.
-- **Purpose unknown**: make no purpose-versus-means check and run the rest of the review as usual. The requirements are what the linked issues state, if any.
+- **Purpose unknown**: make no purpose-versus-means check and run the rest of the review as usual. The requirements are what the linked issues state, if any. Skip `propose-alternatives`; do not invoke; chat the skip; continue. No new prompt.
 - Where no requirements result, say so.
+- **Purpose settled:** invoke `propose-alternatives` once with that settled purpose. **Read-root:** the PR's base at its current tip, the `pr.base.sha` fact fetched as a SHA — not the range's `<base>` merge-base, not `<head>`, not the head worktree Step 3 creates, not the session checkout.
+- Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
+- Empty finding → no `review-findings`; do not wait; continue; chat.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to diff review (`vet-code`) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to the review body or inline comments.
 
 ### 3. Vet
 
@@ -63,6 +67,7 @@ Run `<skill-dir>/scripts/post-review.sh <n> <head> <event> <payload-file>` for t
 ## Report
 
 - the PR and the range reviewed, and whether requirements were available
+- whether `propose-alternatives` was invoked or skipped and why; empty finding or finding; on a finding, that the run waited
 - whether the purpose was checked against the means, and when it was settled but no facts outside the repository were given, that no check against such facts was made
 - what was posted — its state and URL — or that nothing was, or that a pending review was left
 - the rejected findings with their reasons, and the `needs-user` questions
