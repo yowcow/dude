@@ -234,6 +234,17 @@ row_start
 run_sut bash "$SUT" wait '' 1 5 TIMEOUT
 assert_row 'wait: limit 1 ends on the first round' 0 'TIMEOUT\n' 0
 
+# A WAIT whose hand-off line never reaches the caller leaves a file nobody can
+# name again: the path exists only in that line. Bash's builtin `echo` fails
+# when fd 1 is closed, which is how this row reaches that state. No row_start:
+# the command is run directly (run_sut always hands the script a real stdout
+# file) and it stubs no gh.
+LEAK="${HARNESS_TMP}/wait-leak"
+mkdir -p "$LEAK"
+TMPDIR="$LEAK" bash "$SUT" wait '' 3 5 TIMEOUT 1>&- 2>/dev/null && st=0 || st=$?
+tally check_eq 'wait: a hand-off that cannot be printed is a failure' 1 "$st"
+tally check_eq 'wait: no state file left when the hand-off failed' '' "$(ls -A "$LEAK")"
+
 row_start
 run_sut bash "$SUT" wait '' 0 5 TIMEOUT
 assert_row 'wait: limit 0' 2 '' 0

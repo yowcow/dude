@@ -41,6 +41,18 @@ usage() {
 NAME_RE='^[a-z0-9._-]+$'
 PAD_RE='^[[:space:]]|[[:space:]]$'
 
+STATE_OWNED=''
+
+# The state file this script created, removed on every exit that does not hand
+# it back: the caller learns the path only from the WAIT line, so a run that
+# fails before printing it leaves a file nothing will ever name.
+cleanup() {
+  if [ -n "$STATE_OWNED" ]; then
+    rm -f -- "$STATE_OWNED" || true
+  fi
+}
+trap cleanup EXIT
+
 # spec_name <spec>: the fact name inside `name`, `name=v`, `name:A,B`, `name[]`.
 spec_name() {
   local n="${1%%=*}"
@@ -152,6 +164,7 @@ wait_round() {
   fi
   if [ -z "$state" ]; then
     state="$(mktemp "${TMPDIR:-/tmp}/dude-wait.XXXXXX")"
+    STATE_OWNED="$state"
   else
     if [ ! -f "$state" ] || ! line="$(cat -- "$state")" || ! [[ "$line" =~ ^round=[1-9][0-9]*$ ]]; then
       echo "STOP wait-state-invalid"
@@ -162,11 +175,13 @@ wait_round() {
   round=$((round + 1))
   if [ "$round" -ge "$limit" ]; then
     rm -f -- "$state"
+    STATE_OWNED=''
     echo "$final"
     return
   fi
   printf 'round=%s\n' "$round" >"$state"
   echo "WAIT ${seconds} ${state}"
+  STATE_OWNED=''
 }
 
 [ "$#" -ge 1 ] || usage
