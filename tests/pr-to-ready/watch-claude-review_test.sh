@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/watch-claude-review.sh: the
 # availability answer (exit 3 and the two ways of not being it), which runs
-# survive the listing's filter, how deep that listing reaches, and watch mode's
-# exit contract.
+# survive the listing's filter, how deep that listing reaches, watch mode's
+# exit contract, and that both gh calls pin the origin repository with -R.
 #
 # git is NOT stubbed. The script resolves `git rev-parse --show-toplevel` and
 # searches `$root/.github/workflows/`, so the repository *is* an input: each row
@@ -31,17 +31,24 @@
 # not asserted here: `gh` is stubbed, so any row would encode the exit status it
 # scripted rather than measure gh's. Re-measure that against real `gh` by hand.
 #
-# RED verification (see tests/README.md):
+# RED verification (see tests/README.md). SUT must name a copy whose
+# `../../../tools/` resolves, because the script calls resolve-default-branch.sh
+# and origin-repo.sh through SCRIPT_DIR:
 #   tmp="$(mktemp -d)"
-#   git show 2bd1745^:skills/pr-to-ready/scripts/watch-claude-review.sh >"$tmp/old.sh"
-#   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
+#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/tools"
+#   cp tools/resolve-default-branch.sh tools/origin-repo.sh "$tmp/tools/"
+#   git show 2bd1745^:skills/pr-to-ready/scripts/watch-claude-review.sh \
+#     >"$tmp/skills/pr-to-ready/scripts/old.sh"
+#   SUT="$tmp/skills/pr-to-ready/scripts/old.sh" \
+#     tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
 #     -> deep-listing-keeps-the-target-run fails: --limit 20 is answered with a
 #        page the target run has fallen out of, and the filter prints [] (#173).
 #        Three more listing rows fail there as collateral — they stub only
 #        --limit 100, so the pre-fix depth reaches them as an unstubbed argv.
 #        Only the deep row fails on the symptom itself, which is the one to
 #        read: exit 0, empty stderr, [] where the run belongs.
-#   git show e14114a^:skills/pr-to-ready/scripts/watch-claude-review.sh >"$tmp/old.sh"
+#   git show e14114a^:skills/pr-to-ready/scripts/watch-claude-review.sh \
+#     >"$tmp/skills/pr-to-ready/scripts/old.sh"
 #     -> from-a-subdirectory fails with exit 3: the search was cwd-relative.
 set -euo pipefail
 
