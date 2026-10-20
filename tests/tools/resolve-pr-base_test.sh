@@ -41,6 +41,12 @@
 #   rows at the end are the exception -- they copy the SUT into a tools/ tree
 #   that already holds every sibling, so a lone copy is enough for those. The
 #   bb8d8b8^ version above predates the extractions and needs no sibling.
+#
+#   The reader-boundary rows at the end of this file are RED the ordinary way:
+#   point SUT= at the pre-fix script
+#   (`git show 8410c39^:tools/resolve-pr-base.sh`) dropped into a copy of
+#   tools/ that holds every sibling, and only those four rows and their two
+#   stderr tallies fail: `not ok 6/29`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR

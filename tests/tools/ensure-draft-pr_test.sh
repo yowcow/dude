@@ -23,21 +23,19 @@
 # from the scripts directory would pass even against a cwd-relative call to
 # the sibling.
 #
-# RED verification (see tests/README.md). Against
-# `git show master:tools/ensure-draft-pr.sh` every row fails but four: the old
-# usage needs a title and a body file, and the old script calls `gh pr list`.
-# The four that pass hold for the old script too: no-arguments,
-# facts-flag-without-file and created-flag-without-base (it also exits 2) and
-# the no-redundant-push tally (it does not push either). The tree has to be
-# copied with its shape intact (`cp -R tools`): in every row that reaches the
-# real sibling the SUT resolves it through dirname "$0", so a flat copy answers
-# there regardless of this file's own mutation. The two stubbed rows at the end
-# are the exception -- they copy the SUT into a tools/ tree that already holds
-# every sibling, so a flat copy is enough for those too.
+# RED verification (see tests/README.md). The tree has to be copied with its
+# shape intact (`cp -R tools`): in every row that reaches the real sibling the
+# SUT resolves it through dirname "$0", so a flat copy answers there regardless
+# of this file's own mutation. The two stubbed rows at the end are the
+# exception -- they copy the SUT into a tools/ tree that already holds every
+# sibling, so a flat copy is enough for those too.
 #   tmp="$(mktemp -d)"
 #   cp -R tools "$tmp/tools"
-#   git show master:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
+#   git show e4395c8^:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
+#
+#   Against that pre-fix script only the two stubbed rows and their stderr
+#   tally are red: `not ok 3/59`.
 #
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
@@ -536,6 +534,11 @@ assert_row 'no-origin' 0 'STOP repo-lookup-failed\n' 0
 # that aborts, and one that answers out of contract. Measured before the fix:
 # exit 1 with empty stdout, and exit 1 with the error line on stderr -- no
 # STOP either way, so the orchestrator saw "aborted", never "stopped".
+#
+#   These two rows are RED the ordinary way: point SUT= at the pre-fix script
+#   (`git show e4395c8^:tools/ensure-draft-pr.sh`) dropped into a copy of
+#   tools/ that holds every sibling, and only those two rows and the one
+#   stderr tally fail: `not ok 3/59`.
 CONTRACT="${HARNESS_TMP}/tools-contract"
 cp -R "${REPO_ROOT}/tools" "$CONTRACT"
 cp "$SUT" "${CONTRACT}/ensure-draft-pr.sh"
