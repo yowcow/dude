@@ -534,7 +534,8 @@ assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 
 # Same boundary as tests/tools/resolve-pr-base_test.sh's closing rows, and the
 # same fixture: a copy of tools/ with this file's subject dropped in and
 # read-base-trailer.sh replaced. The real reader cannot produce these answers
-# (a state outside OPEN/MERGED stops earlier as STOP fact-enum), so the reader
+# (a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, and
+# CLOSED stops as STOP abandoned-prerequisite), so the reader
 # is stubbed. Measured before the fix: a reader exiting 1 made this script exit
 # 1 with empty stdout; an unknown KIND or STATE answered STOP fetch-failed
 # while the script was in fact reading an unset FETCH_SPEC -- a person sent to

@@ -297,7 +297,8 @@ assert_row 'facts-flag-without-file' 2 '' 0
 # ---- the reader's answers this caller cannot act on ----------------------
 #
 # The real reader prints NO-TRAILER, PREREQ with OPEN or MERGED, NEED or STOP,
-# and a state outside that enum stops earlier as STOP fact-enum. So these rows
+# and a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, while
+# CLOSED stops as STOP abandoned-prerequisite. So these rows
 # stub it: a copy of tools/ with this file's subject dropped in and
 # read-base-trailer.sh replaced. What they pin is the boundary -- whatever the
 # reader answers, this script prints one line and exits 0. Measured before the
