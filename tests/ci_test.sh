@@ -55,6 +55,10 @@ if ! grep -Fq "$schedule_cron" "$workflow"; then
   printf 'FAIL: workflow schedules weekly manifest-latest run\n' >&2
   failed=1
 fi
+if ! grep -Eq '^  pull_request:$' "$workflow"; then
+  printf 'FAIL: workflow runs on pull_request — without the trigger no job above gates a PR\n' >&2
+  failed=1
+fi
 if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not run on schedules\n' >&2
   failed=1
