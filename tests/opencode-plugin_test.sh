@@ -136,11 +136,16 @@ await hookFn(freshEvent);
 const stubText = freshEvent.system[0].text;
 // The two emitters' real install paths are replaced first, so text added
 // between the path and the heading's terminator colon still reaches the
-// comparison. Only session-start's truncated form for a root past 100 chars
-// (`...<cksum>:<suffix>:`) cannot be spelled from the plugin side, so that
-// form alone is matched heading-wide: `[^\n]*` cannot cross into the body's
-// later `dude:using-dude` colon, so it stops at the terminator.
-const roots = [...new Set([process.argv[3], root])];
+// comparison. Longest spelling first: a symlink above the checkout makes the
+// logical root a suffix of the physical one, and a shorter-first pass would
+// mangle the physical path into `prefix<ROOT>`. Only session-start's truncated
+// form for a root past 100 chars (`...<cksum>:<suffix>:`) cannot be spelled
+// from the plugin side, so that form alone is matched heading-wide: `[^\n]*`
+// cannot cross into the body's later `dude:using-dude` colon, so it stops at
+// the terminator. That branch is unexercised by this suite: it fires only for
+// a root past 100 chars, and no fixture here has one, so a change to it cannot
+// be verified here.
+const roots = [...new Set([process.argv[3], root])].sort((a, b) => b.length - a.length);
 const normalize = (s) => roots
   .reduce((out, r) => out.replaceAll(`${r}/`, '<ROOT>').replaceAll(r, '<ROOT>'), s)
   .replace(/from the dude install at \.\.\.[^\n]*:/g, 'from the dude install at <ROOT>:');
