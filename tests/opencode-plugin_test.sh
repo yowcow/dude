@@ -130,24 +130,25 @@ const sessionContext = JSON.parse(process.argv[4]).hookSpecificOutput.additional
 const freshEvent = { system: [] };
 await hookFn(freshEvent);
 const stubText = freshEvent.system[0].text;
-// To end-of-line, not to a colon: the truncated session-start form is
-// `...<cksum>:<suffix>` and the stub body itself holds a later
-// `dude:using-dude` colon, so a greedy `.*(?=:)` eats the `Before any task`
-// sentence and a first-colon match leaves `:suffix` behind.
+// To the heading line's last colon, its terminator: the truncated
+// session-start form is `...<cksum>:<suffix>:`, and a first-colon match would
+// leave `:suffix` behind. `[^\n]*` cannot cross into the body's later
+// `dude:using-dude` colon. Stopping at end-of-line instead would swallow
+// whatever follows the terminator, letting a divergent tail pass.
 const normalize = (s) =>
-  s.replace(/from the dude install at [^\n]*/g, 'from the dude install at <ROOT>');
+  s.replace(/from the dude install at [^\n]*:/g, 'from the dude install at <ROOT>:');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
-for (const line of [
-  'dude-bootstrap:using-dude',
-  'Before any task, read the `dude:using-dude` skill and follow it.',
-  "The orchestrator owns control flow and drives every transition",
-]) {
-  assert.ok(normStub.includes(line), `plugin stub must contain: ${line}`);
-  assert.ok(normSession.includes(line), `session-start context must contain: ${line}`);
-}
-assert.ok(normSession.includes(normStub.split('\n')[1].slice(0, 40)),
-  'session-start context must contain the stub body');
+// The hook's <EXTREMELY_IMPORTANT> wrapper is the one envelope the plugin
+// must not carry, so it is stripped from the hook side alone. Comparing the
+// sentences whole is what catches a copy that drifts.
+const stubSentences = (s) =>
+  s.replace(/^<!-- dude-bootstrap:using-dude -->\n/, '');
+const hookSentences = stubSentences(normSession)
+  .replace(/^<EXTREMELY_IMPORTANT>\n/, '')
+  .replace(/\n<\/EXTREMELY_IMPORTANT>$/, '');
+assert.equal(stubSentences(normStub), hookSentences,
+  'the four stub sentences must match between .opencode/plugins/dude.js and hooks/session-start');
 
 // V1 object form (OpenCode 1.18.29+): the same default export carries server().
 assert.equal(typeof mod.default.server, 'function',
