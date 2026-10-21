@@ -35,14 +35,15 @@
 # emptiness instead of counting them fails 'prerequisite has two prs';
 # dropping the `prereq.number=` pin fails 'prerequisite read as another issue'.
 #
-# The three facts-capture rows at the end are RED against the pre-#675 script
-# (`git show bf5889f^:skills/implement-work/scripts/resolve-base.sh`) in a full
-# tools/ tree, measured while `open head absent on remote` still expected exit
-# 1: `not ok 3/52`. As that row ships here, the same baseline fails it too.
+# The three facts-capture rows at the end are RED against the script before
+# `yowcow/dude#675` (`git show bf5889f^:skills/implement-work/scripts/resolve-base.sh`)
+# in a full tools/ tree, measured while `open head absent on remote` still
+# expected exit 1: `not ok 3/52`. As that row ships here, the same baseline
+# fails it too.
 #
-# `open head absent on remote` is RED against the pre-#681 script
-# (`git show d45deb2:skills/implement-work/scripts/resolve-base.sh`) staged with
-# a copy of tools/ beside it: empty stdout and exit 1, `not ok 1/52`.
+# `open head absent on remote` is RED against the script before
+# `yowcow/dude#681` (`git show d45deb2:skills/implement-work/scripts/resolve-base.sh`)
+# staged with a copy of tools/ beside it: empty stdout and exit 1, `not ok 1/52`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
