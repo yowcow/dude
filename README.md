@@ -190,7 +190,7 @@ six places: `.claude-plugin/plugin.json`, the plugin entry in
 `.muse-plugin/plugin.json`, the plugin entry in
 `.muse-plugin/marketplace.json`, and `package.json`. `.agents/plugins/marketplace.json` is a versionless mirror:
 its schema carries no `version`, so `bump` and the version check leave it
-alone (syntax-checked only). What each runtime does with one:
+alone. What each runtime does with one:
 
 | Runtime     | Requires `version`?        | Uses it to decide an update?                                   |
 | ----------- | -------------------------- | -------------------------------------------------------------- |
@@ -484,10 +484,15 @@ warning while all six version fields agree.
 `muse plugins validate` covers `.muse-plugin/`. The two validators do not cover
 every manifest, so `make manifest` JSON-parses `.agents/plugins/marketplace.json` (versionless mirror, no
 `version`), `package.json`, `hooks/hooks.json`, `.muse-plugin/plugin.json`, and
-`.muse-plugin/marketplace.json`, syntax only. `make lint test` still does not run manifest validation: it covers shell
-and the test suite.
+`.muse-plugin/marketplace.json`, syntax only. `make lint test` runs neither vendor
+validator and never compares the six version fields; the suite checks only that the
+three marketplaces agree and that `bump`'s list covers every version-carrying
+manifest.
 
-CI's pinned `manifest` job is the reproducible merge decision. `manifest-latest`
+CI's `manifest` job is the merge gate. It pins the Claude Code validator and the
+action SHAs, but
+the Muse validator is not pinned (its installer ships only the stable channel),
+so that result can change without a commit here. `manifest-latest`
 is a non-required pull-request/weekly compatibility signal using current Claude
 Code and Muse releases; investigate upstream failures, update the fixed
 baseline when warranted, or deliberately retain it.
