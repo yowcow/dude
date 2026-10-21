@@ -586,7 +586,7 @@ esac
 # The near miss is what would fail if the comparison were looser than -F.
 run_sut bash -c 'printf "%s\n" boom >&2'
 if ! check_stderr_has 'stderr: a printed message matches' 'boom'; then sh_fails=1; fi
-if check_stderr_has 'stderr: a near miss is a failure' 'boon' >/dev/null 2>&1; then
+if check_stderr_has 'stderr: a near miss is a failure' 'bo.m' >/dev/null 2>&1; then
   printf 'FAIL stderr: a near miss matched\n'
   sh_fails=1
 fi
