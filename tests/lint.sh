@@ -131,5 +131,11 @@ done
 echo "bash -n: ok"
 
 shellcheck --version
-shellcheck -- "${files[@]}"
+
+# Per-file, CPU-bound work, so batches of 20 spread across the host's cores:
+# one call over the whole list spent twelve seconds of this script's wall on a
+# single core, batched three. `nproc` is Linux-only and macOS spells it
+# `getconf`'s way. The batch status has to reach the script.
+jobs="$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN || echo 1)"
+printf '%s\0' "${files[@]}" | xargs -0 -n20 -P"$jobs" shellcheck --
 echo "shellcheck: ok"
