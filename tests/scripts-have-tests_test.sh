@@ -618,6 +618,13 @@ run_sut bash "$SUT" "$root"
 if ! check_eq 'test path collision: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'test path collision: names both and the path' \
   'skills/alpha/scripts/foo and skills/alpha/scripts/foo.sh share the expected test path tests/alpha/foo_test.sh'; then fails_here=1; fi
+# The collision is the only error: a declaration cannot make the path its own,
+# so the shared path must not also produce a "does not declare" instruction.
+if grep -qF -- 'does not declare' "$SUT_STDERR"; then
+  printf 'FAIL test path collision: the collision must be the only error\n  got: %s\n' \
+    "$(head -c 600 "$SUT_STDERR")"
+  fails_here=1
+fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 32: the same collision under hooks/ -------------------------------
