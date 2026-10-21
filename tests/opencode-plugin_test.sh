@@ -2,37 +2,44 @@
 # V1+V2 dual-export suite for the opencode plugin (yowcow/dude#495).
 #
 # Offline: the `@opencode/plugin` specifier is stubbed at runtime via a
-# `node:module` resolve hook written to tmpdir (real `define` is identity,
+# `node:module` resolve hook written to $HARNESS_TMP (real `define` is identity,
 # so the stub is faithful for shape purposes). Nothing is installed and no
 # new file is committed for this.
+#
+# The count is real: the node body counts every assertion it runs and writes the
+# tally to $HARNESS_TMP/assertions, and harness_exit prints `ok N/N` — or
+# `not ok F/N` when one fails. A fixed `ok 1/1` said nothing about either.
 #
 # RED knob is PLUGIN_UNDER_TEST=<mutant .js>; put the mutant two directories under
 # the repo root, so pluginRoot (from ../..) resolves to a root this test normalizes.
 # Elsewhere reds on the install path alone: loadSkills() ENOENT, or a copy's own
 # root in the heading, neither of which is the mutation.
-# SUT does not apply (subject is a JS module).
+# SUT does not apply (subject is a JS module). For the deliberate-failure check,
+# copy this file with one assertion forced to fail — same shape as the RED
+# verification in tests/README.md.
 set -euo pipefail
 
-ROOT="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=lib/harness.sh
+# shellcheck disable=SC1091
+. "$(dirname -- "${BASH_SOURCE[0]}")/lib/harness.sh"
 
-PLUGIN_UNDER_TEST="${PLUGIN_UNDER_TEST:-"$ROOT/.opencode/plugins/dude.js"}"
+PLUGIN_UNDER_TEST="${PLUGIN_UNDER_TEST:-"${REPO_ROOT}/.opencode/plugins/dude.js"}"
 if [ ! -f "$PLUGIN_UNDER_TEST" ] || [ ! -s "$PLUGIN_UNDER_TEST" ] || [ ! -r "$PLUGIN_UNDER_TEST" ]; then
   printf 'opencode-plugin_test.sh: PLUGIN_UNDER_TEST does not name a readable non-empty file: %s\n' "$PLUGIN_UNDER_TEST" >&2
   exit 1
 fi
 
-cat >"$tmpdir/stub.mjs" <<'JS'
+cat >"${HARNESS_TMP}/stub.mjs" <<'JS'
 export const Plugin = { define: (d) => d };
 JS
 
-cat >"$tmpdir/hooks.mjs" <<'JS'
+cat >"${HARNESS_TMP}/hooks.mjs" <<'JS'
 import { register } from 'node:module';
 register('./resolve-hook.mjs', import.meta.url);
 JS
 
-cat >"$tmpdir/resolve-hook.mjs" <<'JS'
+cat >"${HARNESS_TMP}/resolve-hook.mjs" <<'JS'
 export async function resolve(specifier, context, next) {
   if (specifier === '@opencode/plugin') {
     return { url: new URL('./stub.mjs', import.meta.url).href, shortCircuit: true };
@@ -41,13 +48,39 @@ export async function resolve(specifier, context, next) {
 }
 JS
 
-session_json="$("$ROOT/hooks/session-start")"
+session_json="$("${REPO_ROOT}/hooks/session-start")"
 
-node --import "$tmpdir/hooks.mjs" --input-type=module - "$PLUGIN_UNDER_TEST" "$ROOT" "$session_json" <<'JS'
-import assert from 'node:assert/strict';
-import { readdirSync, readFileSync, realpathSync } from 'node:fs';
+tally="${HARNESS_TMP}/assertions"
+node_status=0
+node --import "${HARNESS_TMP}/hooks.mjs" --input-type=module - \
+  "$PLUGIN_UNDER_TEST" "$REPO_ROOT" "$session_json" "$tally" <<'JS' || node_status=$?
+import { strict as base } from 'node:assert';
+import { readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
+
+const tallyFile = process.argv[5];
+let failedCount = 0;
+let totalCount = 0;
+// Registered before the first assertion, and it still runs when an assertion
+// throws — which is why a failing run reports its count instead of vanishing.
+process.on('exit', () => {
+  writeFileSync(tallyFile, `${failedCount} ${totalCount}\n`);
+});
+const counted = (fn) => (...args) => {
+  totalCount += 1;
+  try {
+    return fn.apply(base, args);
+  } catch (err) {
+    failedCount += 1;
+    throw err;
+  }
+};
+const assert = {
+  ok: counted(base.ok),
+  equal: counted(base.equal),
+  deepStrictEqual: counted(base.deepStrictEqual),
+};
 
 const pluginPath = process.argv[2];
 // Node resolves symlinks when importing, so the plugin's root (import.meta.url)
@@ -233,4 +266,17 @@ assert.equal(typeof v1sys, 'function',
 }
 JS
 
-printf 'ok 1/1 opencode-plugin_test.sh (V1+V2 dual export; yowcow/dude#495)\n'
+# An absent or unreadable tally (the process died before its exit hook) leaves
+# both at zero, and harness_exit's zero-assertion guard turns that into `not ok`
+# rather than a green with no count.
+failed=0
+total=0
+if [ -s "$tally" ]; then
+  read -r failed total <"$tally"
+fi
+# A non-zero node exit with no counted failure is a crash after the last
+# assertion; charging it as one keeps `ok N/N` from printing over it.
+if [ "$node_status" -ne 0 ] && [ "$failed" -eq 0 ]; then
+  failed=1
+fi
+harness_exit "$failed" "$total"
