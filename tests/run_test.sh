@@ -244,9 +244,18 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 #
 # The fixture is the README because prose can be syntactically valid bash
 # (`This is prose without parentheses.` parses), so `bash -n` would accept some
-# READMEs and is not a substitute.
+# READMEs and is not a substitute for the shebang. Each half of the guard has a
+# fixture that only it can refuse, so neither can be dropped silently:
+# `no-shebang.sh` whose body bash parses, and `not-bash.py` which carries a
+# shebang.
 not_script="${REPO_ROOT}/README.md"
 assert_refused 'non-script SUT' "$not_script" 'SUT does not name a script'
+no_shebang="${HARNESS_TMP}/no-shebang.sh"
+printf 'exit 0\n' >"$no_shebang"
+assert_refused 'SUT without a shebang' "$no_shebang" 'SUT does not name a script'
+not_bash="${HARNESS_TMP}/not-bash.py"
+printf '#!/usr/bin/env python3\nprint("hello")\n' >"$not_bash"
+assert_refused 'non-bash SUT' "$not_bash" 'SUT does not name a script'
 
 # --- case 11: an extensionless SUT still runs --------------------------------
 # tests/lib/bin/gh has to stay named `gh` to work as a PATH stub, so a guard
