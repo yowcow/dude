@@ -107,13 +107,21 @@
 #      branch records a trailer; without this row the trailerless copy of the
 #      same guard could be deleted unnoticed.
 #
-#   Two guards are recorded rather than bound: the `[repo]` fallback's two
-#   `exit 1`s in tools/resolve-default-branch.sh (no remote matches the
-#   argument, then origin's URL or its owner segment is unreadable). Both sit
-#   on the path where no answer can be produced at all, and replacing either
-#   condition with false leaves the state to the next rung, which rejects it
-#   with the same answer these guards give -- exit 1 and empty stdout -- so no
-#   assertion separates a guard from its absence. Rows alone cannot bind them.
+#   The `[repo]` fallback's two `exit 1`s are recorded rather than bound here,
+#   and for neither is the reason "no row could bind it". The
+#   `git remote get-url origin` read: what no row can separate is the read
+#   failing and falling through -- URL is then empty, so url_dir and owner
+#   are empty too and the next guard answers the same exit 1 with the same
+#   empty stdout. A row can separate a mutant that drops the read altogether,
+#   where `set -e` relays git's status 2 (measured) instead of this guard's 1.
+#   The empty owner segment is bindable and left unbound because this issue's
+#   scope is the two test files above: an origin URL whose directory part has
+#   no segment (a bare `/`, or `/repo.git`) leaves url_dir empty, so the
+#   mutant derives the relative remote `acme/parent.git`, and a bare repo
+#   planted at that path inside the work tree, HEAD on `trunk`, makes it
+#   answer `trunk` with exit 0 where the guard answers exit 1 with empty
+#   stdout. Such a row belongs in tests/tools/resolve-default-branch_test.sh;
+#   recorded here as a gap, not as an impossible case.
 #
 #   The reader-boundary rows at the end of this file are RED through SUT= the
 #   ordinary way, not by removing a guard: point it at the pre-fix script
