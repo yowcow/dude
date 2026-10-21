@@ -10,9 +10,9 @@
 #
 # There is no row for a default branch absent on the remote: a HEAD naming an
 # absent branch is unborn and prints nothing, so ls-remote answers no default
-# rather than a branch the fetch then fails on. The fetch-failure exit is still
-# covered by `open head absent on remote`, which goes through the same `base`
-# function.
+# rather than a branch the fetch then fails on. A fetch that does fail is
+# answered like every other failure in the script: `open head absent on remote`
+# goes through the same `base` function and expects `STOP base-fetch-failed`.
 #
 # git is not stubbed. Which ref a fetch updates is git's own behaviour, so a
 # git stub would encode the test author's belief about that rather than git's
@@ -35,8 +35,15 @@
 # emptiness instead of counting them fails 'prerequisite has two prs';
 # dropping the `prereq.number=` pin fails 'prerequisite read as another issue'.
 #
-# The three facts-capture rows at the end are RED against `master`'s script in
-# a full tools/ tree: `not ok 3/52`.
+# The three facts-capture rows at the end are RED against the script before
+# `yowcow/dude#675` (`git show bf5889f^:skills/implement-work/scripts/resolve-base.sh`)
+# in a full tools/ tree, measured while `open head absent on remote` still
+# expected exit 1: `not ok 3/52`. As that row ships here, the same baseline
+# fails it too.
+#
+# `open head absent on remote` is RED against the script before
+# `yowcow/dude#681` (`git show d45deb2:skills/implement-work/scripts/resolve-base.sh`)
+# staged with a copy of tools/ beside it: empty stdout and exit 1, `not ok 1/52`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -362,7 +369,7 @@ assert_row 'default branch lookup fails' 0 'STOP ask-default-branch\n' 0
 row_start
 W="$(work_repo head-absent "$REMOTE" main)"
 run_in "$W" 203 --facts "$(round3 OPEN nosuch)"
-assert_row 'open head absent on remote' 1 '' 0
+assert_row 'open head absent on remote' 0 'STOP base-fetch-failed\n' 0
 tally check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
 
 # ---- facts.sh that stops instead of answering ---------------------------
