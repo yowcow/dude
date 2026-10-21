@@ -70,8 +70,8 @@
 #   perl -0pe 's/(stage watch-checks .*\n.*\n)(stage unresolved-threads .*\n.*\n)/$2$1/' \
 #     skills/pr-to-ready/scripts/recheck-pr.sh >"$tmp/recheck-pr.sh"
 #   SUT="$tmp/recheck-pr.sh" tests/run.sh tests/pr-to-ready/recheck-pr_test.sh
-# The coverage helpers get two mutations, made on the same copy and run the
-# same way:
+# The coverage helpers get two mutations, each made from the pristine script and
+# run the same way:
 #   perl -0pe 's/\[ "\$1" = "\$review" \] && //' \
 #     skills/pr-to-ready/scripts/recheck-pr.sh >"$tmp/recheck-pr.sh"
 # fails `other-review-id-is-unmet` and its mark-ready row — the id half is gone,
