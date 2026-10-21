@@ -44,7 +44,7 @@ SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/watch-copilot-review.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
 TWO="${FIXTURES}/copilot-reviews-two.jsonl"
 
-# A verbatim copy of the --jq argument in list-copilot-reviews.sh:41-43,
+# A verbatim copy of the --jq argument in list-copilot-reviews.sh:46-48,
 # including its eight-space continuation indent. It is one argv element that
 # spans three lines, which is why the manifest has to be able to hold one.
 JQ_FILTER='.reviews[]
