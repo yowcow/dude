@@ -62,13 +62,17 @@ trap 'rm -f "$LISTING" "$PAIRS"' EXIT
 # found" would be the wrong diagnosis. `exit 1` here leaves the script, not just
 # the call: a root that could not be read is never followed by a report on half
 # of it.
-# A root that is itself a symlink to a directory is named here rather than below,
-# because `find` does not descend into its own starting point either: the
-# enumeration comes back empty and the empty guard would report a broken listing
-# when the cause is the link.
+# A root that is itself a symlink is named here rather than below, because `find`
+# does not descend into its own starting point either: the enumeration comes back
+# empty and the empty guard would report a broken listing when the cause is the
+# link. Both targets are named, since either one hides the same subtree.
 list_root() {
-  if [ -L "$1" ] && [ -d "$1" ]; then
-    printf 'scripts-have-tests: %s is a symlink to a directory — its contents cannot be enumerated\n' "${1#"${ROOT}/"}" >&2
+  if [ -L "$1" ]; then
+    if [ -d "$1" ]; then
+      printf 'scripts-have-tests: %s is a symlink to a directory — its contents cannot be enumerated\n' "${1#"${ROOT}/"}" >&2
+    else
+      printf 'scripts-have-tests: %s is a symlink whose target is not a directory — nothing is enumerated there\n' "${1#"${ROOT}/"}" >&2
+    fi
     exit 1
   fi
   if ! find "$1" \( -type f -o -type l \) -print0 | sort -z >"$LISTING"; then

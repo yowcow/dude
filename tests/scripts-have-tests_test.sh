@@ -818,4 +818,22 @@ if ! check_stderr_has 'dangling skill link: names it' \
   'skills/gamma is a symlink whose target is not a directory'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# --- case 45: a root that is a link to a non-directory is named, not the guard -
+# The other half of case 41's hole: `find` lists such a root as its own starting
+# point and the `rel == abs` guard drops it, so the empty guard reported a broken
+# enumeration when the cause was the link.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'a.sh'
+mk_test "$root" alpha 'a_test.sh'
+mv "${root}/scripts" "${root}/scripts-real"
+printf 'not a directory\n' >"${root}/not-a-dir"
+ln -s not-a-dir "${root}/scripts"
+run_sut bash "$SUT" "$root"
+if ! check_eq 'root link to a file: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'root link to a file: names it' \
+  'scripts is a symlink whose target is not a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
