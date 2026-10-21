@@ -7,9 +7,11 @@
 # encode the test author's belief about what a range should be rather than
 # git's own behaviour -- exactly the failure mode tests/tools'
 # resolve-pr-base_test.sh documents for the same reason. Each row that reaches
-# the no-PR path therefore builds a real bare repository to play the remote
-# and a real work repository cloned from it, both under $HARNESS_TMP and both
-# offline.
+# the no-PR path with the real reader therefore builds a real bare repository
+# to play the remote and a real work repository cloned from it, both under
+# $HARNESS_TMP and both offline. The four rows at the end stub the reader, the
+# default-branch lookup and the fetch in a copy of tools/, and build no
+# repository.
 #
 # The PR shape reads the PR record's base oid as a fact (pr_facts below), so
 # its rows make no `gh` call at all; the gh call count is 0 throughout.
@@ -17,12 +19,12 @@
 # The no-argument shape reads the prerequisite's PR as facts (prereq_facts
 # below), so its trailer rows make no `gh pr list` call; the rows without a
 # trailer pass no facts, which is what shows that path asks for nothing. Its
-# default branch is the remote's own HEAD (resolve-default-branch.sh), so the
-# file stubs nothing.
+# default branch is the remote's own HEAD (resolve-default-branch.sh) in every
+# row but the four stubbed ones at the end; no row stubs `gh`.
 #
-# RED verification (see tests/README.md). resolve-range.sh has never been
-# tested before this file, so there is no pre-fix commit to point SUT= at the
-# way this suite's other table tests do. Guards named in the script's own
+# RED verification (see tests/README.md). The reader guard this file's last
+# rows pin is RED the ordinary way -- the recipe and the measured count are in
+# the reader-boundary record below. The other guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
@@ -33,10 +35,12 @@
 # the shared tools/read-base-trailer.sh and/or
 # tools/resolve-default-branch.sh this script calls as
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
-# every file the mutant's row needs in place -- a lone copy of this script
-# answers `STOP ask-default-branch` (or fails outright) on every row instead,
-# which pins nothing about the mutation. Eight were removed; the one that is
-# only partly observable is recorded as such below, rather than counted as
+# every file the mutant's row needs in place -- in those rows a lone copy of
+# this script answers `STOP ask-default-branch` (or fails outright) instead,
+# which pins nothing about the mutation. The four stubbed rows at the end are
+# the exception: they copy the SUT into a tools/ tree that already holds every
+# sibling, so a lone copy is enough for those. Eight were removed; the one that
+# is only partly observable is recorded as such below, rather than counted as
 # covered. What each mutant actually produced, measured:
 #
 #   1. The trailer read guarded as well as captured. This guard lives in
@@ -97,6 +101,16 @@
 #      `no-trailer-uses-the-remote-head` and
 #      `no-trailer-empty-when-head-is-the-default-tip`, which also record
 #      nothing of their own.
+#
+#   The reader-boundary rows at the end of this file are RED through SUT= the
+#   ordinary way, not by removing a guard: point it at the pre-fix script
+#   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
+#   that holds every sibling -- the same tree records 1-3 and 5-8 need -- and
+#   only those four rows and their two stderr tallies fail: `not ok 6/39`.
+#   Measured: the aborted reader exits 1 with empty stdout, and the answers
+#   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
+#   answers STOP fetch-failed, with bash's `FETCH_SPEC: unbound variable`
+#   diagnostic on stderr beside it.
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
@@ -524,5 +538,50 @@ git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' unrelated)"
 git_repo_remote "$W" origin "$LONELY"
 run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
+
+# ---- the reader's answers this caller cannot act on ----------------------
+#
+# Same boundary as tests/tools/resolve-pr-base_test.sh's closing rows, and the
+# same fixture: a copy of tools/ with this file's subject dropped in and
+# read-base-trailer.sh replaced. The real reader cannot produce these answers
+# (a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, and
+# CLOSED stops as STOP abandoned-prerequisite), so the reader
+# is stubbed. Measured before the fix: a reader exiting 1 made this script exit
+# 1 with empty stdout; an unknown KIND or STATE answered STOP fetch-failed
+# while the script was in fact reading an unset FETCH_SPEC -- with bash's
+# `FETCH_SPEC: unbound variable` diagnostic on stderr beside it -- a person
+# sent to re-run a fetch that was never attempted.
+CONTRACT="${HARNESS_TMP}/tools-contract"
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/resolve-range.sh"
+printf '#!/usr/bin/env bash\necho trunk\n' >"${CONTRACT}/resolve-default-branch.sh"
+printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
+
+# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
+
+row_start
+reader 'exit 1'
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
+
+row_start
+reader 'echo WHAT'
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-kind: stderr' \
+  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'echo "PREREQ task 9 DRAFT"'
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-state: stderr' \
+  'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'true'
+run_sut bash "${CONTRACT}/resolve-range.sh"
+assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"

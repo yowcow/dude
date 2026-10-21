@@ -181,10 +181,13 @@ if [ -z "$BASE_REPO" ]; then
 fi
 
 # --- Step 3: the base, from the sibling only. ---
+RESOLVED_ARGS=("$BRANCH" --facts "$FACTS")
 if [ -n "$BASE_REPO" ]; then
-  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" "$TARGET" --facts "$FACTS")"
-else
-  RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "$BRANCH" --facts "$FACTS")"
+  RESOLVED_ARGS=("$BRANCH" "$TARGET" --facts "$FACTS")
+fi
+if ! RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${RESOLVED_ARGS[@]}")"; then
+  echo "STOP base-resolve-failed"
+  exit 0
 fi
 case "$RESOLVED" in
   STOP* | NEED*)
@@ -193,8 +196,9 @@ case "$RESOLVED" in
     ;;
   "BASE "*) BASE="${RESOLVED#BASE }" ;;
   *)
-    echo "error: unexpected output from resolve-pr-base.sh: ${RESOLVED}" >&2
-    exit 1
+    printf 'unexpected output from resolve-pr-base.sh: %s\n' "${RESOLVED}" >&2
+    echo "STOP base-resolve-failed"
+    exit 0
     ;;
 esac
 
