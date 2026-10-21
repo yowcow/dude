@@ -55,10 +55,13 @@ if [ "${status}" -eq 0 ]; then
   git config "branch.${BRANCH}.remote" origin
   git config "branch.${BRANCH}.merge" "refs/heads/${BRANCH}"
   # git resolves branch.<name>.merge through remote.origin.fetch, so a narrowed
-  # clone has to name this branch there before @{upstream} resolves. A clone
-  # whose refspec already covers it needs no change.
+  # clone has to name this branch there before @{upstream} resolves. It gets the
+  # wildcard rather than this branch's own refspec: a non-wildcard entry names a
+  # ref that, once deleted upstream, makes every later plain `git fetch` and
+  # `git pull` in this clone fail. A clone whose refspec already covers the
+  # branch needs no change.
   git rev-parse --abbrev-ref "${BRANCH}@{upstream}" >/dev/null 2>&1 ||
-    git config --add remote.origin.fetch "${REFSPEC}"
+    git config --add remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*'
   echo "ATTACHED ${WORKTREE_PATH}"
   exit 0
 elif [ "${status}" -ne 2 ]; then

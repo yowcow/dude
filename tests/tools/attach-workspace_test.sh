@@ -245,6 +245,17 @@ tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: the branch tracks t
 tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: the clone still fetches its own branch' \
   '+refs/heads/main:refs/remotes/origin/main' \
   "$(git -C "$W" config --get-all remote.origin.fetch | head -1)"
+# The tracking ref lives on in this clone after the branch is deleted upstream,
+# and a non-wildcard configuration entry naming a missing ref makes every later
+# plain fetch fail -- the attach would then cost the clone its routine `git
+# pull`. This is what separates the wildcard entry from the branch's own.
+git_repo_push "$SEED" "$BARE" --delete task
+set +e
+git -C "$W" fetch -q
+status=$?
+set -e
+tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: a plain fetch still works once the branch is deleted upstream' \
+  0 "$status"
 
 # ---- the tip attached is the one this script's own fetch resolved ------
 #
