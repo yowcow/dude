@@ -69,8 +69,8 @@ mk_tool_test() { mk_file "$1" "tests/tools/$2"; }
 # mk_root_script <root> <name>  — <name> is relative to scripts/, may contain slashes
 mk_root_script() { mk_file "$1" "scripts/$2"; }
 
-# mk_root_test <root> <name>  — <name> is the test file's own basename under tests/
-mk_root_test() { mk_file "$1" "tests/$2"; }
+# mk_root_test <root> <name>  — <name> is the test file's own basename under tests/scripts/
+mk_root_test() { mk_file "$1" "tests/scripts/$2"; }
 
 # Each returns a fresh synthetic repo root. The shape mirrors the real one
 # because the gate derives skills, tools, hooks, scripts, and tests from the root it is handed.
@@ -472,7 +472,7 @@ mk_root_script "$root" 'untested.sh'
 run_sut bash "$SUT" "$root"
 if ! check_eq 'root script: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'root script: names the script' 'no test for scripts/untested.sh'; then fails_here=1; fi
-if ! check_stderr_has 'root script: names the expected test path' 'tests/untested_test.sh'; then fails_here=1; fi
+if ! check_stderr_has 'root script: names the expected test path' 'tests/scripts/untested_test.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 25: a missing top-level scripts/ is a listing failure --------------
@@ -496,7 +496,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
-rm -f "${root}/scripts/planted.sh" "${root}/tests/planted_test.sh"
+rm -f "${root}/scripts/planted.sh" "${root}/tests/scripts/planted_test.sh"
 mk_script "$root" alpha 'a.sh'
 mk_test "$root" alpha 'a_test.sh'
 run_sut bash "$SUT" "$root"
@@ -609,20 +609,20 @@ if ! check_stderr_has 'hook test path collision: names both and the path' \
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 33: the same collision across roots -------------------------------
-# The expected path mirrors the script's position in the tree, so a root script
-# under scripts/tools/ lands on the tools/ path. tools/helper.sh is planted by
-# tree_new and already covered; only the root script is added, so the one test
-# would count twice and the second script is exercised by nothing.
+# The expected path mirrors the script's position in the tree, and a skill named
+# `tools` lands on the tools/ path. tools/helper.sh is planted by tree_new and
+# already covered; only the skill script is added, so the one test would count
+# twice and the second script is exercised by nothing.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
 mk_script "$root" alpha 'a.sh'
 mk_test "$root" alpha 'a_test.sh'
-mk_root_script "$root" 'tools/helper.sh'
+mk_script "$root" tools 'helper.sh'
 run_sut bash "$SUT" "$root"
 if ! check_eq 'cross-root test path collision: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'cross-root test path collision: names both and the path' \
-  'tools/helper.sh and scripts/tools/helper.sh share the expected test path tests/tools/helper_test.sh'; then fails_here=1; fi
+  'skills/tools/scripts/helper.sh and tools/helper.sh share the expected test path tests/tools/helper_test.sh'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 34: a symlinked tools/ subdirectory is refused ---------------------
@@ -676,60 +676,6 @@ if ! check_stderr_has 'symlinked scripts subdir: names it' \
   'skills/alpha/scripts/lib is a symlink to a directory'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# --- case 37: a root script sharing its test with tests/<name>.sh is refused --
-# tests/ holds both this position's tests and the harness's own subjects
-# (run.sh, manifest.sh, scripts-have-tests.sh). scripts/run.sh would map to
-# tests/run_test.sh, which tests tests/run.sh — the new script would be run by
-# nothing and still count as covered.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-mk_test "$root" alpha 'a_test.sh'
-mk_root_script "$root" 'x.sh'
-mk_root_test "$root" 'x_test.sh'
-mk_file "$root" tests/x.sh
-run_sut bash "$SUT" "$root"
-if ! check_eq 'root script shadows a tests/ subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'root script shadows a tests/ subject: names both' \
-  'scripts/x.sh collides with tests/x.sh'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-# --- case 38: a root script sharing its test with an extensionless subject ---
-# The same rule for the other spelling: tests/x owns tests/x_test.sh, so a
-# scripts/x would be "covered" by a test that exercises tests/x.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-mk_test "$root" alpha 'a_test.sh'
-mk_root_script "$root" 'x'
-mk_root_test "$root" 'x_test.sh'
-mk_file "$root" tests/x
-run_sut bash "$SUT" "$root"
-if ! check_eq 'root script shadows an extensionless tests/ subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'root script shadows an extensionless tests/ subject: names both' \
-  'scripts/x collides with tests/x'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-# --- case 39: a dangling tests/ subject still occupies the name --------------
-# `-e` is false for a dangling symlink, so a subject that is a broken link
-# would slip past the guard and the root script would be "covered" by a test
-# that exercises nothing at all.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-mk_test "$root" alpha 'a_test.sh'
-mk_root_script "$root" 'x.sh'
-mk_root_test "$root" 'x_test.sh'
-ln -s "${root}/tests/nowhere.sh" "${root}/tests/x.sh"
-run_sut bash "$SUT" "$root"
-if ! check_eq 'root script shadows a dangling tests/ subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'root script shadows a dangling tests/ subject: names both' \
-  'scripts/x.sh collides with tests/x.sh'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
 # --- case 40: a symlinked root script is enumerated, not silently exempt ------
 # Same door as cases 10, 16 and 22, at the fourth position: the root scripts/
 # loop reads the same listing, so a symlink there is enumerated like a regular
@@ -761,25 +707,6 @@ run_sut bash "$SUT" "$root"
 if ! check_eq 'symlinked root: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'symlinked root: names it' \
   'scripts is a symlink to a directory'; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-# --- case 42: a tests/ subdirectory is not a shadowing subject ---------------
-# tests/ names a subdirectory after each position it tests (`tests/hooks/`,
-# `tests/tools/`), so a root script whose stem matches one of those is the
-# ordinary case, not a collision: `scripts/hooks.sh` is covered by
-# `tests/hooks_test.sh` while `tests/hooks/` holds the hook tests. Asking `-e`
-# refused it with a message naming a test that would have covered it correctly.
-total=$((total + 1))
-fails_here=0
-root="$(tree_new)"
-mk_script "$root" alpha 'a.sh'
-mk_test "$root" alpha 'a_test.sh'
-mk_root_script "$root" 'hooks.sh'
-mk_root_test "$root" 'hooks_test.sh'
-run_sut bash "$SUT" "$root"
-if ! check_eq 'tests/ subdirectory is not a subject: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_bytes 'tests/ subdirectory is not a subject: stdout' \
-  'scripts-have-tests: 5 script(s), 5 with tests\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 43: a link at a skill position whose target is gone is refused ------

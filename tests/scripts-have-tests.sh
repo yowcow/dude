@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # The coverage gate: every script under skills/*/scripts/, every file under
 # tools/, every file under hooks/ except hooks.json, and every file under the
-# top-level scripts/ must have a test file under tests/.
+# top-level scripts/ must have a test file under tests/ (tests/scripts/ for the last).
 # Usage: scripts-have-tests.sh [<repo-root>]
 #
 # Why this exists: without it a script can land under skills/*/scripts/,
@@ -182,7 +182,9 @@ done <"$LISTING"
 # shared tool and not a hook — bump.sh is the one there today. It was the last
 # position the position rule skipped: an untested file here was reported as
 # nothing at all. Every file under it is enumerated, subdirectories mirrored into
-# tests/, by the same position rule as tools/.
+# tests/scripts/, by the same position rule as tools/. It has its own namespace
+# because tests/ itself also holds tests whose subject is not under scripts/
+# (ci_test.sh, skill-deps_test.sh), and a shared one would let those cover it.
 list_root "$ROOT_SCRIPTS"
 
 root_scripts=()
@@ -288,30 +290,7 @@ for rel in "${tools[@]}"; do
 done
 
 for rel in "${root_scripts[@]}"; do
-  stem="${rel%.sh}"
-  want="tests/${stem}_test.sh"
-  # tests/ holds this position's tests *and* the harness's own subjects (run.sh,
-  # manifest.sh, scripts-have-tests.sh). Without this guard, a new scripts/run.sh
-  # would be "covered" by tests/run_test.sh, which exercises tests/run.sh — the
-  # script is run by nothing while the gate reports full coverage.
-  #
-  # Both spellings of the subject are refused: `tests/x.sh` and the extensionless
-  # `tests/x`, each of which owns the test `tests/x_test.sh`. `-f` alone misses
-  # a dangling symlink, which still occupies the name and would leave the root
-  # script covered by a test that exercises something else — so `-L` is asked
-  # too. `-e` is not asked: tests/ holds subdirectories named after positions
-  # (`tests/hooks/`, `tests/tools/`), and a directory there is not a subject —
-  # refusing it would report a collision that does not exist and skip the
-  # `tests/hooks_test.sh` that is the right test for `scripts/hooks.sh`.
-  for subject in "${ROOT}/tests/${stem}.sh" "${ROOT}/tests/${stem}"; do
-    if [ -f "$subject" ] || [ -L "$subject" ]; then
-      printf 'scripts-have-tests: scripts/%s collides with %s, whose test %s would cover it\n' \
-        "$rel" "${subject#"${ROOT}/"}" "$want" >&2
-      problems=$((problems + 1))
-      continue 2
-    fi
-  done
-  require_test "scripts/${rel}" "$want"
+  require_test "scripts/${rel}" "tests/scripts/${rel%.sh}_test.sh"
 done
 
 if [ "$problems" -ne 0 ]; then

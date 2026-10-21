@@ -5,9 +5,9 @@
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
-# shellcheck source=lib/harness.sh
+# shellcheck source=../lib/harness.sh
 # shellcheck disable=SC1091
-. "$(dirname -- "${BASH_SOURCE[0]}")/lib/harness.sh"
+. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
 
 SUT="${SUT:-${REPO_ROOT}/scripts/bump.sh}"
 failed=0

@@ -258,7 +258,7 @@ Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 `tests/<skill>/<name>_test.sh`. Every file under `tools/` must have a
 non-empty test file at `tests/tools/<name>_test.sh`. Every file under the
 repository-root `scripts/` must have a non-empty test file at
-`tests/<name>_test.sh`. Every file under `hooks/`
+`tests/scripts/<name>_test.sh`. Every file under `hooks/`
 except `hooks.json` must have a non-empty test file at
 `tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
 subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s native-write rule (rule 1): a write the agent makes natively has no script to count.
@@ -285,15 +285,9 @@ tree rather than stating as prose:
   scripts and the path, and the collision is refused across roots as well as
   within one, because the suffix is stripped before `_test.sh` is appended and
   the expected path mirrors the script's position in the tree:
-  `tools/helper.sh` and `scripts/tools/helper.sh` both want
+  `tools/helper.sh` and a skill named `tools` with `scripts/helper.sh` both want
   `tests/tools/helper_test.sh`. Counting the one file as coverage for both
-  would leave the second script exercised by nothing. The same test cannot
-  cover a *root script* and a `tests/` subject either: `scripts/<x>.sh` whose
-  expected `tests/<x>_test.sh` is already the test of an existing `tests/<x>.sh`
-  — or of an extensionless `tests/<x>` — is refused, naming both, because
-  `tests/<x>_test.sh` exercises that subject and the new script would be run by
-  nothing. A subject that is a dangling symlink still occupies the name and is
-  refused the same way.
+  would leave the second script exercised by nothing.
 - A `find` that dies partway through a root is a **failure**, never a green
   over the part it managed to read. A missing directory reaches the same
   message through `list_root`, which lists every root, and each of the four
