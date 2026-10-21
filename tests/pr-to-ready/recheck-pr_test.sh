@@ -342,6 +342,15 @@ run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:17
 assert_row 'two-recorded-entries-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t2\nREADME.md:179\ntests/run.sh:12\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
 
 row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_no_suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'empty-listing-with-pairs-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
 run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww
 assert_row 'odd-recorded-pair-is-usage' 2 '' 0
 
