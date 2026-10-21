@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "name": "dude",
   "displayName": "dude",
-  "version": "1.9.2",
+  "version": "1.9.3",
   "description": "Yet another AI workflow: planning, implementation, PR delivery, review, simplification, and investigation skills that wire into one another",
   "compat": {
     "source": "native",
