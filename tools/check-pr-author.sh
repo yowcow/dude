@@ -43,15 +43,32 @@ if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
   exit 0
 fi
 
-VERDICT="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" \
-  "repo=${REPO}" "pr.number=${PR}" pr.author.login viewer.login)"
-if [ "$VERDICT" != OK ]; then
-  echo "$VERDICT"
+if ! VERDICT="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" \
+  "repo=${REPO}" "pr.number=${PR}" pr.author.login viewer.login)"; then
+  echo "STOP facts-read-failed"
   exit 0
 fi
+case "$VERDICT" in
+  OK) ;;
+  "NEED "?* | "STOP "?*) echo "$VERDICT" ;;
+  *) echo "STOP facts-answer-malformed" ;;
+esac
+[ "$VERDICT" = OK ] || exit 0
 
-AUTHOR="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" pr.author.login)"
-ME="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" viewer.login)"
+# fact <var> <name>: assign the value into the caller's variable. The value is
+# never printed: called as $(fact ...) the exit 0 above would land in a
+# subshell, leaving the caller running and reading "STOP ..." back as data.
+fact() {
+  local value
+  if ! value="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$2")"; then
+    echo "STOP facts-read-failed"
+    exit 0
+  fi
+  printf -v "$1" '%s' "$value"
+}
+
+fact AUTHOR pr.author.login
+fact ME viewer.login
 
 if [ "$AUTHOR" = "$ME" ]; then
   echo "SELF"

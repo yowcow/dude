@@ -63,18 +63,31 @@ base_default() {
   base "$default"
 }
 
-# need <spec>...: relay any answer from the self-check other than OK.
+# need <spec>...: on OK return; otherwise answer and exit 0.
 need() {
   local verdict
-  verdict="$(bash "${TOOLS}/facts.sh" check "$FACTS" "$@")"
-  if [ "$verdict" != OK ]; then
-    echo "$verdict"
+  if ! verdict="$(bash "${TOOLS}/facts.sh" check "$FACTS" "$@")"; then
+    echo "STOP facts-read-failed"
     exit 0
   fi
+  case "$verdict" in
+    OK) return 0 ;;
+    "NEED "?* | "STOP "?*) echo "$verdict" ;;
+    *) echo "STOP facts-answer-malformed" ;;
+  esac
+  exit 0
 }
 
+# fact <var> <name>: assign the value into the caller's variable. The value is
+# never printed: called as $(fact ...) the exit 0 above would land in a
+# subshell, leaving the caller running and reading "STOP ..." back as data.
 fact() {
-  bash "${TOOLS}/facts.sh" get "$FACTS" "$1"
+  local value
+  if ! value="$(bash "${TOOLS}/facts.sh" get "$FACTS" "$2")"; then
+    echo "STOP facts-read-failed"
+    exit 0
+  fi
+  printf -v "$1" '%s' "$value"
 }
 
 if [ -z "$ISSUE" ]; then
@@ -88,8 +101,9 @@ fi
 
 SPECS=("repo=${REPO}" "issue.number=${ISSUE}" issue.body-file)
 need "${SPECS[@]}"
+fact BODY_FILE issue.body-file
 
-if ! LINE="$(bash "${TOOLS}/prereq-line.sh" "$(fact issue.body-file)")"; then
+if ! LINE="$(bash "${TOOLS}/prereq-line.sh" "$BODY_FILE")"; then
   echo "STOP body-unreadable"
   exit 0
 fi
@@ -108,7 +122,7 @@ PREREQ="${LINE#PREREQ }"
 
 SPECS+=("prereq.number=${PREREQ}" 'prereq.closing-pr[]')
 need "${SPECS[@]}"
-COUNT="$(fact prereq.closing-pr.total)"
+fact COUNT prereq.closing-pr.total
 if [ "$COUNT" -eq 0 ]; then
   echo "STOP not-implemented"
   exit 0
@@ -117,12 +131,14 @@ if [ "$COUNT" -ge 2 ]; then
   echo "STOP ask-multiple-prs"
   exit 0
 fi
-PR="$(fact prereq.closing-pr)"
+fact PR prereq.closing-pr
 
 SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' pr.head.ref)
 need "${SPECS[@]}"
-case "$(fact pr.state)" in
-  OPEN) base "$(fact pr.head.ref)" ;;
+fact STATE pr.state
+fact HEAD_REF pr.head.ref
+case "$STATE" in
+  OPEN) base "$HEAD_REF" ;;
   MERGED) base_default ;;
   CLOSED) echo "STOP abandoned-prerequisite" ;;
 esac

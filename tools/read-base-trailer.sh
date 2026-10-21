@@ -54,15 +54,28 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 need() {
   local verdict
-  verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
-  if [ "$verdict" != OK ]; then
-    echo "$verdict"
+  if ! verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"; then
+    echo "STOP facts-read-failed"
     exit 0
   fi
+  case "$verdict" in
+    OK) return 0 ;;
+    "NEED "?* | "STOP "?*) echo "$verdict" ;;
+    *) echo "STOP facts-answer-malformed" ;;
+  esac
+  exit 0
 }
 
+# fact <var> <name>: assign the value into the caller's variable. The value is
+# never printed: called as $(fact ...) the exit 0 above would land in a
+# subshell, leaving the caller running and reading "STOP ..." back as data.
 fact() {
-  bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$1"
+  local value
+  if ! value="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$2")"; then
+    echo "STOP facts-read-failed"
+    exit 0
+  fi
+  printf -v "$1" '%s' "$value"
 }
 
 # Capture the trailer scan into a variable before testing it, rather than
@@ -98,7 +111,7 @@ fi
 
 SPECS=("repo=${REPO}" "prereq.head=${REPO%%/*}:${RECORDED}" 'prereq.head-pr[]')
 need "${SPECS[@]}"
-COUNT="$(fact prereq.head-pr.total)"
+fact COUNT prereq.head-pr.total
 if [ "$COUNT" -eq 0 ]; then
   echo "STOP no-prereq-pr"
   exit 0
@@ -107,7 +120,7 @@ if [ "$COUNT" -ge 2 ]; then
   echo "STOP ask-multiple-prs"
   exit 0
 fi
-PR="$(fact prereq.head-pr)"
+fact PR prereq.head-pr
 
 # A PR's state has three values, and "not merged" would collapse the two that
 # need opposite answers: a PR closed without merging is abandoned work, not
@@ -115,7 +128,7 @@ PR="$(fact prereq.head-pr)"
 # because both callers answer it with the same byte.
 SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' "pr.head.ref=${RECORDED}" "pr.head.owner=${REPO%%/*}")
 need "${SPECS[@]}"
-STATE="$(fact pr.state)"
+fact STATE pr.state
 case "$STATE" in
   OPEN | MERGED) echo "PREREQ ${RECORDED} ${PR} ${STATE}" ;;
   CLOSED) echo "STOP abandoned-prerequisite" ;;

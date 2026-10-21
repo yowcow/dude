@@ -77,15 +77,28 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 need() {
   local verdict
-  verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"
-  if [ "$verdict" != OK ]; then
-    echo "$verdict"
+  if ! verdict="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" "$@")"; then
+    echo "STOP facts-read-failed"
     exit 0
   fi
+  case "$verdict" in
+    OK) return 0 ;;
+    "NEED "?* | "STOP "?*) echo "$verdict" ;;
+    *) echo "STOP facts-answer-malformed" ;;
+  esac
+  exit 0
 }
 
+# fact <var> <name>: assign the value into the caller's variable. The value is
+# never printed: called as $(fact ...) the exit 0 above would land in a
+# subshell, leaving the caller running and reading "STOP ..." back as data.
 fact() {
-  bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$1"
+  local value
+  if ! value="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$2")"; then
+    echo "STOP facts-read-failed"
+    exit 0
+  fi
+  printf -v "$1" '%s' "$value"
 }
 
 if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
@@ -132,7 +145,7 @@ fi
 # --- Step 2: the branch's own PR. ---
 SPECS=("target=${TARGET}" "head=${OWNER}:${BRANCH}" 'head.open-pr[]')
 need "${SPECS[@]}"
-COUNT="$(fact head.open-pr.total)"
+fact COUNT head.open-pr.total
 
 if [ -n "$CREATED" ]; then
   if [ "$COUNT" -eq 0 ]; then
@@ -143,9 +156,11 @@ if [ -n "$CREATED" ]; then
     echo "STOP ask-multiple-prs-after-create"
     exit 0
   fi
-  NUM="$(fact head.open-pr)"
+  fact NUM head.open-pr
   need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.head.owner=${OWNER}" "pr.base.ref=${CREATED}" 'pr.draft:true,false' pr.url
-  echo "PR ${NUM} created draft=$(fact pr.draft) base=${CREATED} url=$(fact pr.url)"
+  fact DRAFT pr.draft
+  fact URL pr.url
+  echo "PR ${NUM} created draft=${DRAFT} base=${CREATED} url=${URL}"
   exit 0
 fi
 
@@ -154,9 +169,11 @@ if [ "$COUNT" -ge 2 ]; then
   exit 0
 fi
 if [ "$COUNT" -eq 1 ]; then
-  NUM="$(fact head.open-pr)"
+  fact NUM head.open-pr
   need "${SPECS[@]}" "pr.number=${NUM}" "pr.head.ref=${BRANCH}" "pr.head.owner=${OWNER}" 'pr.draft:true,false' pr.url
-  echo "PR ${NUM} found draft=$(fact pr.draft) url=$(fact pr.url)"
+  fact DRAFT pr.draft
+  fact URL pr.url
+  echo "PR ${NUM} found draft=${DRAFT} url=${URL}"
   exit 0
 fi
 
@@ -169,12 +186,14 @@ if [ -z "$BASE_REPO" ]; then
   fi
   SPECS+=("repo=${REPO}" 'repo.fork[]')
   need "${SPECS[@]}"
-  if [ "$(fact repo.fork.total)" -ne 1 ]; then
+  fact FORK_TOTAL repo.fork.total
+  if [ "$FORK_TOTAL" -ne 1 ]; then
     echo "STOP fork-unread"
     exit 0
   fi
   need "${SPECS[@]}" 'repo.fork:true,false'
-  if [ "$(fact repo.fork)" = true ]; then
+  fact FORK repo.fork
+  if [ "$FORK" = true ]; then
     echo "STOP ask-base-repo"
     exit 0
   fi

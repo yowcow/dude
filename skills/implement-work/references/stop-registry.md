@@ -43,6 +43,8 @@ stdout through every such script.
 | `fact-malformed` | `tools/facts.sh` |
 | `fact-mismatch` | `tools/facts.sh` |
 | `fact-missing` | `tools/facts.sh` |
+| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
+| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `tools/resolve-range.sh` |
 | `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `head-moved` | `pr-to-ready/mark-ready.sh` |

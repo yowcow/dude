@@ -13,10 +13,11 @@
 # would only encode the test author's belief about that ordering, not git's
 # actual behaviour.
 #
-# The sibling ./resolve-pr-base.sh runs for real in every row but the two at
-# the end, which stub it to pin how this script answers a sibling that aborts
-# or answers out of contract. #205 left that boundary out; yowcow/dude#648
-# owns it.
+# The sibling ./resolve-pr-base.sh runs for real in every row but the two
+# stubbed ones at the end and the three facts-capture rows after them, which
+# stub ./facts.sh. Those last three pin how this script answers a self-check
+# or a read that aborts or answers out of contract. #205 left that boundary
+# out; yowcow/dude#648 owns it.
 #
 # Every row runs from inside its own work repository, never from the scripts
 # directory: the SUT finds its sibling through dirname -- "$0", so a row run
@@ -36,6 +37,9 @@
 #
 #   Against that pre-fix script only the two stubbed rows and their stderr
 #   tally are red: `not ok 3/59`.
+#
+#   The three facts-capture rows at the end are RED against `master`'s script
+#   in the same full tools/ tree: `not ok 3/62`.
 #
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
@@ -565,5 +569,31 @@ run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-garbage 0; fork si
 assert_row 'base-sibling-garbage-is-reported' 0 'STOP base-resolve-failed\n' 0
 tally check_eq 'base-sibling-garbage: stderr' \
   'unexpected output from resolve-pr-base.sh: WHAT' "$(cat "$SUT_STDERR")"
+
+# ---- facts.sh that stops instead of answering ---------------------------
+#
+# `need` and `fact` capture facts.sh in $( ), so an exit that is not relayed
+# becomes empty stdout and a non-zero status -- "aborted", not "stopped". The
+# copy's facts.sh is replaced for these three rows only; every row above runs
+# the real one.
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/facts.sh"; }
+
+row_start
+fixture facts-abort feature remote
+facts_stub 'exit 1'
+run_contract "$FIXTURE_WORK" feature --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-abort-is-reported' 0 'STOP facts-read-failed\n' 0
+
+row_start
+fixture facts-garbage feature remote
+facts_stub 'echo WHAT'
+run_contract "$FIXTURE_WORK" feature --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-answer-malformed-is-reported' 0 'STOP facts-answer-malformed\n' 0
+
+row_start
+fixture facts-get-abort feature remote
+facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
+run_contract "$FIXTURE_WORK" feature --facts "$(facts_file </dev/null)"
+assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
 harness_exit "$failed" "$total"

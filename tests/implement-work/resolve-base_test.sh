@@ -34,6 +34,9 @@
 # fails every row for that reason instead): testing the closing PRs for
 # emptiness instead of counting them fails 'prerequisite has two prs';
 # dropping the `prereq.number=` pin fails 'prerequisite read as another issue'.
+#
+# The three facts-capture rows at the end are RED against `master`'s script in
+# a full tools/ tree: `not ok 3/52`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -361,5 +364,44 @@ W="$(work_repo head-absent "$REMOTE" main)"
 run_in "$W" 203 --facts "$(round3 OPEN nosuch)"
 assert_row 'open head absent on remote' 1 '' 0
 tally check_tracking 'open head absent: origin/main untouched' "$W" "$REMOTE" main stale
+
+# ---- facts.sh that stops instead of answering ---------------------------
+#
+# The self-check and every read are captured, so an exit that is not relayed
+# becomes empty stdout and a non-zero status. The copy's facts.sh is replaced
+# for these three rows only. The script reaches tools/ through SCRIPT_DIR, so
+# the copy keeps the skills/<skill>/scripts/ shape beside a tools/ tree.
+CONTRACT="${HARNESS_TMP}/facts-contract"
+mkdir -p "${CONTRACT}/skills/implement-work/scripts"
+cp -R "${REPO_ROOT}/tools" "${CONTRACT}/tools"
+cp "$SUT" "${CONTRACT}/skills/implement-work/scripts/resolve-base.sh"
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/facts.sh"; }
+
+# run_contract <work-dir> <argv...> -- run_in, for the copy's script.
+run_contract() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${CONTRACT}/skills/implement-work/scripts/resolve-base.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+W="$(work_repo facts-abort "$REMOTE" main)"
+facts_stub 'exit 1'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-abort-is-reported' 0 'STOP facts-read-failed\n' 0
+
+row_start
+W="$(work_repo facts-garbage "$REMOTE" main)"
+facts_stub 'echo WHAT'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-answer-malformed-is-reported' 0 'STOP facts-answer-malformed\n' 0
+
+row_start
+W="$(work_repo facts-get-abort "$REMOTE" main)"
+facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
 harness_exit "$failed" "$total"
