@@ -211,8 +211,8 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 9: a test file nested under the root is discovered and run ---------
 # Discovery must reach every depth the suite uses, not just the top level. The
-# repository nests 39 of its 47 test files; a discovery that matched one level
-# would run 8 files and report the whole suite green. A plain top-level test is
+# repository nests 40 of its 47 test files; a discovery that matched one level
+# would run 7 files and report the whole suite green. A plain top-level test is
 # planted too, so a depth-blind runner reports one file rather than none.
 total=$((total + 1))
 fails_here=0
