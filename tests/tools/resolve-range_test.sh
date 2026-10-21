@@ -28,20 +28,18 @@
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
 # this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Records
-# 4 and 9 mutate this script itself rather than a sibling: record 4 replaces
-# emit_range's body and fails a PR-shape row that returns before the trailer
-# scan is ever reached; record 9 leaves the NO-TRAILER merge-base bare. Every
-# other record (1-3 and 5-8) mutates a guard that either lives in, or is
-# reached through, the shared tools/read-base-trailer.sh and/or
-# tools/resolve-default-branch.sh this script calls as
-# a subprocess through `dirname "$0"`, so those seven need the tree copied with
-# every file the mutant's row needs in place -- in those rows a lone copy of
-# this script answers `STOP ask-default-branch` (or fails outright) instead,
-# which pins nothing about the mutation. The stubbed rows at the end are
-# the exception: they copy the SUT into a tools/ tree that already holds every
-# sibling, so a lone copy is enough for those. Nine were removed and are bound
-# below; the one that is only partly observable is recorded as such, rather
-# than counted as covered. What each mutant actually produced, measured:
+# 1, 3, 5 and 7 replace a guard in a sibling (read-base-trailer.sh or
+# resolve-default-branch.sh); records 2, 4, 6, 8 and 9 replace one in this
+# script (the MERGED fetch spec, emit_range, the OPEN fetch spec, the bounded
+# scan's `^<tip>` argument, the NO-TRAILER merge-base). Every mutant is applied
+# inside a copy of the tools/ tree regardless, because every row that reaches
+# the script's body reaches a sibling through `dirname "$0"` first: a lone copy
+# of this script answers `STOP ask-default-branch` (or `STOP repo-lookup-
+# failed`) instead, which pins nothing about the mutation. The stubbed rows at
+# the end build that tree themselves, so for them a lone copy of the SUT is
+# enough. Nine were removed and are bound below; the one that is only partly
+# observable is recorded as such, rather than counted as covered. What each
+# mutant actually produced, measured:
 #
 #   1. The trailer read guarded as well as captured. This guard lives in
 #      tools/read-base-trailer.sh, so the mutant is applied there, in a copy
@@ -560,11 +558,10 @@ git_repo_remote "$W" origin "$LONELY"
 run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
 
-# The same two roots (`LONELY`/`LSEED`, from the row above), reached the other
-# way: a branch that records no trailer at all, no facts, and so the NO-TRAILER
-# path. The row above bounds the PREREQ path's merge-base; this one bounds the
-# copy on the path that takes its base from the default branch's tip, where
-# nothing else in the answer would show that git declined to answer.
+# An unrelated remote again (`LONELY`, from the row above), reached the other
+# way: the branch records no trailer at all and the run passes no facts, so it
+# takes the NO-TRAILER path, whose base is the default branch's tip. Nothing
+# else in its answer would show that git declined to answer.
 row_start
 W="$(git_repo_scratch lonely-work-no-trailer)"
 git_repo_init "$W" task

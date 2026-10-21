@@ -20,7 +20,7 @@
 #   - treat any non-zero `git merge` exit as a conflict:
 #     `unrelated-histories-is-not-a-conflict`, `merge-failed-leaves-no-conflict`
 #   - drop the is-ancestor pre-check: `already-contains-the-base`
-#   - treat any non-1 `--is-ancestor` exit as "no", or drop that branch:
+#   - treat `--is-ancestor`'s exit as a boolean, dropping the `-ne 1` branch:
 #     `non-commit-base-is-not-an-answer`
 set -euo pipefail
 
