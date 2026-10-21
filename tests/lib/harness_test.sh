@@ -18,7 +18,7 @@
 # read must be named as such, rather than compared against as far as it got and
 # charged to the script under test. And the payload of an `--input -` call must
 # be recorded, with its absence its own failure distinct from a byte mismatch —
-# without it, `review-pr`'s `post-review.sh` stdin-piped payload is
+# without it, a stdin-piped payload is
 # unobservable, since it never reaches the argv the stub matches on. And a file
 # whose tally is zero must fail rather than print `ok 0/0`: an emptied row list
 # is otherwise indistinguishable from a file that ran every row.
@@ -119,7 +119,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 6: an argv spanning lines can be stubbed and matched exactly ----
 # The GraphQL query list-unresolved-threads.sh passes as `-f query='...'` spans
-# 23 lines. Refusing it would leave that script untestable; matching it loosely
+# many lines. Refusing it would leave that script untestable; matching it loosely
 # would let a different query be served this case's body.
 row_start
 fails_here=0

@@ -53,7 +53,7 @@ set -euo pipefail
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/list-copilot-reviews.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
 
-# A verbatim copy of the --jq argument in list-copilot-reviews.sh:41-43,
+# A verbatim copy of the --jq argument in list-copilot-reviews.sh:46-48,
 # including its eight-space continuation indent. It is one argv element that
 # spans three lines, and the stub matches on its exact bytes: an edit to the
 # filter there fails every row here as an unstubbed argv rather than passing

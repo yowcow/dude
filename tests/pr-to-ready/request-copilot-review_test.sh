@@ -110,7 +110,7 @@ stub_sleep_instant
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/request-copilot-review.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
 
-# A verbatim copy of the --jq argument in request-copilot-review.sh:69-72,
+# A verbatim copy of the --jq argument in request-copilot-review.sh:74-77,
 # including its 11-space continuation indent and the 10-space closing line. It is
 # one argv element spanning four lines, matched on its exact bytes: an edit to
 # the filter there fails every row here as an unstubbed argv rather than quietly.

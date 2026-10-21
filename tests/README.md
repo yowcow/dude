@@ -3,9 +3,8 @@
 An offline test suite for the `gh`-wrapping scripts under `skills/*/scripts/`
 and `tools/`.
 The tree sits beside the skills it tests, but **not inside any skill
-directory**: what this repository distributes as a plugin is `skills/` and its
-contents, so a `tests/` dir inside a skill would ship to every agent that
-installs the plugin. `tests/` at the repository root ships to none of them.
+directory**. A plugin install carries the whole repository, `tests/` included
+(`AGENTS.md`, **What ships**).
 
 ## Layout
 
@@ -97,7 +96,7 @@ newlines are fine — the joined argv lives in a file of its own (`argv.N`)
 rather than a field of the TSV manifest, because real argvs span lines: the
 `--jq` filter `list-copilot-reviews.sh` passes is one three-line argument, and
 the GraphQL query `list-unresolved-threads.sh` passes as `-f query='...'` spans
-23 lines. Either is matched on its exact bytes, by `cmp` on two files. A
+many lines. Either is matched on its exact bytes, by `cmp` on two files. A
 malformed index or an exit status outside 0-255 is rejected too.
 
 **`gh_stub_response` versus `gh_stub_raw_response`** — same signature, and they
@@ -370,7 +369,7 @@ depends on:
    spans lines — a GraphQL query passed as `-f query='...'` — does not
    advance the index past the call a later exact-index entry was written for.
 6. **An argv spanning lines is stubbable and matches only itself** — the
-   23-line GraphQL query is why, and a near-miss query must still be reported
+   multi-line GraphQL query is why, and a near-miss query must still be reported
    as an unstubbed argv rather than served this case's body.
 7. **`--jq` is applied to a successful body and never to a failing one** —
    what real `gh` does (measured), for entries registered with
@@ -395,10 +394,9 @@ depends on:
     inward. The same guard keeps a plain (non-`if`) call from aborting the
     whole test file under `set -e`.
 11. **The payload of an `--input -` call is recorded, and its absence is its
-    own failure** — `review-pr`'s `post-review.sh` pipes its payload to `gh`
-    on stdin precisely so it never reaches the shell, which puts the body
-    outside the argv the stub matches on. `check_gh_stdin` compares those
-    bytes, and reports "gh read no stdin payload" separately from "the bytes
+    own failure** — a script that pipes its body to `gh` on stdin keeps it out
+    of the shell, which puts the body outside the argv the stub matches on.
+    `check_gh_stdin` compares those bytes, and reports "gh read no stdin payload" separately from "the bytes
     differ", because a script that stopped piping its body would otherwise be
     charged with sending different bytes, and an empty expectation would let it
     pass. Only a call carrying `--input -` has a payload, which is real gh's own

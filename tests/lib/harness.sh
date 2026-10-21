@@ -125,8 +125,8 @@ _gh_stub_entry() {
     # different argv lists join to the same bytes — ["a\x1fb"] and ["a","b"] —
     # and the stub would serve one case's body to the other. Tabs and newlines
     # are fine: the joined argv goes to its own file, not into the TSV manifest.
-    # Real argvs need that — list-copilot-reviews.sh:41-43 passes a three-line
-    # --jq filter, and list-unresolved-threads.sh a 23-line GraphQL query — and
+    # Real argvs need that — list-copilot-reviews.sh:46-48 passes a three-line
+    # --jq filter, and list-unresolved-threads.sh a multi-line GraphQL query — and
     # refusing them would leave those calls unstubbable.
     case "$arg" in
       *$'\x1f'*)
