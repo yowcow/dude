@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/watch-checks.sh: each row is a
-# sequence of `gh` responses plus an argv, against the exit status, the number
-# of `gh` calls, the exact bytes on stdout, and the sleeps it performed.
+# sequence of `gh` responses plus an argv, against the exit status, the message
+# on stderr where the exit has one, the number of `gh` calls, the exact bytes on
+# stdout, and the sleeps it performed.
 #
 # The call count is part of the expectation, not decoration: a status here says
 # how far the watch got. A non-numeric cap is a usage error (exit 2) that never
@@ -127,6 +128,23 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
 
   fails_here=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails_here=1; fi
+  # A non-zero exit whose only explanation is the message: nothing else in this
+  # row reads why the watch stopped, so a message replaced by junk leaves the row
+  # green — measured: `this repository does not run checks` swapped for
+  # `MESSAGE-REGRESSED` kept the whole file green before this assertion existed.
+  # Keyed on the expected exit rather than carried in a ninth column, because a
+  # row that omitted a trailing column would read as empty, and empty is exactly
+  # the silently-passing assertion this is here to prevent. Exit 0 and exit 1
+  # print nothing, which is why the tail case asserts nothing.
+  case "$want_exit" in
+    2) want_stderr='<owner> <repo> <sha> [max-iterations] [interval-seconds]' ;;
+    3) want_stderr='No commit found for SHA: deadbeef' ;;
+    4) want_stderr='no check-runs listing could be read for deadbeef' ;;
+    5) want_stderr='this repository does not run checks' ;;
+    *) want_stderr='' ;;
+  esac
+  if [ -n "$want_stderr" ] &&
+    ! check_stderr_has "${name}: stderr" "$want_stderr"; then fails_here=1; fi
   if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails_here=1; fi
   if ! check_bytes "${name}: stdout" "$want_out"; then fails_here=1; fi
   if ! check_no_violations "${name}: argv"; then fails_here=1; fi
