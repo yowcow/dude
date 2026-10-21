@@ -487,7 +487,10 @@ every manifest, so `make manifest` JSON-parses `.agents/plugins/marketplace.json
 `.muse-plugin/marketplace.json`, syntax only. `make lint test` still does not run manifest validation: it covers shell
 and the test suite.
 
-CI's pinned `manifest` job is the reproducible merge decision. `manifest-latest`
+CI's `manifest` job is the merge gate. It pins the Claude Code validator and the
+action SHAs, but
+the Muse validator is not pinned (its installer ships only the stable channel),
+so that result can change without a commit here. `manifest-latest`
 is a non-required pull-request/weekly compatibility signal using current Claude
 Code and Muse releases; investigate upstream failures, update the fixed
 baseline when warranted, or deliberately retain it.

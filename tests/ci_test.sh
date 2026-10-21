@@ -131,4 +131,16 @@ else
   fi
 fi
 
+unpinned_phrase='the Muse validator is not pinned'
+for doc in README.md AGENTS.md; do
+  if ! grep -Fq "$unpinned_phrase" "${REPO_ROOT}/$doc"; then
+    printf 'FAIL: %s says the Muse validator is not pinned — the manifest job pins only Claude Code\n' "$doc" >&2
+    failed=1
+  fi
+done
+if grep -Fq 'reproducible merge decision' "${REPO_ROOT}/README.md"; then
+  printf 'FAIL: README must not call the manifest job a reproducible merge decision\n' >&2
+  failed=1
+fi
+
 harness_exit "$failed" "$total"
