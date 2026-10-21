@@ -9,6 +9,14 @@
 # fixtures in the real checkout. Each case builds a miniature checkout, copies
 # $SUT into it as tests/lint.sh, and runs that copy — the probe tests/README.md
 # describes by hand. $SUT is honoured so a pre-fix lint.sh can be measured.
+#
+# RED verification (see tests/README.md). The pre-fix lint.sh prunes three
+# directories, so the probe's own .opencode/node_modules copy is selected:
+#   tmp="$(mktemp -d)"
+#   git show b15ee47:tests/lint.sh >"$tmp/old.sh"
+#   SUT="$tmp/old.sh" tests/run.sh tests/lint_test.sh
+#   -> selected 5 shell file(s), not 4: the count row fails, and the
+#      .opencode/node_modules row fails because that leak reached the listing.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
