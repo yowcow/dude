@@ -242,6 +242,9 @@ tally check_on_branch 'remote-only-is-attached-in-a-narrowed-clone: on the branc
   "$WT_NEW" task
 tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: the branch tracks the remote' \
   'origin/task' "$(git -C "$W" rev-parse --abbrev-ref 'task@{upstream}')"
+tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: the clone still fetches its own branch' \
+  '+refs/heads/main:refs/remotes/origin/main' \
+  "$(git -C "$W" config --get-all remote.origin.fetch | head -1)"
 
 # ---- the tip attached is the one this script's own fetch resolved ------
 #
