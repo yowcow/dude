@@ -169,7 +169,7 @@ lookup() {
   while IFS=$'\t' read -r idx status body argv_file mode; do
     # The joined argv lives in its own file because an element may carry a tab
     # or a newline — the GraphQL query list-unresolved-threads.sh passes as
-        # `-f query='...'` spans many lines — which a TSV field cannot hold. The
+    # `-f query='...'` spans many lines — which a TSV field cannot hold. The
     # comparison is still on the exact bytes, not on a digest of them: a digest
     # would have to fold characters, and two argvs folding to one key would
     # silently serve the wrong fixture.
