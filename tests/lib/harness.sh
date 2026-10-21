@@ -83,6 +83,29 @@ sleep_call_count() {
   printf '%s\n' "$n"
 }
 
+# no_jq_path <dir>   A PATH with every executable the caller's PATH offers except
+# jq; prints <dir>. Stubbing only `gh` and `sleep` would not do: each starts
+# with `#!/usr/bin/env bash`, so on a PATH without bash a script that reached
+# one looks exactly like one that never did, and the zero call count proves
+# nothing.
+no_jq_path() {
+  local dir="$1" d f name
+  local -a path_dirs
+  mkdir -p "$dir"
+  IFS=':' read -ra path_dirs <<<"$PATH"
+  for d in "${path_dirs[@]}"; do
+    [ -d "$d" ] || continue
+    for f in "$d"/*; do
+      [ -f "$f" ] || continue
+      [ -x "$f" ] || continue
+      name="${f##*/}"
+      [ "$name" != jq ] || continue
+      [ -e "$dir/$name" ] || [ -L "$dir/$name" ] || ln -s "$f" "$dir/$name"
+    done
+  done
+  printf '%s\n' "$dir"
+}
+
 # Two spellings, because the stub cannot tell from a body whether it is what gh
 # printed or what gh received, and guessing is the failure this suite exists to
 # catch — a filter applied to an already-filtered body errors, and a filter

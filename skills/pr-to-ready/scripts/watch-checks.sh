@@ -43,7 +43,16 @@
 #           failed or answered something that is not a run list
 #       5 = neither this commit nor the default branch's head carries a single
 #           check-run — this repository does not run checks
+#       6 = a command this script requires is not on PATH — jq
 set -euo pipefail
+
+# Checked before any argument: without jq a mistyped call would answer usage,
+# and a well-formed one would see every poll as "not a run list" and spend the
+# whole budget to answer exit 4 — a CI diagnosis instead of the dependency.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required but was not found on PATH" >&2
+  exit 6
+fi
 
 if [ "$#" -lt 3 ] || [ "$#" -gt 5 ]; then
   echo "Usage: $0 <owner> <repo> <sha> [max-iterations] [interval-seconds]" >&2
