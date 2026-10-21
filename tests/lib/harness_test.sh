@@ -568,9 +568,6 @@ if [ "$ar_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 # helper like this, and neither may be quiet: dropping the needle (an abort,
 # under the set -u every test file carries) and passing an empty one (an empty
 # substring matches every stderr byte, so the assertion can never fail).
-#
-# The abort is probed in its own process: it ends the file before any row could
-# observe it, and that abort is the mechanism.
 total=$((total + 1))
 sh_fails=0
 sh_status=0
