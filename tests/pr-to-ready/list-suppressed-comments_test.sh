@@ -40,13 +40,16 @@
 # `no-suppressed-block` and `gh-call-fails` are the pair that holds those apart,
 # and they differ only in the exit status.
 #
-# The projection rows and the --full rows are the two consumers this script now
-# serves. `suppressed-block-found` pins what the clean judgment reads and
+# The projection's first line is the Copilot review id the verdict record keys a
+# suppressed finding by, and its entries follow the `suppressed<TAB>N` line. The
+# --full goldens are unchanged from before that id line, which is what makes the
+# --full rows evidence of byte identity rather than a restatement:
+# `suppressed-block-found` pins what the clean judgment reads, and
 # `suppressed-block-full` pins that 2-3's collection still gets the block's own
-# bytes; expected/suppressed-block.out is unchanged from before the projection,
-# which is what makes the second one evidence rather than a restatement. The
-# summary-form pair reads its one fixture the same two ways, against
+# bytes. The summary-form pair reads its one fixture the same two ways, against
 # expected/suppressed-block-summary-form.out unchanged from #92.
+# `latest-review-wins-against-array-order` now proves the id travels with the
+# review selected by `submittedAt`, not the array's last element.
 #
 # `two-entries-projected` is the row that exists for the projection's print loop
 # (`for (i = 1; i <= count; i++)`): its fixture declares N=2 so the loop runs
@@ -99,7 +102,7 @@ JQ_FILTER='.reviews
         | map(select((.author.login // "") | ascii_downcase | contains("copilot")))
         | sort_by(.submittedAt)
         | last
-        | .body // ""'
+        | "\(.id)\n\(.body // "")"'
 
 failed=0
 total=0

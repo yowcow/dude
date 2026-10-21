@@ -9,7 +9,9 @@
 # byte-for-byte: QUERY and THREADS_JQ are verbatim copies of
 # list-unresolved-threads.sh's, SUPPRESSED_JQ of list-suppressed-comments.sh's,
 # STATE_JQ of check-pr-state.sh's. An edit to any of them fails these rows as an
-# unstubbed argv.
+# unstubbed argv. The projected suppressed listing's first line is now part of
+# what recheck-pr.sh reads — the Copilot review id a recorded pair is keyed by —
+# so SUPPRESSED_JQ and that shape move together.
 #
 # `dude-255-thread-after-settle-poll` is the order regression (yowcow/dude#255:
 # a listing read while Copilot's check-run was still in_progress came back
@@ -47,6 +49,19 @@
 # (leaving `[ -z "$OUT" ]`), or the state condition's `BASE-OK` half (keying on
 # `MERGEABLE` alone) fails the matching row.
 #
+# The recorded-pair rows: `recorded-suppressed-is-met` and its mark-ready row
+# pin that a pair naming the listing's own id and entry is met and goes ready,
+# and `second-pair-covers-is-met` pins the pair loop reaching a later pair
+# after an earlier one misses. The near-miss (`README.md:180`
+# against an entry that says `README.md:179` — a one-character near-miss at
+# the location string, not a copy of the --full markup, which prints
+# `**README.md:179**`), the other review id, and the second entry pin two
+# things: the id is half the key, and coverage is per entry.
+# `second-entry-unrecorded-is-unmet` is also the row for the entry loop's bound:
+# a script that checks only the first entry passes every other row.
+# `clean-records-met` and `suppressed-finding-is-unmet` keep the argvs they had
+# before pairs existed, which pins the fallback: no pairs means today's answer.
+#
 # RED verification (see tests/README.md). The script is new, so there is no
 # pre-fix version; the broken variant reads the thread listing before the
 # watch, and fails `dude-255-thread-after-settle-poll` and its mark-ready row:
@@ -55,6 +70,15 @@
 #   perl -0pe 's/(stage watch-checks .*\n.*\n)(stage unresolved-threads .*\n.*\n)/$2$1/' \
 #     skills/pr-to-ready/scripts/recheck-pr.sh >"$tmp/recheck-pr.sh"
 #   SUT="$tmp/recheck-pr.sh" tests/run.sh tests/pr-to-ready/recheck-pr_test.sh
+# The coverage helpers get two mutations, each made from the pristine script and
+# run the same way:
+#   perl -0pe 's/\[ "\$1" = "\$review" \] && //' \
+#     skills/pr-to-ready/scripts/recheck-pr.sh >"$tmp/recheck-pr.sh"
+# fails `other-review-id-is-unmet` and its mark-ready row — the id half is gone,
+# so a pair for any review covers the listing's entries — and
+#   perl -0pe 's/tail -n \+3 \| \{/head -n 3 | tail -n +3 | {/' \
+#     skills/pr-to-ready/scripts/recheck-pr.sh >"$tmp/recheck-pr.sh"
+# fails only `second-entry-unrecorded-is-unmet` — only the first entry is read.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -101,7 +125,7 @@ SUPPRESSED_JQ='.reviews
         | map(select((.author.login // "") | ascii_downcase | contains("copilot")))
         | sort_by(.submittedAt)
         | last
-        | .body // ""'
+        | "\(.id)\n\(.body // "")"'
 STATE_JQ='"\(.baseRefName) \(.mergeable)"'
 
 # stub_head <sha> -- every head read answers <sha>.
@@ -128,6 +152,13 @@ stub_threads() {
 stub_no_suppressed() {
   : | gh_stub_response '*' 0 pr view --repo acme/widgets --json reviews \
     --jq "$SUPPRESSED_JQ" -- 7
+}
+
+# stub_suppressed <fixture> -- raw, so list-suppressed-comments.sh's own --jq
+# runs and the row still pins the id line it prints.
+stub_suppressed() {
+  gh_stub_raw_response '*' 0 pr view --repo acme/widgets --json reviews \
+    --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/$1.json"
 }
 
 # stub_state <base> <mergeable>
@@ -221,15 +252,107 @@ row_start
 stub_head deadbeef
 stub_checks '*' check-runs-settled
 stub_threads 4 threads-all-resolved
-gh_stub_raw_response '*' 0 pr view --repo acme/widgets --json reviews \
-  --jq "$SUPPRESSED_JQ" -- 7 <"${FIXTURES}/reviews-suppressed.json"
+stub_suppressed reviews-suppressed
 stub_state main MERGEABLE
 run_in "$W" acme widgets 7 deadbeef main
-assert_row 'suppressed-finding-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+assert_row 'suppressed-finding-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
 
 row_start
 ready_in "$W" acme widgets 7
 assert_row 'suppressed-finding-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+# ---- a recorded pair covers the listing entry it names ----------------------
+#
+# Each unmet row differs from `recorded-suppressed-is-met` in the pair or the
+# fixture passed, so it probes one half of the coverage rule: the pair must
+# match both the listing's id line and the entry's own bytes.
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'recorded-suppressed-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+: | gh_stub_response '*' 0 pr ready -R acme/widgets -- 7
+ready_in "$W" acme widgets 7
+assert_row 'recorded-suppressed-is-met: mark-ready goes ready' 0 'READY 7\n' 2
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK8Ag-A README.md:179 PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'second-pair-covers-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+: | gh_stub_response '*' 0 pr ready -R acme/widgets -- 7
+ready_in "$W" acme widgets 7
+assert_row 'second-pair-covers-is-met: mark-ready goes ready' 0 'READY 7\n' 2
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:180
+assert_row 'unrecorded-entry-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'unrecorded-entry-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK8Ag-A README.md:179
+assert_row 'other-review-id-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t1\nREADME.md:179\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+ready_in "$W" acme widgets 7
+assert_row 'other-review-id-is-unmet: mark-ready refuses' 0 'STOP conditions-unmet\n' 0
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed-two-entries
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'second-entry-unrecorded-is-unmet' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t2\nREADME.md:179\ntests/run.sh:12\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED unmet deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_suppressed reviews-suppressed-two-entries
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:179 PRR_kwDOTtThvc8AAAABK715Ww tests/run.sh:12
+assert_row 'two-recorded-entries-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\nPRR_kwDOTtThvc8AAAABK715Ww\nsuppressed\t2\nREADME.md:179\ntests/run.sh:12\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
+stub_head deadbeef
+stub_checks '*' check-runs-settled
+stub_threads 4 threads-all-resolved
+stub_no_suppressed
+stub_state main MERGEABLE
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww README.md:179
+assert_row 'empty-listing-with-pairs-is-met' 0 '== head exit=0\ndeadbeef\n== watch-checks exit=0\nbuild\tcompleted\tsuccess\nlint\tcompleted\tskipped\n== unresolved-threads exit=0\n== suppressed-comments exit=0\n== check-pr-state exit=0\nBASE-OK main MERGEABLE\nRECORDED met deadbeef\n' 6
+
+row_start
+run_in "$W" acme widgets 7 deadbeef main PRR_kwDOTtThvc8AAAABK715Ww
+assert_row 'odd-recorded-pair-is-usage' 2 '' 0
 
 row_start
 stub_head deadbeef
