@@ -76,7 +76,8 @@ DEFAULT_CHECKS_ENDPOINT='repos/acme/widgets/commits/trunk/check-runs'
 
 # Registers one response for one endpoint. `spec` is <index>=<fixture>[:<status>],
 # where <index> is a positive integer or `*` and <fixture> is `-` for an empty
-# body — the spelling request-copilot-review_test.sh:122 already uses.
+# body — the spelling `stub_timeline` in request-copilot-review_test.sh
+# already uses.
 stub_api() {
   local endpoint="$1" spec="$2" idx rest fixture status body
   idx="${spec%%=*}"
