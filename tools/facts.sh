@@ -21,6 +21,8 @@
 # writes and the agent hands back unchanged, so a missing or unrecognised
 # state file is a STOP rather than a count restarted from zero: a restart waits past the
 # limit the porting script inherited.
+# Only a file carrying the `dude-wait` mark is one this script wrote: a caller's
+# file that merely spells `round=N` would otherwise be rewritten and removed.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
@@ -40,6 +42,7 @@ usage() {
 
 NAME_RE='^[a-z0-9._-]+$'
 PAD_RE='^[[:space:]]|[[:space:]]$'
+STATE_RE='^dude-wait round=([1-9][0-9]*)$'
 
 STATE_OWNED=''
 
@@ -166,11 +169,12 @@ wait_round() {
     state="$(mktemp "${TMPDIR:-/tmp}/dude-wait.XXXXXX")"
     STATE_OWNED="$state"
   else
-    if [ ! -f "$state" ] || ! line="$(cat -- "$state")" || ! [[ "$line" =~ ^round=[1-9][0-9]*$ ]]; then
+    if [ ! -f "$state" ] || ! line="$(cat -- "$state")" ||
+      ! [[ "$line" =~ $STATE_RE ]]; then
       echo "STOP wait-state-invalid"
       return
     fi
-    round="${line#round=}"
+    round="${BASH_REMATCH[1]}"
   fi
   round=$((round + 1))
   if [ "$round" -ge "$limit" ]; then
@@ -179,7 +183,7 @@ wait_round() {
     echo "$final"
     return
   fi
-  printf 'round=%s\n' "$round" >"$state"
+  printf 'dude-wait round=%s\n' "$round" >"$state"
   echo "WAIT ${seconds} ${state}"
   STATE_OWNED=''
 }
