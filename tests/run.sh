@@ -129,6 +129,25 @@ if [ -n "${SUT:-}" ]; then
     printf 'run.sh: SUT does not name a readable non-empty file: %s\n' "$SUT" >&2
     exit 1
   fi
+  # A readable file that is not a script gets through the three checks above
+  # and then fails every row at `bash "$SUT"`, which is the shape of a
+  # successful RED verification (#687: `SUT=README.md` reported every row
+  # `not ok`). A script is identified by its shebang, the same rule
+  # tests/lint.sh selects by, and it has to be the first line: prose can be
+  # syntactically valid bash, so `bash -n` would accept a README that happens
+  # to carry no parentheses. Any shebang is enough — the file is fed to bash,
+  # not executed through its interpreter.
+  first_line=''
+  # `read` exits non-zero at EOF without a trailing newline and still sets the
+  # variable, so the status is discarded rather than read as "no shebang".
+  IFS= read -r first_line <"$SUT" || true
+  case "$first_line" in
+    '#!'*) ;;
+    *)
+      printf 'run.sh: SUT does not name a script: %s\n' "$SUT" >&2
+      exit 1
+      ;;
+  esac
   printf 'run.sh: SUT override in effect: %s\n' "$SUT"
 fi
 

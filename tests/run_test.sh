@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Tests tests/run.sh itself — that a `$SUT` that does not name a readable
-# non-empty file stops the run before any test file executes (cases 1-5), and
-# that discovery collects a symlinked test file, fails on a dangling link,
-# refuses a symlinked directory, and descends into subdirectories (cases 6-9).
+# non-empty script stops the run before any test file executes (cases 1-5 and
+# 10), that an extensionless script still runs (case 11), and that discovery
+# collects a symlinked test file, fails on a dangling link, refuses a symlinked
+# directory, and descends into subdirectories (cases 6-9).
 #
 # Why this file exists: a $SUT pointing at a path that isn't there makes every
 # `run_sut bash "$SUT"` in the selected test file exit 127, so nearly every row
@@ -10,7 +11,7 @@
 # "the test detects the defect" turns a zero-detection-power test into an
 # accepted one (#214, measured while implementing #187).
 #
-# Whether a test actually ran (cases 1-5) is asserted by the fixture's own
+# Whether a test actually ran (cases 1-5 and 10) is asserted by the fixture's own
 # marker file, not by parsing the runner's output: a refused run under the
 # guarded runner prints no summary at all, while the pre-guard runner this file
 # is also pointed at for RED verification reaches its usual summary whether or
@@ -60,22 +61,23 @@ marker_state() {
   if [ -e "$MARKER" ]; then printf 'ran\n'; else printf 'did-not-run\n'; fi
 }
 
-# assert_refused <label> <child-sut> -- one rejection case's whole verdict: the
-# runner exited 1, no test file ran, and stderr named both `SUT` and the
-# offending path. Advances the caller's `total` once and `failed` once if any
-# of the four fails, so `ok N/N` counts a rejection case exactly as it did when
-# each case spelled the block out.
+# assert_refused <label> <child-sut> <want-message> -- one rejection case's
+# whole verdict: the runner exited 1, no test file ran, and stderr named the
+# offending path in the refusal message. The message is a required argument:
+# a defaulted one would let a case that forgot it pin no wording at all, the
+# same dropped-argument failure assert_row's fourth argument refuses.
 #
 # File-local rather than in harness.sh: nothing else in the suite has a
 # rejection case to assert, and the harness is sourced by every test file.
 assert_refused() {
-  local label="$1" child_sut="$2" fails=0
+  local label="$1" child_sut="$2" want_message="$3" fails=0
   total=$((total + 1))
   run_case "$child_sut"
   if ! check_eq "${label}: exit" 1 "$SUT_STATUS"; then fails=1; fi
   if ! check_eq "${label}: no test file ran" 'did-not-run' "$(marker_state)"; then fails=1; fi
-  if ! grep -q 'SUT' "$SUT_STDERR"; then
-    printf 'FAIL %s: stderr does not name SUT: %s\n' "$label" "$(head -c 400 "$SUT_STDERR")"
+  if ! grep -qF -- "$want_message" "$SUT_STDERR"; then
+    printf 'FAIL %s: stderr does not carry the refusal message [%s]: %s\n' \
+      "$label" "$want_message" "$(head -c 400 "$SUT_STDERR")"
     fails=1
   fi
   if ! grep -qF -- "$child_sut" "$SUT_STDERR"; then
@@ -85,10 +87,27 @@ assert_refused() {
   if [ "$fails" -ne 0 ]; then failed=$((failed + 1)); fi
 }
 
+# assert_accepted <label> <child-sut> -- the guard must not cost the mechanism
+# it protects: the runner exits 0, the fixture ran, and the override was
+# reported on stdout. Advances total once and failed once, so an acceptance
+# case counts exactly as the block it replaces.
+assert_accepted() {
+  local label="$1" child_sut="$2" fails=0
+  total=$((total + 1))
+  run_case "$child_sut"
+  if ! check_eq "${label}: exit" 0 "$SUT_STATUS"; then fails=1; fi
+  if ! check_eq "${label}: the test file ran" 'ran' "$(marker_state)"; then fails=1; fi
+  if ! grep -qF "SUT override in effect: ${child_sut}" "$SUT_STDOUT"; then
+    printf 'FAIL %s: the override was not reported: %s\n' "$label" "$(head -c 400 "$SUT_STDOUT")"
+    fails=1
+  fi
+  if [ "$fails" -ne 0 ]; then failed=$((failed + 1)); fi
+}
+
 # --- case 1: a SUT that does not exist stops the run --------------------------
 missing="${HARNESS_TMP}/no-such-script.sh"
 rm -f "$missing"
-assert_refused 'missing SUT' "$missing"
+assert_refused 'missing SUT' "$missing" 'SUT does not name a readable non-empty file'
 
 # --- case 2: an empty SUT file stops the run ---------------------------------
 # An empty file exists, so an existence-only guard would let it through, and
@@ -96,23 +115,14 @@ assert_refused 'missing SUT' "$missing"
 # everything, which is a *green* RED verification: even more misleading.
 empty="${HARNESS_TMP}/empty-script.sh"
 : >"$empty"
-assert_refused 'empty SUT' "$empty"
+assert_refused 'empty SUT' "$empty" 'SUT does not name a readable non-empty file'
 
 # --- case 3: a real SUT still runs the selected file -------------------------
 # The guard must not cost the mechanism it protects, and this is what would
 # catch a guard whose condition is inverted.
-total=$((total + 1))
-fails_here=0
 good="${HARNESS_TMP}/good-script.sh"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$good"
-run_case "$good"
-if ! check_eq 'valid SUT: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_eq 'valid SUT: the test file ran' 'ran' "$(marker_state)"; then fails_here=1; fi
-if ! grep -qF "SUT override in effect: ${good}" "$SUT_STDOUT"; then
-  printf 'FAIL valid SUT: the override was not reported: %s\n' "$(head -c 400 "$SUT_STDOUT")"
-  fails_here=1
-fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+assert_accepted 'valid SUT' "$good"
 
 # --- case 4: an unreadable SUT file stops the run -----------------------------
 # A file that exists and is non-empty but cannot be read walks straight through
@@ -136,7 +146,7 @@ if [ -r "$unreadable" ]; then
   # what says why.
   printf 'skip unreadable SUT: chmod 000 left it readable as uid %s — the guard is right to accept it here\n' "$(id -u)"
 else
-  assert_refused 'unreadable SUT' "$unreadable"
+  assert_refused 'unreadable SUT' "$unreadable" 'SUT does not name a readable non-empty file'
 fi
 
 # --- case 5: a SUT that names a directory stops the run -----------------------
@@ -149,7 +159,7 @@ fi
 dir_sut="${HARNESS_TMP}/dir-script.sh"
 rm -rf "$dir_sut"
 mkdir -p "$dir_sut"
-assert_refused 'directory SUT' "$dir_sut"
+assert_refused 'directory SUT' "$dir_sut" 'SUT does not name a readable non-empty file'
 
 # --- case 6: a symlinked test file is collected and run ----------------------
 # The gate accepts a symlinked test file as coverage (-f follows the link), so a
@@ -226,5 +236,29 @@ if ! check_eq 'nested test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_bytes 'nested test file: both files ran, in sorted order' \
   'deep ran\ntop ran\nall 2 test files passed\n'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 10: a readable non-script SUT stops the run ------------------------
+# A file that exists, is non-empty and is readable walks straight through
+# -f/-s/-r, and `bash "$SUT"` then fails every row: exit 2 when the absolute
+# path is prose bash cannot parse (`${REPO_ROOT}/README.md`), and exit 127 from
+# the relative spelling `SUT=README.md`, whose path stops resolving once a row
+# `cd`s into a fixture repo. Either way it is the same false RED a missing path
+# produces, reached through prose (#687). Measured against the unguarded
+# runner: `SUT=README.md tests/run.sh tests/tools/check-clean_test.sh` reported
+# `not ok 5/5`, and `SUT=README.md tests/run.sh tests/tools/poll_test.sh`
+# `not ok 7/11`, both indistinguishable from a successful RED verification.
+#
+# The guard reads the first line because a script is identified by its shebang
+# — the same rule tests/lint.sh selects by — while prose can be syntactically
+# valid bash (`This is prose without parentheses.` parses), so `bash -n` would
+# accept some READMEs and is not a substitute.
+not_script="${REPO_ROOT}/README.md"
+assert_refused 'non-script SUT' "$not_script" 'SUT does not name a script'
+
+# --- case 11: an extensionless SUT still runs --------------------------------
+# tests/lib/bin/gh has to stay named `gh` to work as a PATH stub, so a guard
+# that classified by a `.sh` suffix would refuse the ground truth the whole
+# offline suite rests on.
+assert_accepted 'extensionless SUT' "${REPO_ROOT}/tests/lib/bin/gh"
 
 harness_exit "$failed" "$total"
