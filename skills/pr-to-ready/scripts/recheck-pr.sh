@@ -24,9 +24,10 @@
 #         watch-checks, unresolved-threads, suppressed-comments,
 #         check-pr-state — a line `== <stage> exit=<n>`, then that stage's
 #         stdout. Last, `RECORDED met <sha>` when the head is still <sha>, the
-#         watch exited 0 or 5, both listings exited 0, every entry the
-#         suppressed listing printed is covered by one of the recorded pairs
-#         (empty stdout is met), and the state is `BASE-OK <base> MERGEABLE`;
+#         watch exited 0 or 5, both listings exited 0 with the thread listing
+#         empty, every entry the suppressed listing printed is covered by one of
+#         the recorded pairs (an empty suppressed listing is met), and the state
+#         is `BASE-OK <base> MERGEABLE`;
 #         `RECORDED unmet <sha>` otherwise. With no pairs the older rule stands
 #         — only an empty suppressed listing is met — so a caller that records
 #         nothing keeps today's answer. A pair whose id differs from the

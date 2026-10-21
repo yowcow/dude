@@ -187,7 +187,7 @@ A round's fixes take Step 1's ordinary-change discipline with two departures.
 
 When every finding is an `accept` and none of them is blocking: do not fix, do not commit, do not push, and do not return to 2-1. Walk row 2 of the stop list first, across every finding of the round. If it does not stop, post per **Posting** below — each recording-only accept with the fix it would take — and go to the clean judgment. Nothing was pushed, so the SHA is still this round's, and a clean answer takes Step 3 from it instead of forcing one more round over a fix nobody applied.
 
-When the round has at least one `reject` and no blocking accept:
+When the round has at least one blocking `reject` and no blocking accept:
 
 - Do not fix, do not commit, do not push.
 - Walk row 2 of the stop list first, across every finding of the round — a thread replied to and resolved before that check is published and no later round reads it again, and **Escalation** leaves the PR as it is.
@@ -195,6 +195,8 @@ When the round has at least one `reject` and no blocking accept:
 - Then, only if that walk did not stop: read clean condition 3's two listings the way that condition reads them — its **exit 4** is the **third terminal state**, never another round, and a listing that did not exit 0 has no value for the next test.
 - Only when both exited 0: if the SHA is still the one this round requested against, and the thread listing is empty while the suppressed listing carries an entry this run's verdict record does not cover — no recorded pair for it, or its pair names another review's id — take the **third terminal state** and do not go back to 2-1.
 - If those do not all hold, walk row 6 of the stop list even when the SHA did not change, and if that walk does not stop, go back to 2-1.
+
+When every `reject` the round has is recording-only, and no accept is blocking: a blocking reject is the one case that re-reads its own pushback, because a wrong pushback there is what a later round would still catch. A recording-only reject costs a whole round to re-read and cannot be fixed by one, so do not fix, do not commit, do not push, and do not return to 2-1. Walk row 2 of the stop list first, across every finding of the round. If it does not stop: post per **Posting** below, walk rows 4 and 6 of the stop list even when the SHA did not change, and go to the clean judgment. Nothing was pushed, so the SHA is still this round's, and a clean answer takes Step 3 from it.
 
 **Posting**:
 
@@ -257,7 +259,7 @@ When it isn't clean, what to do follows from which condition failed, and every r
     - LGTM-equivalent here means the round left no blocking accepted finding from any reviewer, requesting-code-review included — no findings, every finding `reject`, or only recording-only accepts, which are recorded and not fixed — not that condition 3's suppressed listing is empty.
     - requesting-code-review-empty means condition 6 holds on that SHA: no requesting-code-review finding from this round's identity without an applied verdict. Unapplied requesting-code-review leftover bars this exit the same way an entry no recorded pair covers bars Clean.
    - This exit applies only where full Clean was never measured on that SHA — e.g. a reject history exists, or a prior round was non-clean — and never authorizes a second request after a measured full Clean.
-   - This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries every one of clean's other conditions too — a red check, base drift, or a conflict all mean this doesn't hold either.
+   - This is the stricter exit `using-dude`'s **Loop convergence** allows on top of clean, and being stricter it carries clean's conditions 1, 4 and 5 too — a red check, base drift, or a conflict all mean this doesn't hold either.
 6. **A non-clean stopping condition in `using-dude`'s Loop convergence fires** → stop and hand the user the decision. Where this round's requesting-code-review leftover is still unapplied, do not take this exit yet — go back to 2-1.
 
 A round here is one 2-1 → 2-2 → 2-3 cycle per `using-dude`'s **Loop convergence**, whether or not it entered the clean judgment; a check confirmed and the fix it forces sit inside that same round rather than starting a new one. Two findings are the same one when a later round makes the same claim about the same place, whichever reviewer raises it — and, for a round that went non-clean on a check, when both the check and the cause behind it are what a previous round's fix already targeted.
