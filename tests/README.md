@@ -293,12 +293,12 @@ tree rather than stating as prose:
   sources the harness, or exits before its tally.
 - A non-empty test file is counted only when it **declares its subject** with
   the exact line `SUT="${SUT:-${REPO_ROOT}/<key>}"`, where `<key>` is
-  `skills/...`, `tools/...`, `hooks/...`, or `scripts/...`. The expected path is
-  derived from position, so a file there can be another script's test: a skill
-  named `lib` made `skills/lib/scripts/harness.sh` expect
+  `skills/...`, `tools/...`, `hooks/...`, or `scripts/...`. The match is a whole
+  fixed line, so a declaration for `.../foo.sh` does not stand in for `.../foo`.
+  The expected path is derived from position, so a file there can be another
+  script's test: a skill named `lib` made `skills/lib/scripts/harness.sh` expect
   `tests/lib/harness_test.sh`, the harness's own self-test, and the gate went
-  green with the script exercised by nothing. The match is a whole fixed line,
-  so a declaration for `.../foo.sh` does not stand in for `.../foo`.
+  green with the script exercised by nothing.
 - Two scripts whose expected test paths collide are an **error** naming both
   scripts and the path, and the collision is refused across roots as well as
   within one, because the suffix is stripped before `_test.sh` is appended and

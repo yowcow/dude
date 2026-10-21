@@ -68,8 +68,7 @@ subject_key() {
 }
 
 # mk_covered_test <root> <test-path> <key-without-suffix>
-# Writes the test file and the line the gate accepts as a declaration that the
-# test at <test-path> covers the script whose key is <key>.
+# Writes the test file and its subject declaration.
 mk_covered_test() {
   local key
   key="$(subject_key "$1" "$3")"
