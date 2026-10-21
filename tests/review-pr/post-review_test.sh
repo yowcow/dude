@@ -7,10 +7,10 @@
 # asserts 0 gh calls, and stubs none.
 #
 # RED verification (see tests/README.md): against the pre-port script
-# (`git show master:skills/review-pr/scripts/post-review.sh`) 24 of 34 rows
-# fail, the guard and read-back rows, each on the old six-argument arity
-# answering usage 2. The ten usage rows pass, 'request changes' and 'no choice'
-# among them, since the old arity answers usage 2 for each.
+# (`git show a7f4396:skills/review-pr/scripts/post-review.sh`) 25 of 35 rows
+# fail, the guard, read-back and missing-jq rows, each on the old six-argument
+# arity answering usage 2. The ten usage rows pass, 'request changes' and
+# 'no choice' among them, since the old arity answers usage 2 for each.
 # Mutants measured in a copy under `mktemp -d` (siblings beside it): dropping
 # `review.commit=` from the check fails 'review pinned to another commit',
 # 'commit unreadable' and 'no facts: NEED pins';
@@ -30,6 +30,7 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/post-review.sh}"
+BASH_BIN="$(command -v bash)"
 
 failed=0
 total=0
@@ -120,6 +121,13 @@ assert_row 'missing payload' 2 '' 0
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$NOTJSON"
 assert_row 'payload not json' 2 '' 0
+
+row_start
+run_sut env PATH="${HARNESS_TMP}/no-path" "$BASH_BIN" "$SUT" \
+  12 "$HEAD_SHA" APPROVE "$PAYLOAD"
+assert_row 'missing jq: named, not usage' 1 '' 0
+tally check_eq 'missing jq: stderr' \
+  'error: jq is required but was not found on PATH' "$(cat "$SUT_STDERR")"
 
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE

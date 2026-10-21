@@ -40,9 +40,10 @@
 #       2 = usage error
 #       3 = no @claude workflow in this repository. This is the availability
 #           answer and nothing else exits 3, so a caller may skip Claude on it
-#       other = the underlying gh call failed, or in watch mode the run itself
-#           did not succeed: gh run watch --exit-status returns 1 for a failed
-#           run, and any failing gh call exits with its own status under set -e
+#       other = the underlying gh call failed, the origin repository could not be
+#           resolved, or in watch mode the run itself did not succeed: gh run
+#           watch --exit-status returns 1 for a failed run, and any failing gh
+#           call exits with its own status under set -e
 #
 # Only 0, 2, and 3 identify a cause on their own. Treat every other non-zero as
 # "stop and inspect" rather than as a specific answer.
@@ -78,12 +79,17 @@ if [ -z "$wf" ]; then
 fi
 wf="$(basename "$wf")"
 
+if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
+  echo "error: failed to resolve the origin repository" >&2
+  exit 1
+fi
+
 if [ -z "$RUN_ID" ]; then
   if ! default_branch="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh" 2>/dev/null)"; then
     echo "error: failed to resolve the default branch" >&2
     exit 1
   fi
-  if ! gh run list --workflow="$wf" --limit 100 \
+  if ! gh run list -R "$REPO" --workflow="$wf" --limit 100 \
     --json databaseId,conclusion,createdAt,displayTitle,headBranch 2>/dev/null |
     jq --arg b "$BRANCH" --arg d "$default_branch" \
       '[.[] | select(.headBranch == $b or .headBranch == $d) | del(.headBranch)]' 2>/dev/null; then
@@ -93,4 +99,4 @@ if [ -z "$RUN_ID" ]; then
   exit 0
 fi
 
-gh run watch "$RUN_ID" --exit-status
+gh run watch -R "$REPO" "$RUN_ID" --exit-status

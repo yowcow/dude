@@ -25,6 +25,7 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
 SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/build-review-payload.sh}"
+BASH_BIN="$(command -v bash)"
 
 failed=0
 total=0
@@ -111,6 +112,17 @@ assert_row 'findings not an array' 2 '' 0
 row_start
 run_in "$REPO" "$BASE_SHA" "$HEAD_SHA" "${HARNESS_TMP}/no-such-summary.md" "$FINDINGS"
 assert_row 'missing summary file' 2 '' 0
+
+# Valid arguments and a valid findings array: the only thing wrong is the
+# dependency. `env PATH=` gives the script a PATH with no jq in it; the shell is
+# named by absolute path because it is looked up before that PATH applies.
+row_start
+printf '[]' >"$FINDINGS"
+run_sut env PATH="${HARNESS_TMP}/no-path" "$BASH_BIN" "$SUT" \
+  "$BASE_SHA" "$HEAD_SHA" "$SUMMARY" "$FINDINGS"
+assert_row 'missing jq: named, not usage' 1 '' 0
+tally check_eq 'missing jq: stderr' \
+  'error: jq is required but was not found on PATH' "$(cat "$SUT_STDERR")"
 
 row_start
 run_in "$REPO" "$BASE_SHA" "$HEAD_SHA" "$SUMMARY"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/watch-checks.sh: each row is a
 # sequence of `gh` responses plus an argv, against the exit status, the number
-# of `gh` calls, and the exact bytes on stdout.
+# of `gh` calls, the exact bytes on stdout, and the sleeps it performed.
 #
 # The call count is part of the expectation, not decoration: a status here says
 # how far the watch got. A non-numeric cap is a usage error (exit 2) that never
@@ -114,6 +114,13 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   stub_column "$DEFAULT_CHECKS_ENDPOINT" "$default_checks"
 
   read -ra argv <<<"$args"
+  # The row's own iteration cap, when it has one: the sleep bound below is the
+  # row's, not a constant that could drift away from the table.
+  max_iter=''
+  if [ "${#argv[@]}" -ge 4 ] && [[ "${argv[3]}" =~ ^[0-9]+$ ]]; then
+    max_iter="${argv[3]}"
+  fi
+
   run_sut bash "$SUT" "${argv[@]}"
 
   fails_here=0
@@ -121,6 +128,30 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails_here=1; fi
   if ! check_bytes "${name}: stdout" "$want_out"; then fails_here=1; fi
   if ! check_no_violations "${name}: argv"; then fails_here=1; fi
+  # The last poll is followed by nothing, so the loop can sleep at most
+  # MAX_ITER - 1 times. A sleep after it is a wait no result will ever be read
+  # from, and it is what made the old header's 20-minute claim true.
+  slept="$(sleep_call_count)"
+  if [ -n "$max_iter" ] && [ "$max_iter" -gt 0 ] &&
+    [ "$slept" -gt $((max_iter - 1)) ]; then
+    printf 'FAIL %s: sleeps: want at most %s, got %s\n' "$name" $((max_iter - 1)) "$slept"
+    fails_here=1
+  fi
+
+  # The bound alone cannot see a guard that never sleeps — zero satisfies every
+  # upper bound — so pin the count where it is deterministic. Measured with the
+  # fix: `one-poll-cannot-settle` sleeps 0, `settled-prints-rows` and
+  # `still-unsettled-at-cap` sleep 1, and `the-default-branch-is-read-once` —
+  # 6 polls — sleeps 5.
+  case "$name" in
+    one-poll-cannot-settle) want_sleeps=0 ;;
+    settled-prints-rows | still-unsettled-at-cap) want_sleeps=1 ;;
+    the-default-branch-is-read-once) want_sleeps=5 ;;
+    *) want_sleeps='' ;;
+  esac
+  if [ -n "$want_sleeps" ]; then
+    if ! check_eq "${name}: sleeps" "$want_sleeps" "$slept"; then fails_here=1; fi
+  fi
   if [ "$fails_here" -ne 0 ]; then
     failed=$((failed + 1))
     printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
@@ -165,5 +196,23 @@ too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|
 non-numeric-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef abc 1|2|0|
 ROWS
+
+# Running the defaults pins the three numbers behind the header's 19m40s: 60
+# polls, 59 gaps of 20 s. Every row above passes its own cap, so without this
+# one a default change leaves the header's number behind — the same drift
+# watch-copilot-review_test.sh pins for its own bound.
+row_start
+stub_api "$CHECKS_ENDPOINT" '*=check-runs-in-progress'
+run_sut bash "$SUT" acme widgets deadbeef
+default_fails=0
+if ! check_eq 'default-poll-bound: exit' 1 "$SUT_STATUS"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: gh calls' 60 "$(gh_call_count)"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: sleeps' 59 "$(sleep_call_count)"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: sleep duration' 20 "$(sort -u "${GH_STUB_DIR}/sleeps")"; then default_fails=1; fi
+if ! check_no_violations 'default-poll-bound: argv'; then default_fails=1; fi
+if [ "$default_fails" -ne 0 ]; then
+  failed=$((failed + 1))
+  printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
+fi
 
 harness_exit "$failed" "$total"

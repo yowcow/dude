@@ -14,8 +14,8 @@
 # as its own exit status for the wait it saves, not a wrong answer it stops:
 # once total_count is demanded that 422 body is no listing at all, so without
 # the test the watch polls to its cap and answers exit 4 — measured on the
-# `missing-commit` row — handing the same person the same PR twenty minutes
-# later, with a generic listing-read failure in place of the specific
+# `missing-commit` row — handing the same person the same PR 19m40s later, with
+# a generic listing-read failure in place of the specific
 # missing-commit diagnosis.
 #
 # Whether the checks *pass* is the caller's judgement, never this script's: it
@@ -25,7 +25,9 @@
 # model".
 #
 # Usage: watch-checks.sh <owner> <repo> <sha> [max-iterations] [interval-seconds]
-#        defaults: max-iterations 60, interval-seconds 20 (= 20 minutes)
+#        defaults: max-iterations 60, interval-seconds 20 (= 19m40s: the 59 gaps
+#        between the 60 polls at 20 s each — the last poll is followed by no
+#        sleep)
 #
 # Exit: 0 = every check on the commit has settled, and the set of checks was
 #           unchanged from the previous successfully read listing — the listing
@@ -173,7 +175,7 @@ probed_default=""
 # nothing about but did read.
 saw_runs=""
 
-for _ in $(seq 1 "$MAX_ITER"); do
+for i in $(seq 1 "$MAX_ITER"); do
   # A failing gh call is transient far more often than fatal (rate limit, a blip),
   # so it does not end the watch; the iteration cap is what ends it. The one
   # failure worth ending on is a SHA the remote does not have, because no amount
@@ -330,7 +332,12 @@ for _ in $(seq 1 "$MAX_ITER"); do
     prev_fp="$fp"
   fi
 
-  sleep "$INTERVAL"
+  # No sleep after the final poll — the header's maximum counts the gaps only.
+  # The counter is named because `$_` is bash's "last argument of the previous
+  # command", so `[ "$_" -lt "$MAX_ITER" ]` would be false and skip every sleep.
+  if [ "$i" -lt "$MAX_ITER" ]; then
+    sleep "$INTERVAL"
+  fi
 done
 
 if [ -z "$saw_listing" ]; then

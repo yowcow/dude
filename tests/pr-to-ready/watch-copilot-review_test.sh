@@ -190,6 +190,24 @@ too-many-args|copilot-reviews-two|empty|acme widgets 7 %B 1 1 extra|2|0|
 non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|2|0|
 ROWS
 
+# Running the defaults pins the three numbers behind the header's 19m30s: 40
+# polls, 39 gaps of 30 s each. A default change fails here instead of leaving
+# the header's number behind.
+row_start
+gh_stub_response '*' 0 pr view --repo acme/widgets --json reviews --jq "$JQ_FILTER" -- 7 <"$TWO"
+default_baseline="$(make_baseline all)"
+run_sut bash "$SUT" acme widgets 7 "$default_baseline"
+default_fails=0
+if ! check_eq 'default-poll-bound: exit' 1 "$SUT_STATUS"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: gh calls' 40 "$(gh_call_count)"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: sleeps' 39 "$(sleep_call_count)"; then default_fails=1; fi
+if ! check_eq 'default-poll-bound: sleep duration' 30 "$(sort -u "${GH_STUB_DIR}/sleeps")"; then default_fails=1; fi
+if ! check_no_violations 'default-poll-bound: argv'; then default_fails=1; fi
+if [ "$default_fails" -ne 0 ]; then
+  failed=$((failed + 1))
+  printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
+fi
+
 # CDPATH decoy (yowcow/dude#382): an exported CDPATH plus a relative-path call
 # must still resolve the sibling in this tree. `cd` searches CDPATH for a
 # relative operand, so the pre-fix `cd "$(dirname "$0")"` lands in the decoy

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Table test for skills/pr-to-ready/scripts/watch-claude-review.sh: the
 # availability answer (exit 3 and the two ways of not being it), which runs
-# survive the listing's filter, how deep that listing reaches, and watch mode's
-# exit contract.
+# survive the listing's filter, how deep that listing reaches, watch mode's
+# exit contract, and that both gh calls pin the origin repository with -R.
 #
 # git is NOT stubbed. The script resolves `git rev-parse --show-toplevel` and
 # searches `$root/.github/workflows/`, so the repository *is* an input: each row
@@ -31,18 +31,24 @@
 # not asserted here: `gh` is stubbed, so any row would encode the exit status it
 # scripted rather than measure gh's. Re-measure that against real `gh` by hand.
 #
-# RED verification (see tests/README.md):
+# RED verification (see tests/README.md). SUT must name a copy whose
+# `../../../tools/` resolves, because the script calls resolve-default-branch.sh
+# and origin-repo.sh through SCRIPT_DIR. Setting the depth back to the pre-fix
+# `--limit 20` is the mutation, because a copy that predates the `-R` pin fails
+# every gh-reaching row as an unstubbed argv before the depth is reached:
 #   tmp="$(mktemp -d)"
-#   git show 2bd1745^:skills/pr-to-ready/scripts/watch-claude-review.sh >"$tmp/old.sh"
-#   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
-#     -> deep-listing-keeps-the-target-run fails: --limit 20 is answered with a
-#        page the target run has fallen out of, and the filter prints [] (#173).
-#        Three more listing rows fail there as collateral — they stub only
-#        --limit 100, so the pre-fix depth reaches them as an unstubbed argv.
-#        Only the deep row fails on the symptom itself, which is the one to
-#        read: exit 0, empty stderr, [] where the run belongs.
-#   git show e14114a^:skills/pr-to-ready/scripts/watch-claude-review.sh >"$tmp/old.sh"
-#     -> from-a-subdirectory fails with exit 3: the search was cwd-relative.
+#   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/tools"
+#   cp tools/resolve-default-branch.sh tools/origin-repo.sh "$tmp/tools/"
+#   sed 's/--limit 100/--limit 20/' \
+#     skills/pr-to-ready/scripts/watch-claude-review.sh \
+#     >"$tmp/skills/pr-to-ready/scripts/old.sh"
+#   SUT="$tmp/skills/pr-to-ready/scripts/old.sh" \
+#     tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
+#     -> deep-listing-keeps-the-target-run is answered with the truncated page,
+#        so it exits 0 printing [] where the run belongs (#173); the rows that
+#        stub only --limit 100 fail as unstubbed argv.
+#   The from-a-subdirectory row pins the cwd-relative regression on the current
+#   script; a copy that predates that fix also predates `-R`.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -82,6 +88,10 @@ TARGET_RUN_ID=5999
 # `claude.yml` on both sides, a hardcoded `--workflow=claude.yml` would match.
 WORKFLOW_FILE=ai-review.yml
 
+# The workflow both claude kinds commit; claude-noorigin differs only in having
+# no origin remote.
+CLAUDE_WORKFLOW='name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n'
+
 MIXED="${FIXTURES}/claude-runs-mixed.json"
 DEEP="${FIXTURES}/claude-runs-deep.json"
 LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
@@ -89,27 +99,27 @@ LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
 failed=0
 total=0
 
-# stub_listing <body-file> [<limit>] [<exit-status>] -- one `gh run list` page.
+# stub_listing <repo> <body-file> [<limit>] [<exit-status>] -- one `gh run list` page.
 #
-# The limit is a parameter because a row may need to answer more than one depth:
-# the fake `gh` matches on the exact argv before the call index, so `--limit 100`
-# and `--limit 20` are two independently answerable calls. That is what lets the
-# deep row below behave like a server that honours --limit.
+# The repository is a parameter because `-R` is part of what is under test: a
+# call without it is an argv no row stubbed, which the stub reports as a
+# violation instead of letting gh answer about whatever repository it likes.
 stub_listing() {
-  local body="$1" limit="${2:-100}" status="${3:-0}"
-  gh_stub_response '*' "$status" run list "--workflow=${WORKFLOW_FILE}" \
-    --limit "$limit" --json "$LISTING_FIELDS" <"$body"
+  local repo="$1" body="$2" limit="${3:-100}" status="${4:-0}"
+  gh_stub_response '*' "$status" run list -R "$repo" \
+    "--workflow=${WORKFLOW_FILE}" --limit "$limit" --json "$LISTING_FIELDS" <"$body"
 }
 
-# stub_watch <exit-status> <body-file> -- the single call watch mode makes
+# stub_watch <repo> <exit-status> <body-file> -- the single call watch mode makes
 stub_watch() {
-  gh_stub_response '*' "$1" run watch "$RUN_ID" --exit-status <"$2"
+  gh_stub_response '*' "$2" run watch -R "$1" "$RUN_ID" --exit-status <"$3"
 }
 
 # repo_with_workflow <name> <kind> -- a real repository whose root holds the
 # workflow shape a row wants; prints its path. The `claude` kind also gets an
 # origin whose HEAD names $DEFAULT_BRANCH, which is where the script reads it.
 #   claude   -- .github/workflows/$WORKFLOW_FILE mentioning @claude
+#   claude-noorigin -- the same workflow, with no origin remote
 #   noclaude -- .github/workflows/ci.yml with no @claude anywhere
 #   nodir    -- no .github/ at all
 repo_with_workflow() {
@@ -119,12 +129,17 @@ repo_with_workflow() {
   case "$kind" in
     claude)
       git_repo_commit "$dir" ".github/workflows/${WORKFLOW_FILE}" \
-        'name: claude\non: issue_comment\njobs:\n  review:\n    if: contains(github.event.comment.body, "@claude")\n' \
+        "$CLAUDE_WORKFLOW" \
         'add claude workflow'
       bare="$(git_repo_bare acme "$name")"
       git_repo_push "$dir" "$bare" "$DEFAULT_BRANCH"
       git_repo_bare_head "$bare" "$DEFAULT_BRANCH"
       git_repo_remote "$dir" origin "$bare"
+      ;;
+    claude-noorigin)
+      git_repo_commit "$dir" ".github/workflows/${WORKFLOW_FILE}" \
+        "$CLAUDE_WORKFLOW" \
+        'add claude workflow'
       ;;
     noclaude)
       git_repo_commit "$dir" .github/workflows/ci.yml \
@@ -207,9 +222,14 @@ fi
 
 # Built once and shared: none of the rows writes to them.
 REPO_CLAUDE="$(repo_with_workflow claude-ok claude)"
+# A second origin name, for the same reason as $DEFAULT_BRANCH and
+# $WORKFLOW_FILE: with only acme/claude-ok, resolving origin and then
+# hardcoding `-R acme/claude-ok` would pass every row.
+REPO_CLAUDE_OTHER="$(repo_with_workflow claude-other claude)"
 # origin's HEAD is unborn: the remote names no default branch.
 REPO_CLAUDE_NOHEAD="$(repo_with_workflow claude-nohead claude)"
 git_repo_remote "$REPO_CLAUDE_NOHEAD" origin "$(git_repo_bare acme nohead-empty)"
+REPO_CLAUDE_NOORIGIN="$(repo_with_workflow claude-noorigin claude-noorigin)"
 REPO_NOCLAUDE="$(repo_with_workflow claude-absent noclaude)"
 REPO_NODIR="$(repo_with_workflow no-github nodir)"
 REPO_OUTSIDE="$(git_repo_scratch outside)"
@@ -233,22 +253,18 @@ mkdir -p "$SUBDIR"
 # unstubbed call the harness let through.
 
 row_start
-stub_listing "$MIXED"
 run_in "$REPO_CLAUDE"
 assert_row 'usage-no-args' 2 '-' 0
 
 row_start
-stub_listing "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID" extra
 assert_row 'usage-three-args' 2 '-' 0
 
 row_start
-stub_listing "$MIXED"
 run_in "$REPO_NOCLAUDE" "$BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
 row_start
-stub_listing "$MIXED"
 run_in "$REPO_NODIR" "$BRANCH"
 assert_row 'no-workflows-dir' 3 '-' 0
 
@@ -257,7 +273,6 @@ assert_row 'no-workflows-dir' 3 '-' 0
 # skip the review. 128 is what `git rev-parse --show-toplevel` exits with there,
 # and `set -e` on the assignment propagates it unchanged.
 row_start
-stub_listing "$MIXED"
 run_in "$REPO_OUTSIDE" "$BRANCH"
 assert_row 'outside-a-repository' 128 '-' 0
 
@@ -273,14 +288,21 @@ assert_row 'outside-a-repository' 128 '-' 0
 # there for the same reason — an unfinished run is not hidden from the caller.
 
 row_start
-stub_listing "$MIXED"
+stub_listing acme/claude-ok "$MIXED"
 run_in "$REPO_CLAUDE" "$BRANCH"
 assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
+
+# The `-R` value comes from origin, not from a literal: the same listing asked
+# of a differently named repository must be pinned to that name.
+row_start
+stub_listing acme/claude-other "$MIXED"
+run_in "$REPO_CLAUDE_OTHER" "$BRANCH"
+assert_row 'listing-pins-a-second-origin' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # Same expectation from a subdirectory: the workflow search is anchored at the
 # repository root, so where the caller stands cannot change the answer.
 row_start
-stub_listing "$MIXED"
+stub_listing acme/claude-ok "$MIXED"
 run_in "$SUBDIR" "$BRANCH"
 assert_row 'from-a-subdirectory' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
@@ -288,11 +310,27 @@ row_start
 run_in "$REPO_CLAUDE_NOHEAD" "$BRANCH"
 assert_row 'default-branch-read-fails' 1 '-' 0
 
+# The repository a run belongs to is origin's, not the ambient one: -R pins it.
+# With no origin there is nothing to pin, and the answer must name that lookup
+# rather than fall back to whatever repository gh would pick.
+row_start
+run_in "$REPO_CLAUDE_NOORIGIN" "$BRANCH"
+assert_row 'no-origin' 1 '-' 0
+tally check_eq 'no-origin: names the repository lookup' \
+  'error: failed to resolve the origin repository' "$(cat "$SUT_STDERR")"
+
+# The same lookup is what watch mode pins, and it runs before the mode branch.
+row_start
+run_in "$REPO_CLAUDE_NOORIGIN" "$BRANCH" "$RUN_ID"
+assert_row 'no-origin-in-watch-mode' 1 '-' 0
+tally check_eq 'no-origin-in-watch-mode: names the repository lookup' \
+  'error: failed to resolve the origin repository' "$(cat "$SUT_STDERR")"
+
 # The listing call fails with an empty body; `set -o pipefail` carries gh's
 # status out through the jq pipeline, so nothing is printed and the status is
 # neither 0 nor the availability answer.
 row_start
-stub_listing /dev/null 100 1
+stub_listing acme/claude-ok /dev/null 100 1
 run_in "$REPO_CLAUDE" "$BRANCH"
 assert_row 'listing-call-fails' 1 '-' 1
 
@@ -300,13 +338,14 @@ assert_row 'listing-call-fails' 1 '-' 1
 # depth this script asks for (100) is answered with the whole 21-run page, and
 # the depth the pre-fix script asked for (20) with that page truncated — which
 # is what the API itself would have done. The second stub is the mechanism of
-# the RED, not dead weight: against 2bd1745^ the target run has fallen out of
-# the answer, the filter prints [], and the row fails on the real symptom
-# rather than on an unstubbed argv.
+# the RED, not dead weight: against 2bd1745^ with a copy of this file whose
+# stubs also predate `-R`, the target run has fallen out of the answer, the
+# filter prints [], and the row fails on the real symptom rather than on an
+# unstubbed argv.
 row_start
-stub_listing "$DEEP" 100
+stub_listing acme/claude-ok "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"
-stub_listing "$TRUNCATED" 20
+stub_listing acme/claude-ok "$TRUNCATED" 20
 run_in "$REPO_CLAUDE" "$BRANCH"
 assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.expected" 1
 
@@ -322,19 +361,23 @@ printf 'claude review run succeeded\n' >"$WATCH_OK"
 printf 'claude review run failed\n' >"$WATCH_FAIL"
 
 row_start
-stub_watch 0 "$WATCH_OK"
+stub_watch acme/claude-ok 0 "$WATCH_OK"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-succeeds' 0 "$WATCH_OK" 1
 
 row_start
-stub_watch 1 "$WATCH_FAIL"
+stub_watch acme/claude-other 0 "$WATCH_OK"
+run_in "$REPO_CLAUDE_OTHER" "$BRANCH" "$RUN_ID"
+assert_row 'watch-pins-a-second-origin' 0 "$WATCH_OK" 1
+
+row_start
+stub_watch acme/claude-ok 1 "$WATCH_FAIL"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
 
 # Availability is checked before the run-id branch is taken, so watch mode
 # cannot be reached in a repository with no @claude workflow.
 row_start
-stub_watch 0 "$WATCH_OK"
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-without-claude-workflow' 3 '-' 0
 

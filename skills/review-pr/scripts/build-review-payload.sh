@@ -22,6 +22,13 @@
 # Output: one line of JSON, {"body":...,"comments":[{"path","line","side","body"}]}
 set -euo pipefail
 
+# Checked before any argument: without jq the guard below answers usage, and the
+# caller edits its argv instead of the missing dependency.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required but was not found on PATH" >&2
+  exit 1
+fi
+
 if [ "$#" -ne 4 ] || [ ! -r "$3" ] || [ ! -r "$4" ] ||
   ! jq -e 'type == "array"' "$4" >/dev/null 2>&1; then
   echo "Usage: $0 <base-sha> <head-sha> <summary-file> <findings-file>" >&2
