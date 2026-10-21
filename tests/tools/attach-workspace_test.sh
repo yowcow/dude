@@ -24,6 +24,9 @@
 #   - drop `--exit-code` from `git ls-remote`: `nowhere-is-create`
 #   - drop the `elif [ "${status}" -ne 2 ]` arm, falling through to CREATE:
 #     `unreachable-remote-is-not-absent`, `no-origin-remote-is-not-absent`
+#   - fetch with `git fetch origin -- <branch>` instead of the explicit
+#     refspec (a narrowed clone updates FETCH_HEAD alone, creating no
+#     tracking ref): `remote-only-is-attached-in-a-narrowed-clone`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -203,6 +206,40 @@ tally check_on_branch 'remote-only-is-attached: the workspace is on the branch' 
 tally check_local_branch 'remote-only-is-attached: the branch now exists locally' "$W" task yes
 tally check_eq 'remote-only-is-attached: the branch tracks the remote' 'origin/task' \
   "$(git -C "$W" rev-parse --abbrev-ref 'task@{upstream}')"
+
+# ---- ATTACHED: the branch exists only on the remote, narrowed clone ----
+#
+# `git clone --single-branch` leaves remote.origin.fetch as
+# `+refs/heads/main:refs/remotes/origin/main`, so `git fetch origin -- task`
+# updates FETCH_HEAD and creates no tracking ref. A SUT that trusts that ref to
+# appear dies under `set -e` with nothing on stdout -- neither ATTACHED nor
+# CREATE -- and the caller, which branches on that one line, gets no answer.
+
+row_start
+BARE="$(git_repo_bare acme narrowed)"
+SEED="$(git_repo_scratch narrowed-seed)"
+git_repo_init "$SEED" main
+git_repo_commit "$SEED" main.txt 'on main\n' 'c1'
+git_repo_checkout "$SEED" task main
+git_repo_commit "$SEED" task.txt 'pushed work\n' 'task work'
+REMOTE_TIP="$(git -C "$SEED" rev-parse task)"
+git_repo_checkout "$SEED" main
+git_repo_push "$SEED" "$BARE" main task
+W="$(git_repo_scratch narrowed)"
+git clone -q --single-branch --branch main -- "$BARE" "$W"
+tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: fixture is a one-branch clone' \
+  '+refs/heads/main:refs/remotes/origin/main' \
+  "$(git -C "$W" config --get remote.origin.fetch)"
+tally check_local_branch 'remote-only-is-attached-in-a-narrowed-clone: fixture has no local branch' "$W" task no
+WT_NEW="$(wt_path narrowed-new)"
+run_in "$W" task "$WT_NEW"
+assert_row 'remote-only-is-attached-in-a-narrowed-clone' 0 "ATTACHED ${WT_NEW}\n" 0
+tally check_head 'remote-only-is-attached-in-a-narrowed-clone: at the remote tip' \
+  "$WT_NEW" "$REMOTE_TIP"
+tally check_on_branch 'remote-only-is-attached-in-a-narrowed-clone: on the branch' \
+  "$WT_NEW" task
+tally check_eq 'remote-only-is-attached-in-a-narrowed-clone: the branch tracks the remote' \
+  'origin/task' "$(git -C "$W" rev-parse --abbrev-ref 'task@{upstream}')"
 
 # ---- the tip attached is the one this script's own fetch resolved ------
 #
