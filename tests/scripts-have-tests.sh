@@ -92,7 +92,7 @@ list_root() {
 # and exit 0, the symlink named nowhere. That is this gate's own failure mode
 # reached through the same door the shebang note below refuses to leave open, so
 # a symlink under scripts/ needs a test like anything else.
-# The target is never resolved and never read; only visibility is at stake, so a
+# The target is never read; only visibility is at stake, so a
 # dangling link is reported rather than fatal. A link to a directory is visible
 # but not descended into, so its contents cannot be enumerated at all; such a
 # link is refused outright rather than half-read as an empty tree.
