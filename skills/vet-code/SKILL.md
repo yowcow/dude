@@ -14,7 +14,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 - The reviewer is a read-only worker, dispatched through `superpowers:requesting-code-review` with the prompt **Reviewer prompt** defines. It returns that template's output. It never edits code, never runs the project's checks, and never commits.
 - The reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**: a finding it doesn't return comes back as "nothing found", and the caller reads that as clean.
 - One reviewer per invocation, fresh each time — the fan-out here is fixed at one, because a diff doesn't warrant more.
-- Once the reviewer returns, hand `judge-findings` every Issues finding, and every Declined to judge line as a candidate, with the scope and requirements the reviewer got and the earlier rounds' record. As the acceptance criteria, hand it the template's "The spec is a vision document" paragraph verbatim, plus: a candidate sitting outside the plan or spec is why the reviewer set it aside, not a ground to reject it.
+- Once the reviewer returns, hand `judge-findings` every Issues finding, and every Declined to judge line as a candidate, with the scope and requirements the reviewer got and the earlier rounds' record. As the acceptance criteria, hand it the template's "The spec is a vision document" paragraph verbatim, plus: a candidate sitting outside the plan or spec is why the reviewer set it aside, not a ground to reject it, and neither is the code being unchanged since the previous round when the candidate claims something about that code. A line that only discloses part of the scope went unreviewed is not such a candidate.
 - What a read-only worker buys is a fresh context: it reads the code without having written it, so it is not anchored on why the code ended up this way.
 
 ## Reviewer prompt
@@ -39,7 +39,7 @@ When the caller's scope includes a read-root — a directory already bound as th
 After the template, append only these viewpoint extras:
 
 - **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
-- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, findings rejected with the reason, and Declined to judge lines rejected with the reason. A reviewer not shown the rejections re-litigates them.
+- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, findings accepted and recorded without a fix, findings rejected with the reason, and Declined to judge lines rejected with the reason. The record does not narrow the review: tell the reviewer to cover the whole scope at every severity, places unchanged since the previous round included, and that the record stops only a finding it holds as rejected, or as accepted and recorded without a fix, from being raised again; a finding accepted and fixed that still stands is raised again. A reviewer not shown the rejections re-litigates them.
 
 Also after the template: Confine every search to the project root or narrower. Answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
 
