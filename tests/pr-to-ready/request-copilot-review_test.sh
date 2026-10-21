@@ -23,16 +23,22 @@
 # `neither-form-lands-and-both-forms-failed` shows that two failed requests
 # still produce exit 3 — the documented answer — rather than a leaked status.
 #
-# The index map, with READBACK_TRIES=5 and every TIMELINE call serving one page:
+# The index map, with the readback budget shared by the two forms — two reads
+# after the flag, three after the REST form — and every TIMELINE call serving
+# one page:
 #
 #   1            TIMELINE, the baseline, taken before any request is sent
 #   2            EDIT
-#   3..7         TIMELINE readback tries 1-5 after EDIT
-#   8            POST
-#   9..13        TIMELINE readback tries 1-5 after POST
+#   3..4         TIMELINE readback tries 1-2 after EDIT
+#   5            POST
+#   6..8         TIMELINE readback tries 3-5, the remainder of one shared budget
 #
-# `landed()` sleeps between tries but not after the last, so a readback that
-# runs out costs 4 sleeps and a run that lands nothing costs 8.
+# `landed()` sleeps between tries but not after the last, so a flag readback
+# that runs out costs 1 sleep and the REST form's 2. A run that lands nothing
+# therefore costs 8 gh calls — 6 timeline reads and 2 writes — and 3 sleeps,
+# against 13 calls and 8 sleeps when each form had its own five tries. That is
+# why `neither-form-lands`'s call count is the fetch-count assertion, and what
+# makes the pre-yowcow/dude#686 script red on it.
 #
 # TIMELINE carries --paginate, so successive indices on it are the PAGES of one
 # invocation, not successive invocations. Three measured rules govern when a call
@@ -47,11 +53,12 @@
 #
 # Two consequences worth stating, because each one costs a row when missed. An
 # exact index sitting above a `*` costs one EXTRA call (R2) — which is why
-# `rest-form-takes` is 10 and not 9. And "lands on the Nth separate poll" cannot
-# be written at all: registering index 4 to answer try 2 lets try 1's own
-# invocation swallow it as page 2 (R2), and leaving a gap there makes try 2 a
-# violation (R3). So no row asserts a mid-readback landing; `neither-form-lands`
-# and `lands-on-the-final-readback-try` pin the poll's extent from both sides.
+# `rest-form-takes` is 7 and not 6. And exact-index-only rows cannot express a
+# mid-readback landing (R2 swallows index 4 as page 2; a gap makes try 2 an R3
+# violation), so a row that lands on the second poll takes a `*` default, which
+# halts try 1's invocation. `flag-takes-on-second-readback` is that row, and it
+# is what makes a 1/4 split fail: without it the suite pins the five-read total
+# but not the two/three split the script gives the forms.
 #
 # R2 is also what makes `paginated-page-lengths-are-summed` possible at all: the
 # two pages of one readback are indices 3 and 4. Its BASELINE is the load-bearing
@@ -96,6 +103,12 @@
 #   tmp="$(mktemp -d)"
 #   git show 1245a06^:skills/pr-to-ready/scripts/request-copilot-review.sh >"$tmp/old.sh"
 #   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/request-copilot-review_test.sh
+#
+# RED verification — the pre-yowcow/dude#686 version read the timeline eleven
+# times per request, so these rows fail.
+#   tmp="$(mktemp -d)"
+#   git show d45deb2:skills/pr-to-ready/scripts/request-copilot-review.sh >"$tmp/old.sh"
+#   SUT="$tmp/old.sh" tests/run.sh tests/pr-to-ready/request-copilot-review_test.sh
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -110,10 +123,11 @@ stub_sleep_instant
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/request-copilot-review.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
 
-# A verbatim copy of the --jq argument in request-copilot-review.sh:74-77,
-# including its 11-space continuation indent and the 10-space closing line. It is
-# one argv element spanning four lines, matched on its exact bytes: an edit to
-# the filter there fails every row here as an unstubbed argv rather than quietly.
+# A verbatim copy of the `--jq` argument in `count_requests` in
+# request-copilot-review.sh, including its 11-space continuation indent and the
+# 10-space closing line. It is one argv element spanning four lines, matched on
+# its exact bytes: an edit to the filter there fails every row here as an
+# unstubbed argv rather than quietly.
 JQ_FILTER='[.[]
            | select(.event == "review_requested")
            | select((.requested_reviewer.login // "") | ascii_downcase | contains("copilot"))
@@ -169,6 +183,9 @@ while IFS='|' read -r name timeline forms args want_exit want_calls want_sleeps;
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails_here=1; fi
   if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails_here=1; fi
   if ! check_eq "${name}: sleeps" "$want_sleeps" "$(sleep_call_count)"; then fails_here=1; fi
+  # Sleeps are instant here, so only their duration can see a change to the
+  # interval the header's window numbers come from.
+  if [ "$want_sleeps" -gt 0 ] && ! check_eq "${name}: sleep duration" 5 "$(sort -u "${GH_STUB_DIR}/sleeps")"; then fails_here=1; fi
   # Nothing this script prints goes to stdout — both request forms have theirs
   # dropped, and every diagnostic is on stderr. Asserted rather than left
   # unstated: a stray print would be the caller's parse breaking.
@@ -182,17 +199,19 @@ done <<'ROWS'
 # name|timeline|forms|args|exit|calls|sleeps
 flag-takes|1=timeline-empty;3=timeline-copilot-once|0,0|acme widgets 7|0|3|0
 flag-takes-bot-suffix-spelling|1=timeline-empty;3=timeline-copilot-bot-suffix|0,0|acme widgets 7|0|3|0
-rest-form-takes|*=timeline-empty;9=timeline-copilot-once|0,0|acme widgets 7|0|10|4
-lands-on-the-final-readback-try|*=timeline-empty;13=timeline-copilot-once|0,0|acme widgets 7|0|14|8
-flag-form-fails-and-the-rest-form-takes|*=timeline-empty;9=timeline-copilot-once|1,0|acme widgets 7|0|10|4
-rest-form-fails-and-the-event-is-still-read|*=timeline-empty;9=timeline-copilot-once|0,1|acme widgets 7|0|10|4
-neither-form-lands|*=timeline-empty|0,0|acme widgets 7|3|13|8
-neither-form-lands-and-both-forms-failed|*=timeline-empty|1,1|acme widgets 7|3|13|8
-non-copilot-events-do-not-count|*=timeline-no-copilot|0,0|acme widgets 7|3|13|8
-previous-round-event-is-not-this-round|*=timeline-copilot-once|0,0|acme widgets 7|3|13|8
+flag-takes-on-second-readback|*=timeline-empty;4=timeline-copilot-once|0,0|acme widgets 7|0|5|1
+rest-form-takes|*=timeline-empty;6=timeline-copilot-once|0,0|acme widgets 7|0|7|1
+lands-on-the-final-readback-try|*=timeline-empty;8=timeline-copilot-once|0,0|acme widgets 7|0|9|3
+flag-form-fails-and-the-rest-form-takes|*=timeline-empty;6=timeline-copilot-once|1,0|acme widgets 7|0|7|1
+rest-form-fails-and-the-event-is-still-read|*=timeline-empty;6=timeline-copilot-once|0,1|acme widgets 7|0|7|1
+neither-form-lands|*=timeline-empty|0,0|acme widgets 7|3|8|3
+neither-form-lands-and-both-forms-failed|*=timeline-empty|1,1|acme widgets 7|3|8|3
+non-copilot-events-do-not-count|*=timeline-no-copilot|0,0|acme widgets 7|3|8|3
+previous-round-event-is-not-this-round|*=timeline-copilot-once|0,0|acme widgets 7|3|8|3
 previous-round-event-plus-a-new-one|1=timeline-copilot-once;3=timeline-copilot-twice|0,0|acme widgets 7|0|3|0
 team-request-event-does-not-abort-the-filter|1=timeline-team-only;3=timeline-team-and-copilot|0,0|acme widgets 7|0|3|0
 paginated-page-lengths-are-summed|1=timeline-copilot-once;3=timeline-page1;4=timeline-page2|0,0|acme widgets 7|0|4|0
+rest-readback-timeline-unreadable|*=timeline-empty;6=not-found:1|0,0|acme widgets 7|4|6|1
 baseline-timeline-unreadable|1=not-found:1|0,0|acme widgets 7|4|1|0
 readback-timeline-unreadable|1=timeline-empty;3=not-found:1|0,0|acme widgets 7|4|3|0
 too-few-args|-|0,0|acme widgets|2|0|0

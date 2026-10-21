@@ -58,6 +58,7 @@ stub_sleep_instant
 
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/watch-checks.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
+NO_JQ_PATH="$(no_jq_path "${HARNESS_TMP}/no-jq-path")"
 
 # The three argvs a row can script, one per response column. Spelled here rather
 # than per row: a row that mistyped a URL would stub an argv the script never
@@ -76,7 +77,8 @@ DEFAULT_CHECKS_ENDPOINT='repos/acme/widgets/commits/trunk/check-runs'
 
 # Registers one response for one endpoint. `spec` is <index>=<fixture>[:<status>],
 # where <index> is a positive integer or `*` and <fixture> is `-` for an empty
-# body — the spelling request-copilot-review_test.sh:122 already uses.
+# body — the spelling `stub_timeline` in request-copilot-review_test.sh
+# already uses.
 stub_api() {
   local endpoint="$1" spec="$2" idx rest fixture status body
   idx="${spec%%=*}"
@@ -196,6 +198,18 @@ too-few-args|*=check-runs-settled|-|-|acme widgets|2|0|
 too-many-args|*=check-runs-settled|-|-|acme widgets deadbeef 1 1 extra|2|0|
 non-numeric-max-iterations|*=check-runs-settled|-|-|acme widgets deadbeef abc 1|2|0|
 ROWS
+
+# A missing jq is its own answer, not a usage error and not a poll that reads
+# every listing as "not a run list". jq alone is off the PATH, so the zero gh
+# calls and zero sleeps below say the guard stopped the watch before either —
+# and a script that got as far as polling reaches the stub and is counted.
+row_start
+run_sut env PATH="$NO_JQ_PATH" bash "$SUT" \
+  acme widgets deadbeef 2 1
+assert_row 'missing jq' 6 '' 0
+tally check_eq 'missing jq: sleeps' 0 "$(sleep_call_count)"
+tally check_eq 'missing jq: stderr' \
+  'error: jq is required but was not found on PATH' "$(cat "$SUT_STDERR")"
 
 # Running the defaults pins the three numbers behind the header's 19m40s: 60
 # polls, 59 gaps of 20 s. Every row above passes its own cap, so without this
