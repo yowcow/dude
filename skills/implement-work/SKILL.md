@@ -73,7 +73,7 @@ Run `<skill-dir>/scripts/resolve-base.sh <issue-number>`.
 - It reads the prerequisite from the one `Blocked-By: #N` line `plan-work` writes in the issue's body, and settles the base from the state of the PR that closes that prerequisite: `OPEN` → that PR's head; `MERGED` → the default branch — both fetched first, so the branch you cut actually contains what it's meant to.
 - `NEED <token>...` — read the facts it names as `<skill-dir>/references/facts.md` defines them, add them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - Read its one-line answer: `BASE <branch>` — cut the new branch from `origin/<branch>`, the remote-tracking ref the script has just fetched, and **not** from the bare name.
-- `STOP <reason>` — a prerequisite line that is malformed or not the only one, no PR on the prerequisite or more than one, a prerequisite closed without merging, or a fact that could not be read: stop, and either report why the task can't start or ask a person which base to use, per the reason printed.
+- `STOP <reason>` — a prerequisite line that is malformed or not the only one, no PR on the prerequisite or more than one, a prerequisite closed without merging, a base branch that could not be fetched, or a fact that could not be read: stop, and either report why the task can't start or ask a person which base to use, per the reason printed.
 
 **Record a non-default base** as a single `Base-Branch: <base>` line in the trailer block of this task's **first** commit — `<base>` the bare branch name, no `origin/` prefix and no `refs/heads/` path. Branching from the default branch records nothing.
 
