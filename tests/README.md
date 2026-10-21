@@ -3,9 +3,8 @@
 An offline test suite for the `gh`-wrapping scripts under `skills/*/scripts/`
 and `tools/`.
 The tree sits beside the skills it tests, but **not inside any skill
-directory**: what this repository distributes as a plugin is `skills/` and its
-contents, so a `tests/` dir inside a skill would ship to every agent that
-installs the plugin. `tests/` at the repository root ships to none of them.
+directory**. A plugin install carries the whole repository, `tests/` included
+(`AGENTS.md`, **What ships**).
 
 ## Layout
 

@@ -38,7 +38,7 @@ Action SHAs in `.github/workflows/ci.yml` are pinned with `pinact run .github/wo
 
 ## What ships
 
-A plugin install distributes `skills/` plus hooks/manifests. `tests/` lives at the repo root so it does **not** ship. Never put tests inside a skill directory.
+A plugin install carries the whole repository, `tests/` included: each marketplace entry's source is `./` and no manifest excludes a path. Keep `tests/` at the repo root; never put tests inside a skill directory.
 
 `skills/<skill>/scripts/<name>.sh` needs `tests/<skill>/<name>_test.sh` (subdirectories mirrored); `tools/<name>.sh` needs `tests/tools/<name>_test.sh` (subdirectories mirrored); `scripts/<name>.sh` at the repository root needs `tests/scripts/<name>_test.sh` (subdirectories mirrored); `hooks/<name>` needs `tests/hooks/<name>_test.sh` (trailing `.sh` stripped, subdirectories mirrored), except `hooks/hooks.json` (validated by `make manifest`). Such a test file counts only when it declares its subject with the exact line `SUT="${SUT:-${REPO_ROOT}/<key>}"`. There is no other exemption path, and the gate is permanent. Test-writing contract: `tests/README.md`.
 
