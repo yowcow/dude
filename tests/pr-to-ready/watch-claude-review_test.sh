@@ -303,6 +303,10 @@ run_in "$REPO_CLAUDE" "$BRANCH" ''
 assert_row 'usage-empty-second-argument' 2 '-' 0
 
 row_start
+run_in "$REPO_CLAUDE" '' "$DEFAULT_BRANCH"
+assert_row 'usage-empty-branch' 2 '-' 0
+
+row_start
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
@@ -494,6 +498,7 @@ tally check_eq 'watch-stops-at-the-iteration-cap: sleeps' 39 "$(sleep_call_count
 tally check_eq 'watch-stops-at-the-iteration-cap: names the cap' \
   "claude review run ${RUN_ID} did not complete within 40 polls at 30s" \
   "$(cat "$SUT_STDERR")"
+tally check_eq 'watch-stops-at-the-iteration-cap: interval' 30 "$(sort -u "$GH_STUB_DIR/sleeps")"
 
 # 上限ちょうどのポーリングで完了しても、その conclusion で exit する。
 row_start

@@ -87,9 +87,9 @@ if [ -z "$BRANCH" ] || [ -z "$2" ]; then
   exit 2
 fi
 
-# listing mode と watch mode は第 2 引数の形で分かれる: 全桁なら run id。全桁の
-# 既定ブランチ名は run id として読まれるが、listing を黙って誤ったフィルタに
-# するのではなく run の lookup で止まる（`gh run view` の失敗は即 exit）。
+# List mode and watch mode split on the second argument's shape: all digits is a
+# run id. An all-digit default branch name reads as one too, but the run lookup
+# exits at once rather than silently mis-filtering the listing.
 if [[ "$2" =~ ^[0-9]+$ ]]; then
   RUN_ID="$2"
   DEFAULT_BRANCH=""
@@ -131,26 +131,26 @@ if [ -z "$RUN_ID" ]; then
   exit 0
 fi
 
-# Watch mode の上限: 40 ポーリング × 30 秒 = 19m30s（最後のポーリングの後に
-# sleep は無い）。同じ step の Copilot 待ち（watch-copilot-review.sh）と同じ値。
+# Watch mode's cap: 40 polls x 30 s = 19m30s, with no sleep after the last poll.
+# The same values as the same step's Copilot wait (watch-copilot-review.sh).
 MAX_ITER=40
 INTERVAL=30
 
 for i in $(seq 1 "$MAX_ITER"); do
-  # 失敗した gh 呼び出しはリトライしない: gh が答えられない run id（消えた、
-  # このリポジトリのものでない）を指しており、次のポーリングも同じ間違いを
-  # 聞くだけ。status をそのまま呼び手に渡すのが、tools/poll.sh に載せない理由
-  # そのもの（poll.sh の述語は check コマンドの exit status で、非 0 は全部
-  # 「まだ」なので上限までリトライする）。
+  # A failed gh call is not retried: it points at a run id gh cannot answer for
+  # (gone, or not this repository's), and the next poll would only ask the same
+  # wrong question. Passing the status straight to the caller is exactly why this
+  # is not on tools/poll.sh, whose predicate is the check command's exit status
+  # and every non-zero means "not yet" to it, so it retries to the cap.
   gh_status=0
   view="$(gh run view -R "$REPO" "$RUN_ID" --json status,conclusion)" || gh_status=$?
   if [ "$gh_status" -ne 0 ]; then
     exit "$gh_status"
   fi
 
-  # slurp と length == 1 は watch-checks.sh と同じ理由: jq はトップレベルの値の
-  # ストリームを読むので、読めない本文は「何も答えなかった」に落とす。答えが
-  # 無いのは未完了であって完了ではない。
+  # Slurp and length == 1 for the same reason as watch-checks.sh: jq reads a
+  # stream of top-level values, so a body it cannot read collapses to "it answered
+  # nothing". No answer means incomplete, not complete.
   run_status="$(printf '%s' "$view" |
     jq -r -s 'select(length == 1) | .[0].status | select(type == "string")' 2>/dev/null)" || run_status=""
 
