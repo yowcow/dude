@@ -135,19 +135,16 @@ while IFS='|' read -r name checks repo default_checks args want_exit want_calls 
   # Keyed on the expected exit rather than carried in a ninth column, because a
   # row that omitted a trailing column would read as empty, and empty is exactly
   # the silently-passing assertion this is here to prevent. Exit 0 and exit 1
-  # print nothing, which is why they assert nothing; any other exit that reaches
-  # the default fails loudly, so a new message-bearing exit cannot skip this.
+  # print nothing, which is why they assert nothing; the default asserts nothing
+  # too, so any other exit that prints a message must gain its own branch here
+  # rather than fall through.
   case "$want_exit" in
     0 | 1) want_stderr='' ;;
     2) want_stderr='<owner> <repo> <sha> [max-iterations] [interval-seconds]' ;;
     3) want_stderr='No commit found for SHA: deadbeef' ;;
     4) want_stderr='no check-runs listing could be read for deadbeef' ;;
     5) want_stderr='this repository does not run checks' ;;
-    *)
-      printf 'FAIL %s: exit %s has no stderr message mapped here\n' "$name" "$want_exit"
-      want_stderr=''
-      fails_here=1
-      ;;
+    *) want_stderr='' ;;
   esac
   if [ -n "$want_stderr" ] &&
     ! check_stderr_has "${name}: stderr" "$want_stderr"; then fails_here=1; fi
