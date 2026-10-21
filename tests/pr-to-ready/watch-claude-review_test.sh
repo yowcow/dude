@@ -23,13 +23,14 @@
 # run list --json` pages, and stdout is what jq made of them — which is why the
 # expectations are whole-file byte comparisons against `fixtures/*.expected`.
 #
-# The `skipped` contract is pinned in list mode, because the script itself does
+# The `skipped` contract is pinned in both modes, because the script itself does
 # not filter on conclusion — selecting the run is the caller's job (SKILL.md
 # step 2-2 wants「a conclusion that isn't skipped」). List mode must KEEP a
 # skipped run's `conclusion` field, which is what makes the run discriminable
-# at all (`mixed-listing-…`, run 4003). Watch mode's behaviour on such a run is
-# not asserted here: `gh` is stubbed, so any row would encode the exit status it
-# scripted rather than measure gh's. Re-measure that against real `gh` by hand.
+# at all (`mixed-listing-…`, run 4003); watch mode returns 0 for it, pinned by
+# `watch-treats-a-skipped-run-as-succeeded`. That row reads the conclusion out
+# of the stubbed `gh run view` body the script itself parses, so it measures the
+# script's own decision rather than an exit status the stub scripted.
 #
 # RED verification (see tests/README.md). SUT must name a copy whose
 # `../../../tools/` resolves, because the script calls resolve-default-branch.sh
@@ -73,6 +74,10 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
+# watch mode は上限付きポーリングなので、回数は固定し時計は測らない。
+# sleep はこのファイル全体で即時化する（tests/README.md, stub_sleep_instant）。
+stub_sleep_instant
+
 BRANCH=188-watch-claude-review-tests
 # Deliberately not `master` or `main`: the script filters on the default branch
 # it read from origin's HEAD, and a regression that dropped that read and
@@ -96,6 +101,23 @@ MIXED="${FIXTURES}/claude-runs-mixed.json"
 DEEP="${FIXTURES}/claude-runs-deep.json"
 LISTING_FIELDS=databaseId,conclusion,createdAt,displayTitle,headBranch
 
+# gh run view --json status,conclusion の答え。1 object ずつなので fixture
+# ファイルにはせず、ここで書く。
+VIEW_QUEUED="${HARNESS_TMP}/run-queued.json"
+VIEW_WAITING="${HARNESS_TMP}/run-waiting.json"
+VIEW_COMPLETED_OK="${HARNESS_TMP}/run-completed-ok.json"
+VIEW_COMPLETED_FAILED="${HARNESS_TMP}/run-completed-failed.json"
+VIEW_COMPLETED_SKIPPED="${HARNESS_TMP}/run-completed-skipped.json"
+VIEW_COMPLETED_BARE="${HARNESS_TMP}/run-completed-bare.json"
+VIEW_TWO_DOCUMENTS="${HARNESS_TMP}/run-two-documents.json"
+printf '{"conclusion":"","status":"queued"}\n' >"$VIEW_QUEUED"
+printf '{"conclusion":"","status":"waiting"}\n' >"$VIEW_WAITING"
+printf '{"conclusion":"success","status":"completed"}\n' >"$VIEW_COMPLETED_OK"
+printf '{"conclusion":"failure","status":"completed"}\n' >"$VIEW_COMPLETED_FAILED"
+printf '{"conclusion":"skipped","status":"completed"}\n' >"$VIEW_COMPLETED_SKIPPED"
+printf '{"conclusion":"","status":"completed"}\n' >"$VIEW_COMPLETED_BARE"
+printf '{"conclusion":"success","status":"completed"}\n{}\n' >"$VIEW_TWO_DOCUMENTS"
+
 failed=0
 total=0
 
@@ -110,9 +132,12 @@ stub_listing() {
     "--workflow=${WORKFLOW_FILE}" --limit "$limit" --json "$LISTING_FIELDS" <"$body"
 }
 
-# stub_watch <repo> <exit-status> <body-file> -- the single call watch mode makes
-stub_watch() {
-  gh_stub_response '*' "$2" run watch -R "$1" "$RUN_ID" --exit-status <"$3"
+# stub_view <repo> <index|*> <exit-status> <body-file> -- watch mode の 1 ポーリング。
+# body は gh の stdout そのもの（script 側の jq が読む。script は --jq を渡さない）。
+stub_view() {
+  local repo="$1" idx="$2" status="$3" body="$4"
+  gh_stub_response "$idx" "$status" run view -R "$repo" "$RUN_ID" \
+    --json status,conclusion <"$body"
 }
 
 # repo_with_workflow <name> <kind> -- a real repository whose root holds the
@@ -351,29 +376,92 @@ assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.e
 
 # ---- watch mode ----------------------------------------------------------
 #
-# One call, and the script's status is that call's status. The body is asserted
-# too: `gh run watch` writes the progress report a person reads, and the script
-# passes it through rather than swallowing or reformatting it.
+# Watch mode's stdout is empty: the caller reads only the exit status. The
+# script polls `gh run view --json status,conclusion` itself, so these rows stub
+# the JSON body it parses rather than a status the stub scripted.
 
-WATCH_OK="${HARNESS_TMP}/watch-ok"
-WATCH_FAIL="${HARNESS_TMP}/watch-fail"
-printf 'claude review run succeeded\n' >"$WATCH_OK"
-printf 'claude review run failed\n' >"$WATCH_FAIL"
-
+# 完了した run の conclusion が exit status になる。watch mode の stdout は
+# 空: 呼び手が読むのは exit status だけ。
 row_start
-stub_watch acme/claude-ok 0 "$WATCH_OK"
+stub_view acme/claude-ok '*' 0 "$VIEW_COMPLETED_OK"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
-assert_row 'watch-succeeds' 0 "$WATCH_OK" 1
+assert_row 'watch-completes-successfully' 0 '-' 1
 
 row_start
-stub_watch acme/claude-other 0 "$WATCH_OK"
+stub_view acme/claude-other '*' 0 "$VIEW_COMPLETED_OK"
 run_in "$REPO_CLAUDE_OTHER" "$BRANCH" "$RUN_ID"
-assert_row 'watch-pins-a-second-origin' 0 "$WATCH_OK" 1
+assert_row 'watch-pins-a-second-origin' 0 '-' 1
 
 row_start
-stub_watch acme/claude-ok 1 "$WATCH_FAIL"
+stub_view acme/claude-ok '*' 0 "$VIEW_COMPLETED_FAILED"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
-assert_row 'watch-fails' 1 "$WATCH_FAIL" 1
+assert_row 'watch-reports-a-failed-conclusion' 1 '-' 1
+tally check_eq 'watch-reports-a-failed-conclusion: names the conclusion' \
+  "claude review run ${RUN_ID} concluded 'failure'" "$(cat "$SUT_STDERR")"
+
+# skipped は workflow の if: が弾いた run。header の契約どおり成功として扱う
+# （この契約はこれまで row で固定されていなかった）。
+row_start
+stub_view acme/claude-ok '*' 0 "$VIEW_COMPLETED_SKIPPED"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-treats-a-skipped-run-as-succeeded' 0 '-' 1
+
+# まだ完了していない status の conclusion は空。そこで打ち切ると、承認待ちの
+# run を「完了して中身なし」と読む。
+row_start
+stub_view acme/claude-ok 1 0 "$VIEW_WAITING"
+stub_view acme/claude-ok 2 0 "$VIEW_COMPLETED_OK"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-waits-through-a-non-completed-status' 0 '-' 2
+tally check_eq 'watch-waits-through-a-non-completed-status: sleeps' 1 "$(sleep_call_count)"
+
+# 判定は最後のポーリングの conclusion。1 回目の waiting を verdict にしない。
+row_start
+stub_view acme/claude-ok 1 0 "$VIEW_WAITING"
+stub_view acme/claude-ok 2 0 "$VIEW_COMPLETED_FAILED"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-reports-the-last-polls-conclusion' 1 '-' 2
+
+# 読めない本文は「まだ」であって「完了」ではない。
+row_start
+stub_view acme/claude-ok 1 0 "$VIEW_TWO_DOCUMENTS"
+stub_view acme/claude-ok 2 0 "$VIEW_COMPLETED_OK"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-ignores-a-body-it-cannot-read' 0 '-' 2
+
+# completed で conclusion が空なら成功ではない。
+row_start
+stub_view acme/claude-ok '*' 0 "$VIEW_COMPLETED_BARE"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-completed-without-a-conclusion' 1 '-' 1
+tally check_eq 'watch-completed-without-a-conclusion: names it' \
+  "claude review run ${RUN_ID} concluded ''" "$(cat "$SUT_STDERR")"
+
+# 上限: 回数を固定する。39 個の隙間は stub_sleep_instant で無料。待ちが上限を
+# 持たないことこそが、これが置き換える欠陥。
+row_start
+stub_view acme/claude-ok '*' 0 "$VIEW_QUEUED"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-stops-at-the-iteration-cap' 1 '-' 40
+tally check_eq 'watch-stops-at-the-iteration-cap: sleeps' 39 "$(sleep_call_count)"
+tally check_eq 'watch-stops-at-the-iteration-cap: names the cap' \
+  "claude review run ${RUN_ID} did not complete within 40 polls at 30s" \
+  "$(cat "$SUT_STDERR")"
+
+# 上限ちょうどのポーリングで完了しても、その conclusion で exit する。
+row_start
+stub_view acme/claude-ok '*' 0 "$VIEW_QUEUED"
+stub_view acme/claude-ok 40 0 "$VIEW_COMPLETED_OK"
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-reads-the-last-polls-conclusion' 0 '-' 40
+
+# 失敗した gh 呼び出しはリトライせず gh の status で即 exit する
+# （tools/poll.sh 経由だと上限までリトライしてしまう）。
+row_start
+stub_view acme/claude-ok '*' 4 /dev/null
+run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"
+assert_row 'watch-view-call-fails-at-once' 4 '-' 1
+tally check_eq 'watch-view-call-fails-at-once: sleeps' 0 "$(sleep_call_count)"
 
 # Availability is checked before the run-id branch is taken, so watch mode
 # cannot be reached in a repository with no @claude workflow.

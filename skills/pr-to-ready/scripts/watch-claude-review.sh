@@ -6,7 +6,24 @@
 # With no run-id: prints the workflow's recent runs as JSON, carrying
 # databaseId, conclusion, createdAt and displayTitle so the caller can match a
 # run to its own request rather than taking the newest and risking a stale one.
-# With a run-id: blocks on that run.
+# With a run-id: polls that run until it completes, at most 40 times 30 s apart.
+#
+# Watch mode polls `gh run view --json status,conclusion` rather than
+# `gh run watch --exit-status`, which blocks until the run finishes: a run left
+# queued behind a pending approval never finishes, so that call is this
+# repository's one unbounded wait.
+#
+# The loop is local rather than tools/poll.sh, for the same reason watch-checks.sh's
+# is: poll.sh's predicate is the check command's exit status and every non-zero
+# means "not yet" to it, so a `gh run view` that fails — a run id that is gone,
+# or not this repository's — would be retried to the cap instead of stopping at
+# once with gh's own status.
+#
+# A run is waited on while its status is not "completed". queued, in_progress,
+# requested, waiting and pending all keep waiting, and `waiting` is the one an
+# approval gate leaves behind: it is not a verdict, so it waits to the cap like
+# the rest. The conclusion is read only once the status is completed, because gh
+# leaves it empty on every other status.
 #
 # The listing covers runs on <branch> and on the default branch, because the
 # trigger decides which one a run is attributed to: a review requested by an
@@ -36,14 +53,17 @@
 #
 # Usage: watch-claude-review.sh <branch> [run-id]
 #
-# Exit: 0 = the listing printed (list mode), or the watched run succeeded (watch mode)
+# Exit: 0 = the listing printed (list mode), or the watched run's conclusion is
+#           "success" or "skipped" (watch mode). Watch mode prints nothing on
+#           stdout: the caller reads only the exit status.
+#       1 = in watch mode the run concluded anything else, or it had not
+#           completed when the iteration cap ran out
 #       2 = usage error
 #       3 = no @claude workflow in this repository. This is the availability
 #           answer and nothing else exits 3, so a caller may skip Claude on it
-#       other = the underlying gh call failed, the origin repository could not be
-#           resolved, or in watch mode the run itself did not succeed: gh run
-#           watch --exit-status returns 1 for a failed run, and any failing gh
-#           call exits with its own status under set -e
+#       other = the underlying gh call failed or the origin repository could not
+#           be resolved: a failing `gh run view` exits at once with gh's own
+#           status, never retried to the cap
 #
 # Only 0, 2, and 3 identify a cause on their own. Treat every other non-zero as
 # "stop and inspect" rather than as a specific answer.
@@ -99,4 +119,45 @@ if [ -z "$RUN_ID" ]; then
   exit 0
 fi
 
-gh run watch -R "$REPO" "$RUN_ID" --exit-status
+# Watch mode の上限: 40 ポーリング × 30 秒 = 19m30s（最後のポーリングの後に
+# sleep は無い）。同じ step の Copilot 待ち（watch-copilot-review.sh）と同じ値。
+MAX_ITER=40
+INTERVAL=30
+
+for i in $(seq 1 "$MAX_ITER"); do
+  # 失敗した gh 呼び出しはリトライしない: gh が答えられない run id（消えた、
+  # このリポジトリのものでない）を指しており、次のポーリングも同じ間違いを
+  # 聞くだけ。status をそのまま呼び手に渡すのが、tools/poll.sh に載せない理由
+  # そのもの（poll.sh の述語は check コマンドの exit status で、非 0 は全部
+  # 「まだ」なので上限までリトライする）。
+  gh_status=0
+  view="$(gh run view -R "$REPO" "$RUN_ID" --json status,conclusion)" || gh_status=$?
+  if [ "$gh_status" -ne 0 ]; then
+    exit "$gh_status"
+  fi
+
+  # slurp と length == 1 は watch-checks.sh と同じ理由: jq はトップレベルの値の
+  # ストリームを読むので、読めない本文は「何も答えなかった」に落とす。答えが
+  # 無いのは未完了であって完了ではない。
+  run_status="$(printf '%s' "$view" |
+    jq -r -s 'select(length == 1) | .[0].status | select(type == "string")' 2>/dev/null)" || run_status=""
+
+  if [ "$run_status" = completed ]; then
+    conclusion="$(printf '%s' "$view" |
+      jq -r -s 'select(length == 1) | .[0].conclusion // ""' 2>/dev/null)" || conclusion=""
+    case "$conclusion" in
+      success | skipped) exit 0 ;;
+      *)
+        echo "claude review run ${RUN_ID} concluded '${conclusion}'" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  if [ "$i" -lt "$MAX_ITER" ]; then
+    sleep "$INTERVAL"
+  fi
+done
+
+echo "claude review run ${RUN_ID} did not complete within ${MAX_ITER} polls at ${INTERVAL}s" >&2
+exit 1
