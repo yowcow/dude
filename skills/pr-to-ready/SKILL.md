@@ -137,7 +137,7 @@ Then request each name in the set:
   - That trigger comment is the reference for a Claude-requested round. Record its id/URL at post time for the Request identity row.
 - **Copilot**: only if Copilot is in the set. Record the baseline first, then request.
   - Baseline: `<skill-dir>/scripts/list-copilot-reviews.sh <owner> <repo> <pr-number>`, saving its output unmodified as the `<baseline-file>` that 2-2 passes to `watch-copilot-review.sh`, **before** requesting anything (`gh-mechanics.md`'s "## Recording the Copilot baseline").
-  - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The all-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
+  - Re-request: a re-request on the same SHA still records a fresh baseline and still requests, except once a measured full Clean held on that SHA — there, do not re-request on it. The blocking-reject row-6 loop and other re-entries that never measured full Clean still go back to 2-1.
   - Request: `<skill-dir>/scripts/request-copilot-review.sh <owner> <repo> <pr-number>` — exit 0 means requested, exit 3 means unavailable here (skip Copilot), exit 4 means the request couldn't be read back (stop), anything else also stops. On exit 0 only, record that same round-request SHA for the Request identity row.
 - **requesting-code-review**: only if requesting-code-review is in the set. Call `vet-code` once for the round, handing it the round's scope (the range settled above, as a committed range), the PR body as what was implemented, the requirements, and the verdict record; call it right after the selected Claude/Copilot requests are sent, never after their wait.
 
@@ -170,7 +170,7 @@ Delegate collection to a subagent:
 - Hand over every `needs-user` finding with its location and why the worker put the decision to a person, and the round's other verdicts with it — each `accept` with its fix, each `reject` with its reason — so none of it has to be worked out again.
 - Applying those first is the obvious alternative, and it is the wrong one: the person's answer can move what the other fixes rest on, while holding them costs nothing, since a worker's return is advisory text and an unapplied fix is still in hand.
 
-A `vet-code` finding and an external finding of the same round that make the same claim about the same place are one finding. Where their verdicts agree and it is blocking, its fix is applied once. Where they disagree, the round takes the **third terminal state** with the same hand-over as a `needs-user`, both verdicts included: this skill re-judges neither.
+A `vet-code` finding and an external finding of the same round that make the same claim about the same place are one finding. Where their verdicts agree it is recorded once, and where it is blocking its fix is applied once. Where they disagree, the round takes the **third terminal state** with the same hand-over as a `needs-user`, both verdicts included: this skill re-judges neither.
 
 Otherwise branch on this round's findings.
 
@@ -231,7 +231,7 @@ No line the skill writes into the verdict comment or the review comment carries 
 **Clean** per `using-dude`'s **Loop convergence** loop-clean holds when all six of these are true **on the same commit** — the tip of `<branch>` at the moment you judge, recorded as that judgment's measured-tip SHA:
 
 1. the checks came back clean in Step 1's sense — exit 0 with every conclusion passing, or the exit 5 that says this repository runs none;
-2. this round's Claude run leaves no blocking finding — every comment on it is "looks good"/LGTM-equivalent, or a Minor this round recorded. Do not re-read comments from an earlier round this run already resolved. A Claude finding that carries no severity at all is blocking;
+2. this round's Claude run leaves no blocking finding — every comment on it is "looks good"/LGTM-equivalent, or a Minor in this run's verdict record. Do not re-read comments from an earlier round this run already resolved. A Claude finding that carries no severity at all is blocking;
 3. this round's Copilot review leaves no blocking or unrecorded finding:
    - `<skill-dir>/scripts/list-unresolved-threads.sh <owner> <repo> <pr-number>` **exits 0 with empty stdout**, and `<skill-dir>/scripts/list-suppressed-comments.sh <owner> <repo> <pr-number>` **exits 0 with every `path:line` entry it prints covered by a `review` and `location` pair in this run's verdict record** (empty stdout is covered trivially). Its **exit 4** says Copilot's block stopped parsing, which is the **third terminal state**, never another round.
    - The two sides are read differently because Copilot's findings arrive on two paths and neither script sees the other's: a comment listing carries no resolution state, and a finding Copilot suppressed never became a thread at all. So coverage by the recorded pair, not an "addressed" reject, is what the suppressed side requires — a rejected suppressed finding stays in the listing and its own pair covers it, while an entry with no pair, or with a pair naming another review's id, fails the condition. A rejected thread, by contrast, is replied to and resolved, and so drops out of the thread listing.

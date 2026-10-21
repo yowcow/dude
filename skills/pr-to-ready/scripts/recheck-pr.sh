@@ -38,8 +38,9 @@
 # compare, an entry recorded under an older review reads as unknown and the
 # re-confirmation flips to unmet on a PR nobody changed. The listing's id is
 # split off by parameter expansion, as ./list-suppressed-comments.sh does,
-# rather than by a needless `head` in the pipeline; the first newline is where
-# the id line ends and the block begins. The call site's `{ ...; } ||
+# rather than by a needless `head` in the pipeline; the entry loop below reads
+# what follows the id line and the `suppressed` count line, which is the `+3`.
+# The call site's `{ ...; } ||
 # verdict=unmet` already suppresses errexit for this body, so the choice is
 # consistency with the producer, not a guard against `head`'s SIGPIPE.
 #
