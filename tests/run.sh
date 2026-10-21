@@ -123,8 +123,8 @@ if [ -n "${SUT:-}" ]; then
   # needs no execute bit, so requiring one would refuse a legitimate run.
   #
   # The message names readability alone because `-r` is false for a path that
-  # isn't there as well, so one wording stays true for all four refusals —
-  # missing, directory, empty, unreadable.
+  # isn't there as well, so one wording stays true for all four of these
+  # refusals — missing, directory, empty, unreadable.
   if [ ! -f "$SUT" ] || [ ! -s "$SUT" ] || [ ! -r "$SUT" ]; then
     printf 'run.sh: SUT does not name a readable non-empty file: %s\n' "$SUT" >&2
     exit 1

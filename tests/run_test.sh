@@ -75,22 +75,16 @@ assert_refused() {
   run_case "$child_sut"
   if ! check_eq "${label}: exit" 1 "$SUT_STATUS"; then fails=1; fi
   if ! check_eq "${label}: no test file ran" 'did-not-run' "$(marker_state)"; then fails=1; fi
-  if ! grep -qF -- "$want_message" "$SUT_STDERR"; then
-    printf 'FAIL %s: stderr does not carry the refusal message [%s]: %s\n' \
-      "$label" "$want_message" "$(head -c 400 "$SUT_STDERR")"
-    fails=1
-  fi
-  if ! grep -qF -- "$child_sut" "$SUT_STDERR"; then
-    printf 'FAIL %s: stderr does not name the path: %s\n' "$label" "$(head -c 400 "$SUT_STDERR")"
+  if ! grep -qF -- "${want_message}: ${child_sut}" "$SUT_STDERR"; then
+    printf 'FAIL %s: stderr does not carry the refusal message [%s] naming the path [%s]: %s\n' \
+      "$label" "$want_message" "$child_sut" "$(head -c 400 "$SUT_STDERR")"
     fails=1
   fi
   if [ "$fails" -ne 0 ]; then failed=$((failed + 1)); fi
 }
 
-# assert_accepted <label> <child-sut> -- the guard must not cost the mechanism
-# it protects: the runner exits 0, the fixture ran, and the override was
-# reported on stdout. Advances total once and failed once, so an acceptance
-# case counts exactly as the block it replaces.
+# assert_accepted <label> <child-sut> -- the runner exits 0, the fixture ran,
+# and the override was reported on stdout.
 assert_accepted() {
   local label="$1" child_sut="$2" fails=0
   total=$((total + 1))
@@ -248,10 +242,9 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # `not ok 5/5`, and `SUT=README.md tests/run.sh tests/tools/poll_test.sh`
 # `not ok 7/11`, both indistinguishable from a successful RED verification.
 #
-# The guard reads the first line because a script is identified by its shebang
-# — the same rule tests/lint.sh selects by — while prose can be syntactically
-# valid bash (`This is prose without parentheses.` parses), so `bash -n` would
-# accept some READMEs and is not a substitute.
+# The fixture is the README because prose can be syntactically valid bash
+# (`This is prose without parentheses.` parses), so `bash -n` would accept some
+# READMEs and is not a substitute.
 not_script="${REPO_ROOT}/README.md"
 assert_refused 'non-script SUT' "$not_script" 'SUT does not name a script'
 
