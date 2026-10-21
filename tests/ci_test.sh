@@ -17,7 +17,10 @@ job_block() {
 }
 fixed_manifest="$(job_block 'manifest')"
 latest_manifest="$(job_block 'manifest-latest')"
-gated_blocks="$(job_block 'lint|test')"
+all_jobs="$(sed -n '/^jobs:$/,$p' "$workflow")"
+has_make_step() {
+  grep -Eq "^[[:space:]]*(run:[[:space:]]+)?make $2\$" <<<"$1"
+}
 bash32_job="$(job_block 'test-bash32')"
 bash32_sha='3fa9daf85ebf35068f090ce51283ddeeb3c75eb5bc70b1a4a7cb05868bfe06a4'
 
@@ -63,20 +66,33 @@ if ! grep -Fq "github.event_name != 'schedule'" <<<"$fixed_manifest"; then
   printf 'FAIL: fixed manifest must not run on schedules\n' >&2
   failed=1
 fi
-uses_lines="$(grep -cE '^ *(- )?uses:' <<<"$gated_blocks" || true)"
-pinned_lines="$(grep -cE 'uses: [^[:space:]]+@[0-9a-f]{40} # ' <<<"$gated_blocks" || true)"
+uses_lines="$(grep -cE '^ *(- )?uses:' <<<"$all_jobs" || true)"
+pinned_lines="$(grep -cE 'uses: [^[:space:]]+@[0-9a-f]{40} # ' <<<"$all_jobs" || true)"
+job_count="$(grep -cE '^  [A-Za-z0-9_-]+:$' <<<"$all_jobs" || true)"
 if [ "$uses_lines" -eq 0 ]; then
-  printf 'FAIL: lint/test jobs declare no uses: lines — the selection is broken\n' >&2
+  printf 'FAIL: workflow declares no uses: lines — the selection is broken\n' >&2
+  failed=1
+fi
+if [ "$uses_lines" -lt "$job_count" ]; then
+  printf 'FAIL: every job needs a uses: checkout (uses=%s jobs=%s)\n' "$uses_lines" "$job_count" >&2
   failed=1
 fi
 if [ "$uses_lines" != "$pinned_lines" ]; then
-  printf 'FAIL: lint/test uses: must be SHA-pinned with tag comment (uses=%s pinned=%s)\n' "$uses_lines" "$pinned_lines" >&2
+  printf 'FAIL: every job uses: must be SHA-pinned with tag comment (uses=%s pinned=%s)\n' "$uses_lines" "$pinned_lines" >&2
   failed=1
 fi
-if grep -E -q 'uses: [^[:space:]]+@(v[0-9]|main|master|latest)' <<<"$gated_blocks"; then
-  printf 'FAIL: lint/test uses: must not float on a mutable tag\n' >&2
+if grep -E -q 'uses: [^[:space:]]+@(v[0-9]|main|master|latest)' <<<"$all_jobs"; then
+  printf 'FAIL: every job uses: must not float on a mutable tag\n' >&2
   failed=1
 fi
+for pair in 'lint:lint' 'test:test' 'manifest:manifest' 'manifest-latest:manifest'; do
+  job="${pair%%:*}"
+  target="${pair##*:}"
+  if ! has_make_step "$(job_block "$job")" "$target"; then
+    printf 'FAIL: job %s runs make %s\n' "$job" "$target" >&2
+    failed=1
+  fi
+done
 
 if [ -z "$bash32_job" ]; then
   printf 'FAIL: no test-bash32 job — the selector is broken or the job is gone\n' >&2
