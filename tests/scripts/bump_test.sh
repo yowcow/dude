@@ -195,8 +195,9 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # Every manifest that carries a version is bumped; the versionless mirror is not.
 total=$((total + 1))
 fails_here=0
-for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .codex-plugin/marketplace.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json; do
-  if [ -f "${REPO_ROOT}/$f" ] && grep -q '"version"' "${REPO_ROOT}/$f"; then
+for path in "${REPO_ROOT}"/.*-plugin/*.json "${REPO_ROOT}/package.json"; do
+  f="${path#"${REPO_ROOT}"/}"
+  if [ -f "$path" ] && grep -q '"version"' "$path"; then
     if ! printf '%s\n' "$bump_list" | grep -qxF "$f"; then
       printf 'FAIL bump list lacks %s, which carries a version\n' "$f"
       fails_here=1

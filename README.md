@@ -190,7 +190,7 @@ six places: `.claude-plugin/plugin.json`, the plugin entry in
 `.muse-plugin/plugin.json`, the plugin entry in
 `.muse-plugin/marketplace.json`, and `package.json`. `.agents/plugins/marketplace.json` is a versionless mirror:
 its schema carries no `version`, so `bump` and the version check leave it
-alone (syntax-checked only). What each runtime does with one:
+alone. What each runtime does with one:
 
 | Runtime     | Requires `version`?        | Uses it to decide an update?                                   |
 | ----------- | -------------------------- | -------------------------------------------------------------- |
