@@ -209,6 +209,7 @@ if ! check_eq 'default-poll-bound: exit' 1 "$SUT_STATUS"; then default_fails=1; 
 if ! check_eq 'default-poll-bound: gh calls' 60 "$(gh_call_count)"; then default_fails=1; fi
 if ! check_eq 'default-poll-bound: sleeps' 59 "$(sleep_call_count)"; then default_fails=1; fi
 if ! check_eq 'default-poll-bound: sleep duration' 20 "$(sort -u "${GH_STUB_DIR}/sleeps")"; then default_fails=1; fi
+if ! check_no_violations 'default-poll-bound: argv'; then default_fails=1; fi
 if [ "$default_fails" -ne 0 ]; then
   failed=$((failed + 1))
   printf '  stderr: %s\n' "$(head -c 400 "$SUT_STDERR")"
