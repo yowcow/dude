@@ -51,8 +51,15 @@ fi
 # returns, so the readback is retried over a few seconds — the same kind of
 # bounded re-read as gh-mechanics.md's on `mergeable`, and nothing like 2-2's
 # wait for the review itself.
-READBACK_TRIES=5
-READBACK_INTERVAL=2
+#
+# The budget is shared by the two forms rather than given to each: a readback is
+# the whole issue timeline, paged, and two five-read budgets read it eleven
+# times per request, eight of them after a two-second sleep (yowcow/dude#686).
+# What the reads cost is bounded with them: 2 reads over 5s for the flag, 3
+# over 10s for the REST form.
+FLAG_READBACK_TRIES=2
+REST_READBACK_TRIES=3
+READBACK_INTERVAL=5
 
 # Sets COUNT to the number of Copilot review requests on the timeline. A
 # timeline that cannot be read exits 4 rather than answering 0 — which is why
@@ -81,15 +88,16 @@ count_requests() {
   fi
 }
 
-# True once the count passes the pre-request baseline.
+# `landed <tries>`: true once the count passes the pre-request baseline, within
+# that many timeline reads.
 landed() {
-  local try=1
+  local tries="$1" try=1
   while :; do
     count_requests
     if [ "$COUNT" -gt "$BASELINE" ]; then
       return 0
     fi
-    if [ "$try" -ge "$READBACK_TRIES" ]; then
+    if [ "$try" -ge "$tries" ]; then
       return 1
     fi
     try=$((try + 1))
@@ -101,13 +109,13 @@ count_requests
 BASELINE="$COUNT"
 
 gh pr edit "$PR" --repo "$OWNER/$REPO" --add-reviewer "@copilot" >/dev/null || true
-if landed; then
+if landed "$FLAG_READBACK_TRIES"; then
   exit 0
 fi
 
 gh api --method POST "repos/$OWNER/$REPO/pulls/$PR/requested_reviewers" \
   -f "reviewers[]=copilot-pull-request-reviewer[bot]" >/dev/null || true
-if landed; then
+if landed "$REST_READBACK_TRIES"; then
   exit 0
 fi
 
