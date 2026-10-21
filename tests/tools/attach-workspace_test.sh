@@ -207,7 +207,7 @@ tally check_local_branch 'remote-only-is-attached: the branch now exists locally
 tally check_eq 'remote-only-is-attached: the branch tracks the remote' 'origin/task' \
   "$(git -C "$W" rev-parse --abbrev-ref 'task@{upstream}')"
 tally check_eq 'remote-only-is-attached: a clone that already covers the branch is left alone' \
-  '+refs/heads/*:refs/remotes/origin/*' "$(git -C "$W" config --get remote.origin.fetch)"
+  '+refs/heads/*:refs/remotes/origin/*' "$(git -C "$W" config --get-all remote.origin.fetch)"
 
 # ---- ATTACHED: the branch exists only on the remote, narrowed clone ----
 #
