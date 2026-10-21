@@ -90,18 +90,35 @@ if [ -z "$POSTED" ]; then
   exit 0
 fi
 
-VERDICT="$(bash "${TOOLS}/facts.sh" check "$FACTS" \
+if ! VERDICT="$(bash "${TOOLS}/facts.sh" check "$FACTS" \
   "repo=${REPO}" "pr.number=${PR}" "review.id=${POSTED}" "review.commit=${HEAD}" \
-  'review.state:PENDING,APPROVED,COMMENTED' review.body-file review.url)"
-if [ "$VERDICT" != OK ]; then
-  echo "$VERDICT"
+  'review.state:PENDING,APPROVED,COMMENTED' review.body-file review.url)"; then
+  echo "STOP facts-read-failed"
   exit 0
 fi
+case "$VERDICT" in
+  OK) ;;
+  "NEED "?* | "STOP "?*) echo "$VERDICT" ;;
+  *) echo "STOP facts-answer-malformed" ;;
+esac
+[ "$VERDICT" = OK ] || exit 0
 
-fact() { bash "${TOOLS}/facts.sh" get "$FACTS" "$1"; }
-STATE="$(fact review.state)"
+# fact <var> <name>: assign the value into the caller's variable. The value is
+# never printed: called as $(fact ...) the exit 0 above would land in a
+# subshell, leaving the caller running and reading "STOP ..." back as data.
+fact() {
+  local value
+  if ! value="$(bash "${TOOLS}/facts.sh" get "$FACTS" "$2")"; then
+    echo "STOP facts-read-failed"
+    exit 0
+  fi
+  printf -v "$1" '%s' "$value"
+}
+
+fact STATE review.state
+fact BODY_FILE review.body-file
 BODY="$(jq -j '.body' "$PAYLOAD_FILE")"
-if ! READ_BACK="$(cat -- "$(fact review.body-file)")"; then
+if ! READ_BACK="$(cat -- "$BODY_FILE")"; then
   echo "STOP body-unreadable"
   exit 0
 fi
@@ -113,4 +130,5 @@ if [ "$STATE" != "$WANT" ] || [ "$BODY" != "$READ_BACK" ]; then
   fi
   exit 0
 fi
-echo "POSTED ${STATE} $(fact review.url)"
+fact URL review.url
+echo "POSTED ${STATE} ${URL}"

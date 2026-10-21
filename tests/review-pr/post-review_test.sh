@@ -4,7 +4,8 @@
 # write) and the read-back after it (the review record, read by its id, must
 # be anchored to the reviewed head, in the state the choice asks for, with the
 # body the payload carried). The script reads facts and origin only: every row
-# asserts 0 gh calls, and stubs none.
+# asserts 0 gh calls, and only the three facts-capture rows at the end stub a
+# sibling (facts.sh).
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show a7f4396:skills/review-pr/scripts/post-review.sh`) 25 of 35 rows
@@ -18,6 +19,9 @@
 # failed'; dropping the body compare fails 'submitted with the body dropped',
 # 'draft only, body not carried' and 'body read back differs'; comparing the
 # bodies byte-exact (`cmp`) fails 'body read back with a trailing newline'.
+#
+# The three facts-capture rows at the end are RED against `master`'s script in
+# a full tree beside a tools/ copy: `not ok 3/39`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -221,5 +225,42 @@ assert_row 'body read back differs' 0 'STOP review-state-mismatch\n' 0
 row_start
 run_in "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(rb APPROVED "$HEAD_SHA" acme/widgets 777 "$BODY_NL")"
 assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n" 0
+
+# ---- facts.sh that stops instead of answering ---------------------------
+#
+# The read-back's self-check and every read are captured, so an exit that is
+# not relayed becomes empty stdout and a non-zero status. The copy's facts.sh
+# is replaced for these three rows only. The script reaches tools/ through
+# SCRIPT_DIR, so the copy keeps the skills/<skill>/scripts/ shape beside a
+# tools/ tree.
+CONTRACT="${HARNESS_TMP}/facts-contract"
+mkdir -p "${CONTRACT}/skills/review-pr/scripts"
+cp -R "${REPO_ROOT}/tools" "${CONTRACT}/tools"
+cp "$SUT" "${CONTRACT}/skills/review-pr/scripts/post-review.sh"
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/facts.sh"; }
+
+# run_contract <work-dir> <argv...> -- run_in, for the copy's script.
+run_contract() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${CONTRACT}/skills/review-pr/scripts/post-review.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+facts_stub 'exit 1'
+run_contract "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-abort-is-reported' 0 'STOP facts-read-failed\n' 0
+
+row_start
+facts_stub 'echo WHAT'
+run_contract "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-answer-malformed-is-reported' 0 'STOP facts-answer-malformed\n' 0
+
+row_start
+facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
+run_contract "$WORK" 12 "$HEAD_SHA" APPROVE "$PAYLOAD" --posted 777 --facts "$(facts_file </dev/null)"
+assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
 harness_exit "$failed" "$total"

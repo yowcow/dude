@@ -53,9 +53,15 @@ file format are in `facts.md`.
 - The caller reads every named fact, writes the file, and calls the script
   again with `--facts <file>`. A fact it could not read is written with an
   empty value, never guessed; the check stops on it.
-- Any line `check` prints other than `OK` is relayed verbatim and the script
-  exits 0. This is the one slug that comes out of a command substitution:
+- Any `NEED …` or `STOP …` line `check` prints is relayed verbatim and the
+  script exits 0. This is the one slug that comes out of a command substitution:
   the relayed line is the script's answer, never data it goes on to use.
+- A `check` or `get` that exits non-zero is the script's own stop, not its
+  caller's: answer `STOP facts-read-failed` and exit 0. A `check` line that is
+  not `OK`, `NEED …` or `STOP …` answers `STOP facts-answer-malformed`.
+- Read with `get` into a variable, never print the value for `$( )`: a
+  function that exits inside a command substitution stops only the subshell,
+  and its `STOP` line is read back as data.
 
 ## Waiting: `WAIT`
 

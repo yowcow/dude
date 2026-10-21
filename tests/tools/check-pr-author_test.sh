@@ -3,7 +3,8 @@
 # the agent's GitHub means acts as. review-code stops on OTHER, so both
 # answers, the NEED that asks for the facts, and each way a read can be wrong
 # get a row. The script reads facts and origin only:
-# every row asserts 0 gh calls, and stubs none.
+# every row asserts 0 gh calls, and only the three facts-capture rows at the
+# end stub a sibling (facts.sh).
 #
 # RED verification (see tests/README.md): against the pre-port script
 # (`git show master:tools/check-pr-author.sh`) the no-facts row fails on an
@@ -12,6 +13,9 @@
 # Mutants measured in a copy under `mktemp -d` (siblings beside it): inverting the comparison fails 'own pr' and "someone else's
 # pr"; dropping `pr.number=` from the check fails 'pr number mismatch' and
 # 'no facts: NEED pins repo and pr'.
+#
+# The three facts-capture rows at the end are RED against `master`'s script in
+# a full tools/ tree: `not ok 3/16`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -101,5 +105,39 @@ assert_row '--facts without a file' 2 '' 0
 row_start
 run_in "$WORK" 12 --state x
 assert_row 'unknown option' 2 '' 0
+
+# ---- facts.sh that stops instead of answering ---------------------------
+#
+# The self-check and both reads are captured, so an exit that is not relayed
+# becomes empty stdout and a non-zero status. The copy's facts.sh is replaced
+# for these three rows only.
+CONTRACT="${HARNESS_TMP}/tools-contract"
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/check-pr-author.sh"
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/facts.sh"; }
+
+# run_contract <work-dir> <argv...> -- run_in, for the copy's script.
+run_contract() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${CONTRACT}/check-pr-author.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+facts_stub 'exit 1'
+run_contract "$WORK" 12 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-abort-is-reported' 0 'STOP facts-read-failed\n' 0
+
+row_start
+facts_stub 'echo WHAT'
+run_contract "$WORK" 12 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-answer-malformed-is-reported' 0 'STOP facts-answer-malformed\n' 0
+
+row_start
+facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
+run_contract "$WORK" 12 --facts "$(facts_file </dev/null)"
+assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
 harness_exit "$failed" "$total"

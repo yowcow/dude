@@ -9,9 +9,9 @@
 # resolve-pr-base_test.sh documents for the same reason. Each row that reaches
 # the no-PR path with the real reader therefore builds a real bare repository
 # to play the remote and a real work repository cloned from it, both under
-# $HARNESS_TMP and both offline. The four rows at the end stub the reader, the
-# default-branch lookup and the fetch in a copy of tools/, and build no
-# repository.
+# $HARNESS_TMP and both offline. The seven rows at the end stub the reader,
+# the default-branch lookup, the fetch and facts.sh in a copy of tools/, and
+# build no repository.
 #
 # The PR shape reads the PR record's base oid as a fact (pr_facts below), so
 # its rows make no `gh` call at all; the gh call count is 0 throughout.
@@ -20,7 +20,7 @@
 # below), so its trailer rows make no `gh pr list` call; the rows without a
 # trailer pass no facts, which is what shows that path asks for nothing. Its
 # default branch is the remote's own HEAD (resolve-default-branch.sh) in every
-# row but the four stubbed ones at the end; no row stubs `gh`.
+# row but the seven stubbed ones at the end; no row stubs `gh`.
 #
 # RED verification (see tests/README.md). The reader guard this file's last
 # rows pin is RED the ordinary way -- the recipe and the measured count are in
@@ -37,7 +37,7 @@
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
 # every file the mutant's row needs in place -- in those rows a lone copy of
 # this script answers `STOP ask-default-branch` (or fails outright) instead,
-# which pins nothing about the mutation. The four stubbed rows at the end are
+# which pins nothing about the mutation. The stubbed rows at the end are
 # the exception: they copy the SUT into a tools/ tree that already holds every
 # sibling, so a lone copy is enough for those. Eight were removed; the one that
 # is only partly observable is recorded as such below, rather than counted as
@@ -107,6 +107,8 @@
 #   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
 #   that holds every sibling -- the same tree records 1-3 and 5-8 need -- and
 #   only those four rows and their two stderr tallies fail: `not ok 6/39`.
+#   The three facts-capture rows at the end are RED the same way, against
+#   `master`'s script in a full tools/ tree: `not ok 3/42`.
 #   Measured: the aborted reader exits 1 with empty stdout, and the answers
 #   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
 #   answers STOP fetch-failed, with bash's `FETCH_SPEC: unbound variable`
@@ -583,5 +585,37 @@ row_start
 reader 'true'
 run_sut bash "${CONTRACT}/resolve-range.sh"
 assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+
+# ---- facts.sh that stops instead of answering ---------------------------
+#
+# Both the self-check and the read are captured, so an exit that is not
+# relayed becomes empty stdout and a non-zero status. The PR shape is used
+# because its first fact read is the one under test; the copy's facts.sh is
+# replaced for these three rows only.
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/facts.sh"; }
+
+# run_contract <work-dir> <argv...> -- run_in, for the copy's script.
+run_contract() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${CONTRACT}/resolve-range.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+facts_stub 'exit 1'
+run_contract "$PRWORK" 7 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-abort-is-reported' 0 'STOP facts-read-failed\n' 0
+
+row_start
+facts_stub 'echo WHAT'
+run_contract "$PRWORK" 7 --facts "$(facts_file </dev/null)"
+assert_row 'facts-check-answer-malformed-is-reported' 0 'STOP facts-answer-malformed\n' 0
+
+row_start
+facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
+run_contract "$PRWORK" 7 --facts "$(facts_file </dev/null)"
+assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
 harness_exit "$failed" "$total"
