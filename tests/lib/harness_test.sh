@@ -19,12 +19,15 @@
 # charged to the script under test. And the payload of an `--input -` call must
 # be recorded, with its absence its own failure distinct from a byte mismatch —
 # without it, `review-pr`'s `post-review.sh` stdin-piped payload is
-# unobservable, since it never reaches the argv the stub matches on.
+# unobservable, since it never reaches the argv the stub matches on. And a file
+# whose tally is zero must fail rather than print `ok 0/0`: an emptied row list
+# is otherwise indistinguishable from a file that ran every row.
 #
-# The eleven numbered blocks below run in that order, matching the numbered list
-# in tests/README.md. The blocks after them cover the other two pieces of
-# machinery the suite rests on: the disposable git repository helper and the
-# `sleep` stub.
+# The numbered blocks below run in that order; the numbered list in
+# tests/README.md describes the same properties. The unnumbered blocks cover the
+# rest of the machinery the suite rests on: the `facts_file` fixture,
+# `assert_row`'s required fourth argument, the disposable git repository helper
+# and the `sleep` stub.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -490,7 +493,7 @@ git -C "$clone_work" merge-base --is-ancestor "$blob_sha" "$(git -C "$clone_work
 if ! check_eq 'gitrepo: is-ancestor on a blob is neither verdict' '128' "$blob_status"; then blob_fails=1; fi
 if [ "$blob_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# --- property 12: a fact fixture is the bytes given, in a file of its own -----
+# --- a fact fixture is the bytes given, in a file of its own ------------------
 #
 # Scripts on the facts contract read GitHub facts from a file the agent wrote,
 # so a fixture is that file. Two fixtures in one row must not share a path: a
@@ -520,5 +523,41 @@ case "$ff_one" in
     ;;
 esac
 if [ "$ff_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- property 12: a tally of zero is a failure, not a green -------------------
+# `ok 0/0` is the shape a file has after its row list is emptied: exit 0, and
+# nothing distinguishes it from a file that ran its rows except the count. The
+# coverage gate's `-s` accepts such a file as coverage, so the count has to be
+# the loud case here.
+total=$((total + 1))
+he_fails=0
+he_status=0
+he_out="$(harness_exit 0 0 2>&1)" || he_status=$?
+if ! check_eq 'empty tally: exit' 1 "$he_status"; then he_fails=1; fi
+if ! check_eq 'empty tally: output' \
+  'not ok 0/0 harness_test.sh: no assertion ran — the file is green without testing anything' "$he_out"; then he_fails=1; fi
+he_status=0
+he_out="$(harness_exit 0 3 2>&1)" || he_status=$?
+if ! check_eq 'non-empty tally: exit' 0 "$he_status"; then he_fails=1; fi
+if ! check_eq 'non-empty tally: output' 'ok 3/3 harness_test.sh' "$he_out"; then he_fails=1; fi
+if [ "$he_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- assert_row: the fourth argument is required, not defaulted ---------------
+# A defaulted count turns a dropped argument into a silently skipped gh-call
+# assertion. Probed in its own process: a three-argument call aborts the file
+# before any row could observe it, and that abort is the mechanism.
+total=$((total + 1))
+ar_fails=0
+ar_status=0
+ar_out="$( ( assert_row 'dropped-calls-argument' 0 '' ) 2>&1 )" || ar_status=$?
+if ! check_eq 'required fourth argument: exit' 1 "$ar_status"; then ar_fails=1; fi
+case "$ar_out" in
+  *unbound*) ;;
+  *)
+    printf 'FAIL required fourth argument: %s\n' "$ar_out"
+    ar_fails=1
+    ;;
+esac
+if [ "$ar_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

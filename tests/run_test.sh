@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Tests tests/run.sh itself — specifically that a $SUT that does not name a
-# readable non-empty file stops the run before any test file executes.
+# Tests tests/run.sh itself — that a `$SUT` that does not name a readable
+# non-empty file stops the run before any test file executes (cases 1-5), and
+# that discovery collects a symlinked test file, fails on a dangling link,
+# refuses a symlinked directory, and descends into subdirectories (cases 6-9).
 #
 # Why this file exists: a $SUT pointing at a path that isn't there makes every
 # `run_sut bash "$SUT"` in the selected test file exit 127, so nearly every row
@@ -8,10 +10,11 @@
 # "the test detects the defect" turns a zero-detection-power test into an
 # accepted one (#214, measured while implementing #187).
 #
-# Whether a test actually ran is asserted by the fixture's own marker file, not
-# by parsing the runner's output: a refused run under the guarded runner prints
-# no summary at all, while the pre-guard runner this file is also pointed at for
-# RED verification reaches its usual summary whether or not $SUT was honoured.
+# Whether a test actually ran (cases 1-5) is asserted by the fixture's own
+# marker file, not by parsing the runner's output: a refused run under the
+# guarded runner prints no summary at all, while the pre-guard runner this file
+# is also pointed at for RED verification reaches its usual summary whether or
+# not $SUT was honoured.
 # No one output-parsing rule holds for both, so only the marker separates
 # "refused before running anything" from "ran, whatever the rows did".
 #
@@ -147,5 +150,81 @@ dir_sut="${HARNESS_TMP}/dir-script.sh"
 rm -rf "$dir_sut"
 mkdir -p "$dir_sut"
 assert_refused 'directory SUT' "$dir_sut"
+
+# --- case 6: a symlinked test file is collected and run ----------------------
+# The gate accepts a symlinked test file as coverage (-f follows the link), so a
+# runner that skips it leaves a covered-but-never-run file. The runner under
+# test is copied into a synthetic root because discovery walks its own
+# directory, which is also what makes the pre-fix copy reproduce the hole.
+# `env -u SUT` because a RED run exports SUT for the file under test, and the
+# copy would then refuse two selected files for a reason unrelated to discovery.
+total=$((total + 1))
+fails_here=0
+disc="${HARNESS_TMP}/discovery"
+mkdir -p "$disc"
+cp "$SUT" "$disc/run.sh"
+printf '#!/usr/bin/env bash\nprintf "linked ran\\n"\n' >"$disc/linked-target.sh"
+ln -s "$disc/linked-target.sh" "$disc/linked_test.sh"
+printf '#!/usr/bin/env bash\nprintf "plain ran\\n"\n' >"$disc/plain_test.sh"
+run_sut env -u SUT bash "$disc/run.sh"
+if ! check_eq 'symlinked test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'symlinked test file: both files ran, in sorted order' \
+  'linked ran\nplain ran\nall 2 test files passed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 7: a dangling test-file symlink fails the run ---------------------
+# Collected rather than skipped, it reaches `bash` and exits 127 — loud. The
+# alternative, dropping it, is the same green the case above forbids.
+total=$((total + 1))
+fails_here=0
+dangle="${HARNESS_TMP}/dangling"
+mkdir -p "$dangle"
+cp "$SUT" "$dangle/run.sh"
+ln -s "${dangle}/nowhere.sh" "$dangle/dangling_test.sh"
+run_sut env -u SUT bash "$dangle/run.sh"
+if ! check_eq 'dangling test symlink: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'dangling test symlink: counted as a failed file' \
+  '1 of 1 test files failed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 8: a symlinked directory holding a test file is refused -------------
+# The gate counts a test through a symlinked directory (-f follows the link)
+# while find never descends one, so this file would be covered and never run —
+# the case-6 hole one level up. A plain test is planted too, so the pre-fix
+# runner goes green on it rather than falling into the zero-file refusal.
+total=$((total + 1))
+fails_here=0
+linktree="${HARNESS_TMP}/linked-dir"
+mkdir -p "$linktree/real" "$linktree/tree"
+cp "$SUT" "$linktree/tree/run.sh"
+printf '#!/usr/bin/env bash\nprintf "hidden ran\\n"\n' >"$linktree/real/hidden_test.sh"
+printf '#!/usr/bin/env bash\nprintf "plain ran\\n"\n' >"$linktree/tree/plain_test.sh"
+ln -s "$linktree/real" "$linktree/tree/linked"
+run_sut env -u SUT bash "$linktree/tree/run.sh"
+if ! check_eq 'symlinked test directory: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'symlinked test directory: nothing ran' ''; then fails_here=1; fi
+if ! grep -qF -- "${linktree}/tree/linked is a symlink to a directory" "$SUT_STDERR"; then
+  printf 'FAIL symlinked test directory: stderr does not name the link: %s\n' "$(head -c 400 "$SUT_STDERR")"
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 9: a test file nested under the root is discovered and run ---------
+# Discovery must reach every depth the suite uses, not just the top level. The
+# repository nests 40 of its 47 test files; a discovery that matched one level
+# would run 7 files and report the whole suite green. A plain top-level test is
+# planted too, so a depth-blind runner reports one file rather than none.
+total=$((total + 1))
+fails_here=0
+deep="${HARNESS_TMP}/deep-discovery"
+mkdir -p "$deep/a/b"
+cp "$SUT" "$deep/run.sh"
+printf '#!/usr/bin/env bash\nprintf "deep ran\\n"\n' >"$deep/a/b/deep_test.sh"
+printf '#!/usr/bin/env bash\nprintf "top ran\\n"\n' >"$deep/top_test.sh"
+run_sut env -u SUT bash "$deep/run.sh"
+if ! check_eq 'nested test file: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_bytes 'nested test file: both files ran, in sorted order' \
+  'deep ran\ntop ran\nall 2 test files passed\n'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

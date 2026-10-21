@@ -177,6 +177,9 @@ count_run() {
 # check_bytes: this script prints a multi-line pretty JSON array, and the same
 # expectation written as a printf '%b' string would be one unreadable line. `-`
 # means stdout must be empty.
+#
+# The fourth argument is required, deliberately not defaulted — same reasoning
+# as harness.sh's assert_row.
 assert_row() {
   local name="$1" want_exit="$2" want_file="$3" want_calls="$4" fails=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi
@@ -187,7 +190,7 @@ assert_row() {
     diff -u "$want_file" "$SUT_STDOUT" | head -40 || true
     fails=1
   fi
-  if [ -n "$want_calls" ] && ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
+  if ! check_eq "${name}: gh calls" "$want_calls" "$(gh_call_count)"; then fails=1; fi
   if ! check_no_violations "${name}: argv"; then fails=1; fi
   if [ "$fails" -ne 0 ]; then
     failed=$((failed + 1))
@@ -334,5 +337,27 @@ row_start
 stub_watch 0 "$WATCH_OK"
 run_in "$REPO_NOCLAUDE" "$BRANCH" "$RUN_ID"
 assert_row 'watch-without-claude-workflow' 3 '-' 0
+
+# The fourth argument is required: an empty one must fail the row's gh-call
+# assertion, not skip it. Probed in its own process because a row cannot observe
+# its own failure count: the delta is 0 when the assertion is skipped and 1 when
+# it is compared and fails. This local copy carried `[ -n "$want_calls" ]` and
+# passed every row silently until it was removed; harness.sh's assert_row was
+# required from the start.
+total=$((total + 1))
+SUT_STATUS=3
+: >"$SUT_STDOUT"
+probe_status=0
+probe_out="$( ( before="$failed"; assert_row 'empty-calls-argument' 3 - ''; printf 'delta=%s\n' "$((failed - before))" ) 2>&1 )" || probe_status=$?
+probe_fails=0
+if ! check_eq 'required fourth argument: exit' 0 "$probe_status"; then probe_fails=1; fi
+case "$probe_out" in
+  *delta=1*) ;;
+  *)
+    printf 'FAIL required fourth argument: %s\n' "$probe_out"
+    probe_fails=1
+    ;;
+esac
+if [ "$probe_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

@@ -28,10 +28,19 @@ else
   # `pipefail` (set above) is what makes the single `if !` sufficient — it
   # catches a failure in either stage, so neither `find` nor `sort` can fail
   # unnoticed.
+  #
+  # `-type l` is there because the coverage gate counts a symlinked test file:
+  # it asks `-f`, which follows the link. Discovery with only `-type f`
+  # classified the link instead, leaving such a file covered but never run — a
+  # suite that reports itself passed. A dangling link is collected by the same
+  # expression and then run, where `bash` exits 127: the gate's `-f` fails on
+  # the link, so the gate reports no test for that script rather than counting
+  # it, and the link must still fail the run at `bash` rather than vanish from
+  # discovery.
   LISTING="$(mktemp)"
   trap 'rm -f "$LISTING"' EXIT
 
-  if ! find "$ROOT" -type f -name '*_test.sh' -print0 | sort -z >"$LISTING"; then
+  if ! find "$ROOT" \( -type f -o -type l \) -name '*_test.sh' -print0 | sort -z >"$LISTING"; then
     echo "run.sh: listing ${ROOT} failed — the tree was not fully read" >&2
     exit 1
   fi
@@ -39,6 +48,25 @@ else
   files=()
   while IFS= read -r -d '' f; do
     files+=("$f")
+  done <"$LISTING"
+fi
+
+if [ "$#" -eq 0 ]; then
+  # A symlinked directory is listed by find but never descended into, so a
+  # *_test.sh inside it is neither discovered nor run while the coverage gate
+  # still counts it (-f follows the link) — the same covered-but-never-run file
+  # `-type l` collects above, one level up. Refused rather than followed: -L
+  # would let the walk leave the tree and loop back into it. The listing's
+  # contents are already in `files`, so the temp file is reused here.
+  if ! find "$ROOT" -type l -print0 >"$LISTING"; then
+    echo "run.sh: listing ${ROOT} failed — the tree was not fully read" >&2
+    exit 1
+  fi
+  while IFS= read -r -d '' link; do
+    if [ -d "$link" ]; then
+      printf 'run.sh: %s is a symlink to a directory — its tests are not run\n' "$link" >&2
+      exit 1
+    fi
   done <"$LISTING"
 fi
 

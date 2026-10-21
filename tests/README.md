@@ -20,9 +20,10 @@ installs the plugin. `tests/` at the repository root ships to none of them.
 - `tests/lib/bin-nosleep/sleep` — the instant `sleep`, put on `PATH` only by
   an explicit `stub_sleep_instant` call.
 - `tests/scripts-have-tests.sh` — the coverage gate: every script under
-  `skills/*/scripts/`, every file under `tools/`, and every file under `hooks/`
-  except `hooks.json` must have a test file. Not named `*_test.sh`, so `run.sh`
-  does not collect it directly; `scripts-have-tests_test.sh` is what runs it.
+  `skills/*/scripts/`, every file under `tools/`, every file under `hooks/`
+  except `hooks.json`, and every file under the repository-root `scripts/` must
+  have a test file. Not named `*_test.sh`, so `run.sh` does not collect it
+  directly; `scripts-have-tests_test.sh` is what runs it.
 - `tests/lib/harness_test.sh` — a self-test of the harness mechanism itself
   (no script under test).
 - `<name>_test.sh` anywhere under `tests/` — the actual test cases.
@@ -35,8 +36,16 @@ installs the plugin. `tests/` at the repository root ships to none of them.
   files and `lib/` helpers included. A helper that reaches for a bash 4 feature
   (`mapfile`, `declare -A`) therefore fails the job that runs the suite.
   Discovery uses `find`, not bash 4's `globstar`: a degraded `**` would
-  silently match only one nesting depth.
-- `tests/run.sh <file> [<file> ...]` — runs only the named file(s).
+  silently match only one nesting depth. It collects a `*_test.sh` whether it is
+  a regular file or a symlink — the coverage gate counts a symlink, since its
+  `-f` follows the link — and a dangling link is run and fails the run rather
+  than being silently skipped. A symlinked *directory* under `tests/` is refused
+  for the same reason when the suite discovers its own files: `find` never
+  descends it, so a `*_test.sh` inside would be counted as coverage without
+  ever running.
+- `tests/run.sh <file> [<file> ...]` — runs only the named file(s). The
+  symlinked-directory refusal above applies to discovery only: a named run
+  skips it, because a targeted run is not a coverage claim.
 
 ## Writing a table-test case
 
@@ -247,7 +256,9 @@ name from the prune raises the count, which is what makes the check meaningful;
 
 Every file under `skills/<skill>/scripts/` must have a non-empty test file at
 `tests/<skill>/<name>_test.sh`. Every file under `tools/` must have a
-non-empty test file at `tests/tools/<name>_test.sh`. Every file under `hooks/`
+non-empty test file at `tests/tools/<name>_test.sh`. Every file under the
+repository-root `scripts/` must have a non-empty test file at
+`tests/scripts/<name>_test.sh`. Every file under `hooks/`
 except `hooks.json` must have a non-empty test file at
 `tests/hooks/<name>_test.sh` (a trailing `.sh` on the hook is stripped;
 subdirectories are mirrored). There is no general exemption path. The one named carve-out is `AUTHORING.md`'s native-write rule (rule 1): a write the agent makes natively has no script to count.
@@ -262,29 +273,54 @@ Its rules, each of which `scripts-have-tests_test.sh` asserts against a syntheti
 tree rather than stating as prose:
 
 - An empty enumeration is an **error**, independently for `skills/*/scripts/`,
-  `tools/`, and `hooks/`. A broken tools selector and fully covered skills and
-  hooks trees are otherwise the same green.
+  `tools/`, `hooks/`, and the repository-root `scripts/`. A broken tools
+  selector and fully covered skills and hooks trees are otherwise the same
+  green.
 - An empty test file is **not** coverage. `run.sh` collects it and
-  `bash <empty>` exits 0, so it is a passing test with no detection power.
-- A `find` that dies partway through `skills` is a **failure**, never a
-  green over the part it managed to read. A missing `hooks/` directory is
-  a listing failure, same as a missing `skills/` — same `if ! find` branch,
-  asserted for hooks by the missing-directory case rather than a chmod-000
-  subdirectory.
+  `bash <empty>` exits 0, so it is a passing test with no detection power. A
+  non-empty file that reaches `harness_exit` with a tally of zero exits 1,
+  so the suite catches it — but `-s` alone still accepts a file that never
+  sources the harness, or exits before its tally.
+- Two scripts whose expected test paths collide are an **error** naming both
+  scripts and the path, and the collision is refused across roots as well as
+  within one, because the suffix is stripped before `_test.sh` is appended and
+  the expected path mirrors the script's position in the tree:
+  `tools/helper.sh` and a skill named `tools` with `scripts/helper.sh` both want
+  `tests/tools/helper_test.sh`. Counting the one file as coverage for both
+  would leave the second script exercised by nothing.
+- A `find` that dies partway through a root is a **failure**, never a green
+  over the part it managed to read. A missing directory reaches the same
+  message through `list_root`, which lists every root, and each of the four
+  roots has its own missing-directory case.
 - Selection is by position in the tree, not by shebang: a script under
   `scripts/` or `tools/` in a language ShellCheck does not cover must not be silently
   exempt as well as unlinted, and a file under `hooks/` is not exempt for
   lacking a shebang either. `hooks.json` is excluded by exact relative path
   because it is the JSON manifest `make manifest` already validates, not
   because of its suffix.
-- A **symlink** under `scripts/`, `tools/`, or `hooks/` is enumerated like a regular
+- A **symlink** under a skill's `scripts/`, the repository-root `scripts/`,
+  `tools/`, or `hooks/` is enumerated like a regular
   file, which is where this parts company with `lint.sh`'s deliberate
   `-type f`. For a linter that exclusion is right; for this gate `-type f`
   answers the wrong question, since it classifies a symlink by the link.
   Measured: an untested symlink beside one covered regular script was
   reported as one script, one with tests, and exit 0, naming the symlink
-  nowhere. The target is never resolved or read — only visibility is at
+  nowhere. The target's contents are never read — only visibility is at
   stake — so a dangling link is reported rather than fatal.
+- A symlink to a **directory** under any of these positions is an **error**
+  naming the link: `find` lists it but never descends into it, so its contents
+  cannot be enumerated while the rest of the tree reports itself covered. A
+  position that is itself a symlink is an **error** naming the link: a link to
+  a directory stops the walk before the subtree it hides, and a link to
+  anything else hides that position just as completely — `find` lists the
+  link, descends into nothing, and the subtree is silently absent. The target's
+  contents are never read either: the target is only asked whether it is a
+  directory, never descended into. The one exception is a link
+  to a directory *inside* `skills/<skill>/` but outside its `scripts/` subtree:
+  a linked `references/` directory holds nothing this gate reads and stays
+  green. The skill directory itself is refused the same way: a link at
+  `skills/<skill>` stops the walk before its `scripts/` subtree, so the visible
+  skills would report full coverage of code the gate never read.
 
 For RED verification the mutated copy has to live in `tests/`, not under a
 bare `mktemp -d`: the gate anchors its default root on its own file location, so
@@ -349,6 +385,10 @@ depends on:
     charged with sending different bytes, and an empty expectation would let it
     pass. Only a call carrying `--input -` has a payload, which is real gh's own
     rule.
+12. **A tally of zero is a failure, not a green** — `harness_exit` exits 1 with
+    `not ok 0/0 … no assertion ran` when no assertion ran, so a file whose rows
+    were emptied out cannot read as a pass, and the coverage gate's `-s` is not
+    the only thing standing behind an empty test file.
 
 ## RED verification
 
