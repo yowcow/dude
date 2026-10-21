@@ -70,11 +70,9 @@ check_hits() {
 }
 # shellcheck disable=SC2317
 check_unreadable() {
-  local label="$1" dir="$2"
-  if network_hits "$dir" >/dev/null; then
-    printf 'FAIL %s: an unreadable tree was reported as no hits\n' "$label" >&2
-    return 1
-  fi
+  local label="$1" dir="$2" status=0
+  network_hits "$dir" >/dev/null || status=$?
+  check_eq "$label" 2 "$status"
 }
 
 # The gate: the real hooks/ must be clean.
