@@ -11,11 +11,20 @@
 # do not cover. The gate is permanent: it stays after coverage is complete,
 # because the property it holds is about the *next* script, not the current ones.
 #
+# The expected path is derived from position, so a file at that path may be some
+# other script's test: a skill named `lib` makes `skills/lib/scripts/harness.sh`
+# expect `tests/lib/harness_test.sh`, the harness's own self-test. The file is
+# counted only when it declares its subject with the exact line
+# `SUT="${SUT:-${REPO_ROOT}/<key>}"`; existing tests already carry it, so the
+# rule costs them nothing, and the failure names the line to add.
+#
 # It is a script rather than a check inlined in scripts-have-tests_test.sh for
 # the same reason run.sh has run_test.sh: its own conditions — an empty
-# enumeration is an error, an empty test file is not coverage — are prose until
-# something runs them. As a script it is drivable against synthetic trees and
-# against a deliberately broken copy through the suite's documented `SUT=` path.
+# enumeration is an error, an empty test file is not coverage, a test file that
+# does not name its subject is not coverage of the script that merely shares its
+# expected path — are prose until something runs them. As a script it is
+# drivable against synthetic trees and against a deliberately broken copy
+# through the suite's documented `SUT=` path.
 # What run.sh collects is still the *_test.sh, whose first cases run this gate
 # against the real tree, so `make test` runs it with no Makefile or workflow
 # change.
@@ -258,39 +267,74 @@ claim_test_path() {
   printf '%s\t%s\n' "$want" "$key" >>"$PAIRS"
 }
 
+# shared_test_path <want>
+# Whether another script wants the same test path. Both claimants are known
+# before any file is inspected, so the script that merely sorts first is not told
+# to add a declaration that cannot make the path its own.
+shared_test_path() {
+  local want="$1" n=0 other
+  for other in "${wants[@]}"; do
+    if [ "$other" = "$want" ]; then n=$((n + 1)); fi
+  done
+  [ "$n" -gt 1 ]
+}
+
 # require_test <key> <want>
 # Non-empty and readable, not merely present. run.sh collects an empty
 # *_test.sh and `bash <empty>` exits 0, so an empty file is a passing test with
 # no detection power; counting it as coverage would let exactly the state this
 # gate exists to prevent through the front door.
+#
+# It must also declare <key> as its subject. Without it, a non-empty file at the
+# expected path is counted as coverage and exercises nothing. The comparison is
+# a whole-line fixed string, so `.../foo` does not match a declaration for
+# `.../foo.sh`.
 require_test() {
-  local key="$1" want="$2" abs_test
+  local key="$1" want="$2" abs_test declaration
   claim_test_path "$want" "$key"
   abs_test="${ROOT}/${want}"
-  if [ -f "$abs_test" ] && [ -s "$abs_test" ] && [ -r "$abs_test" ]; then
-    with_tests=$((with_tests + 1))
-  else
+  declaration="SUT=\"\${SUT:-\${REPO_ROOT}/${key}}\""
+  if [ ! -f "$abs_test" ] || [ ! -s "$abs_test" ] || [ ! -r "$abs_test" ]; then
     printf 'scripts-have-tests: no test for %s (expected %s)\n' "$key" "$want" >&2
     problems=$((problems + 1))
+  elif ! shared_test_path "$want" && ! grep -q -x -F -- "$declaration" "$abs_test"; then
+    printf 'scripts-have-tests: %s does not declare %s as its subject — add:\n  %s\n' \
+      "$want" "$key" "$declaration" >&2
+    problems=$((problems + 1))
+  else
+    with_tests=$((with_tests + 1))
   fi
 }
+
+# Every pair is derived before any file is inspected: a shared expected path is a
+# property of the whole tree, not of the script being checked.
+keys=()
+wants=()
 
 for rel in "${scripts[@]}"; do
   skill="${rel%%/*}"
   rest="${rel#*/scripts/}"
-  require_test "skills/${rel}" "tests/${skill}/${rest%.sh}_test.sh"
+  keys+=("skills/${rel}")
+  wants+=("tests/${skill}/${rest%.sh}_test.sh")
 done
 
 for rel in "${hooks[@]}"; do
-  require_test "hooks/${rel}" "tests/hooks/${rel%.sh}_test.sh"
+  keys+=("hooks/${rel}")
+  wants+=("tests/hooks/${rel%.sh}_test.sh")
 done
 
 for rel in "${tools[@]}"; do
-  require_test "tools/${rel}" "tests/tools/${rel%.sh}_test.sh"
+  keys+=("tools/${rel}")
+  wants+=("tests/tools/${rel%.sh}_test.sh")
 done
 
 for rel in "${root_scripts[@]}"; do
-  require_test "scripts/${rel}" "tests/scripts/${rel%.sh}_test.sh"
+  keys+=("scripts/${rel}")
+  wants+=("tests/scripts/${rel%.sh}_test.sh")
+done
+
+for ((i = 0; i < ${#keys[@]}; i++)); do
+  require_test "${keys[i]}" "${wants[i]}"
 done
 
 if [ "$problems" -ne 0 ]; then
