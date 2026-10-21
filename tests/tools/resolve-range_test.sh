@@ -27,21 +27,21 @@
 # the reader-boundary record below. The other guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
-# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Record
-# 4 alone mutates this script by itself and stays single-file: it mutates
-# emit_range, its own guard, and fails a PR-shape row
-# that returns before the trailer scan is ever reached. Every other record
-# (1-3 and 5-8) mutates a guard that either lives in, or is reached through,
-# the shared tools/read-base-trailer.sh and/or
+# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Records
+# 4 and 9 mutate this script itself rather than a sibling: record 4 replaces
+# emit_range's body and fails a PR-shape row that returns before the trailer
+# scan is ever reached; record 9 leaves the NO-TRAILER merge-base bare. Every
+# other record (1-3 and 5-8) mutates a guard that either lives in, or is
+# reached through, the shared tools/read-base-trailer.sh and/or
 # tools/resolve-default-branch.sh this script calls as
 # a subprocess through `dirname "$0"`, so those seven need the tree copied with
 # every file the mutant's row needs in place -- in those rows a lone copy of
 # this script answers `STOP ask-default-branch` (or fails outright) instead,
 # which pins nothing about the mutation. The stubbed rows at the end are
 # the exception: they copy the SUT into a tools/ tree that already holds every
-# sibling, so a lone copy is enough for those. Eight were removed; the one that
-# is only partly observable is recorded as such below, rather than counted as
-# covered. What each mutant actually produced, measured:
+# sibling, so a lone copy is enough for those. Nine were removed and are bound
+# below; the one that is only partly observable is recorded as such, rather
+# than counted as covered. What each mutant actually produced, measured:
 #
 #   1. The trailer read guarded as well as captured. This guard lives in
 #      tools/read-base-trailer.sh, so the mutant is applied there, in a copy
@@ -72,7 +72,7 @@
 #   5. The default branch being read rather than guessed. That read lives in
 #      the shared tools/resolve-default-branch.sh this script reaches by its
 #      no-argument shape, so the mutant is a copy of the tools/ tree with that
-#      script's whole body replaced by `printf 'main\n'`. It failed eighteen
+#      script's whole body replaced by `printf 'main\n'`. It failed nineteen
 #      rows on stdout -- every row that reaches the default branch except
 #      `default-fetch-fails`, whose fixture remote already lacks a `main`
 #      branch and whose stdout already expects `STOP default-fetch-failed`.
@@ -101,14 +101,33 @@
 #      `no-trailer-uses-the-remote-head` and
 #      `no-trailer-empty-when-head-is-the-default-tip`, which also record
 #      nothing of their own.
+#   9. The NO-TRAILER merge-base guard. Leaving `BASE_SHA="$(git merge-base
+#      "${TIP_SHA}" HEAD)"` bare, so `set -e` aborts on git's exit 1 instead of
+#      printing the STOP, failed `merge-base-fails-without-a-trailer` alone:
+#      want `STOP merge-base-failed`, got exit 1 with empty stdout. Its PREREQ
+#      twin was already bound by `merge-base-fails-on-unrelated-history`, whose
+#      branch records a trailer; without this row the trailerless copy of the
+#      same guard could be deleted unnoticed.
+#
+#   Two guards are recorded rather than bound: the `[repo]` fallback's two
+#   `exit 1`s in tools/resolve-default-branch.sh (no remote matches the
+#   argument, then origin's URL or its owner segment is unreadable). Both sit
+#   on the path where no answer can be produced at all, and replacing either
+#   condition with false leaves the state to the next rung, which rejects it
+#   with the same answer these guards give -- exit 1 and empty stdout -- so no
+#   assertion separates a guard from its absence. Rows alone cannot bind them.
 #
 #   The reader-boundary rows at the end of this file are RED through SUT= the
 #   ordinary way, not by removing a guard: point it at the pre-fix script
 #   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
 #   that holds every sibling -- the same tree records 1-3 and 5-8 need -- and
-#   only those four rows and their two stderr tallies fail: `not ok 6/39`.
-#   The three facts-capture rows at the end are RED the same way, against
-#   `master`'s script in a full tools/ tree: `not ok 3/42`.
+#   only those four rows and their two stderr tallies fail: `not ok 6/39`,
+#   measured before the facts-capture rows existed. The three facts-capture
+#   rows at the end were RED the same way, against the `master` of the time in
+#   a full tools/ tree: `not ok 3/42`. Neither figure is today's file:
+#   `9738174^` predates the facts capture, so it fails those rows too --
+#   measured `not ok 9/43` -- while today's `master` carries the capture and
+#   passes `ok 43/43`.
 #   Measured: the aborted reader exits 1 with empty stdout, and the answers
 #   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
 #   answers STOP fetch-failed, with bash's `FETCH_SPEC: unbound variable`
@@ -540,6 +559,19 @@ git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' unrelated)"
 git_repo_remote "$W" origin "$LONELY"
 run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
+
+# The same two roots (`LONELY`/`LSEED`, from the row above), reached the other
+# way: a branch that records no trailer at all, no facts, and so the NO-TRAILER
+# path. The row above bounds the PREREQ path's merge-base; this one bounds the
+# copy on the path that takes its base from the default branch's tip, where
+# nothing else in the answer would show that git declined to answer.
+row_start
+W="$(git_repo_scratch lonely-work-no-trailer)"
+git_repo_init "$W" task
+git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' -)"
+git_repo_remote "$W" origin "$LONELY"
+run_in "$W"
+assert_row 'merge-base-fails-without-a-trailer' 0 'STOP merge-base-failed\n' 0
 
 # ---- the reader's answers this caller cannot act on ----------------------
 #
