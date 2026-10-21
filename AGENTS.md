@@ -11,7 +11,7 @@ make lint test
 make manifest
 ```
 
-CI runs `lint`, `test`, and the `manifest` merge gate on pushes and pull requests. The `manifest` job pins the Claude Code validator and the action SHAs, but the Muse validator is not pinned (its installer ships only the stable channel), so its result can change without a commit here. `manifest-latest` runs only on pull requests and the weekly schedule; it is informational and not required for merging. `make lint test` does **not** validate plugin manifests.
+CI runs `lint`, `test`, and the `manifest` merge gate on pushes and pull requests. The `manifest` job pins the Claude Code validator and the action SHAs, but the Muse validator is not pinned (its installer ships only the stable channel), so its result can change without a commit here. `manifest-latest` runs only on pull requests and the weekly schedule; it is informational and not required for merging. `make lint test` runs neither vendor validator: it checks that the three marketplaces agree and that `bump`'s list is complete, not that the six version fields match.
 
 - lint: `tests/lint.sh` — `bash -n` + ShellCheck, selected by shebang (not `*.sh`), so the extensionless stub `tests/lib/bin/gh` is included. `.shellcheckrc` disables only SC2016 (GraphQL `$vars` in single-quoted `gh` queries must not expand).
 - test: `tests/run.sh` — offline; `gh` is stubbed and never reaches the network.

@@ -180,7 +180,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 total=$((total + 1))
 fails_here=0
 bump_list="$(sed -n 's/^FILES="\(.*\)"$/\1/p' "$SUT" | tr ' ' '\n' | sort)"
-manifest_list="$(grep -o "^    '[^']*':" "${REPO_ROOT}/tests/manifest.sh" | sed "s/^    '//; s/':\$//" | sort)"
+manifest_list="$(sed -n "s/^    '\([^']*\)':.*/\1/p" "${REPO_ROOT}/tests/manifest.sh" | sort)"
 if [ -z "$bump_list" ]; then
   printf 'FAIL bump list: no FILES= extracted from %s\n' "$SUT"
   fails_here=1
@@ -193,17 +193,32 @@ if ! check_eq 'bump list matches manifest versions' "$manifest_list" "$bump_list
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # Every manifest that carries a version is bumped; the versionless mirror is not.
+# `.*-plugin/*.json` is checked apart from `package.json`: an unmatched glob is a
+# literal path the -f test rejects, so with both in one loop `package.json` alone
+# would keep the row green.
 total=$((total + 1))
 fails_here=0
-for path in "${REPO_ROOT}"/.*-plugin/*.json "${REPO_ROOT}/package.json"; do
+manifests=0
+for path in "${REPO_ROOT}"/.*-plugin/*.json; do
+  [ -f "$path" ] || continue
+  manifests=$((manifests + 1))
   f="${path#"${REPO_ROOT}"/}"
-  if [ -f "$path" ] && grep -q '"version"' "$path"; then
-    if ! printf '%s\n' "$bump_list" | grep -qxF "$f"; then
-      printf 'FAIL bump list lacks %s, which carries a version\n' "$f"
-      fails_here=1
-    fi
+  if grep -q '"version"' "$path" && ! printf '%s\n' "$bump_list" | grep -qxF "$f"; then
+    printf 'FAIL bump list lacks %s, which carries a version\n' "$f"
+    fails_here=1
   fi
 done
+# An empty enumeration is an error here as it is in tests/scripts-have-tests.sh
+# and tests/run.sh.
+if [ "$manifests" -eq 0 ]; then
+  printf 'FAIL bump list: no .*-plugin/*.json manifest found — the enumeration is broken\n'
+  fails_here=1
+fi
+if grep -q '"version"' "${REPO_ROOT}/package.json" \
+  && ! printf '%s\n' "$bump_list" | grep -qxF 'package.json'; then
+  printf 'FAIL bump list lacks package.json, which carries a version\n'
+  fails_here=1
+fi
 if printf '%s\n' "$bump_list" | grep -qxF '.agents/plugins/marketplace.json'; then
   printf 'FAIL bump list names .agents/plugins/marketplace.json, a versionless mirror\n'
   fails_here=1

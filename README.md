@@ -484,8 +484,10 @@ warning while all six version fields agree.
 `muse plugins validate` covers `.muse-plugin/`. The two validators do not cover
 every manifest, so `make manifest` JSON-parses `.agents/plugins/marketplace.json` (versionless mirror, no
 `version`), `package.json`, `hooks/hooks.json`, `.muse-plugin/plugin.json`, and
-`.muse-plugin/marketplace.json`, syntax only. `make lint test` still does not run manifest validation: it covers shell
-and the test suite.
+`.muse-plugin/marketplace.json`, syntax only. `make lint test` runs neither vendor
+validator and never compares the six version fields; the suite checks only that the
+three marketplaces agree and that `bump`'s list covers every version-carrying
+manifest.
 
 CI's `manifest` job is the merge gate. It pins the Claude Code validator and the
 action SHAs, but
