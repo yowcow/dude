@@ -44,7 +44,7 @@ A plugin install distributes `skills/` plus hooks/manifests. `tests/` lives at t
 
 Skill scripts must run on bash 3.2 (`${x,,}` is out; use `tr`).
 
-`.gitignore` drops `/.claude/`, `/.worktrees/`, and `/docs/superpowers/plans/` — do not commit those.
+`.gitignore` drops `/.claude/`, `/.serena/`, `/.worktrees/`, and `/docs/superpowers/` — do not commit those.
 
 ## Authoring
 
