@@ -128,10 +128,13 @@ fi
 # The revs are chosen here rather than there because it is this caller's
 # question: local HEAD, bounded by the fetched default tip, since this skill
 # reviews the checkout it is in.
+READ_ARGS=(HEAD "^${TIP_SHA}")
 if [ -n "$FACTS" ]; then
-  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" HEAD "^${TIP_SHA}")"
-else
-  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" HEAD "^${TIP_SHA}")"
+  READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")
+fi
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" "${READ_ARGS[@]}")"; then
+  echo "STOP trailer-read-failed"
+  exit 0
 fi
 
 read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
@@ -164,7 +167,17 @@ case "${KIND}" in
         # outlives both the merge and the branch's deletion.
         FETCH_SPEC="refs/pull/${PREREQ_PR}/head"
         ;;
+      *)
+        printf 'unrecognised prerequisite state: %s\n' "${STATE}" >&2
+        echo "STOP trailer-answer-malformed"
+        exit 0
+        ;;
     esac
+    ;;
+  *)
+    printf 'unrecognised answer from read-base-trailer.sh: %s\n' "${ANSWER}" >&2
+    echo "STOP trailer-answer-malformed"
+    exit 0
     ;;
 esac
 

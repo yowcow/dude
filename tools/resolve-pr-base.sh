@@ -102,10 +102,13 @@ fi
 # branch back as the base -- which ensure-draft-pr.sh then answers as
 # `CREATE ... base=<base>`, so the caller opens the PR against a branch this
 # task never sat on.
+READ_ARGS=(FETCH_HEAD "^${DEFAULT_SHA}")
 if [ -n "$FACTS" ]; then
-  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" --facts "$FACTS" FETCH_HEAD "^${DEFAULT_SHA}")"
-else
-  ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" FETCH_HEAD "^${DEFAULT_SHA}")"
+  READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")
+fi
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" "${READ_ARGS[@]}")"; then
+  echo "STOP trailer-read-failed"
+  exit 0
 fi
 
 read -r KIND RECORDED _ STATE <<<"$ANSWER"
@@ -131,6 +134,16 @@ case "${KIND}" in
         # column's -- the base here is the default branch.
         echo "BASE ${DEFAULT}"
         ;;
+      *)
+        printf 'unrecognised prerequisite state: %s\n' "${STATE}" >&2
+        echo "STOP trailer-answer-malformed"
+        exit 0
+        ;;
     esac
+    ;;
+  *)
+    printf 'unrecognised answer from read-base-trailer.sh: %s\n' "${ANSWER}" >&2
+    echo "STOP trailer-answer-malformed"
+    exit 0
     ;;
 esac

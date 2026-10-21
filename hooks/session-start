@@ -55,7 +55,10 @@ escape_for_json() {
         for o in 001 002 003 004 005 006 007 013 016 017 020 021 022 023 024 025 026 027 030 031 032 033 034 035 036 037; do
             printf -v c '%b' "\\0$o"
             printf -v u '\\u%04x' "0$o"
-            s="${s//"$c"/"$u"}"
+            # The replacement is unquoted on purpose: bash 3.2 keeps those
+            # quotes as literal characters and emits `"\u0001"`, which makes
+            # the whole object unparsable; 5.x accepts either spelling.
+            s="${s//"$c"/$u}"
         done
     fi
     printf '%s' "$s"

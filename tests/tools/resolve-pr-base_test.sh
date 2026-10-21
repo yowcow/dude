@@ -5,25 +5,26 @@
 # git is not stubbed. The defect this file exists to pin is a *range* defect --
 # the scan walking past the branch point into shared history (#171) -- and a
 # git stub would encode the test author's belief about that range rather than
-# git's behaviour. Each row therefore builds a real bare repository to play the
-# remote and a real work repository whose `origin` points at it, both under
-# $HARNESS_TMP and both offline. The work repository holds no commits at all:
-# the SUT reads the branch tip as FETCH_HEAD and never checks anything out.
+# git's behaviour. Each row that drives the real reader builds a real bare
+# repository to play the remote and a real work repository whose `origin`
+# points at it, both under $HARNESS_TMP and both offline. Those work
+# repositories hold no commits at all: the SUT reads the branch tip as
+# FETCH_HEAD and never checks anything out. The rows at the end of this file
+# stub the reader, the default-branch lookup and the fetch instead, and build
+# no repository.
 #
 # The scan's range is the whole point, so the fixtures differ in exactly one
 # axis: whether the Base-Branch trailer sits on the task branch's own commits
 # or on a commit the task branch merely inherits from the default branch.
 #
-# Limitation: `STOP trailer-read-failed` has no row. It needs `git log` itself
-# to fail after both fetches have succeeded, and both refs it names are the
-# ones those fetches just created -- there is no fixture that leaves them
-# unreadable without also breaking the fetch that precedes it. The guard now
-# lives in tools/read-base-trailer.sh and is covered
-# by tests/tools/read-base-trailer_test.sh's `trailer-read-fails` row.
+# `STOP trailer-read-failed` has a row: the stubbed-reader rows at the end of
+# this file, which also pin the answers outside the reader's contract. The
+# reader's own guard is covered by tests/tools/read-base-trailer_test.sh's
+# `trailer-read-fails` row.
 #
-# The prerequisite's PR comes as facts (prereq_facts below) and the default
-# branch from the remote's own HEAD (resolve-default-branch.sh), so the file
-# stubs nothing and every row asserts 0 gh calls.
+# The prerequisite's PR comes as facts (prereq_facts below) and, in every row
+# but the four stubbed ones at the end, the default branch from the remote's
+# own HEAD (resolve-default-branch.sh); every row asserts 0 gh calls.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
 # root, so a branch that recorded nothing picked up whatever Base-Branch it
@@ -33,11 +34,19 @@
 #   SUT="$tmp/old.sh" tests/run.sh tests/tools/resolve-pr-base_test.sh
 #
 #   A copy of the *current* script needs the whole tools/ tree beside it
-#   (`cp -R tools "$tmp/tools"`, then `SUT="$tmp/tools/<copy>.sh"`): it
-#   resolves its siblings through dirname "$0", so a lone copy answers STOP
-#   ask-default-branch (or fails outright) on every row and the failures say
-#   nothing about the mutation. The bb8d8b8^ version above predates the
-#   extractions and needs no sibling.
+#   (`cp -R tools "$tmp/tools"`, then `SUT="$tmp/tools/<copy>.sh"`): on every
+#   row that reaches a real sibling it resolves that sibling through dirname
+#   "$0", so a lone copy answers STOP ask-default-branch (or fails outright)
+#   there and the failures say nothing about the mutation. The four stubbed
+#   rows at the end are the exception -- they copy the SUT into a tools/ tree
+#   that already holds every sibling, so a lone copy is enough for those. The
+#   bb8d8b8^ version above predates the extractions and needs no sibling.
+#
+#   The reader-boundary rows at the end of this file are RED the ordinary way:
+#   point SUT= at the pre-fix script
+#   (`git show 8410c39^:tools/resolve-pr-base.sh`) dropped into a copy of
+#   tools/ that holds every sibling, and only those four rows and their two
+#   stderr tallies fail: `not ok 6/29`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -290,5 +299,50 @@ row_start
 W="$(work_repo args-facts-bare "$REMOTE_PLAIN" main)"
 run_in "$W" feature --facts
 assert_row 'facts-flag-without-file' 2 '' 0
+
+# ---- the reader's answers this caller cannot act on ----------------------
+#
+# The real reader prints NO-TRAILER, PREREQ with OPEN or MERGED, NEED or STOP,
+# and a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, while
+# CLOSED stops as STOP abandoned-prerequisite. So these rows
+# stub it: a copy of tools/ with this file's subject dropped in and
+# read-base-trailer.sh replaced. What they pin is the boundary -- whatever the
+# reader answers, this script prints one line and exits 0. Measured before the
+# guard: a reader exiting 1 made this script exit 1 with empty stdout; an
+# unknown KIND or STATE exited 0 with empty stdout.
+#
+# The default-branch lookup and the fetch keep their own rows above.
+CONTRACT="${HARNESS_TMP}/tools-contract"
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/resolve-pr-base.sh"
+printf '#!/usr/bin/env bash\necho main\n' >"${CONTRACT}/resolve-default-branch.sh"
+printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
+
+# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
+
+row_start
+reader 'exit 1'
+run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
+assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
+
+row_start
+reader 'echo WHAT'
+run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-kind: stderr' \
+  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'echo "PREREQ feature 9 DRAFT"'
+run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
+assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+tally check_eq 'reader-unknown-state: stderr' \
+  'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
+
+row_start
+reader 'true'
+run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
+assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"

@@ -26,6 +26,7 @@ stdout through every such script.
 | `ask-multiple-prs` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `tools/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh` |
+| `base-resolve-failed` | `tools/ensure-draft-pr.sh` |
 | `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
 | `body-unreadable` | `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
@@ -65,7 +66,8 @@ stdout through every such script.
 | `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
-| `trailer-read-failed` | `tools/read-base-trailer.sh` |
+| `trailer-answer-malformed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
+| `trailer-read-failed` | `tools/read-base-trailer.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
