@@ -12,7 +12,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 - **The items** — each finding as the reviewer stated it, with its severity and location; and each candidate, a line the reviewer raised but declined to judge, marked as a candidate. A doc proposal carries, in place of a fix, its before range, its before and after claims tables, and its exact after text.
 - **What to judge against** — the scope (a committed range, uncommitted changes, or paths, with the read-root when the caller has one), or the artifact under review.
 - **The requirements.**
-- **The earlier rounds' record** — findings accepted and fixed, findings rejected with the reason, and candidates rejected with the reason.
+- **The earlier rounds' record** — findings accepted and fixed, findings accepted and recorded without a fix, findings rejected with the reason, and candidates rejected with the reason.
 - **The caller's own acceptance criteria**, which every worker gets verbatim.
 
 ## Orchestration model
