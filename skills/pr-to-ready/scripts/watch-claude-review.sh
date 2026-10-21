@@ -20,10 +20,10 @@
 # once with gh's own status.
 #
 # A run is waited on while its status is not "completed". queued, in_progress,
-# requested, waiting and pending all keep waiting, and `waiting` is the one an
-# approval gate leaves behind: it is not a verdict, so it waits to the cap like
-# the rest. The conclusion is read only once the status is completed, because gh
-# leaves it empty on every other status.
+# requested, waiting and pending all keep waiting, and an approval gate leaves a
+# run at `waiting` or at `queued`: neither is a verdict, so both wait to the cap
+# like the rest. The conclusion is read only once the status is completed,
+# because gh leaves it empty on every other status.
 #
 # The listing covers runs on <branch> and on <default-branch>, because the
 # trigger decides which one a run is attributed to: a review requested by an
@@ -64,28 +64,24 @@
 #           "success" or "skipped" (watch mode). Watch mode prints nothing on
 #           stdout: the caller reads only the exit status.
 #       1 = in watch mode the run concluded anything else, or it had not
-#           completed when the iteration cap ran out
+#           completed when the iteration cap ran out; the origin repository could
+#           not be resolved, in either mode; or the listing failed (list mode)
 #       2 = usage error
 #       3 = no @claude workflow in this repository. This is the availability
 #           answer and nothing else exits 3, so a caller may skip Claude on it
-#       other = the underlying gh call failed or the origin repository could not
-#           be resolved: a failing `gh run view` exits at once with gh's own
-#           status, never retried to the cap
+#       other = in watch mode a failing `gh run view` exits at once with gh's own
+#           status
 #
 # Only 0, 2, and 3 identify a cause on their own. Treat every other non-zero as
 # "stop and inspect" rather than as a specific answer.
 set -euo pipefail
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
   echo "Usage: $0 <branch> <default-branch|run-id>" >&2
   exit 2
 fi
 
 BRANCH="$1"
-if [ -z "$BRANCH" ] || [ -z "$2" ]; then
-  echo "Usage: $0 <branch> <default-branch|run-id>" >&2
-  exit 2
-fi
 
 # List mode and watch mode split on the second argument's shape: all digits is a
 # run id. An all-digit default branch name reads as one too, but the run lookup
@@ -139,14 +135,8 @@ INTERVAL=30
 for i in $(seq 1 "$MAX_ITER"); do
   # A failed gh call is not retried: it points at a run id gh cannot answer for
   # (gone, or not this repository's), and the next poll would only ask the same
-  # wrong question. Passing the status straight to the caller is exactly why this
-  # is not on tools/poll.sh, whose predicate is the check command's exit status
-  # and every non-zero means "not yet" to it, so it retries to the cap.
-  gh_status=0
-  view="$(gh run view -R "$REPO" "$RUN_ID" --json status,conclusion)" || gh_status=$?
-  if [ "$gh_status" -ne 0 ]; then
-    exit "$gh_status"
-  fi
+  # wrong question.
+  view="$(gh run view -R "$REPO" "$RUN_ID" --json status,conclusion)"
 
   # Slurp and length == 1 for the same reason as watch-checks.sh: jq reads a
   # stream of top-level values, so a body it cannot read collapses to "it answered

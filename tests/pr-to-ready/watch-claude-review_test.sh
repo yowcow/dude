@@ -23,8 +23,8 @@
 # run list --json` pages, and stdout is what jq made of them — which is why the
 # expectations are whole-file byte comparisons against `fixtures/*.expected`.
 #
-# The `skipped` contract is pinned in both modes, because the script itself does
-# not filter on conclusion — selecting the run is the caller's job (SKILL.md
+# The `skipped` contract is pinned in both modes, because the listing does not
+# filter on conclusion — selecting the run is the caller's job (SKILL.md
 # step 2-2 wants「a conclusion that isn't skipped」). List mode must KEEP a
 # skipped run's `conclusion` field, which is what makes the run discriminable
 # at all (`mixed-listing-…`, run 4003); watch mode returns 0 for it, pinned by
@@ -147,9 +147,7 @@ stub_view() {
 
 # repo_with_workflow <name> <kind> -- a real repository whose root holds the
 # workflow shape a row wants; prints its path. The `claude` kind also gets an
-# origin whose HEAD names $DEFAULT_BRANCH: nothing in the script reads it any
-# more, but a caller resolves the branch from that same origin, so the fixture
-# mirrors what the argument and the origin say together.
+# origin, which is what origin-repo.sh resolves the `-R` value from.
 #   claude   -- .github/workflows/$WORKFLOW_FILE mentioning @claude
 #   claude-noorigin -- the same workflow, with no origin remote
 #   noclaude -- .github/workflows/ci.yml with no @claude anywhere
@@ -165,7 +163,6 @@ repo_with_workflow() {
         'add claude workflow'
       bare="$(git_repo_bare acme "$name")"
       git_repo_push "$dir" "$bare" "$DEFAULT_BRANCH"
-      git_repo_bare_head "$bare" "$DEFAULT_BRANCH"
       git_repo_remote "$dir" origin "$bare"
       ;;
     claude-noorigin)
@@ -431,8 +428,6 @@ assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.e
 # script polls `gh run view --json status,conclusion` itself, so these rows stub
 # the JSON body it parses rather than a status the stub scripted.
 
-# 完了した run の conclusion が exit status になる。watch mode の stdout は
-# 空: 呼び手が読むのは exit status だけ。
 row_start
 stub_view acme/claude-ok '*' 0 "$VIEW_COMPLETED_OK"
 run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID"

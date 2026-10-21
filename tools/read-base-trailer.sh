@@ -21,8 +21,8 @@
 # does. Without this paragraph the next reader takes the absent caller for
 # an oversight and either wires a contract for it into a SKILL.md that never
 # calls it, or deletes the script as unreferenced.
-# tools/resolve-default-branch.sh sits here for the same reason and says
-# the same thing.
+# tools/resolve-default-branch.sh sits here for the same reason; the one
+# difference is that pr-to-ready's Step 2-1 names it directly.
 #
 # The revs come from the caller and go straight to `git log`, because the two
 # callers scan different histories: one reads a branch it has just fetched,
