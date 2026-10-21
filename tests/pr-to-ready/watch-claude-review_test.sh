@@ -33,13 +33,13 @@
 # script's own decision rather than an exit status the stub scripted.
 #
 # RED verification (see tests/README.md). SUT must name a copy whose
-# `../../../tools/` resolves, because the script calls resolve-default-branch.sh
-# and origin-repo.sh through SCRIPT_DIR. Setting the depth back to the pre-fix
-# `--limit 20` is the mutation, because a copy that predates the `-R` pin fails
-# every gh-reaching row as an unstubbed argv before the depth is reached:
+# `../../../tools/` resolves, because the script calls origin-repo.sh through
+# SCRIPT_DIR. Setting the depth back to the pre-fix `--limit 20` is the mutation,
+# because a copy that predates the `-R` pin fails every gh-reaching row as an
+# unstubbed argv before the depth is reached:
 #   tmp="$(mktemp -d)"
 #   mkdir -p "$tmp/skills/pr-to-ready/scripts" "$tmp/tools"
-#   cp tools/resolve-default-branch.sh tools/origin-repo.sh "$tmp/tools/"
+#   cp tools/origin-repo.sh "$tmp/tools/"
 #   sed 's/--limit 100/--limit 20/' \
 #     skills/pr-to-ready/scripts/watch-claude-review.sh \
 #     >"$tmp/skills/pr-to-ready/scripts/old.sh"
@@ -50,6 +50,11 @@
 #        stub only --limit 100 fail as unstubbed argv.
 #   The from-a-subdirectory row pins the cwd-relative regression on the current
 #   script; a copy that predates that fix also predates `-R`.
+#   Against a copy that predates this file's two-argument argv form, the rows
+#   fail on the contract rather than on a symptom: the second argument is read
+#   as a run id, so a non-numeric default branch is a usage error (exit 2), and
+#   a copy that still watched with `gh run watch` hits an unstubbed argv instead
+#   (exit 99). Neither is the defect the rows exist to catch.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -80,10 +85,10 @@ stub_sleep_instant
 
 BRANCH=188-watch-claude-review-tests
 # Deliberately not `master` or `main`: the script filters on the default branch
-# it read from origin's HEAD, and a regression that dropped that read and
-# hardcoded the usual literal instead would produce byte-identical output on
-# every row here if the fixtures used that same literal. A name nobody would
-# hardcode is what makes the dynamic read observable.
+# it is given as an argument, and a regression that hardcoded the usual literal
+# instead would produce byte-identical output on every row here if the fixtures
+# used that same literal. A name nobody would hardcode is what makes the value
+# the caller passes observable.
 DEFAULT_BRANCH=trunk
 RUN_ID=4242
 TARGET_RUN_ID=5999
@@ -142,7 +147,9 @@ stub_view() {
 
 # repo_with_workflow <name> <kind> -- a real repository whose root holds the
 # workflow shape a row wants; prints its path. The `claude` kind also gets an
-# origin whose HEAD names $DEFAULT_BRANCH, which is where the script reads it.
+# origin whose HEAD names $DEFAULT_BRANCH: nothing in the script reads it any
+# more, but a caller resolves the branch from that same origin, so the fixture
+# mirrors what the argument and the origin say together.
 #   claude   -- .github/workflows/$WORKFLOW_FILE mentioning @claude
 #   claude-noorigin -- the same workflow, with no origin remote
 #   noclaude -- .github/workflows/ci.yml with no @claude anywhere
@@ -286,11 +293,21 @@ run_in "$REPO_CLAUDE" "$BRANCH" "$RUN_ID" extra
 assert_row 'usage-three-args' 2 '-' 0
 
 row_start
-run_in "$REPO_NOCLAUDE" "$BRANCH"
+run_in "$REPO_CLAUDE" "$BRANCH"
+assert_row 'usage-one-arg' 2 '-' 0
+
+# 空の既定ブランチは headBranch == "" のフィルタになり、既定ブランチ側の run を
+# 静かに落とす。usage エラーとして断る。
+row_start
+run_in "$REPO_CLAUDE" "$BRANCH" ''
+assert_row 'usage-empty-second-argument' 2 '-' 0
+
+row_start
+run_in "$REPO_NOCLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'no-claude-workflow' 3 '-' 0
 
 row_start
-run_in "$REPO_NODIR" "$BRANCH"
+run_in "$REPO_NODIR" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'no-workflows-dir' 3 '-' 0
 
 # 128, not 3: a cwd outside a repository is「stop and inspect」, never the
@@ -298,8 +315,36 @@ assert_row 'no-workflows-dir' 3 '-' 0
 # skip the review. 128 is what `git rev-parse --show-toplevel` exits with there,
 # and `set -e` on the assignment propagates it unchanged.
 row_start
-run_in "$REPO_OUTSIDE" "$BRANCH"
+run_in "$REPO_OUTSIDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'outside-a-repository' 128 '-' 0
+
+# ---- 既定ブランチは呼び手が解決する ---------------------------------------
+#
+# tools/resolve-default-branch.sh は毎回 `git ls-remote --symref` を打ち、実測
+# 2.15–2.17 秒。listing はポーリングの各回に乗るので、解決は呼び手が 1 回だけ
+# 行い、ここには値が来る。この copy の解決は必ず失敗するので、listing が解決を
+# 始めたら exit 1 になる。
+SHADOW="${HARNESS_TMP}/shadow"
+rm -rf -- "$SHADOW"
+mkdir -p -- "${SHADOW}/skills/pr-to-ready/scripts" "${SHADOW}/tools"
+cp -- "$SUT" "${SHADOW}/skills/pr-to-ready/scripts/watch-claude-review.sh"
+cp -- "${REPO_ROOT}/tools/origin-repo.sh" "${SHADOW}/tools/origin-repo.sh"
+printf '#!/usr/bin/env bash\nexit 1\n' >"${SHADOW}/tools/resolve-default-branch.sh"
+
+# run_shadow <work-dir> <argv...> -- run_in, この copy 用。
+run_shadow() {
+  local dir="$1"
+  shift
+  cd "$dir" || exit 1
+  run_sut bash "${SHADOW}/skills/pr-to-ready/scripts/watch-claude-review.sh" "$@"
+  cd "$REPO_ROOT" || exit 1
+}
+
+row_start
+stub_listing acme/claude-ok "$MIXED"
+run_shadow "$REPO_CLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
+assert_row 'listing-does-not-resolve-the-default-branch' 0 \
+  "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # ---- list mode -----------------------------------------------------------
 #
@@ -314,32 +359,34 @@ assert_row 'outside-a-repository' 128 '-' 0
 
 row_start
 stub_listing acme/claude-ok "$MIXED"
-run_in "$REPO_CLAUDE" "$BRANCH"
+run_in "$REPO_CLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'mixed-listing-keeps-branch-and-default' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # The `-R` value comes from origin, not from a literal: the same listing asked
 # of a differently named repository must be pinned to that name.
 row_start
 stub_listing acme/claude-other "$MIXED"
-run_in "$REPO_CLAUDE_OTHER" "$BRANCH"
+run_in "$REPO_CLAUDE_OTHER" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'listing-pins-a-second-origin' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # Same expectation from a subdirectory: the workflow search is anchored at the
 # repository root, so where the caller stands cannot change the answer.
 row_start
 stub_listing acme/claude-ok "$MIXED"
-run_in "$SUBDIR" "$BRANCH"
+run_in "$SUBDIR" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'from-a-subdirectory' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
+# origin の HEAD が unborn でも、既定ブランチは引数で来るので listing は成立する。
 row_start
-run_in "$REPO_CLAUDE_NOHEAD" "$BRANCH"
-assert_row 'default-branch-read-fails' 1 '-' 0
+stub_listing acme/nohead-empty "$MIXED"
+run_in "$REPO_CLAUDE_NOHEAD" "$BRANCH" "$DEFAULT_BRANCH"
+assert_row 'listing-does-not-read-origin-head' 0 "${FIXTURES}/claude-runs-mixed.expected" 1
 
 # The repository a run belongs to is origin's, not the ambient one: -R pins it.
 # With no origin there is nothing to pin, and the answer must name that lookup
 # rather than fall back to whatever repository gh would pick.
 row_start
-run_in "$REPO_CLAUDE_NOORIGIN" "$BRANCH"
+run_in "$REPO_CLAUDE_NOORIGIN" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'no-origin' 1 '-' 0
 tally check_eq 'no-origin: names the repository lookup' \
   'error: failed to resolve the origin repository' "$(cat "$SUT_STDERR")"
@@ -356,7 +403,7 @@ tally check_eq 'no-origin-in-watch-mode: names the repository lookup' \
 # neither 0 nor the availability answer.
 row_start
 stub_listing acme/claude-ok /dev/null 100 1
-run_in "$REPO_CLAUDE" "$BRANCH"
+run_in "$REPO_CLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'listing-call-fails' 1 '-' 1
 
 # The depth of the listing, i.e. #173. Two listing stubs, one per depth: the
@@ -371,7 +418,7 @@ row_start
 stub_listing acme/claude-ok "$DEEP" 100
 TRUNCATED="$(truncate_listing "$DEEP" 20)"
 stub_listing acme/claude-ok "$TRUNCATED" 20
-run_in "$REPO_CLAUDE" "$BRANCH"
+run_in "$REPO_CLAUDE" "$BRANCH" "$DEFAULT_BRANCH"
 assert_row 'deep-listing-keeps-the-target-run' 0 "${FIXTURES}/claude-runs-deep.expected" 1
 
 # ---- watch mode ----------------------------------------------------------

@@ -3,7 +3,7 @@
 # finishes. Completion is tied to the workflow run rather than guessed from
 # comment counts, which is why this exists as a command at all.
 #
-# With no run-id: prints the workflow's recent runs as JSON, carrying
+# With a default branch: prints the workflow's recent runs as JSON, carrying
 # databaseId, conclusion, createdAt and displayTitle so the caller can match a
 # run to its own request rather than taking the newest and risking a stale one.
 # With a run-id: polls that run until it completes, at most 40 times 30 s apart.
@@ -25,12 +25,13 @@
 # the rest. The conclusion is read only once the status is completed, because gh
 # leaves it empty on every other status.
 #
-# The listing covers runs on <branch> and on the default branch, because the
+# The listing covers runs on <branch> and on <default-branch>, because the
 # trigger decides which one a run is attributed to: a review requested by an
 # issue comment runs on the default branch, while pull_request_review* triggers
 # run on the PR branch. Filtering on <branch> alone matches nothing for the
 # issue-comment shape, so the caller polls until it times out and reports the
-# review as never arriving even though it completed and posted.
+# review as never arriving even though it completed and posted. The default
+# branch arrives as an argument, never read here: see Usage below.
 #
 # Match on createdAt against the moment the request was posted, but createdAt
 # alone still does not identify the run: every issue-comment run in the
@@ -51,7 +52,13 @@
 # reply. Watch mode returns 0 for it, so taking a skipped run as the review
 # reads an unrun review as a completed one with nothing to say.
 #
-# Usage: watch-claude-review.sh <branch> [run-id]
+# Usage: watch-claude-review.sh <branch> <default-branch|run-id>
+#        The second argument is the default branch in list mode and a run id in
+#        watch mode, told apart by being all digits.
+#        The default branch is an argument, not a read: resolving it is a live
+#        `git ls-remote --symref`, measured at 2.15-2.17 s, and a caller lists
+#        again on every poll of a review it is waiting for. The caller resolves
+#        it once and passes it to every listing.
 #
 # Exit: 0 = the listing printed (list mode), or the watched run's conclusion is
 #           "success" or "skipped" (watch mode). Watch mode prints nothing on
@@ -69,17 +76,26 @@
 # "stop and inspect" rather than as a specific answer.
 set -euo pipefail
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <branch> [run-id]" >&2
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 <branch> <default-branch|run-id>" >&2
   exit 2
 fi
 
 BRANCH="$1"
-RUN_ID="${2:-}"
-
-if [ -n "$RUN_ID" ] && ! [[ "$RUN_ID" =~ ^[0-9]+$ ]]; then
-  echo "Usage: $0 <branch> [run-id]" >&2
+if [ -z "$BRANCH" ] || [ -z "$2" ]; then
+  echo "Usage: $0 <branch> <default-branch|run-id>" >&2
   exit 2
+fi
+
+# listing mode と watch mode は第 2 引数の形で分かれる: 全桁なら run id。全桁の
+# 既定ブランチ名は run id として読まれるが、listing を黙って誤ったフィルタに
+# するのではなく run の lookup で止まる（`gh run view` の失敗は即 exit）。
+if [[ "$2" =~ ^[0-9]+$ ]]; then
+  RUN_ID="$2"
+  DEFAULT_BRANCH=""
+else
+  RUN_ID=""
+  DEFAULT_BRANCH="$2"
 fi
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -105,13 +121,9 @@ if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
 fi
 
 if [ -z "$RUN_ID" ]; then
-  if ! default_branch="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh" 2>/dev/null)"; then
-    echo "error: failed to resolve the default branch" >&2
-    exit 1
-  fi
   if ! gh run list -R "$REPO" --workflow="$wf" --limit 100 \
     --json databaseId,conclusion,createdAt,displayTitle,headBranch 2>/dev/null |
-    jq --arg b "$BRANCH" --arg d "$default_branch" \
+    jq --arg b "$BRANCH" --arg d "$DEFAULT_BRANCH" \
       '[.[] | select(.headBranch == $b or .headBranch == $d) | del(.headBranch)]' 2>/dev/null; then
     echo "error: failed to list workflow runs for $wf" >&2
     exit 1

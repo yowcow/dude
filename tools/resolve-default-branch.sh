@@ -3,9 +3,10 @@
 # having printed nothing.
 #
 # Called as a subprocess by skills/implement-work/scripts/resolve-base.sh,
-# tools/resolve-pr-base.sh, tools/resolve-range.sh and
-# skills/pr-to-ready/scripts/watch-claude-review.sh -- and by no SKILL.md:
-# it is one answer several skills need, and the spec it implements lives in
+# tools/resolve-pr-base.sh and tools/resolve-range.sh, and named by
+# pr-to-ready's Step 2-1, which resolves it once and passes the answer to every
+# listing of the Claude workflow runs: it is one answer several skills need, and
+# the spec it implements lives in
 # skills/implement-work/references/base-branch.md, "## Resolving the default
 # branch".
 #
