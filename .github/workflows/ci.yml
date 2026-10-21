@@ -44,6 +44,53 @@ jobs:
       - name: make test
         run: make test
 
+  # bash 3.2 is the floor the scripts under skills/<skill>/scripts/ and the
+  # hooks must run on (AGENTS.md; #646), and the image ships 5.x: a 3.2-only
+  # regression is green in the jobs above and broken wherever a macOS user's
+  # /bin/bash runs it. The version is asserted in the step that runs the
+  # suite because a PATH that slipped would measure bash 5 and report the
+  # same green.
+  test-bash32:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: build bash 3.2.57
+        run: |
+          set -o pipefail
+          curl -fsSL --retry 3 --retry-connrefused \
+            -o "$RUNNER_TEMP/bash-3.2.57.tar.gz" \
+            https://ftp.gnu.org/gnu/bash/bash-3.2.57.tar.gz
+          printf '%s  %s\n' \
+            '3fa9daf85ebf35068f090ce51283ddeeb3c75eb5bc70b1a4a7cb05868bfe06a4' \
+            "$RUNNER_TEMP/bash-3.2.57.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/bash-3.2.57.tar.gz" -C "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP/bash-3.2.57"
+          # This release's config.guess does not recognise aarch64, so the
+          # triplet is derived from uname rather than guessed; this job runs
+          # x86_64, where both give x86_64-unknown-linux-gnu.
+          # C23 reads `f ()` as `f (void)`, and this release declares
+          # list_reverse () at externs.h:124 while general.h:129 calls it
+          # with an argument; gcc 15, which ubuntu-latest moves to, defaults
+          # to gnu23, so the dialect is pinned.
+          triplet="$(uname -m)-unknown-linux-gnu"
+          CFLAGS="-O2 -std=gnu89" ./configure \
+            --build="$triplet" --host="$triplet" \
+            --without-bash-malloc --disable-nls
+          make
+          echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"
+
+      - name: make test (bash 3.2)
+        run: |
+          bash --version
+          got="$(bash -c 'printf "%s.%s" "${BASH_VERSINFO[0]}" "${BASH_VERSINFO[1]}"')"
+          if [ "$got" != 3.2 ]; then
+            echo "bash on PATH is $got, not 3.2 — the suite below would measure the image's bash" >&2
+            exit 1
+          fi
+          make test
+
   manifest:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
