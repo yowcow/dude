@@ -26,8 +26,8 @@
 # The numbered blocks below run in that order; the numbered list in
 # tests/README.md describes the same properties. The unnumbered blocks cover the
 # rest of the machinery the suite rests on: the `facts_file` fixture,
-# `assert_row`'s required fourth argument, the disposable git repository helper
-# and the `sleep` stub.
+# `assert_row`'s required fourth argument, the required needle of
+# `check_stderr_has`, the disposable git repository helper and the `sleep` stub.
 set -euo pipefail
 
 # harness.sh is linted on its own, so following it from here buys nothing. The
@@ -559,5 +559,41 @@ case "$ar_out" in
     ;;
 esac
 if [ "$ar_fails" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- check_stderr_has: the expected text is required, and a miss is a failure --
+#
+# Asserting stderr is opt-out of assert_row's four arguments: a row whose
+# non-zero exit is explained by nothing but its message passes today with the
+# message replaced by junk. Two ways to lose the assertion are possible in a
+# helper like this, and neither may be quiet: dropping the needle (an abort,
+# under the set -u every test file carries) and passing an empty one (an empty
+# substring matches every stderr byte, so the assertion can never fail).
+#
+# The abort is probed in its own process: it ends the file before any row could
+# observe it, and that abort is the mechanism.
+total=$((total + 1))
+sh_fails=0
+sh_status=0
+sh_out="$( ( check_stderr_has 'dropped-needle-argument' ) 2>&1 )" || sh_status=$?
+if ! check_eq 'required needle argument: exit' 1 "$sh_status"; then sh_fails=1; fi
+case "$sh_out" in
+  *unbound*) ;;
+  *)
+    printf 'FAIL required needle argument: %s\n' "$sh_out"
+    sh_fails=1
+    ;;
+esac
+# The near miss is what would fail if the comparison were looser than -F.
+run_sut bash -c 'printf "%s\n" boom >&2'
+if ! check_stderr_has 'stderr: a printed message matches' 'boom'; then sh_fails=1; fi
+if check_stderr_has 'stderr: a near miss is a failure' 'boon' >/dev/null 2>&1; then
+  printf 'FAIL stderr: a near miss matched\n'
+  sh_fails=1
+fi
+if check_stderr_has 'stderr: an empty needle is refused' '' >/dev/null 2>&1; then
+  printf 'FAIL stderr: an empty needle matched\n'
+  sh_fails=1
+fi
+if [ "$sh_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"

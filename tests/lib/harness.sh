@@ -323,6 +323,35 @@ check_gh_stdin() {
   return 1
 }
 
+# check_stderr_has <label> <needle>
+# The stderr assertion `assert_row` does not make. A non-zero exit whose only
+# explanation is a message passes today with the message replaced by junk, so a
+# row like that binds the message here. The needle stays at the call site, so
+# what a row asserts is read there rather than here.
+#
+# Both arguments are required, deliberately not `${2:-}`: an empty needle is an
+# empty substring and matches every stderr byte, so a dropped argument would turn
+# the assertion into one that cannot fail — silently, which is the defect this
+# assertion exists for. Under the `set -u` every test file carries, a
+# one-argument call aborts the file instead, the same loud failure assert_row's
+# required fourth argument gives.
+#
+# -F because every needle is a literal message fragment, and -- because a needle
+# is free to begin with a dash.
+check_stderr_has() {
+  local label="$1" needle="$2"
+  if [ -z "$needle" ]; then
+    printf 'FAIL %s: no expected stderr given\n' "$label"
+    return 1
+  fi
+  if grep -qF -- "$needle" "$SUT_STDERR"; then
+    return 0
+  fi
+  printf 'FAIL %s: stderr does not contain [%s]\n  got: %s\n' \
+    "$label" "$needle" "$(head -c 600 "$SUT_STDERR")"
+  return 1
+}
+
 check_no_violations() {
   local label="$1" v
   v="$(gh_violations)"
