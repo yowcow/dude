@@ -48,7 +48,8 @@ TOOLS="${SCRIPT_DIR}/../../../tools"
 # base <branch>: fetch it, then answer it.
 base() {
   if ! bash "${TOOLS}/fetch-to-sha.sh" "$1" >/dev/null; then
-    exit 1
+    echo "STOP base-fetch-failed"
+    exit 0
   fi
   echo "BASE $1"
   exit 0
