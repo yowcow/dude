@@ -48,29 +48,58 @@ mk_file() {
   printf '#!/usr/bin/env bash\nexit 0\n' >"$1/$2"
 }
 
+# declare_subject <root> <test-path> <key>
+# Writes the line the gate accepts as a declaration that the test at
+# <test-path> covers <key>.
+declare_subject() {
+  printf 'SUT="${SUT:-${REPO_ROOT}/%s}"\n' "$3" >>"$1/$2"
+}
+
+# subject_key <root> <key-without-suffix>
+# The expected test path drops a trailing `.sh`, so `foo_test.sh` covers either
+# `foo` or `foo.sh`. Declare the `.sh` twin when the tree holds it, and the
+# extensionless name otherwise.
+subject_key() {
+  if [ -f "$1/$2.sh" ]; then
+    printf '%s.sh\n' "$2"
+  else
+    printf '%s\n' "$2"
+  fi
+}
+
+# mk_covered_test <root> <test-path> <key-without-suffix>
+# Writes the test file and the line the gate accepts as a declaration that the
+# test at <test-path> covers the script whose key is <key>.
+mk_covered_test() {
+  local key
+  key="$(subject_key "$1" "$3")"
+  mk_file "$1" "$2"
+  declare_subject "$1" "$2" "$key"
+}
+
 # mk_script <root> <skill> <name>
 mk_script() { mk_file "$1" "skills/$2/scripts/$3"; }
 
 # mk_test <root> <skill> <name>   — <name> is the test file's own basename
-mk_test() { mk_file "$1" "tests/$2/$3"; }
+mk_test() { mk_covered_test "$1" "tests/$2/$3" "skills/$2/scripts/${3%_test.sh}"; }
 
 # mk_hook <root> <name>  — <name> is relative to hooks/, may contain slashes
 mk_hook() { mk_file "$1" "hooks/$2"; }
 
 # mk_hook_test <root> <name>  — <name> is the test file's own basename under tests/hooks/
-mk_hook_test() { mk_file "$1" "tests/hooks/$2"; }
+mk_hook_test() { mk_covered_test "$1" "tests/hooks/$2" "hooks/${2%_test.sh}"; }
 
 # mk_tool <root> <name>  — <name> is relative to tools/, may contain slashes
 mk_tool() { mk_file "$1" "tools/$2"; }
 
 # mk_tool_test <root> <name>  — <name> is the test file's own basename under tests/tools/
-mk_tool_test() { mk_file "$1" "tests/tools/$2"; }
+mk_tool_test() { mk_covered_test "$1" "tests/tools/$2" "tools/${2%_test.sh}"; }
 
 # mk_root_script <root> <name>  — <name> is relative to scripts/, may contain slashes
 mk_root_script() { mk_file "$1" "scripts/$2"; }
 
 # mk_root_test <root> <name>  — <name> is the test file's own basename under tests/scripts/
-mk_root_test() { mk_file "$1" "tests/scripts/$2"; }
+mk_root_test() { mk_covered_test "$1" "tests/scripts/$2" "scripts/${2%_test.sh}"; }
 
 # Each returns a fresh synthetic repo root. The shape mirrors the real one
 # because the gate derives skills, tools, hooks, scripts, and tests from the root it is handed.
@@ -761,6 +790,60 @@ run_sut bash "$SUT" "$root"
 if ! check_eq 'root link to a file: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'root link to a file: names it' \
   'scripts is a symlink whose target is not a directory'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 46: a test path that does not declare its subject is not coverage --
+# yowcow/dude#666: a skill named `lib` makes skills/lib/scripts/harness.sh expect
+# tests/lib/harness_test.sh, which exists as the harness's own self-test. Non-empty
+# at the expected path says nothing about which script it exercises, so the gate
+# counts it only when the file declares this script as its subject.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" lib 'harness.sh'
+mk_file "$root" 'tests/lib/harness_test.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'undeclared test: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'undeclared test: names the script' 'skills/lib/scripts/harness.sh'; then fails_here=1; fi
+if ! check_stderr_has 'undeclared test: names the expected test path' 'tests/lib/harness_test.sh'; then fails_here=1; fi
+if ! check_stderr_has 'undeclared test: names the line to add' \
+  'SUT="${SUT:-${REPO_ROOT}/skills/lib/scripts/harness.sh}"'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 47: a test declaring another subject is not coverage ---------------
+# tests/implement-work/handoff-contract_test.sh checks SKILL.md against
+# tools/ensure-draft-pr.sh and declares no subject. A script added at
+# skills/implement-work/scripts/handoff-contract.sh lands on its path with
+# nothing exercising it: the hole is a shared directory name, not the skill
+# named `lib`, and a declaration for some other subject must not close it.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" implement-work 'handoff-contract.sh'
+mk_file "$root" 'tests/implement-work/handoff-contract_test.sh'
+declare_subject "$root" 'tests/implement-work/handoff-contract_test.sh' 'tools/ensure-draft-pr.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'wrong subject: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'wrong subject: names the script' 'skills/implement-work/scripts/handoff-contract.sh'; then fails_here=1; fi
+if ! check_stderr_has 'wrong subject: names the line to add' \
+  'SUT="${SUT:-${REPO_ROOT}/skills/implement-work/scripts/handoff-contract.sh}"'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 48: a declaration for foo.sh does not cover foo ---------------------
+# The expected path strips a trailing `.sh`, so an extensionless script and its
+# .sh twin share it. The declaration names the key in full, and the comparison
+# is a whole line, so `.../foo.sh`'s line does not match for `.../foo`.
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_script "$root" alpha 'foo'
+mk_file "$root" 'tests/alpha/foo_test.sh'
+declare_subject "$root" 'tests/alpha/foo_test.sh' 'skills/alpha/scripts/foo.sh'
+run_sut bash "$SUT" "$root"
+if ! check_eq 'extensionless near-miss: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'extensionless near-miss: names the extensionless script' 'skills/alpha/scripts/foo'; then fails_here=1; fi
+if ! check_stderr_has 'extensionless near-miss: names the line to add' \
+  'SUT="${SUT:-${REPO_ROOT}/skills/alpha/scripts/foo}"'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
