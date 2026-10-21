@@ -133,23 +133,28 @@ for f in keep pkg/node_modules/keep .opencode/keep-shell tests/lint.sh; do
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# Batching must not drop a file: past one batch, every planted file still
-# reaches ShellCheck. They sort last, so a feed that stops after the first
-# batch loses them and no other row notices.
-mkdir -p "$PROBE/zz-batch"
-for ((i = 1; i <= 20; i++)); do
-  printf '#!/usr/bin/env bash\nexit 0\n' >"$PROBE/zz-batch/f${i}"
-done
+# `nproc` is absent on macOS and every other row here takes its branch. With a
+# failing `nproc` stub and a `getconf` stub answering 3, the `xargs` stub must
+# be handed -P3: a wrong `getconf` name would fall through to 1 and run the
+# tree serially with every row here still green.
+FALLBACK_BIN="$(mktemp -d "${HARNESS_TMP}/bin-fallback.XXXXXX")"
+XARGS_LOG="${HARNESS_TMP}/xargs.argv"
+printf '#!/bin/sh\nexit 1\n' >"${FALLBACK_BIN}/nproc"
+printf '#!/bin/sh\n[ "$1" = _NPROCESSORS_ONLN ] || exit 1\nprintf "3\\n"\n' >"${FALLBACK_BIN}/getconf"
+printf '#!/bin/sh\nprintf "%%s\\n" "$@" >>"%s"\n' "$XARGS_LOG" >"${FALLBACK_BIN}/xargs"
+chmod +x "${FALLBACK_BIN}/nproc" "${FALLBACK_BIN}/getconf" "${FALLBACK_BIN}/xargs"
+SAVED_PATH="$PATH"
+PATH="${FALLBACK_BIN}:${PATH}"
+hash -r 2>/dev/null || true
 run_sut bash "$PROBE/tests/lint.sh"
+PATH="$SAVED_PATH"
+hash -r 2>/dev/null || true
 total=$((total + 1))
-fails_here=0
-for ((i = 1; i <= 20; i++)); do
-  if ! grep -qxF -- "$PROBE/zz-batch/f${i}" "$SHELLCHECK_LOG"; then
-    printf 'FAIL probe: %s was dropped by batching\n' "$PROBE/zz-batch/f${i}"
-    fails_here=1
-  fi
-done
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+if ! grep -qxF -- '-P3' "$XARGS_LOG" 2>/dev/null; then
+  printf 'FAIL probe: the getconf fallback did not reach xargs\n  argv: %s\n' \
+    "$(head -c 400 "$XARGS_LOG" 2>/dev/null)"
+  failed=$((failed + 1))
+fi
 
 # A file ShellCheck rejects still fails the run. `xargs` exits 123 when any
 # batch fails and the script carries that out as its own non-zero status; a
@@ -164,5 +169,24 @@ if [ "$SUT_STATUS" -eq 0 ]; then
     "$(head -c 400 "$SUT_STDOUT")"
   failed=$((failed + 1))
 fi
+unset SHELLCHECK_FAIL_FILE
+
+# Batching must not drop a file: every planted file still reaches ShellCheck.
+# The files past the first batch sort last, so a feed that stops after the
+# first batch loses them and no other row notices.
+mkdir -p "$PROBE/zz-batch"
+for ((i = 1; i <= 20; i++)); do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$PROBE/zz-batch/f${i}"
+done
+run_sut bash "$PROBE/tests/lint.sh"
+total=$((total + 1))
+fails_here=0
+for ((i = 1; i <= 20; i++)); do
+  if ! grep -qxF -- "$PROBE/zz-batch/f${i}" "$SHELLCHECK_LOG"; then
+    printf 'FAIL probe: %s was dropped by batching\n' "$PROBE/zz-batch/f${i}"
+    fails_here=1
+  fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
