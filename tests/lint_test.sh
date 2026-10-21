@@ -88,6 +88,9 @@ export SHELLCHECK_LOG
 cat >"${SHELLCHECK_BIN}/shellcheck" <<'STUB'
 #!/usr/bin/env bash
 printf '%s\n' "$@" >>"$SHELLCHECK_LOG"
+for a in "$@"; do
+  if [ "$a" = "${SHELLCHECK_FAIL_FILE:-}" ]; then exit 1; fi
+done
 exit 0
 STUB
 chmod +x "${SHELLCHECK_BIN}/shellcheck"
@@ -129,5 +132,37 @@ for f in keep pkg/node_modules/keep .opencode/keep-shell tests/lint.sh; do
   fi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Batching must not drop a file: past one batch, every planted file still
+# reaches ShellCheck. They sort last, so a feed that stops after the first
+# batch loses them and no other row notices.
+mkdir -p "$PROBE/zz-batch"
+for ((i = 1; i <= 20; i++)); do
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$PROBE/zz-batch/f${i}"
+done
+run_sut bash "$PROBE/tests/lint.sh"
+total=$((total + 1))
+fails_here=0
+for ((i = 1; i <= 20; i++)); do
+  if ! grep -qxF -- "$PROBE/zz-batch/f${i}" "$SHELLCHECK_LOG"; then
+    printf 'FAIL probe: %s was dropped by batching\n' "$PROBE/zz-batch/f${i}"
+    fails_here=1
+  fi
+done
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# A file ShellCheck rejects still fails the run. `xargs` exits 123 when any
+# batch fails and the script carries that out as its own non-zero status; a
+# wrapper that swallowed it would print "shellcheck: ok" over a failing tree.
+# One file of the four fails, so the row also covers a batch that is partly
+# clean rather than a run where every file did.
+export SHELLCHECK_FAIL_FILE="$PROBE/keep"
+run_sut bash "$PROBE/tests/lint.sh"
+total=$((total + 1))
+if [ "$SUT_STATUS" -eq 0 ]; then
+  printf 'FAIL probe: a failing file left the exit status 0\n  stdout: %s\n' \
+    "$(head -c 400 "$SUT_STDOUT")"
+  failed=$((failed + 1))
+fi
 
 harness_exit "$failed" "$total"
