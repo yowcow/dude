@@ -123,10 +123,34 @@ if [ -n "${SUT:-}" ]; then
   # needs no execute bit, so requiring one would refuse a legitimate run.
   #
   # The message names readability alone because `-r` is false for a path that
-  # isn't there as well, so one wording stays true for all four refusals —
-  # missing, directory, empty, unreadable.
+  # isn't there as well, so one wording stays true for all four of these
+  # refusals — missing, directory, empty, unreadable.
   if [ ! -f "$SUT" ] || [ ! -s "$SUT" ] || [ ! -r "$SUT" ]; then
     printf 'run.sh: SUT does not name a readable non-empty file: %s\n' "$SUT" >&2
+    exit 1
+  fi
+  # A readable file that is not a script gets through the three checks above
+  # and then fails every row at `bash "$SUT"`, which is the shape of a
+  # successful RED verification (#687: `SUT=README.md` reported every row
+  # `not ok`). A script is identified by its shebang on the first line — the
+  # property tests/lint.sh keys its selection on, though lint admits only sh
+  # and bash because ShellCheck has to read the file. The shebang alone is not
+  # enough: prose can be syntactically valid bash, so `bash -n` would accept a
+  # README that happens to carry no parentheses, and a `#!` line alone lets a
+  # script for another interpreter through to the same false RED.
+  first_line=''
+  # `read` exits non-zero at EOF without a trailing newline and still sets the
+  # variable, so the status is discarded rather than read as "no shebang".
+  IFS= read -r first_line <"$SUT" || true
+  case "$first_line" in
+    '#!'*) ;;
+    *)
+      printf 'run.sh: SUT does not name a script: %s\n' "$SUT" >&2
+      exit 1
+      ;;
+  esac
+  if ! bash -n -- "$SUT" >/dev/null 2>&1; then
+    printf 'run.sh: SUT does not name a script: %s\n' "$SUT" >&2
     exit 1
   fi
   printf 'run.sh: SUT override in effect: %s\n' "$SUT"
