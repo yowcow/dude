@@ -121,8 +121,8 @@ serve() {
 # It lives in its own file holding nothing but the integer, and is deliberately
 # NOT derived by counting lines in the argv log below. An argument may carry a
 # newline of its own — the GraphQL query list-unresolved-threads.sh passes as
-# `-f query='...'` spans 23 lines — and counting lines would then advance the
-# index by 23 for one call, so every later exact-index entry would answer a
+# `-f query='...'` spans many lines — and counting lines would then advance the
+# index by that many for one call, so every later exact-index entry would answer a
 # different call than the one it was written for.
 #
 # It counts *responses served*: invocations for an ordinary call, pages for a
@@ -138,8 +138,7 @@ fi
 # 読むのもその条件に限る。無条件に読むと、--input を持たない呼び出しの stdin を
 # 空読みしてしまい、実 gh が触らないものを stub が触ることになる。
 #
-# 記録する理由は 2 つある。ひとつ、本文は argv に現れない — 現れないこと自体が
-# review-pr の post-review.sh のヘッダが名指しする guard である — ので、payload を見
+# 記録する理由は 2 つある。ひとつ、本文は argv に現れない（stdin で渡す呼び出しはそうなる）ので、payload を見
 # られないテストは本文の誤りを 1 バイトも検出できない。ふたつ、pipe buffer を超える本文で
 # は、読まれないパイプの向こう側で `jq` が SIGPIPE を受け、`pipefail` を持つ
 # 被試験スクリプトが投稿成功を exit 141 に化けさせる。
@@ -170,7 +169,7 @@ lookup() {
   while IFS=$'\t' read -r idx status body argv_file mode; do
     # The joined argv lives in its own file because an element may carry a tab
     # or a newline — the GraphQL query list-unresolved-threads.sh passes as
-    # `-f query='...'` spans 23 lines — which a TSV field cannot hold. The
+        # `-f query='...'` spans many lines — which a TSV field cannot hold. The
     # comparison is still on the exact bytes, not on a digest of them: a digest
     # would have to fold characters, and two argvs folding to one key would
     # silently serve the wrong fixture.
