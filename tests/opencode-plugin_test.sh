@@ -15,8 +15,7 @@
 # Elsewhere reds on the install path alone: loadSkills() ENOENT, or a copy's own
 # root in the heading, neither of which is the mutation.
 # SUT does not apply (subject is a JS module). For the deliberate-failure check,
-# copy this file with one assertion forced to fail — same shape as the RED
-# verification in tests/README.md.
+# copy this file with one assertion forced to fail and confirm it prints `not ok`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -50,36 +49,32 @@ JS
 
 session_json="$("${REPO_ROOT}/hooks/session-start")"
 
-tally="${HARNESS_TMP}/assertions"
-node_status=0
+assertions="${HARNESS_TMP}/assertions"
+# A non-zero exit is the failure signal: a failed assertion aborts the body, and
+# a crash after the last assertion must not print green.
+failed=0
 node --import "${HARNESS_TMP}/hooks.mjs" --input-type=module - \
-  "$PLUGIN_UNDER_TEST" "$REPO_ROOT" "$session_json" "$tally" <<'JS' || node_status=$?
-import { strict as base } from 'node:assert';
+  "$PLUGIN_UNDER_TEST" "$REPO_ROOT" "$session_json" "$assertions" <<'JS' || failed=1
+import { strict as nodeAssert } from 'node:assert';
 import { readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const tallyFile = process.argv[5];
-let failedCount = 0;
 let totalCount = 0;
 // Registered before the first assertion, and it still runs when an assertion
 // throws — which is why a failing run reports its count instead of vanishing.
 process.on('exit', () => {
-  writeFileSync(tallyFile, `${failedCount} ${totalCount}\n`);
+  writeFileSync(tallyFile, `${totalCount}\n`);
 });
 const counted = (fn) => (...args) => {
   totalCount += 1;
-  try {
-    return fn.apply(base, args);
-  } catch (err) {
-    failedCount += 1;
-    throw err;
-  }
+  return fn(...args);
 };
 const assert = {
-  ok: counted(base.ok),
-  equal: counted(base.equal),
-  deepStrictEqual: counted(base.deepStrictEqual),
+  ok: counted(nodeAssert.ok),
+  equal: counted(nodeAssert.equal),
+  deepStrictEqual: counted(nodeAssert.deepStrictEqual),
 };
 
 const pluginPath = process.argv[2];
@@ -267,16 +262,10 @@ assert.equal(typeof v1sys, 'function',
 JS
 
 # An absent or unreadable tally (the process died before its exit hook) leaves
-# both at zero, and harness_exit's zero-assertion guard turns that into `not ok`
-# rather than a green with no count.
-failed=0
+# the total at zero, and harness_exit's zero-assertion guard turns that into
+# `not ok` rather than a green with no count.
 total=0
-if [ -s "$tally" ]; then
-  read -r failed total <"$tally"
-fi
-# A non-zero node exit with no counted failure is a crash after the last
-# assertion; charging it as one keeps `ok N/N` from printing over it.
-if [ "$node_status" -ne 0 ] && [ "$failed" -eq 0 ]; then
-  failed=1
+if [ -s "$assertions" ]; then
+  read -r total <"$assertions"
 fi
 harness_exit "$failed" "$total"
