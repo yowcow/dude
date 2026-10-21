@@ -176,4 +176,37 @@ fi
 if ! check_eq 'make function injection untouched' '"version": "1.0.0"' "$(version_line "$root/package.json")"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# The bump target list and the manifest gate's version dict must name the same files.
+total=$((total + 1))
+fails_here=0
+bump_list="$(sed -n 's/^FILES="\(.*\)"$/\1/p' "$SUT" | tr ' ' '\n' | sort)"
+manifest_list="$(grep -o "^    '[^']*':" "${REPO_ROOT}/tests/manifest.sh" | sed "s/^    '//; s/':\$//" | sort)"
+if [ -z "$bump_list" ]; then
+  printf 'FAIL bump list: no FILES= extracted from %s\n' "$SUT"
+  fails_here=1
+fi
+if [ -z "$manifest_list" ]; then
+  printf 'FAIL manifest list: no versions keys extracted from tests/manifest.sh\n'
+  fails_here=1
+fi
+if ! check_eq 'bump list matches manifest versions' "$manifest_list" "$bump_list"; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Every manifest that carries a version is bumped; the versionless mirror is not.
+total=$((total + 1))
+fails_here=0
+for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json .codex-plugin/marketplace.json .muse-plugin/plugin.json .muse-plugin/marketplace.json package.json; do
+  if [ -f "${REPO_ROOT}/$f" ] && grep -q '"version"' "${REPO_ROOT}/$f"; then
+    if ! printf '%s\n' "$bump_list" | grep -qxF "$f"; then
+      printf 'FAIL bump list lacks %s, which carries a version\n' "$f"
+      fails_here=1
+    fi
+  fi
+done
+if printf '%s\n' "$bump_list" | grep -qxF '.agents/plugins/marketplace.json'; then
+  printf 'FAIL bump list names .agents/plugins/marketplace.json, a versionless mirror\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
