@@ -214,6 +214,15 @@ written expecting real waits. Unlike the fake `gh`, it accepts any argv: the
 `gh` rule exists because an unstubbed call would be answered by the network,
 and `sleep` hands the caller nothing it reads.
 
+## A PATH without `jq`: `no_jq_path`
+
+`no_jq_path <dir>` symlinks every executable on the current `PATH` except `jq`,
+and prints `dir` for use as a row's `PATH`. A row proving that a missing
+dependency stops a script needs the rest of the PATH intact: each stub starts
+with `#!/usr/bin/env bash`, so on a PATH with no `bash` a script that ran on to
+call one looks exactly like one that stopped, and its zero call count proves
+nothing.
+
 ## Fact fixtures: `facts_file`
 
 A script on the facts contract (`skills/implement-work/references/facts.md`)

@@ -42,6 +42,7 @@ stub_sleep_instant
 
 SUT="${SUT:-${REPO_ROOT}/skills/pr-to-ready/scripts/watch-copilot-review.sh}"
 FIXTURES="$(dirname -- "${BASH_SOURCE[0]}")/fixtures"
+NO_JQ_PATH="$(no_jq_path "${HARNESS_TMP}/no-jq-path")"
 TWO="${FIXTURES}/copilot-reviews-two.jsonl"
 
 # A verbatim copy of the --jq argument in list-copilot-reviews.sh:46-48,
@@ -189,6 +190,19 @@ too-few-args|copilot-reviews-two|absent|acme widgets 7|2|0|
 too-many-args|copilot-reviews-two|empty|acme widgets 7 %B 1 1 extra|2|0|
 non-numeric-max-iterations|copilot-reviews-two|empty|acme widgets 7 %B abc 1|2|0|
 ROWS
+
+# A missing jq is its own answer, not a baseline that is "not a listing". jq
+# alone is off the PATH, and the baseline is a valid one, so the exit status and
+# stderr below are what tell the guard apart: the pre-fix script fails the
+# baseline read with zero `gh` calls too. The count is asserted for the one
+# thing it does say — no `gh` call was made.
+row_start
+jq_baseline="$(make_baseline empty)"
+run_sut env PATH="$NO_JQ_PATH" bash "$SUT" \
+  acme widgets 7 "$jq_baseline" 1 1
+assert_row 'missing jq' 6 '' 0
+tally check_eq 'missing jq: stderr' \
+  'error: jq is required but was not found on PATH' "$(cat "$SUT_STDERR")"
 
 # Running the defaults pins the three numbers behind the header's 19m30s: 40
 # polls, 39 gaps of 30 s each. A default change fails here instead of leaving

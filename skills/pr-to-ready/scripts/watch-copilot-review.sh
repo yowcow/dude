@@ -45,7 +45,16 @@
 #       1 = none arrived before the iteration cap ran out
 #       2 = usage error, the baseline file does not exist or cannot be read, or
 #           it is not a list-copilot-reviews.sh listing
+#       6 = a command this script requires is not on PATH — jq
 set -euo pipefail
+
+# Checked before any argument: without jq the baseline read below reports a
+# valid file as not a listing, so the caller edits the baseline instead of
+# installing the dependency.
+if ! command -v jq >/dev/null 2>&1; then
+  echo "error: jq is required but was not found on PATH" >&2
+  exit 6
+fi
 
 if [ "$#" -lt 4 ] || [ "$#" -gt 6 ]; then
   echo "Usage: $0 <owner> <repo> <pr-number> <baseline-file> [max-iterations] [interval-seconds]" >&2
