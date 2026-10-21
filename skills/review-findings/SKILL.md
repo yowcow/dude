@@ -81,10 +81,8 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 Record per-lens accepted/rejected counts against the target's tracking issue, or chat when none tracks the work, citing the ledger entries and intake decisions the pass produced.
 Only the converged counts reach the tracking issue, published by the caller per `using-dude`'s **Stage boundaries** — never a per-pass GitHub write by the pass itself.
 Counts reuse the Report ledger's accepted entries, rejected-but-checked entries, and intake decisions; no separate log is kept.
-Rejected: flagging the `AUTHORING.md` `byte-for-byte` wording overstatement as a finding — left as is, no reader reaches a wrong conclusion or wrong fix because the mechanism is correct and only the wording overstates (Side A not met; real yowcow/dude#442 axis-2 nit).
+Rejected: flagging a doc's wording that overstates a mechanism which is itself correct as a finding — left as is, no reader reaches a wrong conclusion or wrong fix because the mechanism is correct and only the wording overstates (Side A not met; real yowcow/dude#442 axis-2 nit).
 Rejected: flagging excess measurement precision (or section ordering) as a finding — followed as stated, the reader spends a fix that changes no conclusion, which is reviewer preference, never a finding (Side B not met; the preference class named above).
-Replay the corpus — the yowcow/dude#442 audit report plus the yowcow/dude#443 design-comment review rounds (Pass 1, Revision 1, Revision 2 clean) — once under the current single additive pass and once under the new additive-plus-subtractive design.
-Report the accepted-entry sustain rate (accepted entries sustained under the Evidence-only verification pass divided by total accepted entries) with per-lens counts for both arms.
 
 ## Caller contract
 
