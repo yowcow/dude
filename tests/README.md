@@ -82,7 +82,9 @@ Each row typically does:
    is the separate assertion for a row whose non-zero exit is explained by
    nothing but the message it printed; the needle is required and must not be
    empty, because an empty substring matches every byte and an assertion that
-   cannot fail is the defect it is there to catch.
+   cannot fail is the defect it is there to catch. The needle is single-line:
+   `grep -F` reads a newline in the pattern as a separator, so a two-line needle
+   would pass when either line alone survived.
 5. `tally <cmd> <args...>` — for a row that needs an assertion beyond
    `assert_row`'s four. It advances `total` once and `failed` once if the
    check fails, so an extra assertion is counted exactly like the row's

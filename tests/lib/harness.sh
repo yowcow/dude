@@ -337,7 +337,9 @@ check_gh_stdin() {
 # required fourth argument gives.
 #
 # -F because every needle is a literal message fragment, and -- because a needle
-# is free to begin with a dash.
+# is free to begin with a dash. The needle is single-line: grep -F reads a
+# newline inside the pattern as a separator, so a two-line needle would pass
+# when any one of its lines alone survived.
 check_stderr_has() {
   local label="$1" needle="$2"
   if [ -z "$needle" ]; then
