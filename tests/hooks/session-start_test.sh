@@ -350,7 +350,7 @@ row_done 'size-budget' "$fails"
 # UTF-8) locale, where it measures characters.
 
 row_start
-COMP="$(printf '%200s' '' | tr ' ' 'a')"
+COMP="$(printf '%150s' '' | tr ' ' 'a')"
 # 40 × U+1F600: 160 bytes, 40 characters, 80 UTF-16 code units.
 EMOJI="$(printf '😀%.0s' {1..40})"
 B40="$(printf '%40s' '' | tr ' ' 'b')"
@@ -485,12 +485,13 @@ row_done 'instruction-text-outside-block' "$fails"
 
 row_start
 ROOT="${HARNESS_TMP}/inv"$'\377'"set/dude"
-# A filesystem that refuses the byte (macOS/APFS, HFS+) fails at mkdir. Named as
-# this row's own failure rather than left to set -e, which would end the file
-# here and take the rows after it with it, with only a raw mkdir errno to say
-# why. `failed` is incremented directly because row_start already counted it.
-if ! build_tree "$ROOT" 2>/dev/null; then
-  printf 'FAIL invalid-utf8-strict-decode: this filesystem rejects an invalid-UTF-8 name\n'
+# A filesystem that refuses the byte (macOS/APFS, HFS+) fails at mkdir, as does
+# a full disk or an unwritable TMPDIR further along. Named as this row's own
+# failure, with what build_tree printed, rather than left to set -e, which would
+# end the file here and take the rows after it with it. `failed` is incremented
+# directly because row_start already counted it.
+if ! err="$(build_tree "$ROOT" 2>&1)"; then
+  printf 'FAIL invalid-utf8-strict-decode: cannot build the fixture tree\n  %s\n' "$err"
   failed=$((failed + 1))
 else
   run_sut bash "${ROOT}/hooks/session-start"
