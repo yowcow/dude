@@ -107,8 +107,9 @@ fi
 
 # One ERE per directory name, with the left boundary only, in a single file.
 # The candidates are wider than the three classes need: which class a line
-# belongs to is decided in bash. Only the mention class wants a right boundary,
-# and paraphrase must not have one — `plan-works worker` matches there.
+# belongs to is decided in bash. The path class wants a right boundary after
+# `/scripts`, the mention class right after the name, and paraphrase none at
+# all — `plan-works worker` matches there.
 patterns="${HARNESS_TMP}/patterns"
 : >"$patterns"
 for t in "${targets[@]}"; do
@@ -135,7 +136,6 @@ while IFS= read -r f; do
     done
   done < <(grep -nEf "$patterns" "$f" || true)
   while IFS= read -r hit; do
-    n="${hit%%:*}"
     rest="${hit#*:}"
     prefix="${rest%-*}"
     prefix="${prefix##*[!a-z0-9-]}"

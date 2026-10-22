@@ -99,8 +99,11 @@ total=0
 # main, plus <branch> when <where> is remote. A row copies it instead of
 # building a remote from an empty repo every time.
 template() {
-  local branch="$1" where="$2" trailer="$3" t seed
-  t="${HARNESS_TMP}/templates/${branch}.${where}.${trailer}.git"
+  local branch="$1" where="$2" trailer="$3" t seed key
+  # Slash-free: only templates/ is created, so a slash in <branch> or <trailer>
+  # would make git init fail with "not a directory".
+  key="$(printf '%s.%s.%s' "$branch" "$where" "$trailer" | tr '/' '_')"
+  t="${HARNESS_TMP}/templates/${key}.git"
   if [ -d "$t" ]; then
     printf '%s\n' "$t"
     return 0
