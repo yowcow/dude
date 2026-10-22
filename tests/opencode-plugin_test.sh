@@ -15,7 +15,9 @@
 # Elsewhere reds on the install path alone: loadSkills() ENOENT, or a copy's own
 # root in the heading, neither of which is the mutation.
 # SUT does not apply (subject is a JS module). For the deliberate-failure check,
-# copy this file with one assertion forced to fail and confirm it prints `not ok`.
+# copy this file to `tests/` under a name not ending in `_test.sh` (so a full
+# `tests/run.sh` run does not pick it up), force one assertion to fail, run it,
+# confirm it prints `not ok`, then delete the copy.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
