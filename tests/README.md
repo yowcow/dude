@@ -72,10 +72,19 @@ Each row typically does:
    unstubbed argv, advancing `failed` on any mismatch. All four arguments are
    required: a defaulted call count would turn a dropped argument into a
    silently skipped assertion. Reach for the individual checks — `check_eq`,
-   `check_bytes`, `check_no_violations`, `check_gh_stdin` — for a row that
-   needs an assertion `assert_row` does not make, or a different comparison:
-   `watch-claude-review_test.sh` compares stdout against a file and keeps a
-   local `assert_row` whose third argument is that file's path.
+   `check_bytes`, `check_no_violations`, `check_gh_stdin`, `check_stderr_has`
+   — for a row that needs an assertion `assert_row` does not make, or a
+   different comparison: `watch-claude-review_test.sh` compares stdout against
+   a file and keeps a local `assert_row` whose third argument is that file's
+   path.
+
+   `assert_row` does not look at stderr. `check_stderr_has <label> <needle>`
+   is the separate assertion for a row whose non-zero exit is explained by
+   nothing but the message it printed; the needle is required and must not be
+   empty, because an empty substring matches every byte and an assertion that
+   cannot fail is the defect it is there to catch. The needle is single-line:
+   `grep -F` reads a newline in the pattern as a separator, so a two-line needle
+   would pass when either line alone survived.
 5. `tally <cmd> <args...>` — for a row that needs an assertion beyond
    `assert_row`'s four. It advances `total` once and `failed` once if the
    check fails, so an extra assertion is counted exactly like the row's
