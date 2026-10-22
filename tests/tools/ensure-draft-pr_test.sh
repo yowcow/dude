@@ -35,11 +35,8 @@
 #   git show e4395c8^:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
 #
-#   Against that pre-fix script only the two stubbed rows and their stderr
-#   tally are red: `not ok 3/59`.
-#
-#   The three facts-capture rows at the end are RED against `master`'s script
-#   in the same full tools/ tree: `not ok 3/62`.
+#   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
+#   their stderr tally, plus the three facts-capture rows.
 #
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
@@ -95,8 +92,8 @@ total=0
 # so a shared one would let a `local` row's push show up in the next row.
 #
 # The template's HEAD is pointed at `main` before any clone: a bare repo starts
-# on an unborn `master`, which is what the sibling reads as the default branch,
-# and a clone of it would record no refs/remotes/origin/HEAD.
+# on an unborn `master` that no fixture creates, and `ls-remote --symref` then
+# names no default branch at all, which the sibling reads as a stop.
 #
 # template <branch> <where> <trailer> -- a bare repo built once per shape:
 # main, plus <branch> when <where> is remote. A row copies it instead of
@@ -110,7 +107,9 @@ template() {
   fi
   mkdir -p "${HARNESS_TMP}/templates"
   git init -q --bare "$t"
-  seed="$(git_repo_scratch "seed-${branch}.${where}.${trailer}")"
+  # Slash-free and constant: builds run one at a time, and git_repo_scratch
+  # wipes the directory, while <branch> may one day carry a slash.
+  seed="$(git_repo_scratch seed-template)"
   git_repo_init "$seed" main
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
   if [ "$where" = remote ]; then
