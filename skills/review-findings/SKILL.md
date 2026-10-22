@@ -40,7 +40,7 @@ Six, and none of them lowers the bar in **What counts as a finding**. Run the on
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
 - **Reality** — mismatch with the system as it is: a version, config, code path, or constraint the report describes wrongly.
 
-*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions** — `review-plan`'s lenses, which this skill never runs — and say so in the report: the work this report may propose is not reviewed here, so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
+*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions** — four `review-plan` lenses that are not among this skill's six — and say so in the report: the work this report may propose is not reviewed here, so there is nothing for the first three to bite on, and what a report takes for granted is Evidence sufficiency's business here.
 
 ## Dispatch
 
