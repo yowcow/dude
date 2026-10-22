@@ -49,11 +49,15 @@
 #
 # A run whose conclusion is "skipped" is one the workflow's own if: condition
 # rejected — a comment carrying no @claude, including the reviewer bot's own
-# reply. Watch mode returns 0 for it, so taking a skipped run as the review
-# reads an unrun review as a completed one with nothing to say.
+# reply. Watch mode exits 1 for it, as `gh run watch --exit-status` did, because
+# exit 0 would let a skipped run taken for the review read as a completed one
+# with nothing to say.
 #
-# Usage: watch-claude-review.sh <branch> <default-branch|run-id>
-#        The second argument is the default branch in list mode and a run id in
+# Usage: watch-claude-review.sh <owner> <repo> <branch> <default-branch|run-id>
+#        <owner>/<repo> is the repository the caller bound from the PR, the one
+#        both gh calls pin with -R: the checkout's origin can be a fork whose
+#        runs are not where the PR's @claude run lands.
+#        The last argument is the default branch in list mode and a run id in
 #        watch mode, told apart by being all digits.
 #        The default branch is an argument, not a read: resolving it is a live
 #        `git ls-remote --symref`, measured at 2.15-2.17 s, and a caller lists
@@ -61,11 +65,11 @@
 #        it once and passes it to every listing.
 #
 # Exit: 0 = the listing printed (list mode), or the watched run's conclusion is
-#           "success" or "skipped" (watch mode). Watch mode prints nothing on
-#           stdout: the caller reads only the exit status.
-#       1 = in watch mode the run concluded anything else, or it had not
-#           completed when the iteration cap ran out; the origin repository could
-#           not be resolved, in either mode; or the listing failed (list mode)
+#           "success" (watch mode). Watch mode prints nothing on stdout: the
+#           caller reads only the exit status.
+#       1 = in watch mode the run concluded anything else, "skipped" included, or
+#           it had not completed when the iteration cap ran out; or the listing
+#           failed (list mode)
 #       2 = usage error
 #       3 = no @claude workflow in this repository. This is the availability
 #           answer and nothing else exits 3, so a caller may skip Claude on it
@@ -76,24 +80,24 @@
 # "stop and inspect" rather than as a specific answer.
 set -euo pipefail
 
-if [ "$#" -ne 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
-  echo "Usage: $0 <branch> <default-branch|run-id>" >&2
+if [ "$#" -ne 4 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
+  echo "Usage: $0 <owner> <repo> <branch> <default-branch|run-id>" >&2
   exit 2
 fi
 
-BRANCH="$1"
+REPO="$1/$2"
+BRANCH="$3"
 
-# List mode and watch mode split on the second argument's shape: all digits is a
+# List mode and watch mode split on the last argument's shape: all digits is a
 # run id. An all-digit default branch name reads as one too, but the run lookup
 # exits at once rather than silently mis-filtering the listing.
-if [[ "$2" =~ ^[0-9]+$ ]]; then
-  RUN_ID="$2"
+if [[ "$4" =~ ^[0-9]+$ ]]; then
+  RUN_ID="$4"
   DEFAULT_BRANCH=""
 else
   RUN_ID=""
-  DEFAULT_BRANCH="$2"
+  DEFAULT_BRANCH="$4"
 fi
-SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # grep exits 1 when nothing matches, which set -e would turn into an abort, so
 # the substitution is guarded and the emptiness of wf is what gets tested.
@@ -110,11 +114,6 @@ if [ -z "$wf" ]; then
   exit 3
 fi
 wf="$(basename "$wf")"
-
-if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
-  echo "error: failed to resolve the origin repository" >&2
-  exit 1
-fi
 
 if [ -z "$RUN_ID" ]; then
   if ! gh run list -R "$REPO" --workflow="$wf" --limit 100 \
@@ -148,7 +147,7 @@ for i in $(seq 1 "$MAX_ITER"); do
     conclusion="$(printf '%s' "$view" |
       jq -r -s 'select(length == 1) | .[0].conclusion // ""' 2>/dev/null)" || conclusion=""
     case "$conclusion" in
-      success | skipped) exit 0 ;;
+      success) exit 0 ;;
       *)
         echo "claude review run ${RUN_ID} concluded '${conclusion}'" >&2
         exit 1
