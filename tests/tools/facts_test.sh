@@ -12,6 +12,11 @@
 # `-ge` to `-gt` in the round comparison fails the three rows that end on the
 # final word: 'wait: the limit-th round answers the final word', 'wait: the
 # sequence' and 'wait: limit 1 ends on the first round', plus the state-file tally.
+# Accepting a bare `round=N` as the state fails 'wait: a counter it did not
+# write is refused' and 'wait: a counter it did not write is not advanced';
+# widening the round to `[0-9][0-9]*` fails 'wait: the mark does not excuse a
+# bad round'; dropping the trailing `$` fails 'wait: a marked file with a
+# trailing line'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -232,6 +237,32 @@ assert_row 'wait: a file it did not write' 0 'STOP wait-state-invalid\n' 0
 # The trap must never own a file the caller named: a STOP here still leaves it.
 tally check_eq 'wait: a caller-owned file survives the STOP' yes \
   "$([ -e "$BAD" ] && echo yes || echo no)"
+
+row_start
+COUNTED="$(printf 'round=3\n' | facts_file)"
+run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
+assert_row 'wait: a counter it did not write is refused' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: a counter it did not write keeps its bytes' 'round=3' "$(cat "$COUNTED")"
+
+row_start
+COUNTED="$(printf 'round=1\n' | facts_file)"
+run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
+assert_row 'wait: a counter it did not write is not advanced' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: a counter it did not write keeps one round' 'round=1' "$(cat "$COUNTED")"
+
+row_start
+COUNTED="$(printf 'dude-wait round=0\n' | facts_file)"
+run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
+assert_row 'wait: the mark does not excuse a bad round' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: the mark does not excuse a bad round, untouched' \
+  'dude-wait round=0' "$(cat "$COUNTED")"
+
+row_start
+COUNTED="$(printf 'dude-wait round=3\nextra=1\n' | facts_file)"
+run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
+assert_row 'wait: a marked file with a trailing line' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: a trailing line keeps its bytes' \
+  "$(printf 'dude-wait round=3\nextra=1')" "$(cat "$COUNTED")"
 
 row_start
 run_sut bash "$SUT" wait '' 1 5 TIMEOUT
