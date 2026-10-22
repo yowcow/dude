@@ -402,6 +402,19 @@ run_sut bash "${ROOT}/hooks/session-start"
 fails=0
 if ! check_json 'multibyte-short-path'; then fails=1; fi
 if ! check_context 'multibyte-short-path: context' "$ROOT"; then fails=1; fi
+# A literal, not a second copy of the sanitizer: `expected_install`, which
+# check_context compares against above, is `sanitize_path` again, so it cannot
+# tell a byte-wise pass from a per-character one. Only the tail is spelled out
+# -- HARNESS_TMP's own bytes are not what this row pins. The quote keeps both
+# `?` literal.
+ctx="$(context_of)"
+case "$(install_line_of "$ctx")" in
+  *'/??/dude -->') ;;
+  *)
+    printf 'FAIL multibyte-short-path: the install line does not end in /??/dude\n'
+    fails=1
+    ;;
+esac
 row_done 'multibyte-short-path' "$fails"
 
 # ---- a path that spells the block's own terminator ----------------------
@@ -472,20 +485,28 @@ row_done 'instruction-text-outside-block' "$fails"
 
 row_start
 ROOT="${HARNESS_TMP}/inv"$'\377'"set/dude"
-build_tree "$ROOT"
-run_sut bash "${ROOT}/hooks/session-start"
-fails=0
-if ! python3 -c '
+# A filesystem that refuses the byte (macOS/APFS, HFS+) fails at mkdir. Named as
+# this row's own failure rather than left to set -e, which would end the file
+# here and take the rows after it with it, with only a raw mkdir errno to say
+# why. `failed` is incremented directly because row_start already counted it.
+if ! build_tree "$ROOT" 2>/dev/null; then
+  printf 'FAIL invalid-utf8-strict-decode: this filesystem rejects an invalid-UTF-8 name\n'
+  failed=$((failed + 1))
+else
+  run_sut bash "${ROOT}/hooks/session-start"
+  fails=0
+  if ! python3 -c '
 import json, sys
 raw = open(sys.argv[1], "rb").read()
 json.loads(raw.decode("utf-8"))
 ' "$SUT_STDOUT"; then
-  printf 'FAIL invalid-utf8-strict-decode: the payload is not strict UTF-8\n'
-  fails=1
+    printf 'FAIL invalid-utf8-strict-decode: the payload is not strict UTF-8\n'
+    fails=1
+  fi
+  if ! check_json 'invalid-utf8-strict-decode'; then fails=1; fi
+  if ! check_context 'invalid-utf8-strict-decode: context' "$ROOT"; then fails=1; fi
+  row_done 'invalid-utf8-strict-decode' "$fails"
 fi
-if ! check_json 'invalid-utf8-strict-decode'; then fails=1; fi
-if ! check_context 'invalid-utf8-strict-decode: context' "$ROOT"; then fails=1; fi
-row_done 'invalid-utf8-strict-decode' "$fails"
 
 # ---- a short install path carries an identity too -----------------------
 #

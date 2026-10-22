@@ -236,19 +236,16 @@ const stubText = freshEvent.system[0].text;
 // between the path and the heading's terminator colon still reaches the
 // comparison. Longest spelling first: a symlink above the checkout makes the
 // logical root a suffix of the physical one, and a shorter-first pass would
-// mangle the physical path into `prefix<ROOT>`. The install line's truncated
-// form is spelled identically by both emitters, so it is normalized only
-// because the two roots can differ; the cksum is normalized for the same
-// reason, and its value is pinned against `cksum` separately, below.
+// mangle the physical path into `prefix<ROOT>`. The install line is normalized
+// whole, unconditionally: the two roots can be differing spellings, and a
+// disallowed byte in either keeps its raw form from appearing on the line at
+// all. Its spelling is pinned per emitter instead -- repo_install and
+// long_install below for this side, check_context() in
+// tests/hooks/session-start_test.sh for the hook.
 const roots = [...new Set([process.argv[3], root])].sort((a, b) => b.length - a.length);
 const normalize = (s) => roots
   .reduce((out, r) => out.replaceAll(`${r}/`, '<ROOT>').replaceAll(r, '<ROOT>'), s)
-  // Both sides are normalized here, so a cross-emitter divergence in the
-  // install line would be hidden -- but only for a checkout path over 100 bytes,
-  // which this repository is not. Truncation itself is pinned per emitter: by
-  // `long_tree` below for this side, and by the long row in
-  // session-start_test.sh for the hook.
-  .replace(/^<!-- dude-install: \.\.\.[^\n]* -->$/gm, '<!-- dude-install: <ROOT> -->')
+  .replace(/^<!-- dude-install: .* -->$/gm, '<!-- dude-install: <ROOT> -->')
   .replace(/with cksum \d+:/g, 'with cksum <CKSUM>:');
 const normStub = normalize(stubText);
 const normSession = normalize(sessionContext);
@@ -261,7 +258,7 @@ const hookSentences = stubSentences(normSession)
   .replace(/^<EXTREMELY_IMPORTANT>\n/m, '')
   .replace(/\n<\/EXTREMELY_IMPORTANT>$/, '');
 assert.equal(stubSentences(normStub), hookSentences,
-  'the install line and the four stub sentences must match between .opencode/plugins/dude.js and hooks/session-start');
+  'the four stub sentences must match between .opencode/plugins/dude.js and hooks/session-start (the install line is normalized away and pinned per emitter)');
 
 const expected = Object.fromEntries(
   readFileSync(process.argv[6], 'utf8').split('\n').filter(Boolean)
