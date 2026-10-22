@@ -587,10 +587,22 @@ if check_stderr_has 'stderr: a near miss is a failure' 'bo.m' >/dev/null 2>&1; t
   printf 'FAIL stderr: a near miss matched\n'
   sh_fails=1
 fi
-if check_stderr_has 'stderr: an empty needle is refused' '' >/dev/null 2>&1; then
+# The refusal's own message is read, not only its status: a helper that
+# refused silently would leave the caller without the argument to fix.
+if sh_out="$( ( check_stderr_has 'empty-needle' '' ) 2>&1 )"; then
   printf 'FAIL stderr: an empty needle matched\n'
   sh_fails=1
 fi
+case "$sh_out" in
+  *'no expected stderr given'*) ;;
+  *)
+    printf 'FAIL stderr: empty needle, diagnostic was: %s\n' "$sh_out"
+    sh_fails=1
+    ;;
+esac
+# -- is here for this needle type: without it grep reads -dash as options.
+run_sut bash -c 'printf "%s\n" "-dash boom" >&2'
+if ! check_stderr_has 'dash-led needle' '-dash boom'; then sh_fails=1; fi
 if [ "$sh_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
