@@ -8,7 +8,9 @@
 # Usage: check-clean.sh
 set -euo pipefail
 
-STATUS="$(git status --porcelain)"
+# The flag overrides `status.showUntrackedFiles=no`, under which a tree holding
+# only untracked files reads as clean.
+STATUS="$(git status --porcelain --untracked-files=normal)"
 
 if [ -z "$STATUS" ]; then
   exit 0
