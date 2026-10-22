@@ -84,8 +84,12 @@ if ! find "$ROOT/skills" -mindepth 1 -maxdepth 1 -type d -print | sort >"$dirs" 
   exit 1
 fi
 
+# targets is every directory, using-dude included: the scripts/ path check is the
+# one that names it, the mention checks are not.
 skills=()
+targets=()
 while IFS= read -r d; do
+  targets+=("${d##*/}")
   [ "${d##*/}" = using-dude ] || skills+=("${d##*/}")
 done <"$dirs"
 
@@ -101,6 +105,16 @@ if [ "${#skills[@]}" -eq 0 ]; then
   broken
 fi
 
+# One ERE per directory name, with the left boundary only, in a single file.
+# The candidates are wider than the three classes need: which class a line
+# belongs to is decided in bash. Only the mention class wants a right boundary,
+# and paraphrase must not have one — `plan-works worker` matches there.
+patterns="${HARNESS_TMP}/patterns"
+: >"$patterns"
+for t in "${targets[@]}"; do
+  printf '(^|[^a-z0-9-])%s\n' "$t" >>"$patterns"
+done
+
 # mentions: "<owner> <target> <file>:<line>", one per mention.
 mentions="${HARNESS_TMP}/mentions"
 : >"$mentions"
@@ -110,19 +124,26 @@ while IFS= read -r f; do
   rel="${f#"$ROOT"/}"
   owner="${rel#skills/}"
   owner="${owner%%/*}"
-  for t in "${skills[@]}"; do
-    [ "$t" != "$owner" ] || continue
-    grep -nE "(^|[^a-z0-9-])${t}([^a-z0-9-]|$)" "$f" | cut -d: -f1 |
-      sed "s|^|${owner} ${t} ${rel}:|" >>"$mentions" || true
-  done
-  grep -noE '(^|[^a-z0-9-])[a-z0-9]+(-[a-z0-9]+)*-\*' "$f" |
-    sed -E 's/^([0-9]+):[^a-z0-9-]?([a-z0-9-]+)-\*$/\1 \2/' |
-    while read -r line prefix; do
-      for t in "${skills[@]}"; do
-        [ "$t" != "$owner" ] || continue
-        case "$t" in "$prefix"-*) echo "${owner} ${t} ${rel}:${line}" ;; esac
-      done
-    done >>"$mentions" || true
+  while IFS= read -r hit; do
+    n="${hit%%:*}"
+    text="${hit#*:}"
+    for t in "${skills[@]}"; do
+      [ "$t" != "$owner" ] || continue
+      if [[ "$text" =~ (^|[^a-z0-9-])${t}([^a-z0-9-]|$) ]]; then
+        printf '%s %s %s:%s\n' "$owner" "$t" "$rel" "$n" >>"$mentions"
+      fi
+    done
+  done < <(grep -nEf "$patterns" "$f" || true)
+  while IFS= read -r hit; do
+    n="${hit%%:*}"
+    rest="${hit#*:}"
+    prefix="${rest%-*}"
+    prefix="${prefix##*[!a-z0-9-]}"
+    for t in "${skills[@]}"; do
+      [ "$t" != "$owner" ] || continue
+      case "$t" in "$prefix"-*) printf '%s %s %s:%s\n' "$owner" "$t" "$rel" "$n" >>"$mentions" ;; esac
+    done
+  done < <(grep -noE '(^|[^a-z0-9-])[a-z0-9]+(-[a-z0-9]+)*-\*' "$f" || true)
 done <"$files"
 
 nmentions="$(wc -l <"$mentions" | tr -d ' ')"
@@ -192,13 +213,17 @@ while IFS= read -r f; do
         ;;
     esac
   done < <(grep -niE 'orchestration' "$f" || true)
-  for t in "${skills[@]}"; do
-    [ "$t" != "$owner" ] || continue
-    while IFS= read -r hit; do
-      printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
-      bad=1
-    done < <(grep -nE "(^|[^a-z0-9-])${t}\`?'s? (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)" "$f" || true)
-  done
+  while IFS= read -r hit; do
+    text="${hit#*:}"
+    for t in "${skills[@]}"; do
+      [ "$t" != "$owner" ] || continue
+      re="(^|[^a-z0-9-])${t}\`?'s? (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)"
+      if [[ "$text" =~ $re ]]; then
+        printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+        bad=1
+      fi
+    done
+  done < <(grep -nEf "$patterns" "$f" || true)
 done <"$files"
 failed=$((failed + bad))
 
@@ -209,14 +234,16 @@ while IFS= read -r f; do
   rel="${f#"$ROOT"/}"
   owner="${rel#skills/}"
   owner="${owner%%/*}"
-  while IFS= read -r d; do
-    t="${d##*/}"
-    [ "$t" != "$owner" ] || continue
-    while IFS= read -r hit; do
-      printf 'FAIL skill-deps: %s:%s names a path into %s/scripts/: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
-      bad=1
-    done < <(grep -nE "(^|[^a-z0-9-])${t}/scripts([^a-z0-9-]|$)" "$f" || true)
-  done <"$dirs"
+  while IFS= read -r hit; do
+    text="${hit#*:}"
+    for t in "${targets[@]}"; do
+      [ "$t" != "$owner" ] || continue
+      if [[ "$text" =~ (^|[^a-z0-9-])${t}/scripts([^a-z0-9-]|$) ]]; then
+        printf 'FAIL skill-deps: %s:%s names a path into %s/scripts/: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+        bad=1
+      fi
+    done
+  done < <(grep -nEf "$patterns" "$f" || true)
 done <"$files"
 failed=$((failed + bad))
 
