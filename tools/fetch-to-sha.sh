@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # Fetch one ref from origin and print its tip SHA on stdout.
 #
-# This is the canonical fetch-to-SHA source: `resolve-range.sh` and
-# `retarget-pr.sh` each inline this fetch plus a `git rev-parse FETCH_HEAD`
-# today, and `resolve-pr-base.sh` inlines the fetch with its own FETCH_HEAD
-# use (item 3 migrates them onto this script).
+# This is the canonical fetch-to-SHA source: `resolve-range.sh`,
+# `retarget-pr.sh` and `resolve-pr-base.sh` fetch through it rather than
+# inlining `git fetch` plus their own `git rev-parse FETCH_HEAD`.
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs callers print for the exit-1 path:
 # skills/implement-work/references/stop-registry.md
