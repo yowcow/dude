@@ -14,7 +14,9 @@
 # gh fail on an unstubbed `gh repo view`, and 'url naming another repository',
 # 'no origin', 'unparseable reference' and 'no argument' pass because the old
 # script answered them before gh. Dropping the origin comparison makes 'url
-# naming another repository' answer a PR line.
+# naming another repository' answer a PR line. Against a script that keeps its
+# own copy of the normalization, 'a changed shared helper reaches this caller'
+# fails by answering that PR line, and every other row stays green.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -46,6 +48,15 @@ git -C "$PUSHFORK" config remote.origin.pushurl "$(git_repo_bare me widgets)"
 
 NOREMOTE="$(git_repo_scratch noremote-work)"
 git_repo_init "$NOREMOTE" main
+
+# run_sut_in <dir> <argv...>   -- the SUT reads the *current* repository.
+run_sut_in() {
+  local dir="$1" prev="$PWD"
+  shift
+  cd "$dir" || exit 1
+  run_sut "$@"
+  cd "$prev" || exit 1
+}
 
 row_start
 run_in "$WIDGETS" 12
@@ -82,5 +93,33 @@ assert_row 'unparseable reference' 2 '' 0
 row_start
 run_in "$WIDGETS"
 assert_row 'no argument' 2 '' 0
+
+# --- 10/11. this script's normalization is the shared helper, not a copy of it
+# The control row is what makes the second row's verdict about the helper: the
+# same mirrored tree answers like the tree, and only after one line of the helper
+# changes does this caller's answer move. A caller that kept its own copy of the
+# reduction would answer the PR line in row 11.
+MIRROR="${HARNESS_TMP}/mirror"
+mkdir -p "${MIRROR}/skills/review-pr/scripts"
+cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
+cp "$SUT" "${MIRROR}/skills/review-pr/scripts/"
+MIRRORED="${MIRROR}/skills/review-pr/scripts/${SUT##*/}"
+
+row_start
+run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+assert_row 'the copy answers like the tree' 0 'PR 12 repo=acme/widgets\n' 0
+
+row_start
+cat >"${MIRROR}/tools/normalize-repo-path.sh" <<'EOF'
+#!/usr/bin/env bash
+# Mutant for #696: a checkout's remote arrives as a path and a reference's
+# repository as an owner/repo pair, so this answers them differently.
+case "$1" in
+  /*) printf 'acme/widgets\n' ;;
+  *) printf 'other/elsewhere\n' ;;
+esac
+EOF
+run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 
 harness_exit "$failed" "$total"

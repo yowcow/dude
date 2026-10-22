@@ -36,23 +36,12 @@ usage() {
 [ "$#" -eq 1 ] || usage
 REF="$1"
 
-# Reduce a remote URL or an owner/repo pair to lowercase `<owner>/<repo>`.
-normalize_repo_path() {
-  local url="$1" owner repo
-  repo="${url##*/}"
-  repo="${repo%.git}"
-  owner="${url%/*}"
-  owner="${owner##*/}"
-  owner="${owner##*:}"
-  printf '%s/%s\n' "${owner}" "${repo}" | tr '[:upper:]' '[:lower:]'
-}
-
 if [[ "$REF" =~ ^[0-9]+$ ]]; then
   # A bare number carries no repository, so it can only mean origin's.
   NUMBER="$REF"
   NAMED=""
 elif [[ "$REF" =~ ^(https?://)?[^/]+/([^/]+)/([^/]+)/pull/([0-9]+)([/?#].*)?$ ]]; then
-  NAMED="$(normalize_repo_path "${BASH_REMATCH[2]}/${BASH_REMATCH[3]}")"
+  NAMED="$(bash "${SCRIPT_DIR}/../../../tools/normalize-repo-path.sh" "${BASH_REMATCH[2]}/${BASH_REMATCH[3]}")"
   NUMBER="${BASH_REMATCH[4]}"
 else
   usage
