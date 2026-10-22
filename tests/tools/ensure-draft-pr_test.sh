@@ -88,24 +88,58 @@ total=0
 # The work repo is a real clone rather than init + remote add, so it has the
 # remote-tracking refs, the upstream and the fetch refspec a real checkout has.
 #
-# The remote's HEAD is pointed at `main` before the clone: git_repo_bare leaves
-# it on an unborn `master`, which is what the sibling reads as the default
-# branch, and a clone of it would record no refs/remotes/origin/HEAD.
-fixture() {
-  local name="$1" branch="$2" where="$3" trailer="${4:--}" bare seed work
-  bare="$(git_repo_bare acme "$name")"
-  seed="$(git_repo_scratch "seed-${name}")"
+# Each shape's bare repo is built once and copied per row with `cp -R`, which
+# is what a row starts from: `remote` rows clone it on <branch>, whose commit
+# (trailer and all) is already in the template, while `local` and `nowhere` rows
+# clone `main`. The copy is per row because a bare repo's path is its identity,
+# so a shared one would let a `local` row's push show up in the next row.
+#
+# The template's HEAD is pointed at `main` before any clone: a bare repo starts
+# on an unborn `master`, which is what the sibling reads as the default branch,
+# and a clone of it would record no refs/remotes/origin/HEAD.
+#
+# template <branch> <where> <trailer> -- a bare repo built once per shape:
+# main, plus <branch> when <where> is remote. A row copies it instead of
+# building a remote from an empty repo every time.
+template() {
+  local branch="$1" where="$2" trailer="$3" t seed
+  t="${HARNESS_TMP}/templates/${branch}.${where}.${trailer}.git"
+  if [ -d "$t" ]; then
+    printf '%s\n' "$t"
+    return 0
+  fi
+  mkdir -p "${HARNESS_TMP}/templates"
+  git init -q --bare "$t"
+  seed="$(git_repo_scratch "seed-${branch}.${where}.${trailer}")"
   git_repo_init "$seed" main
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
-  git_repo_push "$seed" "$bare" main
-  git_repo_bare_head "$bare" main
-  work="$(git_repo_clone "work-${name}" "$bare" main)"
-  if [ "$where" != nowhere ]; then
+  if [ "$where" = remote ]; then
+    git_repo_checkout "$seed" "$branch" main
+    git_repo_commit "$seed" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
+  fi
+  git_repo_push "$seed" "$t" main
+  if [ "$where" = remote ]; then
+    git_repo_push "$seed" "$t" "$branch"
+  fi
+  git_repo_bare_head "$t" main
+  printf '%s\n' "$t"
+}
+
+fixture() {
+  local name="$1" branch="$2" where="$3" trailer="${4:--}" bare work
+  gitrepo_reject_traversal acme "$name"
+  bare="${HARNESS_TMP}/remotes/acme/${name}.git"
+  rm -rf -- "$bare"
+  mkdir -p -- "${bare%/*}"
+  cp -R -- "$(template "$branch" "$where" "$trailer")" "$bare"
+  if [ "$where" = remote ]; then
+    work="$(git_repo_clone "work-${name}" "$bare" "$branch")"
+  else
+    work="$(git_repo_clone "work-${name}" "$bare" main)"
+  fi
+  if [ "$where" = local ]; then
     git_repo_checkout "$work" "$branch" main
     git_repo_commit "$work" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
-    if [ "$where" = remote ]; then
-      git_repo_push "$work" origin "refs/heads/${branch}:refs/heads/${branch}"
-    fi
   fi
   FIXTURE_BARE="$bare"
   FIXTURE_WORK="$work"
