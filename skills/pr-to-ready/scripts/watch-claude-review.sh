@@ -3,17 +3,35 @@
 # finishes. Completion is tied to the workflow run rather than guessed from
 # comment counts, which is why this exists as a command at all.
 #
-# With no run-id: prints the workflow's recent runs as JSON, carrying
+# With a default branch: prints the workflow's recent runs as JSON, carrying
 # databaseId, conclusion, createdAt and displayTitle so the caller can match a
 # run to its own request rather than taking the newest and risking a stale one.
-# With a run-id: blocks on that run.
+# With a run-id: polls that run until it completes, at most 40 times 30 s apart.
 #
-# The listing covers runs on <branch> and on the default branch, because the
+# Watch mode polls `gh run view --json status,conclusion` rather than
+# `gh run watch --exit-status`, which blocks until the run finishes: a run left
+# queued behind a pending approval never finishes, so that call is this
+# repository's one unbounded wait.
+#
+# The loop is local rather than tools/poll.sh, for the same reason watch-checks.sh's
+# is: poll.sh's predicate is the check command's exit status and every non-zero
+# means "not yet" to it, so a `gh run view` that fails — a run id that is gone,
+# or not this repository's — would be retried to the cap instead of stopping at
+# once with gh's own status.
+#
+# A run is waited on while its status is not "completed". queued, in_progress,
+# requested, waiting and pending all keep waiting, and an approval gate leaves a
+# run at `waiting` or at `queued`: neither is a verdict, so both wait to the cap
+# like the rest. The conclusion is read only once the status is completed,
+# because gh leaves it empty on every other status.
+#
+# The listing covers runs on <branch> and on <default-branch>, because the
 # trigger decides which one a run is attributed to: a review requested by an
 # issue comment runs on the default branch, while pull_request_review* triggers
 # run on the PR branch. Filtering on <branch> alone matches nothing for the
 # issue-comment shape, so the caller polls until it times out and reports the
-# review as never arriving even though it completed and posted.
+# review as never arriving even though it completed and posted. The default
+# branch arrives as an argument, never read here: see Usage below.
 #
 # Match on createdAt against the moment the request was posted, but createdAt
 # alone still does not identify the run: every issue-comment run in the
@@ -31,37 +49,55 @@
 #
 # A run whose conclusion is "skipped" is one the workflow's own if: condition
 # rejected — a comment carrying no @claude, including the reviewer bot's own
-# reply. Watch mode returns 0 for it, so taking a skipped run as the review
-# reads an unrun review as a completed one with nothing to say.
+# reply. Watch mode exits 1 for it, as `gh run watch --exit-status` did, because
+# exit 0 would let a skipped run taken for the review read as a completed one
+# with nothing to say.
 #
-# Usage: watch-claude-review.sh <branch> [run-id]
+# Usage: watch-claude-review.sh <owner> <repo> <branch> <default-branch|run-id>
+#        <owner>/<repo> is the repository the caller bound from the PR, the one
+#        both gh calls pin with -R: the checkout's origin can be a fork whose
+#        runs are not where the PR's @claude run lands.
+#        The last argument is the default branch in list mode and a run id in
+#        watch mode, told apart by being all digits.
+#        The default branch is an argument, not a read: resolving it is a live
+#        `git ls-remote --symref`, measured at 2.15-2.17 s, and a caller lists
+#        again on every poll of a review it is waiting for. The caller resolves
+#        it once and passes it to every listing.
 #
-# Exit: 0 = the listing printed (list mode), or the watched run succeeded (watch mode)
+# Exit: 0 = the listing printed (list mode), or the watched run's conclusion is
+#           "success" (watch mode). Watch mode prints nothing on stdout: the
+#           caller reads only the exit status.
+#       1 = in watch mode the run concluded anything else, "skipped" included, or
+#           it had not completed when the iteration cap ran out; or the listing
+#           failed (list mode)
 #       2 = usage error
 #       3 = no @claude workflow in this repository. This is the availability
 #           answer and nothing else exits 3, so a caller may skip Claude on it
-#       other = the underlying gh call failed, the origin repository could not be
-#           resolved, or in watch mode the run itself did not succeed: gh run
-#           watch --exit-status returns 1 for a failed run, and any failing gh
-#           call exits with its own status under set -e
+#       other = in watch mode a failing `gh run view` exits at once with gh's own
+#           status
 #
 # Only 0, 2, and 3 identify a cause on their own. Treat every other non-zero as
 # "stop and inspect" rather than as a specific answer.
 set -euo pipefail
 
-if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-  echo "Usage: $0 <branch> [run-id]" >&2
+if [ "$#" -ne 4 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
+  echo "Usage: $0 <owner> <repo> <branch> <default-branch|run-id>" >&2
   exit 2
 fi
 
-BRANCH="$1"
-RUN_ID="${2:-}"
+REPO="$1/$2"
+BRANCH="$3"
 
-if [ -n "$RUN_ID" ] && ! [[ "$RUN_ID" =~ ^[0-9]+$ ]]; then
-  echo "Usage: $0 <branch> [run-id]" >&2
-  exit 2
+# List mode and watch mode split on the last argument's shape: all digits is a
+# run id. An all-digit default branch name reads as one too, but the run lookup
+# exits at once rather than silently mis-filtering the listing.
+if [[ "$4" =~ ^[0-9]+$ ]]; then
+  RUN_ID="$4"
+  DEFAULT_BRANCH=""
+else
+  RUN_ID=""
+  DEFAULT_BRANCH="$4"
 fi
-SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # grep exits 1 when nothing matches, which set -e would turn into an abort, so
 # the substitution is guarded and the emptiness of wf is what gets tested.
@@ -79,19 +115,10 @@ if [ -z "$wf" ]; then
 fi
 wf="$(basename "$wf")"
 
-if ! REPO="$(bash "${SCRIPT_DIR}/../../../tools/origin-repo.sh")"; then
-  echo "error: failed to resolve the origin repository" >&2
-  exit 1
-fi
-
 if [ -z "$RUN_ID" ]; then
-  if ! default_branch="$(bash "${SCRIPT_DIR}/../../../tools/resolve-default-branch.sh" 2>/dev/null)"; then
-    echo "error: failed to resolve the default branch" >&2
-    exit 1
-  fi
   if ! gh run list -R "$REPO" --workflow="$wf" --limit 100 \
     --json databaseId,conclusion,createdAt,displayTitle,headBranch 2>/dev/null |
-    jq --arg b "$BRANCH" --arg d "$default_branch" \
+    jq --arg b "$BRANCH" --arg d "$DEFAULT_BRANCH" \
       '[.[] | select(.headBranch == $b or .headBranch == $d) | del(.headBranch)]' 2>/dev/null; then
     echo "error: failed to list workflow runs for $wf" >&2
     exit 1
@@ -99,4 +126,39 @@ if [ -z "$RUN_ID" ]; then
   exit 0
 fi
 
-gh run watch -R "$REPO" "$RUN_ID" --exit-status
+# Watch mode's cap: 40 polls x 30 s = 19m30s, with no sleep after the last poll.
+# The same values as the same step's Copilot wait (watch-copilot-review.sh).
+MAX_ITER=40
+INTERVAL=30
+
+for i in $(seq 1 "$MAX_ITER"); do
+  # A failed gh call is not retried: it points at a run id gh cannot answer for
+  # (gone, or not this repository's), and the next poll would only ask the same
+  # wrong question.
+  view="$(gh run view -R "$REPO" "$RUN_ID" --json status,conclusion)"
+
+  # Slurp and length == 1 for the same reason as watch-checks.sh: jq reads a
+  # stream of top-level values, so a body it cannot read collapses to "it answered
+  # nothing". No answer means incomplete, not complete.
+  run_status="$(printf '%s' "$view" |
+    jq -r -s 'select(length == 1) | .[0].status | select(type == "string")' 2>/dev/null)" || run_status=""
+
+  if [ "$run_status" = completed ]; then
+    conclusion="$(printf '%s' "$view" |
+      jq -r -s 'select(length == 1) | .[0].conclusion // ""' 2>/dev/null)" || conclusion=""
+    case "$conclusion" in
+      success) exit 0 ;;
+      *)
+        echo "claude review run ${RUN_ID} concluded '${conclusion}'" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  if [ "$i" -lt "$MAX_ITER" ]; then
+    sleep "$INTERVAL"
+  fi
+done
+
+echo "claude review run ${RUN_ID} did not complete within ${MAX_ITER} polls at ${INTERVAL}s" >&2
+exit 1

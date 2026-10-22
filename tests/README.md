@@ -450,9 +450,8 @@ with the defect.
 cp skills/pr-to-ready/scripts/list-copilot-reviews.sh "$tmp/"
 ```
 
-`watch-claude-review.sh` needs a staged `skills/pr-to-ready/scripts/` beside
-`tools/`, not a lone copy, and only a copy at or after `253c615` pins `-R`:
-the runnable recipe is the `RED verification` header of
+Only a `watch-claude-review.sh` copy at or after `253c615` pins `-R`: the
+runnable recipe is the `RED verification` header of
 `tests/pr-to-ready/watch-claude-review_test.sh`.
 
 `SUT` names one script under test in place of a test file's default. `run.sh`
