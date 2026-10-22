@@ -38,11 +38,10 @@
 # `--limit 20` is the mutation, because a copy that predates the `-R` pin fails
 # every gh-reaching row as an unstubbed argv before the depth is reached:
 #   tmp="$(mktemp -d)"
-#   mkdir -p "$tmp/skills/pr-to-ready/scripts"
 #   sed 's/--limit 100/--limit 20/' \
 #     skills/pr-to-ready/scripts/watch-claude-review.sh \
-#     >"$tmp/skills/pr-to-ready/scripts/old.sh"
-#   SUT="$tmp/skills/pr-to-ready/scripts/old.sh" \
+#     >"$tmp/old.sh"
+#   SUT="$tmp/old.sh" \
 #     tests/run.sh tests/pr-to-ready/watch-claude-review_test.sh
 #     -> deep-listing-keeps-the-target-run is answered with the truncated page,
 #        so it exits 0 printing [] where the run belongs (#173); the rows that
