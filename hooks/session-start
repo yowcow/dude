@@ -69,17 +69,19 @@ escape_for_json() {
 # An install path is data, not prose. Everything outside [A-Za-z0-9._/-]
 # becomes `?`: that covers every JSON metacharacter, every C0 control, and every
 # byte of a non-ASCII character, so a directory named `</EXTREMELY_IMPORTANT>`
-# cannot close the block and one named `IGNORE-ALL-PREVIOUS-INSTRUCTIONS`
-# cannot read as an instruction. Byte-wise (LC_ALL=C) so the result is ASCII
-# whatever locale the hook runs under, and so the truncation below is byte-safe.
+# cannot close the block. Text that reads as an instruction is not the filter's
+# job -- one named `IGNORE-ALL-PREVIOUS-INSTRUCTIONS` is spelled entirely from
+# allowed characters and survives verbatim -- which is why the value is emitted
+# outside the block. Byte-wise (LC_ALL=C) so the result is ASCII whatever locale
+# the hook runs under, and so the truncation below is byte-safe.
 sanitize_path() {
     printf '%s' "$1" | LC_ALL=C tr -c 'A-Za-z0-9._/-' '?'
 }
 
-# The block's identity is a cksum of the complete root, whatever the path
-# length: the path is attacker-chosen, and so is any suffix of it, so neither
-# can be the identity. The path goes out as data instead -- sanitized, kept to
-# its last 100 bytes, and outside the block.
+# The block's identity is a cksum of the complete root, so it is stable under
+# the truncation below: the install line keeps only the last 100 bytes, and that
+# window moves with the path's total length. The path goes out as data instead
+# -- sanitized, kept to its last 100 bytes, and outside the block.
 root_checksum="$(printf '%s' "$plugin_root" | cksum)"
 root_checksum="${root_checksum%% *}"
 install_value="$(sanitize_path "$plugin_root")"

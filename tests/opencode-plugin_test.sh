@@ -64,6 +64,9 @@ make_tree() {
   rm -rf -- "$1"
   mkdir -p -- "$1/.opencode/plugins" "$1/skills"
   cp -- "$PLUGIN_UNDER_TEST" "$1/.opencode/plugins/dude.js"
+  # So the copied plugin imports as ESM on Node versions without syntax
+  # detection; without it the failure names a temp fixture instead of this.
+  printf '{"type":"module"}\n' >"$1/package.json"
 }
 physical() { ( CDPATH='' cd -- "$1" && pwd -P ); }
 cksum_of() {
@@ -86,9 +89,12 @@ make_tree "$fx/broken"
 mkdir -p -- "$fx/broken/skills/good" "$fx/broken/skills/broken/SKILL.md"
 printf -- '---\nname: good\ndescription: fixture\n---\n\nbody\n' >"$fx/broken/skills/good/SKILL.md"
 # Every other fixture root is far under 100 bytes, so a plugin that never
-# truncates would pass without this one.
+# truncates would pass without this one. The emoji run is 160 bytes but 40
+# characters (80 UTF-16 code units), so a length or a cut taken on the raw string
+# keeps a different window.
 LONG="$(printf '%120s' '' | tr ' ' 'x')"
-make_tree "$fx/long/${LONG}/dude"
+EMOJI="$(printf '😀%.0s' {1..40})"
+make_tree "$fx/long/${LONG}/${EMOJI}/dude"
 
 # The shell is the oracle: `cksum` and `tr` are what the hook uses, so the
 # plugin's own JS implementation is compared against them, not against itself.
@@ -97,7 +103,7 @@ inject_tree="$(physical "$fx/IGNORE-ALL-PREVIOUS-INSTRUCTIONS/é/dude")"
 collide_left_tree="$(physical "$fx/a b/dude")"
 collide_right_tree="$(physical "$fx/a?b/dude")"
 broken_tree="$(physical "$fx/broken")"
-long_tree="$(physical "$fx/long/${LONG}/dude")"
+long_tree="$(physical "$fx/long/${LONG}/${EMOJI}/dude")"
 {
   printf 'repo_cksum=%s\n' "$(cksum_of "$(physical "$REPO_ROOT")")"
   printf 'repo_install=%s\n' "$(install_of "$(physical "$REPO_ROOT")")"
@@ -239,6 +245,11 @@ const stubText = freshEvent.system[0].text;
 const roots = [...new Set([process.argv[3], root])].sort((a, b) => b.length - a.length);
 const normalize = (s) => roots
   .reduce((out, r) => out.replaceAll(`${r}/`, '<ROOT>').replaceAll(r, '<ROOT>'), s)
+  // Both sides are normalized here, so a cross-emitter divergence in the
+  // install line would be hidden -- but only for a checkout path over 100 bytes,
+  // which this repository is not. Truncation itself is pinned per emitter: by
+  // `long_tree` below for this side, and by the long row in
+  // session-start_test.sh for the hook.
   .replace(/^<!-- dude-install: \.\.\.[^\n]* -->$/gm, '<!-- dude-install: <ROOT> -->')
   .replace(/with cksum \d+:/g, 'with cksum <CKSUM>:');
 const normStub = normalize(stubText);
@@ -374,8 +385,6 @@ const installLineOf = (s) => {
     'the install line must carry only [A-Za-z0-9._/-] and ?');
   assert.ok(!/[\u0000-\u0009\u000b-\u001f]/.test(stub),
     'the stub must carry no C0 control other than newline');
-  assert.equal(JSON.parse(JSON.stringify({ text: stub })).text, stub,
-    'the stub must survive a JSON round-trip unchanged');
 }
 
 // `/a b/...` and `/a?b/...` sanitize to one install line; the cksum of the raw
@@ -387,8 +396,6 @@ const installLineOf = (s) => {
     'the left install line must be the sanitized path');
   assert.equal(installLineOf(right.stub), expected.collide_install,
     'the right install line must be the sanitized path');
-  assert.equal(installLineOf(left.stub), installLineOf(right.stub),
-    'two paths that sanitize alike must share an install line');
   assert.ok(left.stub.includes(`with cksum ${expected.collide_left_cksum}:`),
     'the left install must keep its own cksum');
   assert.ok(right.stub.includes(`with cksum ${expected.collide_right_cksum}:`),

@@ -27,8 +27,10 @@ function installValue(p) {
 
 // POSIX cksum, the number the hook prints: CRC-32 (polynomial 0x04c11db7, MSB
 // first, initial 0) over the bytes, the byte length appended base-256 least
-// significant first, complemented, in decimal. One install, one number, on both
-// emitters -- which is why the same rule is implemented twice.
+// significant first, complemented, in decimal. One install path spelling, one
+// number, on both emitters -- which is why the same rule is implemented twice.
+// The spelling can differ: this side sees a non-UTF-8 name as U+FFFD and a
+// symlinked one as the physical root, so the two numbers can differ with it.
 function cksum(s) {
   const bytes = [...Buffer.from(s, 'utf8')];
   let crc = 0;

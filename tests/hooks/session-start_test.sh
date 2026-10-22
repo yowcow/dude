@@ -19,7 +19,7 @@
 # calls, which is what holds that to being true.
 #
 # RED verification (see tests/README.md). Against the pre-change script the file
-# reports `not ok 10/11`: every row but `size-budget` fails, because the
+# reports `not ok 11/12`: every row but `size-budget` fails, because the
 # expected layout changed (the install path left the block, the identity became a
 # cksum). The four rows that pin a defect rather than the layout fail on their
 # own messages, which is what a reviewer reads:
@@ -253,11 +253,11 @@ row_done 'control-chars-json-intact' "$fails"
 # landed on, so an exported CDPATH holding a decoy makes the hook's own `cd`
 # resolve to a tree it was never invoked from -- and hook_dir then carries that
 # path plus the echoed line. Before this change that produced a failed read and
-# a loud error; now the same value is printed as the block's identity, so the
-# block names a tree it never ran from. That is worse than naming none: telling
-# two installs apart is the whole point of the line, and a wrong one is
-# believed. The repository already spells the guard this way in
-# tests/lib/harness.sh and tests/run.sh.
+# a loud error; now the same value is cksummed into the block's identity, so a
+# decoy root yields a wrong identity. That is worse than none: telling two
+# installs apart is the whole point of the line, and a wrong one is believed.
+# The repository already spells the guard this way in tests/lib/harness.sh and
+# tests/run.sh.
 #
 # The row reaches it the only way it is reachable: an argv whose $0 is
 # relative, so `dirname` yields a bare `hooks` for CDPATH to resolve.
@@ -332,16 +332,25 @@ row_done 'size-budget' "$fails"
 # The stub's dynamic part is derived from the install path, so a valid install
 # under a long directory must not push stdout past its budget. Without
 # the bound this row fails the same budget the row above passes. The last
-# component carries a quote, a backslash, a tab and a multibyte character, so
-# the 100-byte cut is taken on a string the sanitizer has already reduced to
-# `?`: each of those, and both bytes of the multibyte character, becomes one.
+# component carries a quote, a backslash, a tab, a multibyte character and a run
+# of 4-byte characters; sanitized byte for byte, each of those bytes is one `?`,
+# so the 100-byte cut lands inside the run of `?` the emoji leave. A cut taken
+# before sanitizing, or a length measured in characters, keeps a different
+# window -- which is what pins the order and the unit.
+#
+# The first run forces LC_ALL=C, where bash measures bytes; the second runs in
+# the ambient (normally UTF-8) locale, where it measures characters. That
+# difference is what makes a length or a cut taken on the raw path disagree.
 
 row_start
 COMP="$(printf '%200s' '' | tr ' ' 'a')"
-# Its first character is two bytes in UTF-8 and the tab is a C0 control, so the
-# sanitized form carries `??` and `?` and the 100-byte cut lands inside the
-# retained ASCII run.
-TRICKY="éq\"uote\\slash"$'\t'"$(printf '%86s' '' | tr ' ' 'b')"
+# 40 × U+1F600: 160 bytes, 40 characters, 80 UTF-16 code units.
+EMOJI="$(printf '😀%.0s' {1..40})"
+B40="$(printf '%40s' '' | tr ' ' 'b')"
+# 15 bytes of punctuation and C0 control, then 40 ASCII bytes, the emoji run and
+# 40 ASCII bytes: the sanitized form is 15 + 40 + 160 + 40, and its last 100
+# bytes are `?` from the emoji followed by the trailing ASCII run.
+TRICKY="éq\"uote\\slash"$'\t'"${B40}${EMOJI}${B40}"
 ROOT="${HARNESS_TMP}/tree.long/${COMP}/${COMP}/${COMP}/${COMP}/${TRICKY}"
 build_tree "$ROOT"
 run_sut env LC_ALL=C bash "${ROOT}/hooks/session-start"
@@ -351,7 +360,7 @@ context_a="$(context_of)"
 if ! check_context 'near-limit-path: context' "$ROOT"; then fails=1; fi
 ROOT_B="${HARNESS_TMP}/tree.wide/${COMP}/${COMP}/${COMP}/${COMP}/${TRICKY}"
 build_tree "$ROOT_B"
-run_sut env LC_ALL=C bash "${ROOT_B}/hooks/session-start"
+run_sut bash "${ROOT_B}/hooks/session-start"
 if ! check_json 'near-limit-path: distinct root'; then fails=1; fi
 context_b="$(context_of)"
 if ! check_context 'near-limit-path: distinct root context' "$ROOT_B"; then fails=1; fi
@@ -370,6 +379,23 @@ if [ "$out_bytes" -gt 2048 ]; then
   fails=1
 fi
 row_done 'near-limit-path' "$fails"
+
+# ---- a short path carrying a multibyte character ------------------------
+#
+# `é` is two bytes and neither is allowed, so it becomes two `?`. One `?` would
+# be the per-character reading -- what a sanitizer written over characters emits
+# -- and this row pins the byte-wise one. The path is short on purpose: nothing
+# is truncated, so the pair reaches the install line instead of being cut away
+# the way it is in the long row above.
+
+row_start
+ROOT="${HARNESS_TMP}/é/dude"
+build_tree "$ROOT"
+run_sut bash "${ROOT}/hooks/session-start"
+fails=0
+if ! check_json 'multibyte-short-path'; then fails=1; fi
+if ! check_context 'multibyte-short-path: context' "$ROOT"; then fails=1; fi
+row_done 'multibyte-short-path' "$fails"
 
 # ---- an install path that reads as an instruction -----------------------
 #
@@ -449,7 +475,7 @@ if ! check_eq 'short-path-identity: block cksum' "with cksum $(expected_cksum "$
   fails=1
 fi
 if ! check_eq 'short-path-identity: install line' \
-  "<!-- dude-install: ${ROOT} -->" "$(install_line_of "$ctx")"; then
+  "<!-- dude-install: $(expected_install "$ROOT") -->" "$(install_line_of "$ctx")"; then
   fails=1
 fi
 row_done 'short-path-identity' "$fails"
