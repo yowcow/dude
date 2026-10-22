@@ -26,10 +26,12 @@
 # RED verification (see tests/README.md): with a script that drops the origin
 # comparison, the 'url naming another repository' row fails — it answers with a
 # branch instead of STOP wrong-checkout; dropping the push comparison alone
-# fails 'pushurl naming another repository' the same way. Against a script that
-# keeps its own copy of the normalization, 'a changed shared helper reaches this
-# caller' fails by answering with the PR line in place of `STOP wrong-checkout`,
-# and every other row stays green.
+# fails 'pushurl naming another repository' the same way. A caller that keeps
+# its own copy of the normalization in place of a helper call fails both mutant
+# rows: 'a changed shared helper reaches this caller' answers with the PR line
+# in place of `STOP wrong-checkout`, and 'the copy reads both checkout URLs
+# through the helper' answers `STOP wrong-checkout` in place of the `repo=` line
+# — that one row for a copy left at either checkout site alone.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -59,7 +61,7 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
 failed=0
 total=0
 
-# Four checkouts, told apart by what their `origin` points at. Nothing is ever
+# Five checkouts, told apart by what their `origin` points at. Nothing is ever
 # fetched from these bare repos — the SUT only reads the remote's URL — so they
 # stay empty.
 ACME_WIDGETS="$(git_repo_bare acme widgets)"
@@ -82,6 +84,13 @@ PUSHAWAY="$(git_repo_scratch pushaway-work)"
 git_repo_init "$PUSHAWAY" main
 git_repo_remote "$PUSHAWAY" origin "$ACME_WIDGETS"
 git -C "$PUSHAWAY" config remote.origin.pushurl "$(git_repo_bare fork widgets)"
+
+# An origin the mutant answers differently from a path, so a helper call and a
+# local copy are distinguishable at each checkout site. Only the URL is read;
+# nothing is fetched.
+HTTPS_ORIGIN="$(git_repo_scratch https-origin-work)"
+git_repo_init "$HTTPS_ORIGIN" main
+git_repo_remote "$HTTPS_ORIGIN" origin 'https://github.com/acme/widgets'
 
 # stub_graphql <owner> <name> <number> [<exit>]   body on stdin
 stub_graphql() {
@@ -219,7 +228,7 @@ assert_row 'unparseable reference' 2 '' 0
 # mutant rows' verdict about the helper: the same tree answers like the tree,
 # and only after one line of the helper changes does this caller's answer move.
 # A caller that kept its own copy of the reduction would answer the PR line in
-# row 19, and would read the checkout as this PR's repository in row 20.
+# row 19, and `STOP wrong-checkout` in place of the `repo=` line in row 20.
 MIRROR="${HARNESS_TMP}/mirror"
 mkdir -p "${MIRROR}/skills/pr-to-ready/scripts"
 cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
@@ -237,12 +246,14 @@ cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
 run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 
-# The mutant answers a checkout URL and an `<owner>/<repo>` pair differently, so
-# this row is what pins the checkout comparison: `the copy` reads the checkout
-# through the helper and finds it is not the repository the reference named.
+# A bare number consults no reference, so this row is about the two checkout
+# sites alone: with the helper in place both read the mutant's `other/elsewhere`
+# and the run goes ahead; with either site re-inlined as a copy, that site reads
+# `acme/widgets`, the origin/push comparison stops the run, and this row fails.
 row_start
-pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
-run_sut_in "$ELSEWHERE" bash "$SUT" https://github.com/acme/widgets/pull/12
-assert_row 'the copy reads its checkout through the helper' 0 'STOP wrong-checkout\n' 0
+pr_body 12 feature main OPEN true | stub_graphql other elsewhere 12
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
+run_sut_in "$HTTPS_ORIGIN" bash "$SUT" 12
+assert_row 'the copy reads both checkout URLs through the helper' 0 'PR 12 branch=feature base=main repo=other/elsewhere draft=true\n' 1
 
 harness_exit "$failed" "$total"
