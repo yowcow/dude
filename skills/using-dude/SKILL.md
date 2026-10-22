@@ -42,6 +42,7 @@ A named deliverable settles the classification, even where running the skill pro
 Change and Investigation both begin with **Understand**.
 
 - A bug whose cause is unknown is an investigation first, and its fix enters the Change workflow only through the transition below.
+- A scan — `audit-code` — enters as the investigation family does: a repository or path needs sweeping for what to fix rather than a symptom to explain, and its report goes to `plan-work`'s **Entry**, with no reproduction to carry — a scan has none.
 - General research (library comparisons, "how does X work") is none of these — answer it directly, with `superpowers:brainstorming` when it is design-shaped.
 
 Match a named deliverable against the skills' `description`s, and where two could fit, let the deliverable named decide rather than the topic. Where the run turns up work beyond that deliverable, report it and let the user pick the flow instead of widening the run.
