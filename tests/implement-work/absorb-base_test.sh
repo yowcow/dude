@@ -13,13 +13,15 @@
 # calls, which is what holds that to being true.
 #
 # RED verification (see tests/README.md). The script is new, so there is no
-# pre-fix version; each of the three deliberately broken variants below is one
+# pre-fix version; each of the four deliberately broken variants below is one
 # defect wide, and the rows it must fail are named:
 #   - read an inherited `FETCH_HEAD` instead of fetching:
 #     `inherited-fetch-head-is-not-trusted`, `stale-remote-ref-is-refetched`
 #   - treat any non-zero `git merge` exit as a conflict:
 #     `unrelated-histories-is-not-a-conflict`, `merge-failed-leaves-no-conflict`
 #   - drop the is-ancestor pre-check: `already-contains-the-base`
+#   - treat `--is-ancestor`'s exit as a boolean, dropping the `-ne 1` branch:
+#     `non-commit-base-is-not-an-answer`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -219,6 +221,24 @@ row_start
 W="$(build_case nobase clean)"
 run_in "$W" task nosuchbase
 assert_row 'base-absent-on-the-remote' 0 'STOP base-fetch-failed\n' 0
+
+# The base ref resolves -- the fetch succeeds and rev-parse hands back a SHA --
+# but it names a blob, not a commit, so `git merge-base --is-ancestor` exits
+# 128 with "not a valid commit name". Its two verdicts are 0 and 1, so reading
+# this as "no" merges a blob. Measured on git 2.43; 128 is what the script
+# forwards as its own exit status.
+row_start
+BARE="$(git_repo_bare acme blobbase)"
+W="$(git_repo_scratch blobbase-work)"
+git_repo_init "$W" task
+git_repo_commit "$W" task.txt 'task\n' 'task root'
+git_repo_remote "$W" origin "$BARE"
+git_repo_blob_ref "$BARE" notacommit 'a blob, not a commit\n'
+run_in "$W" task notacommit
+assert_row 'non-commit-base-is-not-an-answer' 128 '' 0
+# git explains itself on stderr first; the script's own line comes last.
+tally check_eq 'non-commit-base-is-not-an-answer: stderr' \
+  'error: git merge-base --is-ancestor failed (exit 128)' "$(tail -n 1 "$SUT_STDERR")"
 
 # ---- argument validation -----------------------------------------------
 
