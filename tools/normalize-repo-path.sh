@@ -10,9 +10,12 @@
 # repository and have to compare equal — done through `tr` rather than `${x,,}`
 # to keep this running on the bash 3.2 this repository's scripts still run on.
 #
-# Empty segments are answered as they reduce (`widgets/`), never refused:
-# origin-repo.sh turns that shape into exit 1; resolve-pr-entry.sh and
-# check-pr-repo.sh compare the answer against a repository and stop.
+# Empty segments are answered as they reduce (`widgets/`), never refused: one
+# trailing separator is dropped above (a clone of `.../widgets/` keeps it and
+# would otherwise reduce to `widgets/`), but input that still leaves one --
+# `.../widgets//`, say -- reduces with an empty half, and origin-repo.sh turns
+# that shape into exit 1; resolve-pr-entry.sh and check-pr-repo.sh compare the
+# answer against a repository and stop.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 #
@@ -26,6 +29,10 @@ if [ "$#" -ne 1 ]; then
 fi
 
 url="$1"
+# `git clone https://host/owner/repo/` stores the trailing separator verbatim,
+# and without this line that form reduces to `widgets/` -- an identity no
+# repository answers, so a correct checkout stops as not being its own PR's.
+url="${url%/}"
 repo="${url##*/}"
 repo="${repo%.git}"
 owner="${url%/*}"

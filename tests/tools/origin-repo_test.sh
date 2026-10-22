@@ -9,7 +9,9 @@
 # in a copy under `mktemp -d`: dropping `${owner##*:}` fails 'scp-like url';
 # dropping the `tr` fails 'https url with .git' (both now mutations of the
 # shared helper, whose own test holds them); a copy of the reduction kept
-# inside this script fails 'a changed shared helper reaches this caller'.
+# inside this script fails 'a changed shared helper reaches this caller', and
+# a script that reduces a trailing separator to an empty repo segment fails
+# 'url with a trailing slash'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -43,7 +45,12 @@ url_row 'scp-like url' 'git@github.com:acme/widgets.git' 'acme/widgets\n'
 url_row 'ssh url' 'ssh://git@github.com/acme/widgets.git' 'acme/widgets\n'
 
 row_start
-git_repo_remote "$WORK" origin 'https://github.com/acme/widgets/'
+git_repo_remote "$WORK" origin 'https://github.com/Acme/Widgets/'
+run_in "$WORK"
+assert_row 'url with a trailing slash' 0 'acme/widgets\n' 0
+
+row_start
+git_repo_remote "$WORK" origin 'https://github.com/acme/widgets//'
 run_in "$WORK"
 assert_row 'url with no repo segment' 1 '' 0
 

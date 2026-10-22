@@ -213,12 +213,13 @@ row_start
 run_sut_in "$WIDGETS" bash "$SUT" 'not-a-reference'
 assert_row 'unparseable reference' 2 '' 0
 
-# --- 18/19. this script's normalization is the shared helper, not a copy of it
-# Both rows run a copy of this script beside a copy of tools/, because the helper
-# is reached through SCRIPT_DIR. The control row is what makes the second row's
-# verdict about the helper: the same tree answers like the tree, and only after
-# one line of the helper changes does this caller's answer move. A caller that
-# kept its own copy of the reduction would answer the PR line in row 19.
+# --- 18/20. this script's normalization is the shared helper, not a copy of it
+# All three rows run a copy of this script beside a copy of tools/, because the
+# helper is reached through SCRIPT_DIR. The control row is what makes the
+# mutant rows' verdict about the helper: the same tree answers like the tree,
+# and only after one line of the helper changes does this caller's answer move.
+# A caller that kept its own copy of the reduction would answer the PR line in
+# row 19, and would read the checkout as this PR's repository in row 20.
 MIRROR="${HARNESS_TMP}/mirror"
 mkdir -p "${MIRROR}/skills/pr-to-ready/scripts"
 cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
@@ -235,5 +236,13 @@ pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
 run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
+
+# The mutant answers a checkout URL and an `<owner>/<repo>` pair differently, so
+# this row is what pins the checkout comparison: `the copy` reads the checkout
+# through the helper and finds it is not the repository the reference named.
+row_start
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+run_sut_in "$ELSEWHERE" bash "$SUT" https://github.com/acme/widgets/pull/12
+assert_row 'the copy reads its checkout through the helper' 0 'STOP wrong-checkout\n' 0
 
 harness_exit "$failed" "$total"

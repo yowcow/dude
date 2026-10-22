@@ -2,13 +2,16 @@
 # Table test for tools/normalize-repo-path.sh: every remote URL shape git
 # accepts for GitHub, plus the `<owner>/<repo>` pair a reference URL carries,
 # reduced to the lowercase `<owner>/<repo>` the repository-identity checks
-# compare. The empty-segment row expects the reduced `widgets/`, not a refusal.
+# compare. A clone's remote URL keeps a trailing separator, so a single one is
+# dropped; an entry that still leaves an empty segment reduces to `widgets/`,
+# not a refusal.
 #
 # RED verification (see tests/README.md): the script is new. Mutants measured in
 # a copy under `mktemp -d`: dropping `${owner##*:}` fails only 'scp-like url';
 # dropping the `tr` fails every row with an uppercase owner ('https url with
 # .git', 'case fold', 'local path'); dropping `${repo%.git}` fails every `.git`
-# row ('https url with .git', 'scp-like url', 'ssh url', 'local path').
+# row ('https url with .git', 'scp-like url', 'ssh url', 'local path');
+# dropping `${url%/}` fails both trailing-slash rows.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -51,7 +54,11 @@ assert_row 'repo name containing a dot' 0 'acme/widgets.js\n' 0
 
 row_start
 run_sut bash "$SUT" 'https://github.com/acme/widgets/'
-assert_row 'url with no repo segment' 0 'widgets/\n' 0
+assert_row 'url with a trailing slash' 0 'acme/widgets\n' 0
+
+row_start
+run_sut bash "$SUT" 'https://github.com/acme/widgets//'
+assert_row 'url with two trailing slashes' 0 'widgets/\n' 0
 
 row_start
 run_sut bash "$SUT"
