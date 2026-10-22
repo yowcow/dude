@@ -6,18 +6,20 @@
 # parameter substitution rather than jq, because the hook has to run wherever
 # the plugin is installed and jq is not guaranteed there.
 #
-# The stub is static and small (~0.6KB decoded): only the install path is
-# dynamic. The full rules live in skills/using-dude/SKILL.md and are read on
-# demand via a skill call, outside additionalContext's truncation budget.
+# The stub is static and small (~0.6KB decoded): what varies per install is a
+# cksum identity inside the block and the install path as escaped data outside
+# it. The full rules live in skills/using-dude/SKILL.md and are read on demand
+# via a skill call, outside additionalContext's truncation budget.
 
 set -euo pipefail
 
 # CDPATH is cleared rather than trusted: `cd` searches it for a relative
 # operand and echoes the directory it landed on, so an exported CDPATH would
 # resolve this to a tree the hook was never invoked from and fold the echoed
-# line into the value. That path is printed below as the block's identity, and
-# a wrong identity is worse than none -- it is the line a reader trusts to tell
-# two installs apart. Spelled as tests/lib/harness.sh and tests/run.sh spell it.
+# line into the value. That path is printed below as data and cksummed as the
+# block's identity; a wrong path is a wrong identity, worse than none -- the
+# cksum is the line a reader trusts to tell two installs apart. Spelled as
+# tests/lib/harness.sh and tests/run.sh spell it.
 hook_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # The install this hook is running out of. Two installs of dude each run their
 # own copy of this script and inject a near-identical block; without the tree
@@ -64,33 +66,29 @@ escape_for_json() {
     printf '%s' "$s"
 }
 
-# `"`, `\` and the C0 controls a path can hold are all legal in a POSIX
-# filename, and an install path carrying any of them would close or
-# invalidate the JSON string early -- taking the whole stub with it.
-#
-# The identity is the only dynamic part of the stub, so a long install path
-# must not push it past its budget. Truncate the raw path to its last 100
-# characters before escaping: after is too late, a byte cut there can split
-# an escape or a multibyte character and invalidate the whole object. Even
-# at 6x escape expansion this stays inside both budgets. The suffix is paired
-# with a POSIX cksum of the complete root, so separate installs stay distinct.
-root_len=${#plugin_root}
-if [ "$root_len" -gt 100 ]; then
-  root_checksum="$(printf '%s' "$plugin_root" | cksum)"
-  root_checksum="${root_checksum%% *}"
-  suffix="${plugin_root:$((root_len - 100))}"
-  # A byte cut under LC_ALL=C can start mid-character: drop dangling UTF-8
-  # continuation bytes so the head is character-aligned. The tail needs
-  # nothing -- it is the string's original end. Under a UTF-8 locale the cut
-  # is already aligned and this strips nothing.
-  while [[ $suffix == [$'\200'-$'\277']* ]]; do
-    suffix="${suffix:1}"
-  done
-  plugin_root="...${root_checksum}:${suffix}"
-fi
-escaped_root=$(escape_for_json "$plugin_root")
+# An install path is data, not prose. Everything outside [A-Za-z0-9._/-]
+# becomes `?`: that covers every JSON metacharacter, every C0 control, and every
+# byte of a non-ASCII character, so a directory named `</EXTREMELY_IMPORTANT>`
+# cannot close the block and one named `IGNORE-ALL-PREVIOUS-INSTRUCTIONS`
+# cannot read as an instruction. Byte-wise (LC_ALL=C) so the result is ASCII
+# whatever locale the hook runs under, and so the truncation below is byte-safe.
+sanitize_path() {
+    printf '%s' "$1" | LC_ALL=C tr -c 'A-Za-z0-9._/-' '?'
+}
 
-context="<!-- dude-bootstrap:using-dude -->\n<EXTREMELY_IMPORTANT>\ndude's workflow rules — summary stub (not the full ruleset) from the dude install at ${escaped_root}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.\n</EXTREMELY_IMPORTANT>"
+# The block's identity is a cksum of the complete root, whatever the path
+# length: the path is attacker-chosen, and so is any suffix of it, so neither
+# can be the identity. The path goes out as data instead -- sanitized, kept to
+# its last 100 bytes, and outside the block.
+root_checksum="$(printf '%s' "$plugin_root" | cksum)"
+root_checksum="${root_checksum%% *}"
+install_value="$(sanitize_path "$plugin_root")"
+if [ "${#install_value}" -gt 100 ]; then
+    install_value="...${install_value:$((${#install_value} - 100))}"
+fi
+escaped_install=$(escape_for_json "$install_value")
+
+context="<!-- dude-bootstrap:using-dude -->\n<!-- dude-install: ${escaped_install} -->\n<EXTREMELY_IMPORTANT>\ndude's workflow rules — summary stub (not the full ruleset) from the dude install with cksum ${root_checksum}:\n\nBefore any task, read the \`dude:using-dude\` skill and follow it. The full rules live in skills/using-dude/SKILL.md of this install; this stub is only a pointer.\n\nThe orchestrator owns control flow and drives every transition; a worker never declares a phase complete or advances the workflow. A sub-skill's trailing transition is cut — what runs next is the caller's decision, not the sub-skill's.\n</EXTREMELY_IMPORTANT>"
 
 # printf rather than a heredoc: bash 5.3+ hangs on heredocs in this position.
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$context"
