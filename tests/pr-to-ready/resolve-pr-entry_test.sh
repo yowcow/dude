@@ -26,7 +26,9 @@
 # RED verification (see tests/README.md): with a script that drops the origin
 # comparison, the 'url naming another repository' row fails — it answers with a
 # branch instead of STOP wrong-checkout; dropping the push comparison alone
-# fails 'pushurl naming another repository' the same way.
+# fails 'pushurl naming another repository' the same way. Against a script that
+# keeps its own copy of the normalization, 'a changed shared helper reaches this
+# caller' fails by answering that PR line, and every other row stays green.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -209,5 +211,36 @@ assert_row 'two arguments' 2 '' 0
 row_start
 run_sut_in "$WIDGETS" bash "$SUT" 'not-a-reference'
 assert_row 'unparseable reference' 2 '' 0
+
+# --- 18/19. this script's normalization is the shared helper, not a copy of it
+# Both rows run a copy of this script beside a copy of tools/, because the helper
+# is reached through SCRIPT_DIR. The control row is what makes the second row's
+# verdict about the helper: the same tree answers like the tree, and only after
+# one line of the helper changes does this caller's answer move. A caller that
+# kept its own copy of the reduction would answer the PR line in row 19.
+MIRROR="${HARNESS_TMP}/mirror"
+mkdir -p "${MIRROR}/skills/pr-to-ready/scripts"
+cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
+cp "$SUT" "${MIRROR}/skills/pr-to-ready/scripts/"
+MIRRORED="${MIRROR}/skills/pr-to-ready/scripts/${SUT##*/}"
+
+row_start
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+assert_row 'the copy answers like the tree' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
+
+row_start
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+cat >"${MIRROR}/tools/normalize-repo-path.sh" <<'EOF'
+#!/usr/bin/env bash
+# Mutant for #696: a checkout's remote arrives as a path and a reference's
+# repository as an owner/repo pair, so this answers them differently.
+case "$1" in
+  /*) printf 'acme/widgets\n' ;;
+  *) printf 'other/elsewhere\n' ;;
+esac
+EOF
+run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 
 harness_exit "$failed" "$total"

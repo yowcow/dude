@@ -140,7 +140,7 @@ exit codes, a real `git merge` producing a genuine conflict. Source
 
 - `git_repo_bare <owner> <repo>` — a new bare repo at
   `$HARNESS_TMP/remotes/<owner>/<repo>.git`; prints the path. The **path is the
-  identity**: `resolve-pr-entry.sh` reduces a remote URL to its last two
+  identity**: `tools/normalize-repo-path.sh` reduces a remote URL to its last two
   segments, so this repo reads as `<owner>/<repo>` while still being a local
   directory `git fetch` can reach offline.
 - `git_repo_bare_head <bare> <branch>` — points a bare repo's `HEAD` at
