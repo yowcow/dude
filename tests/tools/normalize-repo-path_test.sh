@@ -23,6 +23,13 @@ SUT="${SUT:-${REPO_ROOT}/tools/normalize-repo-path.sh}"
 failed=0
 total=0
 
+# shellcheck disable=SC2317 # invoked indirectly, as `tally check_stderr_has ...`
+check_stderr_has() {
+  local got=no
+  grep -q -- "$2" "$SUT_STDERR" && got=yes
+  check_eq "$1" 'yes' "$got"
+}
+
 row_start
 run_sut bash "$SUT" 'https://github.com/Acme/Widgets.git'
 assert_row 'https url with .git' 0 'acme/widgets\n' 0
@@ -58,9 +65,11 @@ assert_row 'url with no repo segment' 0 'widgets/\n' 0
 row_start
 run_sut bash "$SUT"
 assert_row 'no argument' 2 '' 0
+tally check_stderr_has 'no argument: usage is printed' 'Usage:'
 
 row_start
 run_sut bash "$SUT" a b
 assert_row 'two arguments' 2 '' 0
+tally check_stderr_has 'two arguments: usage is printed' 'Usage:'
 
 harness_exit "$failed" "$total"
