@@ -26,7 +26,10 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 
 ## Verdicts
 
-- **`accept`** with the fix — only after verifying the claim against what is judged. It judges the claim alone: whether the fix is applied is the caller's decision, and an `accept` recorded without being applied stays an `accept`.
+- **`accept`** with the fix — only after verifying the claim against what is judged. It judges the claim alone: whether the fix is applied is the caller's decision, and an `accept` recorded without being applied stays an `accept`. Every `accept` also carries a value and its reason, a separate axis from the severity the reviewer gave and from the `reject` ground below:
+  - **`apply`** — the fix changes what someone does: what the code does when it runs, a command that gets run, a test that gets written, a procedure that gets followed, or a decision a maintainer makes when maintaining it.
+  - **`record`** — the fix changes only what a reader takes away, and none of those actions.
+  - Severity does not decide the value: a Minor can be `apply` and an Important can be `record`. A fix that changes nothing a reader takes away is not on this axis; it is the reviewer preference under `reject`.
 - **`reject`** with the stated reason — the finding is wrong, only reflects reviewer preference, asks for work beyond the request, or fails the caller's criteria.
   - **A fix that changes nothing a reader takes away is reviewer preference** — a sentence reworded, a paragraph reflowed, a list reordered, a name or style the reviewer would have written differently. It takes `reject`, not `needs-user`, unless the caller's acceptance criteria make that class of change the work.
 - **`needs-user`** — the call is a person's rather than a technical one: the question to put to that person and why the decision is theirs.
@@ -35,4 +38,4 @@ For a candidate, `accept` or `needs-user` makes it a finding at the severity the
 
 **A doc proposal is judged against the file and the proposed text, never against its own table.** For a doc proposal, enumerate the facts of the replaced before range from the file yourself, and the facts of the proposed text from that text, then compare both directions against both tables — the categories the tables cover are not the measure. A fact the after text adds fails; one it removes fails unless the after table names the `path:line`, in the same file and outside the replaced range, where that same fact still stands. Confirm that commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at are byte-identical. A missing, empty, or thin table, or a dropped warning, condition, instruction, or opt-out, is not accepted. On `accept`, return the proposer's after text unchanged: different wording is a `reject`, or a fresh after table verified again.
 
-Return each item as given, with its verdict. The caller re-judges none.
+Return each item as given, with its verdict — an `accept` with its value and reason. The caller re-judges none.
