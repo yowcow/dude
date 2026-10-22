@@ -61,7 +61,7 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
 failed=0
 total=0
 
-# Five checkouts, told apart by what their `origin` points at. Nothing is ever
+# Six checkouts, told apart by what their `origin` points at. Nothing is ever
 # fetched from these bare repos — the SUT only reads the remote's URL — so they
 # stay empty.
 ACME_WIDGETS="$(git_repo_bare acme widgets)"
@@ -91,6 +91,11 @@ git -C "$PUSHAWAY" config remote.origin.pushurl "$(git_repo_bare fork widgets)"
 HTTPS_ORIGIN="$(git_repo_scratch https-origin-work)"
 git_repo_init "$HTTPS_ORIGIN" main
 git_repo_remote "$HTTPS_ORIGIN" origin 'https://github.com/acme/widgets'
+
+# An origin whose reduced form ends in the empty repo half.
+EMPTY_HALF="$(git_repo_scratch empty-half-work)"
+git_repo_init "$EMPTY_HALF" main
+git_repo_remote "$EMPTY_HALF" origin 'https://github.com/acme/widgets//'
 
 # stub_graphql <owner> <name> <number> [<exit>]   body on stdin
 stub_graphql() {
@@ -168,6 +173,14 @@ row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$PUSHAWAY" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'pushurl naming another repository' 0 'STOP wrong-checkout\n' 0
+
+# --- 8b. an origin whose last segment is empty has no repository to be -----
+# A bare number reads this checkout's own owner/repo, so an empty repo half
+# would be carried into the lookup and answered as `no such pr` about a PR that
+# exists. Nothing is stubbed: the run must stop before the lookup.
+row_start
+run_sut_in "$EMPTY_HALF" bash "$SUT" 12
+assert_row 'origin with an empty repo segment' 0 'STOP wrong-checkout\n' 0
 
 # --- 9. a head branch living in a fork is not on this origin at all -------
 # The origin comparison above cannot see this: the reference names the base

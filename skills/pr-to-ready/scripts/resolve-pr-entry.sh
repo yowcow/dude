@@ -99,6 +99,16 @@ if [ "$PUSH_CHECKOUT" != "$CHECKOUT" ]; then
   exit 0
 fi
 
+# An empty half is the shape origin-repo.sh refuses, and the same stop belongs
+# here: a bare number would take it as this checkout's own owner/repo and answer
+# `STOP no-pr` about a PR that exists.
+case "$CHECKOUT" in
+  /*|*/)
+    echo "STOP wrong-checkout"
+    exit 0
+    ;;
+esac
+
 # --- Step 2: split the reference into owner, repo and number. ---
 
 if [[ "$REF" =~ ^[0-9]+$ ]]; then
