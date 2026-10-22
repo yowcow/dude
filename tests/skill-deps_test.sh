@@ -40,12 +40,13 @@ judge-findings primitive'
 EDGES='plan-work implement-work hand-off: the published TODO list is shaped for implement-work to pick up one item.
 implement-work plan-work hand-back: work larger than one PR and an invalidated design go back to plan-work, whose **Entry** says what it does with them.
 implement-work pr-to-ready hand-off, plus contracts: **Hand off** continues into pr-to-ready, and references/ holds the STOP registry and Base-Branch contract that pr-to-ready'"'"'s scripts implement.
-pr-to-ready implement-work hand-off: its input is the draft PR implement-work left, title and body follow implement-work'"'"'s **Hand off**, and a drifted base is sent back there.
+pr-to-ready implement-work hand-off: its input is the draft PR implement-work left, title and body follow implement-work'"'"'s **Hand off**, and a drifted base is handed back there for a person'"'"'s explicit re-entry.
 pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the finding, the branch, and its state.
 review-code implement-work contract (PR #549 R6): cites the Base-Branch trailer contract in implement-work/references/base-branch.md, its single source.
 review-pr implement-work contract: script headers cite implement-work/references/script-conventions.md and stop-registry.md, the shared conventions.
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
-audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude names no destination for audit-code.'
+audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
+review-findings review-plan lens ownership: cites review-plan'"'"'s four lens names only to say it skips them.'
 
 failed=0
 total=0
