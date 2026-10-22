@@ -345,11 +345,9 @@ row_done 'size-budget' "$fails"
 # of 4-byte characters; sanitized byte for byte, each of those bytes is one `?`,
 # so the 100-byte cut lands inside the run of `?` the emoji leave. A cut taken
 # before sanitizing, or a length measured in characters, keeps a different
-# window -- which is what pins the order and the unit.
-#
-# The first run forces LC_ALL=C, where bash measures bytes; the second runs in
-# the ambient (normally UTF-8) locale, where it measures characters. That
-# difference is what makes a length or a cut taken on the raw path disagree.
+# window -- which is what pins the order and the unit: the first run forces
+# LC_ALL=C, where bash measures bytes; the second runs in the ambient (normally
+# UTF-8) locale, where it measures characters.
 
 row_start
 COMP="$(printf '%200s' '' | tr ' ' 'a')"
