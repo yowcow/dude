@@ -18,6 +18,9 @@ directory**. A plugin install carries the whole repository, `tests/` included
   for the scripts that shell out to `git`. Sourced after `harness.sh`.
 - `tests/lib/bin-nosleep/sleep` — the instant `sleep`, put on `PATH` only by
   an explicit `stub_sleep_instant` call.
+- `tests/lib/mutant/normalize-repo-path.sh` — a replacement a test copies over
+  `tools/normalize-repo-path.sh` in a mirrored copy of the tree, to prove a
+  caller reaches the shared helper rather than a copy of its own.
 - `tests/scripts-have-tests.sh` — the coverage gate: every script under
   `skills/*/scripts/`, every file under `tools/`, every file under `hooks/`
   except `hooks.json`, and every file under the repository-root `scripts/` must
@@ -65,8 +68,8 @@ Each row typically does:
    there, and returns to the repository root, stopping the file if either cd
    fails. Most of the git-touching scripts need it — a row run from the
    scripts directory would pass even against a cwd-relative sibling call.
-   `resolve-pr-entry_test.sh` and `review-pr/check-pr-repo_test.sh` each keep a
-   local `run_sut_in` whose signature differs.
+   `resolve-pr-entry_test.sh` keeps a local `run_sut_in` whose signature
+   differs.
 4. `assert_row <name> <want-exit> <want-stdout> <want-gh-calls>` — the row's
    whole verdict in one call: exit status, stdout bytes, `gh` call count, and no
    unstubbed argv, advancing `failed` on any mismatch. All four arguments are

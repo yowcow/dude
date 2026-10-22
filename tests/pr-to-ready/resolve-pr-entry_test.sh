@@ -231,15 +231,7 @@ assert_row 'the copy answers like the tree' 0 'PR 12 branch=feature base=main re
 
 row_start
 pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
-cat >"${MIRROR}/tools/normalize-repo-path.sh" <<'EOF'
-#!/usr/bin/env bash
-# Mutant for #696: a checkout's remote arrives as a path and a reference's
-# repository as an owner/repo pair, so this answers them differently.
-case "$1" in
-  /*) printf 'acme/widgets\n' ;;
-  *) printf 'other/elsewhere\n' ;;
-esac
-EOF
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
 run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
 assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 

@@ -49,15 +49,6 @@ git -C "$PUSHFORK" config remote.origin.pushurl "$(git_repo_bare me widgets)"
 NOREMOTE="$(git_repo_scratch noremote-work)"
 git_repo_init "$NOREMOTE" main
 
-# run_sut_in <dir> <argv...>   -- the SUT reads the *current* repository.
-run_sut_in() {
-  local dir="$1" prev="$PWD"
-  shift
-  cd "$dir" || exit 1
-  run_sut "$@"
-  cd "$prev" || exit 1
-}
-
 row_start
 run_in "$WIDGETS" 12
 assert_row 'bare number' 0 'PR 12 repo=acme/widgets\n' 0
@@ -103,23 +94,15 @@ MIRROR="${HARNESS_TMP}/mirror"
 mkdir -p "${MIRROR}/skills/review-pr/scripts"
 cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
 cp "$SUT" "${MIRROR}/skills/review-pr/scripts/"
-MIRRORED="${MIRROR}/skills/review-pr/scripts/${SUT##*/}"
+SUT="${MIRROR}/skills/review-pr/scripts/${SUT##*/}"
 
 row_start
-run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+run_in "$WIDGETS" https://github.com/acme/widgets/pull/12
 assert_row 'the copy answers like the tree' 0 'PR 12 repo=acme/widgets\n' 0
 
 row_start
-cat >"${MIRROR}/tools/normalize-repo-path.sh" <<'EOF'
-#!/usr/bin/env bash
-# Mutant for #696: a checkout's remote arrives as a path and a reference's
-# repository as an owner/repo pair, so this answers them differently.
-case "$1" in
-  /*) printf 'acme/widgets\n' ;;
-  *) printf 'other/elsewhere\n' ;;
-esac
-EOF
-run_sut_in "$WIDGETS" bash "$MIRRORED" https://github.com/acme/widgets/pull/12
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
+run_in "$WIDGETS" https://github.com/acme/widgets/pull/12
 assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 
 harness_exit "$failed" "$total"
