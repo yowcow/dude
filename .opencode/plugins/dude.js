@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const pluginRoot = fileURLToPath(new URL('../..', import.meta.url)).replace(/\/$/, '');
+const pluginRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 const skillsRoot = path.join(pluginRoot, 'skills');
 const MARKER = 'dude-bootstrap:using-dude';
 
@@ -32,7 +32,7 @@ function installValue(p) {
 // The spelling can differ: this side sees a non-UTF-8 name as U+FFFD and a
 // symlinked one as the physical root, so the two numbers can differ with it.
 function cksum(s) {
-  const bytes = [...Buffer.from(s, 'utf8')];
+  const bytes = Buffer.from(s, 'utf8');
   let crc = 0;
   const feed = (b) => {
     crc = (crc ^ (b << 24)) >>> 0;

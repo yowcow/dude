@@ -16,18 +16,16 @@ set -euo pipefail
 # CDPATH is cleared rather than trusted: `cd` searches it for a relative
 # operand and echoes the directory it landed on, so an exported CDPATH would
 # resolve this to a tree the hook was never invoked from and fold the echoed
-# line into the value. That path is printed below as data and cksummed as the
-# block's identity; a wrong path is a wrong identity, worse than none -- the
-# cksum is the line a reader trusts to tell two installs apart. Spelled as
-# tests/lib/harness.sh and tests/run.sh spell it.
+# line into the value. A wrong value there is worse than a missing one -- the
+# identity is what a reader believes. Spelled as tests/lib/harness.sh and
+# tests/run.sh spell it.
 hook_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 # The install this hook is running out of. Two installs of dude each run their
-# own copy of this script and inject a near-identical block; without the tree
-# named in the block, the two cannot be told apart by reading them. The value
-# was already being computed here and thrown away -- $CLAUDE_PLUGIN_ROOT is
-# deliberately not consulted, so what is printed stays the tree this file
-# actually ran from. `dirname` rather than ${hook_dir%/*}, which yields the
-# empty string for a hook_dir of `/hooks`.
+# own copy of this script and inject a near-identical block; without a cksum
+# identity in the block and the tree named beside it, the two cannot be told
+# apart by reading them. $CLAUDE_PLUGIN_ROOT is deliberately not consulted, so
+# what is printed stays the tree this file actually ran from. `dirname` rather
+# than ${hook_dir%/*}, which yields the empty string for a hook_dir of `/hooks`.
 plugin_root="$(dirname -- "$hook_dir")"
 
 escape_for_json() {
@@ -80,8 +78,7 @@ sanitize_path() {
 
 # The block's identity is a cksum of the complete root, so it is stable under
 # the truncation below: the install line keeps only the last 100 bytes, and that
-# window moves with the path's total length. The path goes out as data instead
-# -- sanitized, kept to its last 100 bytes, and outside the block.
+# window moves with the path's total length.
 root_checksum="$(printf '%s' "$plugin_root" | cksum)"
 root_checksum="${root_checksum%% *}"
 install_value="$(sanitize_path "$plugin_root")"
