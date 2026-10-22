@@ -21,13 +21,6 @@ SUT="${SUT:-${REPO_ROOT}/tools/normalize-repo-path.sh}"
 failed=0
 total=0
 
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_stderr_has ...`
-check_stderr_has() {
-  local got=no
-  grep -q -- "$2" "$SUT_STDERR" && got=yes
-  check_eq "$1" 'yes' "$got"
-}
-
 row_start
 run_sut bash "$SUT" 'https://github.com/Acme/Widgets.git'
 assert_row 'https url with .git' 0 'acme/widgets\n' 0
