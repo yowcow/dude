@@ -27,7 +27,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 ## Verdicts
 
 - **`accept`** with the fix — only after verifying the claim against what is judged. It judges the claim alone: whether the fix is applied is the caller's decision, and an `accept` recorded without being applied stays an `accept`. Every `accept` also carries a value and its reason, a separate axis from the severity the reviewer gave and from the `reject` ground below:
-  - **`apply`** — the fix changes what someone does: a command that gets run, a test that gets written, a procedure that gets followed, or a decision a maintainer makes when maintaining it.
+  - **`apply`** — the fix changes what someone does: what the code does when it runs, a command that gets run, a test that gets written, a procedure that gets followed, or a decision a maintainer makes when maintaining it.
   - **`record`** — the fix changes only what a reader takes away, and none of those actions.
   - Severity does not decide the value: a Minor can be `apply` and an Important can be `record`. A fix that changes nothing a reader takes away is not on this axis; it is the reviewer preference under `reject`.
 - **`reject`** with the stated reason — the finding is wrong, only reflects reviewer preference, asks for work beyond the request, or fails the caller's criteria.
