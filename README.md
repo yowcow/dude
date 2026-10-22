@@ -70,6 +70,7 @@ flowchart TB
   review-pr -.-> implement-work
   review-pr -.-> plan-work
   audit-code -.-> plan-work
+  review-findings -.-> review-plan
 
   plan-work --> review-plan
   plan-work --> settle-question
