@@ -11,8 +11,8 @@
 # to keep this running on the bash 3.2 this repository's scripts still run on.
 #
 # Empty segments are answered as they reduce (`widgets/`), never refused:
-# origin-repo.sh turns that shape into exit 1, and the two callers compare the
-# answer against a repository and stop.
+# origin-repo.sh turns that shape into exit 1; resolve-pr-entry.sh and
+# check-pr-repo.sh compare the answer against a repository and stop.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 #

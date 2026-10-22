@@ -2,9 +2,7 @@
 # Table test for tools/normalize-repo-path.sh: every remote URL shape git
 # accepts for GitHub, plus the `<owner>/<repo>` pair a reference URL carries,
 # reduced to the lowercase `<owner>/<repo>` the repository-identity checks
-# compare. A value with an empty segment is answered as it reduces (`widgets/`),
-# never refused: origin-repo.sh turns that shape into exit 1, and the two callers
-# compare it against a repository and stop.
+# compare. The empty-segment row expects the reduced `widgets/`, not a refusal.
 #
 # RED verification (see tests/README.md): the script is new. Mutants measured in
 # a copy under `mktemp -d`: dropping `${owner##*:}` fails only 'scp-like url';
