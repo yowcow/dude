@@ -15,7 +15,8 @@
 # Accepting a bare `round=N` as the state fails 'wait: a counter it did not
 # write is refused' and 'wait: a counter it did not write is not advanced';
 # widening the round to `[0-9][0-9]*` fails 'wait: the mark does not excuse a
-# bad round'.
+# bad round'; dropping the trailing `$` fails 'wait: a marked file with a
+# trailing line'.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -253,6 +254,15 @@ row_start
 COUNTED="$(printf 'dude-wait round=0\n' | facts_file)"
 run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
 assert_row 'wait: the mark does not excuse a bad round' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: the mark does not excuse a bad round, untouched' \
+  'dude-wait round=0' "$(cat "$COUNTED")"
+
+row_start
+COUNTED="$(printf 'dude-wait round=3\nextra=1\n' | facts_file)"
+run_sut bash "$SUT" wait "$COUNTED" 3 5 TIMEOUT
+assert_row 'wait: a marked file with a trailing line' 0 'STOP wait-state-invalid\n' 0
+tally check_eq 'wait: a trailing line keeps its bytes' \
+  "$(printf 'dude-wait round=3\nextra=1')" "$(cat "$COUNTED")"
 
 row_start
 run_sut bash "$SUT" wait '' 1 5 TIMEOUT
