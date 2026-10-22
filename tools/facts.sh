@@ -75,7 +75,13 @@ values() {
 
 # count <file> <name>: how many lines record <name>.
 count() {
-  values "$1" "$2" | wc -l | tr -d ' '
+  local line n=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    case "$line" in
+      "$2="*) n=$((n + 1)) ;;
+    esac
+  done <"$1"
+  printf '%s\n' "$n"
 }
 
 unfilled() {
