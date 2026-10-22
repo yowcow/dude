@@ -88,10 +88,8 @@ make_tree "$fx/a?b/dude"
 make_tree "$fx/broken"
 mkdir -p -- "$fx/broken/skills/good" "$fx/broken/skills/broken/SKILL.md"
 printf -- '---\nname: good\ndescription: fixture\n---\n\nbody\n' >"$fx/broken/skills/good/SKILL.md"
-# Every other fixture root is far under 100 bytes, so a plugin that never
-# truncates would pass without this one. The emoji run is 160 bytes but 40
-# characters (80 UTF-16 code units), so a length or a cut taken on the raw string
-# keeps a different window.
+# The emoji run is 160 bytes but 40 characters (80 UTF-16 code units), so a
+# length or a cut taken on the raw string keeps a different window.
 LONG="$(printf '%120s' '' | tr ' ' 'x')"
 EMOJI="$(printf '😀%.0s' {1..40})"
 make_tree "$fx/long/${LONG}/${EMOJI}/dude"
