@@ -7,7 +7,7 @@ description: Use to implement one PR-sized task.
 
 There is no plan yet.
 
-This skill holds two gates: one on the detailed plan, before any code, and the completion gate at the end. It does not own the PR-side loop — the draft PR it opens at the end is where `pr-to-ready` takes over with its own completion path, and neither gate here is re-entered from there.
+This skill holds two gates: one on the detailed plan, before any code, and the completion gate at the end. It does not own the PR-side loop — the draft PR it opens at the end is where `pr-to-ready` takes over with its own completion path, and neither gate here is re-entered from there: a return into this flow is a person's explicit re-entry, never a step `pr-to-ready` takes on its own.
 
 ## Orchestration model
 
