@@ -19,6 +19,7 @@ Root-cause an observed performance shortfall. `superpowers:systematic-debugging`
 
 - Descending the layers (Step 3) stays sequential by design — which layer to drill into depends on the previous measurement.
 - Within a layer, independent measurements (CPU vs memory vs IO saturation) can each go to a worker.
+- A worker that measures returns the command it ran and its raw output for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
 
 ## Entry
 
@@ -31,6 +32,8 @@ An observed shortfall and where it was observed: the endpoint, job, or query tha
 - Define the exact metric (p50/p99 latency, throughput, RSS, CPU%) and the target or prior value it is measured against.
 - Fix the environment: hardware, dataset size, concurrency.
 - Record the baseline numbers and the exact command that produced them.
+- Those numbers, that command, and its raw output are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree they ran against, or, off a git tree, the path or record and how that identity was fixed; so is every measurement this run takes.
+- A run that takes up a record from another session or worktree, where its path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, or a bound this run names when the metric states none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
 
 ### Step 2: Reproduce reliably
 
@@ -55,17 +58,17 @@ Descend the layers, measuring each one's share of the total cost; stop at the fi
 - A named bottleneck whose measured contribution explains the observed shortfall's magnitude — not just "found something slow"; or
 - documented dead ends, each with the measurement that would settle it.
 
-Once the report below is drafted, run `review-findings` on it for one pass and publish per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
 1. **Summary** — one paragraph.
 2. **Numbers** — baseline vs observed vs target.
-3. **Reproduction** — the minimal reproduction or the observation window, with the exact command behind the numbers.
+3. **Reproduction** — the minimal reproduction or the observation window, with the exact command behind the numbers; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the numbers rest on. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
 4. **Root cause** — with the decisive measurement.
 5. **Contributing factors**
 6. **Fix options** — expected gain and cost of each.
-7. **Open questions**
+7. **Open questions** — including documented dead ends, each with the measurement that would settle it.
 
 What a fix carries forward is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to the next flow, never work started from here.
 
