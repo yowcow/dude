@@ -16,7 +16,7 @@ A missing field would be machine-checkable. Whether a measurement record still c
 
 ## The roster
 
-The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is an entry whose own dispatch carries a measurement record. No skill in this table hands raw measurement data across its work today and none sets a bound on re-measuring. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer, worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
+The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is an entry whose own dispatch carries a measurement record. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer, worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
 
 | Skill | Applicability | Reason |
 | --- | --- | --- |

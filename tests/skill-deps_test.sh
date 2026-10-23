@@ -177,7 +177,7 @@ failed=$((failed + bad))
 total=$((total + 1))
 bad=0
 rel="${roster#"$ROOT"/}"
-if [ ! -r "$roster" ]; then
+if [ ! -f "$roster" ] || [ ! -r "$roster" ]; then
   printf 'FAIL skill-deps: %s is missing or unreadable — the measurement-record roster cannot be checked\n' \
     "$rel"
   bad=1
