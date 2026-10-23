@@ -120,8 +120,10 @@ done
 # mentions: "<owner> <target> <file>:<line>", one per mention.
 mentions="${HARNESS_TMP}/mentions"
 : >"$mentions"
+roster="$ROOT/skills/implement-work/references/measurement-record.md"
 nfiles=0
 while IFS= read -r f; do
+  [ "$f" != "$roster" ] || continue
   nfiles=$((nfiles + 1))
   rel="${f#"$ROOT"/}"
   owner="${rel#skills/}"
@@ -171,7 +173,6 @@ failed=$((failed + bad))
 # reads the first column only, so the reason text stays free.
 total=$((total + 1))
 bad=0
-roster="$ROOT/skills/implement-work/references/measurement-record.md"
 if [ ! -r "$roster" ]; then
   printf 'FAIL skill-deps: %s is missing or unreadable — the measurement-record roster cannot be checked\n' \
     "${roster#"$ROOT"/}"
@@ -183,6 +184,10 @@ else
       bad=1
     fi
   done
+  if grep -qF " ${roster#"$ROOT"/}:" "$mentions"; then
+    printf 'FAIL skill-deps: %s is scanned for dependency mentions\n' "${roster#"$ROOT"/}"
+    bad=1
+  fi
 fi
 failed=$((failed + bad))
 
