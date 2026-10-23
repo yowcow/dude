@@ -183,8 +183,14 @@ if [ ! -r "$roster" ]; then
   bad=1
 else
   for t in "${targets[@]}"; do
-    if ! grep -qE "\| \`${t}\` \| (applies|does not apply) \| [^ |]" "$roster"; then
+    rows="$(grep -c "^| \`${t}\` |" "$roster" || true)"
+    ok="$(grep -cE "^\| \`${t}\` \| (applies|does not apply) \| [^ |]" "$roster" || true)"
+    if [ "$rows" -eq 0 ]; then
       printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
+      bad=1
+    elif [ "$ok" -ne 1 ]; then
+      printf 'FAIL skill-deps: the measurement-record roster row for %s needs "applies" or "does not apply" and a reason (well-formed rows: %s of %s)\n' \
+        "$t" "$ok" "$rows"
       bad=1
     fi
   done
