@@ -188,7 +188,7 @@ else
     if [ "$rows" -eq 0 ]; then
       printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
       bad=1
-    elif [ "$ok" -ne 1 ]; then
+    elif [ "$ok" -ne 1 ] || [ "$rows" -ne 1 ]; then
       printf 'FAIL skill-deps: the measurement-record roster row for %s needs "applies" or "does not apply" and a reason (well-formed rows: %s of %s)\n' \
         "$t" "$ok" "$rows"
       bad=1
