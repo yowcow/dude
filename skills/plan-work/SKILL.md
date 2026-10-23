@@ -13,6 +13,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
 - This skill dispatches no worker of its own. Invoke `propose-alternatives` and, on a finding, `review-findings` by name; those skills own their procedures.
+- Every invocation it makes of `propose-alternatives`, `review-findings`, or `review-plan` carries the measurement record's path or, where no record covers the tree the worker will judge, says that there is none and what is missing, per `using-dude`'s **Measurement records**.
 
 ## Boundaries
 
@@ -90,14 +91,14 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 2. Invoke `propose-alternatives` once when the purpose is named.
    - **Purpose:** the tracking issue's problem; with no issue, the request's problem. Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
    - **Read-root:** the default branch. Use the session checkout only when it is already that branch; otherwise read the default-branch ref, fetched to its current tip, and do not pass the session tree. Do not create a worktree, read-only or not.
-   - Else invoke `propose-alternatives` once with that purpose and read-root.
+   - Else invoke `propose-alternatives` once with that purpose, read-root, and the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing.
    - Compare the proposal with the work as currently framed — the issue or request and the means it asks for — on purpose, means, and cost, per `propose-alternatives`'s **Caller contract**.
    - Empty finding → no `review-findings`; do not wait; continue; chat.
-   - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: take the finding to **Design agreement**). Do not proceed to step 3 except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+   - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**, carrying the measurement record's path, or saying that none covers the tree the worker will judge and what is missing; chat; wait for **continue** vs **revisit design** (revisit: take the finding to **Design agreement**). Do not proceed to step 3 except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 3. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
 4. Reach **Design agreement**.
 5. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 6.
-6. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run it with the record of the previous pass — findings accepted and fixed, findings rejected with the reason. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
+6. Run `review-plan` with the target declared as the TODO list, and with the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing. Fold every accepted finding in yourself, then re-run it with the previous pass's findings record — findings accepted and fixed, findings rejected with the reason — and with the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing. A finding that invalidates the agreed design is not folded in at all: take **Escalation**.
 7. Don't leave step 6 while a blocking finding remains.
 8. **Publish**.
 

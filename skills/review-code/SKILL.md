@@ -47,7 +47,7 @@ Either invocation answers in one line:
 One invocation is one pass, and a pass is as many rounds as it takes:
 
 1. Resolve the scope per **Scope** and declare it.
-2. Invoke `vet-code` once on the code as it now stands, handing it the scope, what was implemented, the requirements, and from the second round on the earlier rounds' record.
+2. Invoke `vet-code` once on the code as it now stands, handing it the scope, what was implemented, the requirements, from the second round on the earlier rounds' record, and the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing, per `using-dude`'s **Measurement records**.
 3. Take back the judged findings `vet-code` returns — each `accept` with its fix, `reject` with its reason, or `needs-user` — and re-judge none of them; carry any caveat it returns (paths-only scope, no requirements) into **Report**.
 4. Count the `needs-user` verdicts before applying anything.
   - One or more ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: go to step 7 and leave non-clean, per **Escalation**.
