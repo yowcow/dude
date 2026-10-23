@@ -14,9 +14,10 @@
 # property the completion gate relies on: a record taken over round 1's
 # still-uncommitted work must equal HEAD^{tree} once step 4 commits it.
 #
-# RED verification (see tests/README.md). The script is new, so there is no
-# pre-fix version; each deliberately broken variant below is one defect wide,
-# and the rows it must fail are named:
+# RED verification (see tests/README.md). Each line below names one defect and
+# the row it must fail; each is one defect wide: the first two are deliberately
+# broken variants of this script, the third the argument list before `baseline`
+# was accepted.
 #   - record `git rev-parse HEAD^{tree}` instead of the working tree:
 #     `records-the-working-tree`
 #   - run `git add -A` against the real index instead of a copy:

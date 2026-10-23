@@ -84,8 +84,8 @@ If the verified baseline contradicts what the plan assumes — an existing failu
 The verified baseline is a **measurement record**: the project's own checks, run once in this workspace, their command and raw output kept whole. It is this run's first measurement record, written before **Alternatives**.
 
 - **Where.** Under this worktree's own git dir, in `dude-measurements/`, beside the completion gate's `dude-completion-gate/` records. That is outside the tree, so a record is never committed, never a working-tree change, and the consumed project's ignore file is never touched.
-- **Names.** One file per measurement, named for what it measured: `baseline.md` for the baseline; `verify-<round>.md` and `simplify-<round>.md` for the completion gate's.
-- **Fields.** The exact command, the working directory, the start time and duration, the exit status, the raw stdout and stderr kept whole rather than summarised — output too large for the record kept in a file beside it, whose path the record names — and the subject identity.
+- **Names.** One file per measurement step per round rather than per command, named for what it measured: `baseline.md` for the baseline; `verify-<round>.md` and `simplify-<round>.md` for the completion gate's.
+- **Fields.** Every command the step issued, the working directory, the start time and duration, the exit status, the raw stdout and stderr kept whole rather than summarised — output too large for the record kept in a file beside it, whose path the record names — and the subject identity.
 - **Subject identity.** For a git tree, the commit the workspace is on and the working-tree hash — the tree taken with the completion gate's own tree recorder, `<skill-dir>/scripts/record-tree.sh baseline`. For anything else, the path or record measured, and how its identity was fixed.
 - **The comparison.** A dispatch may carry a record's path only while its subject still matches what the worker will judge: a worker judging the workspace needs the same commit and the same working tree, and a worker judging a ref needs the record's commit to be that ref's commit and its tree to be that ref's tree. Where they differ, the dispatch carries no record and says what was missing.
 
@@ -117,7 +117,7 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
 3. Dispatch `review-plan` with the target declared as the implementation plan and the baseline record's path while the record still covers this workspace, as step 2's last bullet decides — the re-run after folding findings included.
 
    - Fold every accepted finding in yourself — except one that invalidates the agreed design, which is not folded in at all: stop and take the **Design invalidated** exit below.
-   - Then re-run `review-plan`, handing over the record of the previous pass.
+   - Then re-run `review-plan`, handing over the findings of the previous pass.
 4. Leave by exactly one of three exits:
    - **Clean** per `using-dude`'s **Loop convergence** loop-clean — no blocking finding → **Execution**.
    - **Design invalidated** — a Critical finding that undoes the agreed design → take **Escalation**.

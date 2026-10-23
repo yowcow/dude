@@ -21,8 +21,8 @@
 # it, and a sibling worktree's records never answer for this one. The path is
 # shared with check-tree-records.sh.
 #
-# baseline is not a completion-gate phase: it records the tree a measurement
-# record's subject names, and check-tree-records.sh does not inspect it,
+# baseline is not a completion-gate phase: it records the tree named by a
+# measurement record's subject, and check-tree-records.sh does not inspect it,
 # because the gate's three phases stay the only ones Hand off guards.
 # Usage: record-tree.sh verify|simplify|review|baseline
 set -euo pipefail

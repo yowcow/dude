@@ -21,7 +21,7 @@ The target class is a skill whose judgment can rest on a measurement a read-only
 | Skill | Applicability | Reason |
 | --- | --- | --- |
 | `using-dude` | does not apply | Owns the rule (**Measurement records**); it dispatches nothing, so it carries no measurement of its own. |
-| `implement-work` | applies | **Isolation**'s verified baseline is a measurement record, and the completion gate's Verify and Simplify runs are records; their paths are carried to `propose-alternatives`, `review-findings`, the plan drafter, `review-plan`, `simplify-code` and `review-code` only while the recorded commit and tree still match the subject each judges. |
+| `implement-work` | applies | **Isolation**'s verified baseline is a measurement record, and the completion gate's Verify run and its Simplify run, where it ran one, are records; their paths are carried to `propose-alternatives`, `review-findings`, the plan drafter, `review-plan`, `simplify-code` and `review-code` only while the recorded commit and tree still match the subject each judges. |
 | `propose-alternatives` | applies | Worker contract: the worker may measure and is handed no measurement record; the later worker-contract change reads a measurement record first and bounds the worker's own measurement to one. |
 | `review-plan` | applies | Read-only reviewers run no check under no rule today and are handed no measurement record; the later worker-contract change adds the ban and pairs it with reading the measurement record. |
 | `judge-findings` | applies | Judging workers edit nothing and are handed no measurement record; the later worker-contract change bans executing checks and pairs that ban with reading the measurement record. |
