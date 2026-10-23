@@ -1,6 +1,6 @@
 # Measurement records
 
-This file holds the rationale and the full roster. The rule body is `using-dude`'s **Measurement records** and is not repeated here. What fields a measurement record carries, and the procedure that writes one, belong to `implement-work`, so neither is defined here. Every other skill reads a measurement record when one is handed to it, and never redefines one.
+This file holds the rationale and the full roster. The rule body is `using-dude`'s **Measurement records** and is not repeated here.
 
 ## Why the measurement record lives outside the work tree
 
@@ -40,5 +40,5 @@ The target class is a skill whose judgment can rest on a measurement a read-only
 | `settle-question` | applies | The measurement is the deliverable: the judgment rests on measured facts that stay checkable; the later change makes the report's measurement base a measurement record with its path. |
 | `pr-to-ready` | applies | Entry with a diagnostic worker: a failed check's cause is diagnosed by a read-only worker that would otherwise re-measure; the later entry change has that worker return the command and raw output and the orchestrator record them. |
 | `plan-work` | does not apply | Entry: it dispatches no worker of its own and follows the contracts of the skills it calls; a measurement record's path only passes through. |
-| `review-code` | does not apply | Entry: it dispatches no worker of its own; a handed measurement record's path passes through to the skills it calls. |
+| `review-code` | applies | Entry: it dispatches no worker of its own, but its step 5 verification runs the project's checks on the tree its own fixes changed — a measurement no earlier record still covers and the round-2 reviewer is forbidden to re-derive. The later entry change records that command and raw output and hands its path to `vet-code` with the earlier rounds' record. |
 | `review-pr` | does not apply | Entry: the same, with no worker and no measurement of its own. |
