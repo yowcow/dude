@@ -17,7 +17,7 @@ Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core
 ## Orchestration model
 
 - Step 2 sources (logs, dashboards, queue/process state, usage exports) can be captured by one worker per source.
-- A worker that captures or sweeps returns the command it ran and its raw output for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
+- A worker that captures or sweeps returns the command it ran and its raw output — or, for a capture that ran no command, its source, window, and the export or snapshot it took — for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
 - Step 4 change classes are independent — fan out one worker per class; the orchestrator merges the results into the timeline.
 - Hypothesis testing (Step 5) stays sequential in the orchestrator: each verdict informs the next hypothesis choice.
 
@@ -81,7 +81,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 3. **Timeline**
 4. **Root cause / Trigger / Contributing factors**
 5. **Detection gaps** — why it wasn't caught sooner.
-6. **Reproduction or observation baseline** — what makes the symptom observable again: the steps that reproduce it, or the window and metrics that show it; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the baseline rests on. Where a record can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
+6. **Reproduction or observation baseline** — what makes the symptom observable again: the steps that reproduce it, or the window and metrics that show it; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the baseline, timeline, and root cause rest on. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
 7. **Remediation options** — immediate mitigation vs preventive fixes.
 8. **Open questions**
 

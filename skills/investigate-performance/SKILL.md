@@ -33,7 +33,7 @@ An observed shortfall and where it was observed: the endpoint, job, or query tha
 - Fix the environment: hardware, dataset size, concurrency.
 - Record the baseline numbers and the exact command that produced them.
 - Those numbers, that command, and its raw output are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree they ran against, or, off a git tree, the path or record and how that identity was fixed; so is every measurement this run takes.
-- A run that takes the baseline up in another session or worktree, where the record's path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
+- A run that takes the baseline up in another session or worktree, where the record's path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, or a bound this run names when the metric states none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
 
 ### Step 2: Reproduce reliably
 
@@ -64,7 +64,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 
 1. **Summary** — one paragraph.
 2. **Numbers** — baseline vs observed vs target.
-3. **Reproduction** — the minimal reproduction or the observation window, with the exact command behind the numbers; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the numbers rest on. Where a record can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
+3. **Reproduction** — the minimal reproduction or the observation window, with the exact command behind the numbers; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the numbers rest on. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
 4. **Root cause** — with the decisive measurement.
 5. **Contributing factors**
 6. **Fix options** — expected gain and cost of each.

@@ -50,7 +50,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 ### Report format
 
 1. **Verdict** — the answer to the question, in one paragraph.
-2. **Measurement base** — the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the base and the settled points rest on; and the sweep behind each claim of absence. Where a record can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
+2. **Measurement base** — the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the base and the settled points rest on; and the sweep behind each claim of absence. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
 3. **Settled points** — per point, the verdict and the evidence that decided it.
 4. **Alternatives rejected** — each one considered, with why it is wrong.
 5. **Next items** — concrete next actions in order, each naming its owner (who decides) and its action type: file, decide, or measure. Not work to start here.
