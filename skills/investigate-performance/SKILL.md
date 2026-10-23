@@ -33,7 +33,7 @@ An observed shortfall and where it was observed: the endpoint, job, or query tha
 - Fix the environment: hardware, dataset size, concurrency.
 - Record the baseline numbers and the exact command that produced them.
 - Those numbers, that command, and its raw output are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree they ran against, or, off a git tree, the path or record and how that identity was fixed; so is every measurement this run takes.
-- A run that takes the baseline up in another session or worktree, where the record's path does not resolve, measures once more under the environment and load shape this step fixes, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
+- A run that takes the baseline up in another session or worktree, where the record's path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
 
 ### Step 2: Reproduce reliably
 
@@ -58,7 +58,7 @@ Descend the layers, measuring each one's share of the total cost; stop at the fi
 - A named bottleneck whose measured contribution explains the observed shortfall's magnitude — not just "found something slow"; or
 - documented dead ends, each with the measurement that would settle it.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report with the measurement records the report rests on, and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
@@ -68,7 +68,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 4. **Root cause** — with the decisive measurement.
 5. **Contributing factors**
 6. **Fix options** — expected gain and cost of each.
-7. **Open questions**
+7. **Open questions** — including documented dead ends, each with the measurement that would settle it.
 
 What a fix carries forward is **Reproduction** and **Fix options**, per `using-dude`'s **Investigation → Change transition** — input to the next flow, never work started from here.
 

@@ -58,7 +58,7 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 - Every axis has its verdict and the decisive evidence behind it — the verdict of an axis whose probe found nothing being that it was swept; or
 - the axis is recorded as not measured, with what would measure it and who decides.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report with the measurement records the report rests on, and naming what the report rests on that no record covers; restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is chat, or the tracking issue's comment when one tracks the work; another repository on request, chat-only also allowed. A bare `#N` only when the posting repository is the scanned one; otherwise qualify as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is chat, or the tracking issue's comment when one tracks the work; another repository on request, chat-only also allowed. A bare `#N` only when the posting repository is the scanned one; otherwise qualify as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 

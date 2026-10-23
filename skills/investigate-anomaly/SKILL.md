@@ -36,8 +36,8 @@ An observed symptom and where it was observed: the error text or metric values, 
 
 - Record the symptom as observed: exact error text/codes or metric values and their source, first and last occurrence, and current status (ongoing vs recovered).
 - Snapshot anything that rotates or expires: logs, dashboards, queue depths, process state, billing/usage exports.
-- Each capture, and each sweep's count with the command that produced it, is kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree it was taken against, or, off a git tree, the path or record and how that identity was fixed.
-- A run that takes a record up in another session or worktree, where its path does not resolve, captures it once more under the window Step 3 anchors and keeps that as a new measurement record, citing it instead — never a path it could not resolve. Where that window's evidence has rotated away, per **Exit criteria** a recovered anomaly leaves nothing to re-capture, and the report's validity scope is what a reader gets.
+- Each capture, each sweep's count with the command that produced it, and every test this run runs are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree it was taken against, or, off a git tree, the path or record and how that identity was fixed.
+- A run that takes a record up in another session or worktree, where its path does not resolve, captures it once more under the window Step 3 anchors and keeps that as a new measurement record, citing it instead — never a path it could not resolve. Where that one re-capture cannot be taken — including when the window's evidence has rotated away — the claims it backed go to **Open questions**, each with what would settle it.
 
 ### Step 3: Reconstruct the timeline
 
@@ -72,7 +72,7 @@ Sweep every change class across the last-good → first-bad window:
 - The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report with the measurement records the report rests on, and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format (blameless)
 
