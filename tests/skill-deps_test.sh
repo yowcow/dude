@@ -173,9 +173,10 @@ failed=$((failed + bad))
 # reads the first column only, so the reason text stays free.
 total=$((total + 1))
 bad=0
+rel="${roster#"$ROOT"/}"
 if [ ! -r "$roster" ]; then
   printf 'FAIL skill-deps: %s is missing or unreadable — the measurement-record roster cannot be checked\n' \
-    "${roster#"$ROOT"/}"
+    "$rel"
   bad=1
 else
   for t in "${targets[@]}"; do
@@ -184,8 +185,8 @@ else
       bad=1
     fi
   done
-  if grep -qF " ${roster#"$ROOT"/}:" "$mentions"; then
-    printf 'FAIL skill-deps: %s is scanned for dependency mentions\n' "${roster#"$ROOT"/}"
+  if grep -qF " ${rel}:" "$mentions"; then
+    printf 'FAIL skill-deps: %s is scanned for dependency mentions\n' "$rel"
     bad=1
   fi
 fi
