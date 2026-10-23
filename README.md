@@ -82,6 +82,12 @@ flowchart TB
   implement-work --> simplify-code
   implement-work --> propose-alternatives
   implement-work --> review-findings
+  implement-work --> audit-code
+  implement-work --> investigate-anomaly
+  implement-work --> investigate-performance
+  implement-work --> settle-question
+  implement-work --> vet-code
+  implement-work --> judge-findings
   pr-to-ready --> review-code
   pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
