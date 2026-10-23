@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Record the tree a completion-gate phase just saw, so check-tree-records.sh
-# can refuse a Hand off whose tree that phase did not see last. Overwrites the
-# phase's previous record and prints the tree hash it recorded.
+# Record the tree a phase just saw, so check-tree-records.sh can refuse a
+# Hand off whose tree that phase did not see last. Overwrites the phase's
+# previous record and prints the tree hash it recorded.
 # Conventions: references/script-conventions.md.
 #
 # The tree is the working tree's content -- uncommitted edits and non-ignored

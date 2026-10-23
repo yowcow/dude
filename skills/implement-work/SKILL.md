@@ -83,11 +83,11 @@ If the verified baseline contradicts what the plan assumes — an existing failu
 
 The verified baseline is a **measurement record**: the project's own checks, run once in this workspace, their command and raw output kept whole. It is this run's first measurement record, written before **Alternatives**.
 
-- **Where.** Under this worktree's own git dir, in `dude-measurements/`, beside the completion gate's `dude-completion-gate/` records. That is outside the tree, so a record is never committed, never a working-tree change, and the consumed project's ignore file is never touched.
+- **Where.** Under this worktree's own git dir, in `dude-measurements/`, beside the completion gate's `dude-completion-gate/` records.
 - **Names.** One file per measurement step per round rather than per command, named for what it measured: `baseline.md` for the baseline; `verify-<round>.md` and `simplify-<round>.md` for the completion gate's.
 - **Fields.** Every command the step issued, the working directory, the start time and duration, the exit status, the raw stdout and stderr kept whole rather than summarised — output too large for the record kept in a file beside it, whose path the record names — and the subject identity.
-- **Subject identity.** For a git tree, the commit the workspace is on and the working-tree hash — the tree taken with the completion gate's own tree recorder, `<skill-dir>/scripts/record-tree.sh baseline`. For anything else, the path or record measured, and how its identity was fixed.
-- **The comparison.** A dispatch may carry a record's path only while its subject still matches what the worker will judge: a worker judging the workspace needs the same commit and the same working tree, and a worker judging a ref needs the record's commit to be that ref's commit and its tree to be that ref's tree. Where they differ, the dispatch carries no record and says what was missing.
+- **Subject identity.** For a git tree, the commit the workspace is on and the working-tree hash that measurement's own `record-tree.sh` call printed — `<skill-dir>/scripts/record-tree.sh baseline` for the baseline. For anything else, the path or record measured, and how its identity was fixed.
+- **The comparison.** A worker judging the workspace needs the record's commit and working tree to be this workspace's; a worker judging a ref needs the record's commit and tree to be that ref's commit and tree.
 
 `using-dude`'s **Measurement records** is the rule; this subsection is what this skill produces under it.
 
@@ -97,7 +97,7 @@ After Isolation, before **Plan gate**. The small-change lane still runs this, th
 
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a chat-only task — with `NEED` and `STOP` handled as there. Hand `origin/<base>`, fetched to its current tip, never the bare name, the workspace path, HEAD, or the session checkout.
-- Else invoke `propose-alternatives` once with that purpose, the read-root, and — while the baseline record's subject is that read-root (same commit, its tree equal to that ref's tree) — the record's path; otherwise the invocation carries no path and says what was missing.
+- Else invoke `propose-alternatives` once with that purpose, the read-root, and — while the baseline record's subject is that read-root — the record's path; otherwise the invocation carries no path and says what was missing.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
 - Empty finding → no `review-findings`; do not wait; continue; chat.
 - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**, carrying the baseline record's path under the same condition as the invocation above and none otherwise; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
@@ -111,10 +111,10 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
    - **Fresh context.** A dispatch form that carries this session's context forward is barred.
    - **The brief carries references, not the design.** Point the worker at where step 1 found the design, and give it the workspace path and the branch. Restating the design in the brief puts its decisions back in the main loop and leaves the worker transcribing them.
    - **The worker drafts the plan and returns its path; it never implements.** `superpowers:writing-plans` ends by presenting execution options — the brief is where that is refused, since what runs after this gate is settled here.
-   - **The baseline record, while it still covers this workspace.** Drafting writes only the git-ignored plan file, so it does not move the tree: while the record's subject is still this workspace — same commit, same working tree — the brief carries the record's path; otherwise it carries none and says what was missing.
+   - **The baseline record.** Drafting writes only the git-ignored plan file, so it does not move the tree: while the record's subject is still this workspace, the brief carries the record's path; otherwise it carries none and says what was missing.
 
    What this gate takes back is a plan that has been through that skill's own self-review — not the file the moment it lands. The plan goes in the workspace, git-ignored, and is never committed or published.
-3. Dispatch `review-plan` with the target declared as the implementation plan and the baseline record's path while the record still covers this workspace, as step 2's last bullet decides — the re-run after folding findings included.
+3. Dispatch `review-plan` with the target declared as the implementation plan and the baseline record's path as step 2's last bullet decides — the re-run after folding findings included.
 
    - Fold every accepted finding in yourself — except one that invalidates the agreed design, which is not folded in at all: stop and take the **Design invalidated** exit below.
    - Then re-run `review-plan`, handing over the findings of the previous pass.
@@ -159,7 +159,7 @@ Add only what the execution method left undone.
 
    - Its requirements checklist reads **the task's own entry artifact**, not the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work.
     - Run that checklist every round, even when nothing changed this round.
-   - Once its checks have run, record the tree with `<skill-dir>/scripts/record-tree.sh verify`, and record the run as this round's measurement record `verify-<round>.md` — **Measurement records**' fields, its subject the commit the workspace is on and the tree just recorded.
+   - Once its checks have run, record the tree with `<skill-dir>/scripts/record-tree.sh verify`, and record the run as this round's measurement record `verify-<round>.md` per **Measurement records**' fields.
    - The verdict on whether each criterion is met stays in the main loop and is never dispatched, per this skill's Orchestration model (the orchestrator owns the gate decision).
    - The plan is a transcription of that artifact, so checking against it confirms only the transcription — and on the small-change lane in `using-dude`'s **Workflow selection** there is no plan to check against at all.
    - **The scope boundary is part of that source, not commentary on it.** What it excludes never becomes a checklist row, so an exclusion cannot come back as a gap.
@@ -167,10 +167,10 @@ Add only what the execution method left undone.
      - No → it is this task's work, so implement it in this round.
      - Yes → don't implement it; record it and leave by step 6's first exit.
      - Criteria that contradict each other, or the agreed design, are outside this test — no checklist can be built from them at all — and take `using-dude`'s **Escalation** by that route, recorded and exited the same way.
-2. **Simplify** — `simplify-code` on the recent diff only, handing it this round's step-1 Verify result and the `verify-<round>.md` record's path as the check result covering the tree. No execution method has a simplification pass, so this is the gate's main job. Record the tree with `<skill-dir>/scripts/record-tree.sh simplify`. Where Simplify changed the tree and ran the checks over it, record that run the same way as `simplify-<round>.md` and keep it for step 3; where it changed nothing, the Verify record still covers the tree.
-3. **Review** — run `review-code`, handing it the check result covering the tree — step-2's check run where Simplify changed the tree this round, otherwise this round's step-1 Verify result on the unchanged tree — and the path of the record covering that tree: the `simplify-<round>.md` record where Simplify ran the checks, the `verify-<round>.md` record where the tree is unchanged, never the previous round's record.
+2. **Simplify** — `simplify-code` on the recent diff only, handing it this round's step-1 Verify result and the `verify-<round>.md` record's path as the check result covering the tree. No execution method has a simplification pass, so this is the gate's main job. Record the tree with `<skill-dir>/scripts/record-tree.sh simplify`. Where Simplify changed the tree and ran the checks over it, record that run — its final apply-verify run, over the tree just recorded — as `simplify-<round>.md` per **Measurement records**' fields.
+3. **Review** — run `review-code`, handing it the check result covering the tree together with that run's record path: step-2's check run and the `simplify-<round>.md` record where step 2 recorded one; otherwise this round's step-1 Verify result and the `verify-<round>.md` record on the unchanged tree. Never the previous round's record.
 
-   - The one exception is Simplify changing the tree without a check run over it — a doc-only proposal, whose proof is its judged claims table: there the dispatch carries no check result and no record, and hands that table as the proof in their place, saying no project check covers the prose and what was missing; never the Verify result or record, whose tree has moved.
+   - The one exception is Simplify changing the tree without a check run over it — a doc-only proposal, whose proof is its judged claims table. There the dispatch carries no check result and no record; it hands that table as the proof instead, saying no project check covers the prose and what was missing — never the Verify result or record, whose tree has moved.
    - The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
    - Record the tree with `<skill-dir>/scripts/record-tree.sh review` only when that verdict is clean.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
