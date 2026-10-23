@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Record the tree a completion-gate phase just saw, so check-tree-records.sh
-# can refuse a Hand off whose tree that phase did not see last. Overwrites the
-# phase's previous record and prints the tree hash it recorded.
+# Record the tree a phase just saw, so check-tree-records.sh can refuse a
+# Hand off whose tree that phase did not see last. Overwrites the phase's
+# previous record and prints the tree hash it recorded.
 # Conventions: references/script-conventions.md.
 #
 # The tree is the working tree's content -- uncommitted edits and non-ignored
@@ -20,18 +20,22 @@
 # common dir): outside the tree, so neither check-clean.sh nor a commit sees
 # it, and a sibling worktree's records never answer for this one. The path is
 # shared with check-tree-records.sh.
-# Usage: record-tree.sh verify|simplify|review
+#
+# baseline is not a completion-gate phase: it records the tree named by a
+# measurement record's subject, and check-tree-records.sh does not inspect it,
+# because the gate's three phases stay the only ones Hand off guards.
+# Usage: record-tree.sh verify|simplify|review|baseline
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 verify|simplify|review" >&2
+  echo "Usage: $0 verify|simplify|review|baseline" >&2
   exit 2
 fi
 
 case "$1" in
-  verify | simplify | review) ;;
+  verify | simplify | review | baseline) ;;
   *)
-    echo "Usage: $0 verify|simplify|review" >&2
+    echo "Usage: $0 verify|simplify|review|baseline" >&2
     exit 2
     ;;
 esac
