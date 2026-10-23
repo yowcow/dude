@@ -4,9 +4,7 @@ This file holds the rationale and the full roster. The rule body is `using-dude`
 
 ## Why the measurement record lives outside the work tree
 
-A measurement record's body sits under the worktree's git dir, beside the completion gate's tree records. Nothing there is ever committed, nothing there is a working-tree change, and each worktree keeps its own body independently. The consumed project's ignore file is never touched, so no repository needs a new entry.
-
-The issue behind this convention asks for a measurement record inside the workspace that is git-ignored. In a worktree the body lands under `.git/worktrees/<name>` instead. The property meant is "not committed, not a working-tree change", and the body's location is what delivers it.
+A measurement record's body sits under the worktree's git dir — `.git/worktrees/<name>` for a linked worktree — beside the completion gate's tree records. Nothing there is ever committed, nothing there is a working-tree change, and each worktree keeps its own body independently. The consumed project's ignore file is never touched, so no repository needs a new entry.
 
 ## Why not a cache shared across sessions or worktrees
 
@@ -16,13 +14,9 @@ The duplication measured on 2026-10-22 was inside one session, where four worker
 
 A missing field would be machine-checkable. Whether a measurement record still covers the question a worker is asked is not: that stays the orchestrator's judgment, so a script would enforce only the envelope and leave the expensive question untouched. AUTHORING's generic-operation rule keeps this prose, with nothing new to maintain.
 
-## Whose call validity is
-
-The orchestrator decides whether a measurement record covers the tree being judged. A worker reads what it is handed and never judges staleness. This is the same split as a check result supplied by the caller: the caller owns whether the result applies, the worker owns what it does with it.
-
 ## The roster
 
-The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is the producer or entry that carries a measurement record between them. It hands no raw measurement data across that work and sets no bound on re-measuring. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer, worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
+The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is an entry whose own dispatch carries a measurement record. No skill in this table hands raw measurement data across its work today and none sets a bound on re-measuring. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer, worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
 
 | Skill | Applicability | Reason |
 | --- | --- | --- |

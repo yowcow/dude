@@ -171,8 +171,9 @@ failed=$((failed + bad))
 # --- every skill directory has a measurement-record roster row ---------------
 # The roster under skills/implement-work/references/ decides every skill's
 # applicability, so a directory missing a row leaves its half of the rule
-# unowned. targets, not skills: using-dude is a skill directory too. The check
-# reads the first column only, so the reason text stays free.
+# unowned. targets, not skills: using-dude is a skill directory too. The
+# Applicability cell is fixed to the two values and the Reason cell must open
+# with text; the wording of a reason stays free.
 total=$((total + 1))
 bad=0
 rel="${roster#"$ROOT"/}"
@@ -182,7 +183,7 @@ if [ ! -r "$roster" ]; then
   bad=1
 else
   for t in "${targets[@]}"; do
-    if ! grep -q "^| \`${t}\` |" "$roster"; then
+    if ! grep -qE "\| \`${t}\` \| (applies|does not apply) \| [^ |]" "$roster"; then
       printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
       bad=1
     fi
