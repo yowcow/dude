@@ -38,7 +38,7 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 ### Step 3: Fix the measurement base
 
 - Record what was actually read: the revision, tree, or path, including the source of Step 1's inventory. An installed tree and the repository it came from are different artifacts, and so are a branch and its base; a promise from a tree the record does not name is not this artifact's.
-- Each command behind this base and each sweep's command, with the raw output of each, are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
+- Each command behind this base and each sweep's command, with the raw output of each — or, for a base read that ran no command, the file, path, or record read and how its content was captured — are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
 - A run that takes this base up in another session or worktree, where the record's path does not resolve, measures once more — under the bound Step 4 gives a probe, and, for a sweep, run to completion and read whole — keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to Not measured.
 - Every claim of absence, exhaustiveness, or "only" names the sweep that produced it — run to completion and read whole, never a truncated or paged view of the output.
 

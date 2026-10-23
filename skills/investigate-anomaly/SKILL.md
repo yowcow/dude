@@ -17,7 +17,7 @@ Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core
 ## Orchestration model
 
 - Step 2 sources (logs, dashboards, queue/process state, usage exports) can be captured by one worker per source.
-- A worker that captures or sweeps returns the command it ran and its raw output — or, for a capture that ran no command, its source, window, and the export or snapshot it took — for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
+- A worker that captures or sweeps returns the command it ran and its raw output — or, for a capture or sweep that ran no command, its source, window, and the export, snapshot, or records it read — for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
 - Step 4 change classes are independent — fan out one worker per class; the orchestrator merges the results into the timeline.
 - Hypothesis testing (Step 5) stays sequential in the orchestrator: each verdict informs the next hypothesis choice.
 
@@ -36,7 +36,7 @@ An observed symptom and where it was observed: the error text or metric values, 
 
 - Record the symptom as observed: exact error text/codes or metric values and their source, first and last occurrence, and current status (ongoing vs recovered).
 - Snapshot anything that rotates or expires: logs, dashboards, queue depths, process state, billing/usage exports.
-- Each capture, each sweep's count with the command that produced it, and every test this run runs are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree it was taken against, or, off a git tree, the path or record and how that identity was fixed.
+- Each capture, each sweep's count with the command that produced it, or, where the sweep ran no command, its source and window along with the count read, and every test this run runs are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree it was taken against, or, off a git tree, the path or record and how that identity was fixed.
 - A run that takes a record up in another session or worktree, where its path does not resolve, captures it once more under the window Step 3 anchors and keeps that as a new measurement record, citing it instead — never a path it could not resolve. Where that one re-capture cannot be taken — including when the window's evidence has rotated away — the claims it backed go to **Open questions**, each with what would settle it.
 
 ### Step 3: Reconstruct the timeline
