@@ -14,6 +14,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 - **The requirements.**
 - **The earlier rounds' record** — findings accepted and fixed, findings accepted and recorded without a fix, findings rejected with the reason, and candidates rejected with the reason.
 - **The caller's own acceptance criteria**, which every worker gets verbatim.
+- **The measurement record's path** — when the caller has one covering the subject judged, per `using-dude`'s **Measurement records**.
 
 ## Orchestration model
 
@@ -21,7 +22,7 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 
 - No items, no worker.
 - Otherwise group the items into a few workers launched together — one when the items are few — keeping items at nearby locations, such as the same file or the same section, in the same worker.
-- Each worker applies `superpowers:receiving-code-review` to each of its items and returns one verdict per item. It gets its items and every input above, never the main loop's history. It is read-only: it edits nothing and returns the fix as text; applying it is the caller's.
+- Each worker applies `superpowers:receiving-code-review` to each of its items and returns one verdict per item. It gets its items and every input above, never the main loop's history. It is read-only: it edits nothing, runs no project check, and returns the fix as text; applying it is the caller's. It reads the measurement record it was handed, and where that record does not cover the claim, it says what would have to be measured.
 - Workers go out at the `high` tier in `using-dude`'s **Worker tier**.
 
 ## Verdicts
@@ -33,9 +34,10 @@ The reviewer, applying a fix, every round decision, and posting anything anywher
 - **`reject`** with the stated reason — the finding is wrong, only reflects reviewer preference, asks for work beyond the request, or fails the caller's criteria.
   - **A fix that changes nothing a reader takes away is reviewer preference** — a sentence reworded, a paragraph reflowed, a list reordered, a name or style the reviewer would have written differently. It takes `reject`, not `needs-user`, unless the caller's acceptance criteria make that class of change the work.
 - **`needs-user`** — the call is a person's rather than a technical one: the question to put to that person and why the decision is theirs.
+  - **A claim resting on a measurement the record does not cover** — never `reject` on that ground. It takes `needs-user` on the **measurement route**: whoever may spend that measurement — the caller, or the caller above it where that caller runs no project check — takes it, one and bounded, and has the claim judged again. Only where neither may spend it does it become the **person route**, with the `not measured` line.
 
 For a candidate, `accept` or `needs-user` makes it a finding at the severity the worker assigns, carrying that verdict; `reject` leaves it declined.
 
 **A doc proposal is judged against the file and the proposed text, never against its own table.** For a doc proposal, enumerate the facts of the replaced before range from the file yourself, and the facts of the proposed text from that text, then compare both directions against both tables — the categories the tables cover are not the measure. A fact the after text adds fails; one it removes fails unless the after table names the `path:line`, in the same file and outside the replaced range, where that same fact still stands. Confirm that commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at are byte-identical. A missing, empty, or thin table, or a dropped warning, condition, instruction, or opt-out, is not accepted. On `accept`, return the proposer's after text unchanged: different wording is a `reject`, or a fresh after table verified again.
 
-Return each item as given, with its verdict — an `accept` with its value and reason. The caller re-judges none.
+Return each item as given, with its verdict — an `accept` with its value and reason. The caller re-judges none. For a claim that rests on a measurement the measurement record did not cover, also return a `not measured` line naming what would have to be measured.

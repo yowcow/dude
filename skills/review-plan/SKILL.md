@@ -13,6 +13,7 @@ Use on planning work before any code is written, or on a revision of it. This re
 
 - A reviewer takes its assigned lenses, reports findings, and hands back.
   - It never edits what it reviewed and never declares the plan clean.
+  - It runs no project check: it reads the measurement record the dispatch hands it, per `using-dude`'s **Measurement records**, and where that record does not cover what it has to judge, it says what would have to be measured.
   - **Dispatch** sizes the fan-out.
   - Each reviewer goes out at the `high` tier in `using-dude`'s **Worker tier**.
   - A design flaw it doesn't report flows into the implementation, and every gate after this one reads the implementation, not the plan.
@@ -25,7 +26,7 @@ One test admits everything this skill reports: **left as it is, would this make 
 
 This test overrides the lenses. A lens names a failure mode to look for; naming one does not make every instance of it worth reporting. Terminology that drifts without misleading anyone, wording that could read better, a section a reviewer would have organised differently — these fail the test, so they are not findings, whatever lens surfaced them. Reviewer preference is never a finding here. Prose and formatting are findings only where they leave an implementer unable to tell what the plan means.
 
-There is no non-blocking tier. A finding that passes the test has to be resolved before implementation; anything that fails it is left unsaid rather than recorded as a note.
+There is no non-blocking tier. A finding that passes the test has to be resolved before implementation; anything that fails it is left unsaid rather than recorded as a note. A gap in the measurement record's coverage is not such a note when the answer could change what the plan instructs: that is a finding against the plan line it leaves unsupported — the quoted line is its evidence — and `judge-findings` takes it to `needs-user` where it rests on a measurement. Only a gap whose answer cannot change what the plan instructs goes on the report's **not measured** line, saying what would have to be measured.
 
 ## Targets
 
@@ -62,7 +63,7 @@ Each lens is a distinct failure mode, and none of them lowers the bar in **What 
 
 ## Dispatch
 
-Each reviewer gets its assigned lenses, the artifact under review, the original request, and the paths it touches. Every reviewer takes the same stance: try to make the plan fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
+Each reviewer gets its assigned lenses, the artifact under review, the original request, the paths it touches, and the measurement record's path when the caller has one covering what the plan would touch. Every reviewer takes the same stance: try to make the plan fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
 
 Size the fan-out to the target. Both targets here are small artifacts — a list of PR-sized items, or one PR's plan — so keep it small.
 
@@ -90,19 +91,21 @@ Each reviewer returns findings only — never a rewritten plan — with:
 - **claim** — one sentence on what is wrong.
 - **evidence** — `path:line` from the repo, or the quoted line from the artifact. No evidence, no finding.
 - **suggested change** — what it should say instead.
+- **not measured** — a separate line, not a finding: the question a lens could not judge because no measurement record covered it and no answer to it could change what the plan instructs, and what would have to be measured.
 
 Report "no findings" explicitly rather than inventing one. Confine every search to the project root or narrower.
 
 ## Pass
 
-1. Gather the inputs: the declared target, the artifact, the original request, the paths it touches, and the record of an earlier pass if the caller supplied one.
+1. Gather the inputs: the declared target, the artifact, the original request, the paths it touches, the measurement record's path when the caller has one covering what the plan would touch, and the record of an earlier pass if the caller supplied one.
 2. Dispatch reviewers, sized per **Dispatch**.
-3. Hand the reviewers' findings to `judge-findings`, and take back its verdicts.
+3. Hand the reviewers' findings to `judge-findings`, and take back its verdicts, with the measurement record's path when one was handed to the reviewers.
    - The target it judges against is the plan and the repo, the requirements are the original request, and the earlier rounds are the caller's record.
    - The caller's acceptance criteria are **What counts as a finding**.
+   - A `needs-user` on the measurement route is settled before the person route is reached: the caller takes that measurement, one and bounded, records it, and hands the finding back to `judge-findings` with the record; this pass runs no project check. Only a measurement outside what the caller may spend goes to a person.
 4. Report per **Report**, and stop there — revising and re-reviewing are the caller's job.
 
-This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding goes to a person, with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — here no edit to the plan settles it. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
+This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding takes the route `judge-findings`'s **Verdicts** gives `needs-user`: on the measurement route the caller takes the one bounded measurement and has the finding judged again, and on the person route it goes to a person, where no edit to the plan settles it until that person decides. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
 
 ## Report
 
@@ -111,5 +114,6 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 - the target reviewed, the fan-out used, and any lens skipped with why
 - accepted findings with lens, severity, evidence, and suggested change
 - rejected findings with the reason
-- `needs-user` findings, with why the worker put the decision to a person
+- `needs-user` findings, each with its route — what would have to be measured for the measurement route, and why the decision is the person's for the person route
+- the **not measured** lines, each with what would settle it
 - the verdict: clean, or the blocking findings that remain — flagging any Critical finding separately, since **Finding contract** puts its remedy outside a plan edit
