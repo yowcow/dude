@@ -16,9 +16,9 @@
 #
 # RED verification (see tests/README.md). The first two are deliberately broken
 # variants of this script, the third the argument list before `baseline` was
-# accepted; each is one defect wide, and the row it must fail is named:
+# accepted; each is one defect wide, and the rows it must fail are named:
 #   - record `git rev-parse HEAD^{tree}` instead of the working tree:
-#     `records-the-working-tree`
+#     `records-the-working-tree`, `baseline-phase`
 #   - run `git add -A` against the real index instead of a copy:
 #     `records-the-working-tree: real index untouched`
 #   - the pre-change argument list rejects `baseline`: `baseline-phase`
@@ -70,6 +70,8 @@ git_repo_commit "$W" tracked.txt 'committed\n' 'c1'
 printf 'edited\n' >"${W}/tracked.txt"
 printf 'new\n' >"${W}/new.txt"
 run_in "$W" baseline
+tally check_eq 'baseline-phase: record file' "$(cat "$SUT_STDOUT")" \
+  "$(cat "$(git -C "$W" rev-parse --absolute-git-dir)/dude-completion-gate/baseline")"
 git -C "$W" add -A
 git -C "$W" commit -q -m 'commit everything'
 assert_row 'baseline-phase' 0 "$(git -C "$W" rev-parse 'HEAD^{tree}')\n" 0
