@@ -102,9 +102,10 @@ Report "no findings" explicitly rather than inventing one. Confine every search 
 3. Hand the reviewers' findings to `judge-findings`, and take back its verdicts, with the measurement record's path when one was handed to the reviewers.
    - The target it judges against is the plan and the repo, the requirements are the original request, and the earlier rounds are the caller's record.
    - The caller's acceptance criteria are **What counts as a finding**.
+   - A `needs-user` on the measurement route is settled before the person route is reached: the caller takes that measurement, one and bounded, records it, and hands the finding back to `judge-findings` with the record; this pass runs no project check. Only a measurement outside what the caller may spend goes to a person.
 4. Report per **Report**, and stop there — revising and re-reviewing are the caller's job.
 
-This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding goes to a person, with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — here no edit to the plan settles it. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
+This pass is clean per `using-dude`'s **Loop convergence** loop-clean when no finding survives step 3. A `needs-user` survives it: the pass ends non-clean and that finding takes the route `judge-findings`'s **Verdicts** gives `needs-user`: on the measurement route the caller takes the one bounded measurement and has the finding judged again, and on the person route it goes to a person, where no edit to the plan settles it until that person decides. Another pass is the obvious alternative and it is the wrong one: **Dispatch**'s revision rule scopes every lens it sends out, Reality included, to the edits that resolved an accepted finding, and a `needs-user` produced none, so the re-run comes back clean over a question nobody answered. What the person settles comes back as an ordinary revision: the caller's record carries that finding among the accepted and fixed, so **Dispatch** sends its lens out again, scoped to the edit the answer produced.
 
 ## Report
 
@@ -113,6 +114,6 @@ Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage bounda
 - the target reviewed, the fan-out used, and any lens skipped with why
 - accepted findings with lens, severity, evidence, and suggested change
 - rejected findings with the reason
-- `needs-user` findings, with why the worker put the decision to a person
+- `needs-user` findings, each with its route — what would have to be measured for the measurement route, and why the decision is the person's for the person route
 - the **not measured** lines, each with what would settle it
 - the verdict: clean, or the blocking findings that remain — flagging any Critical finding separately, since **Finding contract** puts its remedy outside a plan edit
