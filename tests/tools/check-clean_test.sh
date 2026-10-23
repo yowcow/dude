@@ -11,11 +11,16 @@
 # No row stubs `gh`: this script never calls it. Every row asserts zero gh
 # calls, which is what holds that to being true.
 #
-# RED verification (see tests/README.md). The script is new, so there is no
-# pre-fix version; the deliberately broken variant below is one defect wide --
-# the guard the header names, removed:
+# RED verification (see tests/README.md): against the pre-fix script, which is
+# this probe with `--untracked-files=normal` dropped
+# (`git show 934ebf8:tools/check-clean.sh`), exactly one row fails --
+# `untracked-file-hidden-by-config`, on exit 0 with empty stdout (not ok 1/6).
+#
+# The deliberately broken variant below is one defect wide, and the rows it
+# must fail are named:
 #   - branch on `git status --porcelain`'s exit status instead of its output:
-#     `modified-tracked-file`, `untracked-file`, `staged-modification`,
+#     `modified-tracked-file`, `untracked-file`,
+#     `untracked-file-hidden-by-config`, `staged-modification`,
 #     `staged-addition`
 set -euo pipefail
 
@@ -52,7 +57,7 @@ assert_row 'clean-tree' 0 '' 0
 
 # ---- a modified tracked file -------------------------------------------
 #
-# The first of the four rows the header's mutation must fail. `git status
+# The first row the header's variant must fail. `git status
 # --porcelain` exits 0 here, so a script branching on that exit status reports
 # a dirty tree as clean, and the completion gate hands off a branch that omits
 # these edits.
@@ -70,6 +75,19 @@ W="$(build_repo untracked)"
 printf 'new\n' >"${W}/new.txt"
 run_in "$W"
 assert_row 'untracked-file' 1 '?? new.txt\n' 0
+
+# ---- an untracked file in a repository that hides untracked files ------
+#
+# `status.showUntrackedFiles=no` makes a plain `git status --porcelain` print
+# nothing here and exit 0, so the probe has to name the mode it wants: the
+# completion gate would otherwise hand off a branch with no trace of this file.
+
+row_start
+W="$(build_repo untracked-hidden)"
+git -C "$W" config status.showUntrackedFiles no
+printf 'new\n' >"${W}/new.txt"
+run_in "$W"
+assert_row 'untracked-file-hidden-by-config' 1 '?? new.txt\n' 0
 
 # ---- staged only, nothing left in the working tree ---------------------
 #

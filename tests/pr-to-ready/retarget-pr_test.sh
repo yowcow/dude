@@ -179,6 +179,18 @@ printf 'uncommitted\n' >>"${W}/README.md"
 run_in "$W" "$OWNER" "$REPO" "$PR" feature main
 assert_row 'dirty-worktree' 0 'STOP dirty-worktree\n' 1
 
+# The same gate in a repository that hides untracked files from `git status`.
+# Without the explicit mode the tree reads clean and the merge runs over a file
+# nobody committed.
+row_start
+stub_view develop
+BARE="$(build_remote dirty-hidden clean)"
+W="$(git_repo_clone dirty-hidden "$BARE" feature)"
+git -C "$W" config status.showUntrackedFiles no
+printf 'new\n' >"${W}/new.txt"
+run_in "$W" "$OWNER" "$REPO" "$PR" feature main
+assert_row 'dirty-worktree-with-untracked-hidden' 0 'STOP dirty-worktree\n' 1
+
 row_start
 stub_view develop
 stub_edit main 1
