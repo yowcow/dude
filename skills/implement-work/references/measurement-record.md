@@ -1,6 +1,6 @@
 # Measurement records
 
-This file holds the rationale and the full roster. The rule body is `using-dude`'s **Measurement records** and is not repeated here. What fields a measurement record carries, and the procedure that writes one, belong to `implement-work`, so neither is defined here. Every other skill reads a measurement record it is handed and never redefines one.
+This file holds the rationale and the full roster. The rule body is `using-dude`'s **Measurement records** and is not repeated here. What fields a measurement record carries, and the procedure that writes one, belong to `implement-work`, so neither is defined here. Every other skill reads a measurement record when one is handed to it, and never redefines one.
 
 ## Why the measurement record lives outside the work tree
 
@@ -22,7 +22,7 @@ The orchestrator decides whether a measurement record covers the tree being judg
 
 ## The roster
 
-The target class is a skill that dispatches read-only workers whose judgment can touch a claim resting on a measurement, hands them no raw measurement data, and sets no bound on re-measuring. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer and worker-contract changes that close a gap are later issues and are out of scope here.
+The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is the producer or entry that carries a measurement record between them. It hands no raw measurement data across that work and sets no bound on re-measuring. The Reason column records the applicability decision and the gap as this PR's tree stands; the producer, worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
 
 | Skill | Applicability | Reason |
 | --- | --- | --- |
@@ -32,13 +32,13 @@ The target class is a skill that dispatches read-only workers whose judgment can
 | `review-plan` | applies | Read-only reviewers run no check under no rule today and are handed no measurement record; the later worker-contract change adds the ban and pairs it with reading the measurement record. |
 | `judge-findings` | applies | Judging workers edit nothing and are handed no measurement record; the later worker-contract change bans executing checks and pairs that ban with reading the measurement record. |
 | `vet-code` | applies | The reviewer is not to execute checks and is handed no measurement record; the later worker-contract change pairs that ban with reading the measurement record, which may sit outside its read-root. |
-| `simplify-code` | applies | The existing no-execution rule for its workers is handed no measurement record; the later worker-contract change pairs that ban with reading the measurement record. |
+| `simplify-code` | applies | Its workers are under the existing no-execution rule and are handed no measurement record; the later worker-contract change pairs that ban with reading the measurement record. |
 | `review-findings` | applies | Sweep completeness judges from the trace the report left and has no measurement record beside it; the later change adds the measurement record to that trace rather than a re-run. |
 | `audit-code` | applies | The measurement is the deliverable: the sweep's raw output is the evidence a later reader re-reads rather than re-runs; the later change keeps that raw output as a measurement record and puts its path in the report. |
 | `investigate-performance` | applies | The measurement is the deliverable: timing and profiling are the explanation's evidence and must stay reproducible; the later change keeps them in a measurement record and cites its path in the report. |
 | `investigate-anomaly` | applies | The measurement is the deliverable: the observed change is established by measurement the report cites; the later change keeps that measurement as a measurement record and puts its path in the report. |
 | `settle-question` | applies | The measurement is the deliverable: the judgment rests on measured facts that stay checkable; the later change makes the report's measurement base a measurement record with its path. |
-| `pr-to-ready` | applies | Entry with a diagnostic worker: a failed check's cause is diagnosed by a read-only worker that would otherwise re-measure. |
+| `pr-to-ready` | applies | Entry with a diagnostic worker: a failed check's cause is diagnosed by a read-only worker that would otherwise re-measure; the later entry change has that worker return the command and raw output and the orchestrator record them. |
 | `plan-work` | does not apply | Entry: it dispatches no worker of its own and follows the contracts of the skills it calls; a measurement record's path only passes through. |
 | `review-code` | does not apply | Entry: it dispatches no worker of its own; a handed measurement record's path passes through to the skills it calls. |
 | `review-pr` | does not apply | Entry: the same, with no worker and no measurement of its own. |

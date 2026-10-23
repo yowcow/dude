@@ -181,7 +181,7 @@ if [ ! -r "$roster" ]; then
   bad=1
 else
   for t in "${targets[@]}"; do
-    if ! grep -qE "^\| \`${t}\` \|" "$roster"; then
+    if ! grep -qF "| \`${t}\` |" "$roster"; then
       printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
       bad=1
     fi
