@@ -7,7 +7,9 @@
 # name, or by a glob such as `investigate-*`, which counts as an edge to every
 # skill the prefix matches. using-dude is neither owner nor target: every skill
 # may name it. Only an edge's presence is checked, never how many mentions it
-# has, so editing a flow's prose does not move this file.
+# has, so editing a flow's prose does not move this file. The measurement-record
+# roster under skills/implement-work/references/ is exempt: its rows classify
+# every skill and imply no dependency, so a new row asks for no EDGES entry.
 #
 # Usage: tests/skill-deps_test.sh [<root>]   — <root> defaults to this repository.
 set -euo pipefail
