@@ -130,6 +130,12 @@ Where the runtime has no means of choosing a tier, this rule settles nothing and
   - Present the report in chat and ask whether to post that content to #N; post it as a comment on that issue only on yes; a declined ask leaves the report unpublished — settle with a person where its record lives before the run ends.
   - With no tracking issue, chat is the record. Any other such deliverable publishes to the canonical record above.
 
+### Measurement records
+
+Raw measurement data is evidence, and evidence crosses a hand-off as a **measurement record** — the command that was run and its raw output, kept whole rather than summarised. A measurement record lives outside the work tree, so it is never committed and never appears as a change. A dispatch carries the path of the measurement record that covers the question it asks — one measurement record, never a directory to choose from — and only while the identity the measurement record carries — the subject it measured, such as a commit and tree — still matches the subject the worker will judge; where it does not, the dispatch carries no measurement record and says what was missing. A rule that forbids a worker to measure is paired with the instruction to read the measurement record it was handed, so the two never travel apart. A worker that measures does not write the measurement record: it returns the command and the raw output, and the orchestrator records them — except output too large to return, which the worker writes outside the work tree under the write directory the dispatch names for it — the directory holding the measurement record when the dispatch named one — and returns the path of each file it wrote. A dispatch that permits measurement names that write directory. A measurement record outside a worker's read-root is still readable when the dispatch names it by path, and so is a file written out under this rule.
+
+The rationale for this rule, and the roster that fixes every skill's applicability, live in `implement-work`'s `references/measurement-record.md`.
+
 ### Loop convergence
 
 Every loop that checks work and fixes what came back stops on the same conditions. The rule binds a skill's own check-fix loop and the loop that re-invokes it alike:
