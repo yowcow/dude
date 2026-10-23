@@ -9,6 +9,10 @@
 # may name it. Only an edge's presence is checked, never how many mentions it
 # has, so editing a flow's prose does not move this file.
 #
+# One roster under skills/implement-work/references/ decides every skill's
+# applicability for measurement records; a directory missing from it would
+# leave its half of the rule silently unowned, so it is checked here too.
+#
 # Usage: tests/skill-deps_test.sh [<root>]   — <root> defaults to this repository.
 set -euo pipefail
 
@@ -162,6 +166,27 @@ for s in "${skills[@]}"; do
     bad=1
   fi
 done
+failed=$((failed + bad))
+
+# --- every skill directory is named by the measurement-record roster ---------
+# targets, not skills: using-dude is a skill directory too, and the roster
+# decides its row as well. The check reads the roster's first column only, so
+# the reason text stays free.
+total=$((total + 1))
+bad=0
+roster="$ROOT/skills/implement-work/references/measurement-record.md"
+if [ ! -r "$roster" ]; then
+  printf 'FAIL skill-deps: %s is missing or unreadable — the measurement-record roster cannot be checked\n' \
+    "${roster#"$ROOT"/}"
+  bad=1
+else
+  for t in "${targets[@]}"; do
+    if ! grep -qE "^\| \`${t}\` \|" "$roster"; then
+      printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
+      bad=1
+    fi
+  done
+fi
 failed=$((failed + bad))
 
 # --- every upward or lateral edge has a row ----------------------------------
