@@ -215,12 +215,13 @@ while IFS= read -r f; do
     esac
   done < <(grep -niE 'orchestration' "$f" || true)
   while IFS= read -r hit; do
+    n="${hit%%:*}"
     text="${hit#*:}"
     for t in "${skills[@]}"; do
       [ "$t" != "$owner" ] || continue
       re="(^|[^a-z0-9-])${t}\`?'s? (\*\*)?[A-Za-z ]{0,20}([Oo]rchestrat|[Dd]ispatch|[Ww]orker)"
       if [[ "$text" =~ $re ]]; then
-        printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+        printf 'FAIL skill-deps: %s:%s borrows %s'"'"'s orchestration: %s\n' "$rel" "$n" "$t" "$text"
         bad=1
       fi
     done
@@ -236,11 +237,12 @@ while IFS= read -r f; do
   owner="${rel#skills/}"
   owner="${owner%%/*}"
   while IFS= read -r hit; do
+    n="${hit%%:*}"
     text="${hit#*:}"
     for t in "${targets[@]}"; do
       [ "$t" != "$owner" ] || continue
       if [[ "$text" =~ (^|[^a-z0-9-])${t}/scripts([^a-z0-9-]|$) ]]; then
-        printf 'FAIL skill-deps: %s:%s names a path into %s/scripts/: %s\n' "$rel" "${hit%%:*}" "$t" "${hit#*:}"
+        printf 'FAIL skill-deps: %s:%s names a path into %s/scripts/: %s\n' "$rel" "$n" "$t" "$text"
         bad=1
       fi
     done

@@ -95,6 +95,14 @@ total=0
 # on an unborn `master` that no fixture creates, and `ls-remote --symref` then
 # names no default branch at all, which the sibling reads as a stop.
 #
+# task_commit <repo> <branch> <trailer> -- the task commit shape: branch off
+# main, then commit T.md with the trailer in the subject.
+task_commit() {
+  local repo="$1" branch="$2" trailer="$3"
+  git_repo_checkout "$repo" "$branch" main
+  git_repo_commit "$repo" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
+}
+
 # template <branch> <where> <trailer> -- a bare repo built once per shape:
 # main, plus <branch> when <where> is remote. A row copies it instead of
 # building a remote from an empty repo every time.
@@ -115,12 +123,9 @@ template() {
   seed="$(git_repo_scratch seed-template)"
   git_repo_init "$seed" main
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
-  if [ "$where" = remote ]; then
-    git_repo_checkout "$seed" "$branch" main
-    git_repo_commit "$seed" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
-  fi
   git_repo_push "$seed" "$t" main
   if [ "$where" = remote ]; then
+    task_commit "$seed" "$branch" "$trailer"
     git_repo_push "$seed" "$t" "$branch"
   fi
   git_repo_bare_head "$t" main
@@ -140,8 +145,7 @@ fixture() {
     work="$(git_repo_clone "work-${name}" "$bare" main)"
   fi
   if [ "$where" = local ]; then
-    git_repo_checkout "$work" "$branch" main
-    git_repo_commit "$work" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
+    task_commit "$work" "$branch" "$trailer"
   fi
   FIXTURE_BARE="$bare"
   FIXTURE_WORK="$work"
