@@ -14,7 +14,7 @@ Review a PR, have every finding judged against the PR's own code, and return the
 
 **This skill dispatches no worker of its own: the reviewer and the verdict workers are `vet-code`'s.** Invoke `propose-alternatives` when the purpose is settled, before `vet-code`. The orchestrator resolves the PR, calls `vet-code` once, drafts the review, makes the one review write to the PR the user chose, and puts the reviewer's 👀 on the PR while the review runs, removing it when the run ends.
 
-Every invocation it makes carries the measurement record's path or says there is none, per `using-dude`'s **Measurement records**.
+Every invocation it makes carries the measurement record's path or, where no record covers the tree the worker will judge, says that there is none and what is missing, per `using-dude`'s **Measurement records**.
 
 ## Steps
 
@@ -33,15 +33,15 @@ Take the PR number or URL from the caller; if none was given, ask.
 - **Purpose settled** (confirmed or corrected): ask in plain chat for facts outside this repository that bear on whether the means is sound — callers in other repositories, an earlier attempt at the same approach that was reverted, another mechanism that already meets the purpose; the answer is optional, and the run goes on without one. The requirements are the settled purpose, what the linked issues state as requirements, and any facts the user gave; where the purpose and an issue's requirements differ, the settled purpose wins. The PR body is not a requirement.
 - **Purpose unknown**: make no purpose-versus-means check and run the rest of the review as usual. The requirements are what the linked issues state, if any. Skip `propose-alternatives`; do not invoke; chat the skip; continue. No new prompt.
 - Where no requirements result, say so.
-- **Purpose settled:** invoke `propose-alternatives` once with that settled purpose and the measurement record's path or that there is none. **Read-root:** the PR's base at its current tip, the `pr.base.sha` fact fetched as a SHA — not the range's `<base>` merge-base, not `<head>`, not the head worktree Step 3 creates, not the session checkout.
+- **Purpose settled:** invoke `propose-alternatives` once with that settled purpose and the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing. **Read-root:** the PR's base at its current tip, the `pr.base.sha` fact fetched as a SHA — not the range's `<base>` merge-base, not `<head>`, not the head worktree Step 3 creates, not the session checkout.
 - Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
 - Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**, carrying the measurement record's path or that there is none; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to diff review (`vet-code`) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to the review body or inline comments.
+- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**, carrying the measurement record's path, or saying that none covers the tree the worker will judge and what is missing; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to diff review (`vet-code`) except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to the review body or inline comments.
 
 ### 3. Vet
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention, and bind its absolute path as `<head-dir>`: this checkout is not the PR's head, and a worker reading files here judges code the PR does not contain. Remove the worktree when the run ends.
-- Invoke `vet-code` once, handing it as the scope the committed range `<base>..<head>` together with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements — the PR body —, the requirements, saying so when they include a settled purpose, and the measurement record's path or that there is none. A worker does not inherit this session's working directory, and the scope is the one input `vet-code` passes to its reviewer and its verdict workers alike. Take back its judged findings and re-judge none of them.
+- Invoke `vet-code` once, handing it as the scope the committed range `<base>..<head>` together with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements — the PR body —, the requirements, saying so when they include a settled purpose, and the measurement record's path or, where no record covers the tree the worker will judge, that there is none and what is missing. A worker does not inherit this session's working directory, and the scope is the one input `vet-code` passes to its reviewer and its verdict workers alike. Take back its judged findings and re-judge none of them.
 
 ### 4. Draft
 
