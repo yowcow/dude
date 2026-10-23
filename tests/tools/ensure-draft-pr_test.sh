@@ -35,11 +35,8 @@
 #   git show e4395c8^:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
 #
-#   Against that pre-fix script only the two stubbed rows and their stderr
-#   tally are red: `not ok 3/59`.
-#
-#   The three facts-capture rows at the end are RED against `master`'s script
-#   in the same full tools/ tree: `not ok 3/62`.
+#   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
+#   their stderr tally, plus the three facts-capture rows.
 #
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
@@ -88,24 +85,67 @@ total=0
 # The work repo is a real clone rather than init + remote add, so it has the
 # remote-tracking refs, the upstream and the fetch refspec a real checkout has.
 #
-# The remote's HEAD is pointed at `main` before the clone: git_repo_bare leaves
-# it on an unborn `master`, which is what the sibling reads as the default
-# branch, and a clone of it would record no refs/remotes/origin/HEAD.
-fixture() {
-  local name="$1" branch="$2" where="$3" trailer="${4:--}" bare seed work
-  bare="$(git_repo_bare acme "$name")"
-  seed="$(git_repo_scratch "seed-${name}")"
+# Each shape's bare repo is built once and copied per row with `cp -R`, which
+# is what a row starts from: `remote` rows clone it on <branch>, whose commit
+# (trailer and all) is already in the template, while `local` and `nowhere` rows
+# clone `main`. The copy is per row because a bare repo's path is its identity,
+# so a shared one would let a `local` row's push show up in the next row.
+#
+# The template's HEAD is pointed at `main` before any clone: a bare repo starts
+# on an unborn `master` that no fixture creates, and `ls-remote --symref` then
+# names no default branch at all, which the sibling reads as a stop.
+#
+# task_commit <repo> <branch> <trailer> -- the task commit shape: branch off
+# main, then commit T.md with the trailer in the subject.
+task_commit() {
+  local repo="$1" branch="$2" trailer="$3"
+  git_repo_checkout "$repo" "$branch" main
+  git_repo_commit "$repo" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
+}
+
+# template <branch> <where> <trailer> -- a bare repo built once per shape:
+# main, plus <branch> when <where> is remote. A row copies it instead of
+# building a remote from an empty repo every time.
+template() {
+  local branch="$1" where="$2" trailer="$3" t seed key
+  # Slash-free: only templates/ is created, so a slash in <branch> or <trailer>
+  # would make git init fail with "not a directory".
+  key="$(printf '%s.%s.%s' "$branch" "$where" "$trailer" | tr '/' '_')"
+  t="${HARNESS_TMP}/templates/${key}.git"
+  if [ -d "$t" ]; then
+    printf '%s\n' "$t"
+    return 0
+  fi
+  mkdir -p "${HARNESS_TMP}/templates"
+  git init -q --bare "$t"
+  # Slash-free and constant: builds run one at a time, and git_repo_scratch
+  # wipes the directory, while <branch> may one day carry a slash.
+  seed="$(git_repo_scratch seed-template)"
   git_repo_init "$seed" main
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
-  git_repo_push "$seed" "$bare" main
-  git_repo_bare_head "$bare" main
-  work="$(git_repo_clone "work-${name}" "$bare" main)"
-  if [ "$where" != nowhere ]; then
-    git_repo_checkout "$work" "$branch" main
-    git_repo_commit "$work" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
-    if [ "$where" = remote ]; then
-      git_repo_push "$work" origin "refs/heads/${branch}:refs/heads/${branch}"
-    fi
+  git_repo_push "$seed" "$t" main
+  if [ "$where" = remote ]; then
+    task_commit "$seed" "$branch" "$trailer"
+    git_repo_push "$seed" "$t" "$branch"
+  fi
+  git_repo_bare_head "$t" main
+  printf '%s\n' "$t"
+}
+
+fixture() {
+  local name="$1" branch="$2" where="$3" trailer="${4:--}" bare work
+  gitrepo_reject_traversal acme "$name"
+  bare="${HARNESS_TMP}/remotes/acme/${name}.git"
+  rm -rf -- "$bare"
+  mkdir -p -- "${bare%/*}"
+  cp -R -- "$(template "$branch" "$where" "$trailer")" "$bare"
+  if [ "$where" = remote ]; then
+    work="$(git_repo_clone "work-${name}" "$bare" "$branch")"
+  else
+    work="$(git_repo_clone "work-${name}" "$bare" main)"
+  fi
+  if [ "$where" = local ]; then
+    task_commit "$work" "$branch" "$trailer"
   fi
   FIXTURE_BARE="$bare"
   FIXTURE_WORK="$work"
