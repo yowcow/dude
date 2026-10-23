@@ -82,12 +82,6 @@ flowchart TB
   implement-work --> simplify-code
   implement-work --> propose-alternatives
   implement-work --> review-findings
-  implement-work --> audit-code
-  implement-work --> investigate-anomaly
-  implement-work --> investigate-performance
-  implement-work --> settle-question
-  implement-work --> vet-code
-  implement-work --> judge-findings
   pr-to-ready --> review-code
   pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
@@ -109,7 +103,8 @@ flowchart TB
 ```
 
 The canonical source is `tests/skill-deps_test.sh` and the skills' own
-mentions of each other; the figure copies them.
+mentions of each other; the figure draws the dependencies those mentions
+imply, not every mention a classification table records.
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —
