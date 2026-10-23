@@ -117,7 +117,9 @@ if [ "$CURRENT_HEAD" != "$BRANCH" ]; then
   exit 0
 fi
 
-if [ -n "$(git status --porcelain)" ]; then
+# The flag overrides `status.showUntrackedFiles=no`, under which a tree holding
+# only untracked files reads as clean.
+if [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
   echo "STOP dirty-worktree"
   exit 0
 fi
