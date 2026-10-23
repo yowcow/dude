@@ -26,7 +26,12 @@
 # RED verification (see tests/README.md): with a script that drops the origin
 # comparison, the 'url naming another repository' row fails — it answers with a
 # branch instead of STOP wrong-checkout; dropping the push comparison alone
-# fails 'pushurl naming another repository' the same way.
+# fails 'pushurl naming another repository' the same way. A caller that keeps
+# its own copy of the normalization in place of a helper call fails both mutant
+# rows: 'a changed shared helper reaches this caller' answers with the PR line
+# in place of `STOP wrong-checkout`, and 'the copy reads both checkout URLs
+# through the helper' answers `STOP wrong-checkout` in place of the `repo=` line
+# — that one row for a copy left at either checkout site alone.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -56,7 +61,7 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
 failed=0
 total=0
 
-# Four checkouts, told apart by what their `origin` points at. Nothing is ever
+# Six checkouts, told apart by what their `origin` points at. Nothing is ever
 # fetched from these bare repos — the SUT only reads the remote's URL — so they
 # stay empty.
 ACME_WIDGETS="$(git_repo_bare acme widgets)"
@@ -79,6 +84,18 @@ PUSHAWAY="$(git_repo_scratch pushaway-work)"
 git_repo_init "$PUSHAWAY" main
 git_repo_remote "$PUSHAWAY" origin "$ACME_WIDGETS"
 git -C "$PUSHAWAY" config remote.origin.pushurl "$(git_repo_bare fork widgets)"
+
+# An origin the mutant answers differently from a path, so a helper call and a
+# local copy are distinguishable at each checkout site. Only the URL is read;
+# nothing is fetched.
+HTTPS_ORIGIN="$(git_repo_scratch https-origin-work)"
+git_repo_init "$HTTPS_ORIGIN" main
+git_repo_remote "$HTTPS_ORIGIN" origin 'https://github.com/acme/widgets'
+
+# An origin whose reduced form ends in the empty repo half.
+EMPTY_HALF="$(git_repo_scratch empty-half-work)"
+git_repo_init "$EMPTY_HALF" main
+git_repo_remote "$EMPTY_HALF" origin 'https://github.com/acme/widgets//'
 
 # stub_graphql <owner> <name> <number> [<exit>]   body on stdin
 stub_graphql() {
@@ -157,6 +174,14 @@ pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
 run_sut_in "$PUSHAWAY" bash "$SUT" https://github.com/acme/widgets/pull/12
 assert_row 'pushurl naming another repository' 0 'STOP wrong-checkout\n' 0
 
+# --- 8b. an origin whose last segment is empty has no repository to be -----
+# A bare number reads this checkout's own owner/repo, so an empty repo half
+# would be carried into the lookup and answered as `no such pr` about a PR that
+# exists. Nothing is stubbed: the run must stop before the lookup.
+row_start
+run_sut_in "$EMPTY_HALF" bash "$SUT" 12
+assert_row 'origin with an empty repo segment' 0 'STOP wrong-checkout\n' 0
+
 # --- 9. a head branch living in a fork is not on this origin at all -------
 # The origin comparison above cannot see this: the reference names the base
 # repository, which is exactly the repository this checkout is.
@@ -209,5 +234,39 @@ assert_row 'two arguments' 2 '' 0
 row_start
 run_sut_in "$WIDGETS" bash "$SUT" 'not-a-reference'
 assert_row 'unparseable reference' 2 '' 0
+
+# --- 18/20. this script's normalization is the shared helper, not a copy of it
+# All three rows run a copy of this script beside a copy of tools/, because the
+# helper is reached through SCRIPT_DIR. The control row is what makes the
+# mutant rows' verdict about the helper: the same tree answers like the tree,
+# and only after one line of the helper changes does this caller's answer move.
+# A caller that kept its own copy of the reduction would answer the PR line in
+# row 19, and `STOP wrong-checkout` in place of the `repo=` line in row 20.
+MIRROR="${HARNESS_TMP}/mirror"
+mkdir -p "${MIRROR}/skills/pr-to-ready/scripts"
+cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
+cp "$SUT" "${MIRROR}/skills/pr-to-ready/scripts/"
+SUT="${MIRROR}/skills/pr-to-ready/scripts/${SUT##*/}"
+
+row_start
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12
+assert_row 'the copy answers like the tree' 0 'PR 12 branch=feature base=main repo=acme/widgets draft=true\n' 1
+
+row_start
+pr_body 12 feature main OPEN true | stub_graphql acme widgets 12
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
+run_sut_in "$WIDGETS" bash "$SUT" https://github.com/acme/widgets/pull/12
+assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
+
+# A bare number consults no reference, so this row is about the two checkout
+# sites alone: with the helper in place both read the mutant's `other/elsewhere`
+# and the run goes ahead; with either site re-inlined as a copy, that site reads
+# `acme/widgets`, the origin/push comparison stops the run, and this row fails.
+row_start
+pr_body 12 feature main OPEN true | stub_graphql other elsewhere 12
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
+run_sut_in "$HTTPS_ORIGIN" bash "$SUT" 12
+assert_row 'the copy reads both checkout URLs through the helper' 0 'PR 12 branch=feature base=main repo=other/elsewhere draft=true\n' 1
 
 harness_exit "$failed" "$total"

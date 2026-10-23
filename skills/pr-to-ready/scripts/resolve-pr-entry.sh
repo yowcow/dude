@@ -45,6 +45,8 @@
 # Usage: resolve-pr-entry.sh <pr-number-or-url>
 set -euo pipefail
 
+SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+
 if [ "$#" -ne 1 ]; then
   echo "Usage: $0 <pr-number-or-url>" >&2
   exit 2
@@ -65,25 +67,6 @@ QUERY='query($owner:String!,$name:String!,$number:Int!){
   }
 }'
 
-# Reduce a git remote URL to a lowercase `<owner>/<repo>`, the only part of it
-# this script compares. The `##*:` strip is what covers the scp form
-# (`git@host:owner/repo`), where the host sits with no path separator after it
-# and so lands inside the owner segment; drop that line and the form git uses
-# for a default SSH clone stops matching its own repository. The case fold is
-# not cosmetic either: GitHub matches owner and repo case-insensitively, so
-# `acme/Widgets` and `acme/widgets` name one repository and have to compare
-# equal — done through `tr` rather than `${x,,}` to keep this running on the
-# bash 3.2 this skill's scripts still run on.
-normalize_repo_path() {
-  local url="$1" owner repo
-  repo="${url##*/}"
-  repo="${repo%.git}"
-  owner="${url%/*}"
-  owner="${owner##*/}"
-  owner="${owner##*:}"
-  printf '%s/%s\n' "${owner}" "${repo}" | tr '[:upper:]' '[:lower:]'
-}
-
 # --- Step 1: whose checkout is this? ---
 
 # `origin` rather than `gh`'s own repository resolution, because `origin` is
@@ -103,17 +86,28 @@ normalize_repo_path() {
 # while the PR they were written for does not move. `--push` falls back to the
 # fetch URL where no pushurl is set, so an ordinary checkout compares against
 # itself; a `url.<base>.pushInsteadOf` rewrite changes only scheme and host,
-# which normalize_repo_path drops.
+# which the shared tools/normalize-repo-path.sh drops.
 if ! ORIGIN_URL="$(git remote get-url origin 2>/dev/null)" || [ -z "$ORIGIN_URL" ] ||
   ! PUSH_URL="$(git remote get-url --push origin 2>/dev/null)" || [ -z "$PUSH_URL" ]; then
   echo "STOP wrong-checkout"
   exit 0
 fi
-CHECKOUT="$(normalize_repo_path "$ORIGIN_URL")"
-if [ "$(normalize_repo_path "$PUSH_URL")" != "$CHECKOUT" ]; then
+CHECKOUT="$(bash "${SCRIPT_DIR}/../../../tools/normalize-repo-path.sh" "$ORIGIN_URL")"
+PUSH_CHECKOUT="$(bash "${SCRIPT_DIR}/../../../tools/normalize-repo-path.sh" "$PUSH_URL")"
+if [ "$PUSH_CHECKOUT" != "$CHECKOUT" ]; then
   echo "STOP wrong-checkout"
   exit 0
 fi
+
+# An empty half is the shape origin-repo.sh refuses, and the same stop belongs
+# here: a bare number would take it as this checkout's own owner/repo and answer
+# `STOP no-pr` about a PR that exists.
+case "$CHECKOUT" in
+  /*|*/)
+    echo "STOP wrong-checkout"
+    exit 0
+    ;;
+esac
 
 # --- Step 2: split the reference into owner, repo and number. ---
 
@@ -133,7 +127,8 @@ elif [[ "$REF" =~ ^(https?://)?[^/]+/([^/]+)/([^/]+)/pull/([0-9]+)([/?#].*)?$ ]]
   # against the canonical name would reject that checkout. The host is not
   # compared — a repository of the same owner and name on a different host
   # passes this comparison too.
-  if [ "$(normalize_repo_path "${OWNER}/${REPO}")" != "$CHECKOUT" ]; then
+  NAMED="$(bash "${SCRIPT_DIR}/../../../tools/normalize-repo-path.sh" "${OWNER}/${REPO}")"
+  if [ "$NAMED" != "$CHECKOUT" ]; then
     echo "STOP wrong-checkout"
     exit 0
   fi

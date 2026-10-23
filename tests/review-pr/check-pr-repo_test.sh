@@ -10,11 +10,13 @@
 # offline (see ../lib/gitrepo.sh).
 #
 # RED verification (see tests/README.md): against the pre-port script every row
-# fails but four (`SUT=<old> tests/run.sh ...`, not ok 5/9): the rows that reach
+# fails but four (`SUT=<old> tests/run.sh ...`, not ok 7/11): the rows that reach
 # gh fail on an unstubbed `gh repo view`, and 'url naming another repository',
 # 'no origin', 'unparseable reference' and 'no argument' pass because the old
 # script answered them before gh. Dropping the origin comparison makes 'url
-# naming another repository' answer a PR line.
+# naming another repository' answer a PR line. Against a script that keeps its
+# own copy of the normalization, 'a changed shared helper reaches this caller'
+# fails by answering that PR line, and every other row stays green.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -82,5 +84,25 @@ assert_row 'unparseable reference' 2 '' 0
 row_start
 run_in "$WIDGETS"
 assert_row 'no argument' 2 '' 0
+
+# --- 10/11. this script's normalization is the shared helper, not a copy of it
+# The control row is what makes the second row's verdict about the helper: the
+# same mirrored tree answers like the tree, and only after one line of the helper
+# changes does this caller's answer move. A caller that kept its own copy of the
+# reduction would answer the PR line in row 11.
+MIRROR="${HARNESS_TMP}/mirror"
+mkdir -p "${MIRROR}/skills/review-pr/scripts"
+cp -a "${REPO_ROOT}/tools" "${MIRROR}/tools"
+cp "$SUT" "${MIRROR}/skills/review-pr/scripts/"
+SUT="${MIRROR}/skills/review-pr/scripts/${SUT##*/}"
+
+row_start
+run_in "$WIDGETS" https://github.com/acme/widgets/pull/12
+assert_row 'the copy answers like the tree' 0 'PR 12 repo=acme/widgets\n' 0
+
+row_start
+cp "${REPO_ROOT}/tests/lib/mutant/normalize-repo-path.sh" "${MIRROR}/tools/"
+run_in "$WIDGETS" https://github.com/acme/widgets/pull/12
+assert_row 'a changed shared helper reaches this caller' 0 'STOP wrong-checkout\n' 0
 
 harness_exit "$failed" "$total"

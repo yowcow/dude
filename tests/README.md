@@ -18,6 +18,9 @@ directory**. A plugin install carries the whole repository, `tests/` included
   for the scripts that shell out to `git`. Sourced after `harness.sh`.
 - `tests/lib/bin-nosleep/sleep` — the instant `sleep`, put on `PATH` only by
   an explicit `stub_sleep_instant` call.
+- `tests/lib/mutant/normalize-repo-path.sh` — a replacement a test copies over
+  `tools/normalize-repo-path.sh` in a mirrored copy of the tree, to prove a
+  caller reaches the shared helper rather than a copy of its own.
 - `tests/scripts-have-tests.sh` — the coverage gate: every script under
   `skills/*/scripts/`, every file under `tools/`, every file under `hooks/`
   except `hooks.json`, and every file under the repository-root `scripts/` must
@@ -149,7 +152,7 @@ exit codes, a real `git merge` producing a genuine conflict. Source
 
 - `git_repo_bare <owner> <repo>` — a new bare repo at
   `$HARNESS_TMP/remotes/<owner>/<repo>.git`; prints the path. The **path is the
-  identity**: `resolve-pr-entry.sh` reduces a remote URL to its last two
+  identity**: `tools/normalize-repo-path.sh` reduces a remote URL to its last two
   segments, so this repo reads as `<owner>/<repo>` while still being a local
   directory `git fetch` can reach offline.
 - `git_repo_bare_head <bare> <branch>` — points a bare repo's `HEAD` at
