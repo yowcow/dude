@@ -20,18 +20,22 @@
 # common dir): outside the tree, so neither check-clean.sh nor a commit sees
 # it, and a sibling worktree's records never answer for this one. The path is
 # shared with check-tree-records.sh.
-# Usage: record-tree.sh verify|simplify|review
+#
+# baseline is not a completion-gate phase: it records the tree a measurement
+# record's subject names, and check-tree-records.sh does not inspect it,
+# because the gate's three phases stay the only ones Hand off guards.
+# Usage: record-tree.sh verify|simplify|review|baseline
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
-  echo "Usage: $0 verify|simplify|review" >&2
+  echo "Usage: $0 verify|simplify|review|baseline" >&2
   exit 2
 fi
 
 case "$1" in
-  verify | simplify | review) ;;
+  verify | simplify | review | baseline) ;;
   *)
-    echo "Usage: $0 verify|simplify|review" >&2
+    echo "Usage: $0 verify|simplify|review|baseline" >&2
     exit 2
     ;;
 esac

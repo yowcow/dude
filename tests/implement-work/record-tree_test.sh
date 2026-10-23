@@ -21,6 +21,7 @@
 #     `records-the-working-tree`
 #   - run `git add -A` against the real index instead of a copy:
 #     `records-the-working-tree: real index untouched`
+#   - the pre-change argument list rejects `baseline`: `baseline-phase`
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -59,6 +60,19 @@ tally check_eq 'records-the-working-tree: real index untouched' \
 git -C "$W" add -A
 git -C "$W" commit -q -m 'commit everything'
 assert_row 'records-the-working-tree' 0 "$(git -C "$W" rev-parse 'HEAD^{tree}')\n" 0
+
+# ---- the baseline stage records the working tree -----------------------
+
+row_start
+W="$(git_repo_scratch baseline)"
+git_repo_init "$W" main
+git_repo_commit "$W" tracked.txt 'committed\n' 'c1'
+printf 'edited\n' >"${W}/tracked.txt"
+printf 'new\n' >"${W}/new.txt"
+run_in "$W" baseline
+git -C "$W" add -A
+git -C "$W" commit -q -m 'commit everything'
+assert_row 'baseline-phase' 0 "$(git -C "$W" rev-parse 'HEAD^{tree}')\n" 0
 
 # ---- argument validation -----------------------------------------------
 
