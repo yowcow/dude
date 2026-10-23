@@ -10,6 +10,7 @@ Settle an open question whose deliverable is a judgment. `superpowers:systematic
 ## Orchestration model
 
 - The points to settle are independent of each other, so fan out one worker per point. Each verdict stays with the orchestrator.
+- A worker that measures, reads, or runs returns the command it ran and its raw output for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
 - **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
@@ -27,6 +28,8 @@ A question, or an issue carrying the points to be settled. Closing any gap again
 
 - Record what was actually read: the revision, tree, or record. An installed tree and the repository it came from are different artifacts, and so are a branch and its base.
 - Every claim of absence, exhaustiveness, or "only" names the sweep that produced it — run to completion and read whole, never a truncated or paged view of the output.
+- The command behind each read and run, with its raw output, is kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
+- A run that takes the base up in another session or worktree, where the record's path does not resolve, measures once more under the bound the point's own evidence names, or a bound this run names when the point's evidence names none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to Not measured.
 
 ## Validate
 
@@ -42,12 +45,12 @@ A question, or an issue carrying the points to be settled. Closing any gap again
 - Every point has a verdict with the decisive evidence behind it; or
 - the point is recorded as unsettled, with what would settle it and who decides.
 
-Once the report below is drafted, run `review-findings` on it for one pass and publish per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report with the measurement records the report rests on, and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
 1. **Verdict** — the answer to the question, in one paragraph.
-2. **Measurement base** — the revision, tree, or record measured, and the sweep behind each claim of absence.
+2. **Measurement base** — the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the base and the settled points rest on; and the sweep behind each claim of absence. Where a record can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
 3. **Settled points** — per point, the verdict and the evidence that decided it.
 4. **Alternatives rejected** — each one considered, with why it is wrong.
 5. **Next items** — concrete next actions in order, each naming its owner (who decides) and its action type: file, decide, or measure. Not work to start here.
