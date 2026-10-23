@@ -33,7 +33,7 @@ An observed shortfall and where it was observed: the endpoint, job, or query tha
 - Fix the environment: hardware, dataset size, concurrency.
 - Record the baseline numbers and the exact command that produced them.
 - Those numbers, that command, and its raw output are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree they ran against, or, off a git tree, the path or record and how that identity was fixed; so is every measurement this run takes.
-- A run that takes the baseline up in another session or worktree, where the record's path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, or a bound this run names when the metric states none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
+- A run that takes a record this run keeps up in another session or worktree, where its path does not resolve, measures once more under the environment Step 1 fixes and the load shape Step 2 builds, bounded by the metric's own duration/repetitions, or a bound this run names when the metric states none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to documented dead ends, each with the measurement that would settle it.
 
 ### Step 2: Reproduce reliably
 

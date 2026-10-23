@@ -10,7 +10,7 @@ Settle an open question whose deliverable is a judgment. `superpowers:systematic
 ## Orchestration model
 
 - The points to settle are independent of each other, so fan out one worker per point. Each verdict stays with the orchestrator.
-- A worker that measures, reads, or runs returns the command it ran and its raw output for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
+- A worker that measures, reads, or runs returns the command it ran and its raw output — or, for a read that ran no command, the file or record read and how its content was captured — for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
 - **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
 ## Entry
@@ -28,7 +28,7 @@ A question, or an issue carrying the points to be settled. Closing any gap again
 
 - Record what was actually read: the revision, tree, or record. An installed tree and the repository it came from are different artifacts, and so are a branch and its base.
 - Every claim of absence, exhaustiveness, or "only" names the sweep that produced it — run to completion and read whole, never a truncated or paged view of the output.
-- The command behind each read and run, with its raw output, is kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
+- The command behind each read and run, with its raw output, or, for a read that ran no command, the file or record read and how its content was captured, is kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
 - A run that takes the base up in another session or worktree, where the record's path does not resolve, measures once more under the bound the point's own evidence names, or a bound this run names when the point's evidence names none, keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to Not measured.
 
 ## Validate
