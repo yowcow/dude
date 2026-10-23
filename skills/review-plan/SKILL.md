@@ -26,7 +26,7 @@ One test admits everything this skill reports: **left as it is, would this make 
 
 This test overrides the lenses. A lens names a failure mode to look for; naming one does not make every instance of it worth reporting. Terminology that drifts without misleading anyone, wording that could read better, a section a reviewer would have organised differently — these fail the test, so they are not findings, whatever lens surfaced them. Reviewer preference is never a finding here. Prose and formatting are findings only where they leave an implementer unable to tell what the plan means.
 
-There is no non-blocking tier. A finding that passes the test has to be resolved before implementation; anything that fails it is left unsaid rather than recorded as a note. A gap in the measurement record's coverage is not such a note: it goes on the report's **not measured** line, saying what would have to be measured.
+There is no non-blocking tier. A finding that passes the test has to be resolved before implementation; anything that fails it is left unsaid rather than recorded as a note. A gap in the measurement record's coverage is not such a note when the answer could change what the plan instructs: that is a finding against the plan line it leaves unsupported — the quoted line is its evidence — and `judge-findings` takes it to `needs-user` where it rests on a measurement. Only a gap whose answer cannot change what the plan instructs goes on the report's **not measured** line, saying what would have to be measured.
 
 ## Targets
 
@@ -91,7 +91,7 @@ Each reviewer returns findings only — never a rewritten plan — with:
 - **claim** — one sentence on what is wrong.
 - **evidence** — `path:line` from the repo, or the quoted line from the artifact. No evidence, no finding.
 - **suggested change** — what it should say instead.
-- **not measured** — a separate line, not a finding: the question a lens could not judge because no measurement record covered it, and what would have to be measured.
+- **not measured** — a separate line, not a finding: the question a lens could not judge because no measurement record covered it and no answer to it could change what the plan instructs, and what would have to be measured.
 
 Report "no findings" explicitly rather than inventing one. Confine every search to the project root or narrower.
 
