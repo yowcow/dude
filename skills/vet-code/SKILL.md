@@ -38,7 +38,7 @@ When the caller has a measurement record covering the scope, pass its path besid
 
 **The requirements** fill `PLAN_OR_REQUIREMENTS` — the plan, or the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
 
-**The ledger rows** — when the caller hands any over, append them after the template with one instruction: answer each row against the code as it now stands, with the finding it is and its severity, or that it no longer stands and why. They narrow nothing: the scope shape is the caller's and stays as it is, and every search still covers the whole scope at every severity, as it would without them.
+**The ledger rows** — when the caller hands any over, append them after the template with one instruction: answer each row against the code as it now stands, keeping the row with its answer — the finding it is and its severity, or that it no longer stands and why, and never as a `Declined to judge` line. They narrow nothing: the scope shape is the caller's and stays as it is, and every search still covers the whole scope at every severity, as it would without them.
 
 After the template, append only these viewpoint extras:
 
