@@ -181,6 +181,7 @@ Add only what the execution method left undone.
    - Record the tree with `<skill-dir>/scripts/record-tree.sh review` only when that verdict is clean.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
+   - **A commit sends the round back, whatever it holds** — this round's own work, or the execution method's uncommitted changes this round takes in. So the round that declares this gate clean is one whose steps 1-4 changed nothing: a clean tree with commits ahead of the base, which `review-code`'s **Scope** resolves to the whole branch, `base..head`.
    - **Hand off** pushes it, and a push carries only commits, while **Escalation** hands `plan-work` a branch name that re-approval judges by what it contains; either way, anything left uncommitted is simply absent from what the next flow reads.
    - Confirm it worked by running `tools/check-clean.sh` and reading its exit status — 0 is clean, non-zero is dirty and prints what is pending; don't leave this step while it reports dirty.
    - A byproduct of step 1's checks belongs in `.gitignore`; the byproduct itself is never committed. A measurement record is not that byproduct — it sits outside the tree, so it takes no ignore entry and no commit carries it.
@@ -208,7 +209,7 @@ Add only what the execution method left undone.
    | 1 | **The agreed design is what has to change** — `review-code` reported a Critical finding that invalidates it, or step 1 recorded a criterion that the scope boundary puts out of reach, or one that contradicts another criterion or the agreed design | Stop the gate and return to `plan-work`, per **Escalation** |
    | 2 | **`review-code` stopped short of clean with blocking findings open**, per `using-dude`'s **Loop convergence** | The whole gate halts here, whatever else changed. Report the open findings and let the user decide. Don't loop back, and don't re-invoke `review-code` |
    | 3 | **This gate's own rounds hit one of those non-clean conditions** — the gate as an ordinary loop, rather than as the receiver of `review-code`'s stop | Stop and hand the decision over the same way |
-   | 4 | **Any step of this round changed something** — code, or a base absorbed by step 5 | Back to step 1 — verification and simplification have to run against the tree as it now stands |
+   | 4 | **Any step of this round changed something** — code, a base absorbed by step 5, or a commit step 4 made, execution's leftovers included | Back to step 1 — verification and simplification have to run against the tree as it now stands |
    | 5 | **Nothing changed and step 3 came back clean** — the review clean, and step 5 answering `UP-TO-DATE` | **Hand off** — the loop's only normal exit, and *clean* per `using-dude`'s **Loop convergence** loop-clean |
 
    The order is what makes this correct: a `review-code` that stopped short of clean still applied and verified its fixes first, so rows 2-4 can be true at once, and row 1 can surface on any round — in any other order the gate would loop where it has to stop, or carry a design-invalidating finding forward.
