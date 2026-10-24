@@ -237,6 +237,7 @@ Where it answers `STOP ask-base-repo` or `STOP fork-unread`, origin is a fork or
 Title and body follow the repo's PR template when it has one.
 
 - The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository.
+- The body lists every Minor this gate recorded — the review's own, and any a ledger row raised — under **Known minors (recorded, not fixed)**. The session report is where they live otherwise, and it ends with the session; the PR body is what a reviewer reads.
 - The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
 
 Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the `url=` value from that line — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
@@ -253,6 +254,7 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**, han
 - the `review-plan` rounds run on the detailed plan, and the final verdict
 - the completion gate's `review-code` verdict, and any blocking finding left open
 - the completion gate's rounds, and the condition it exited on
+- the execution method's rulings, collected before its workspace was deleted, each with what it costs if wrong — or that it made none
 - the base absorbed, how it was re-resolved, and what the absorb answered on the final round
 - the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
 - the concrete checks run, and any that couldn't be
