@@ -79,6 +79,6 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
 - rejected findings, with the reason
 - on a `needs-user` stop, the stopped round's verdicts as they stand unapplied — each `accept` with its proposed fix, each `reject` with its reason, and each `needs-user` finding with why the worker put the decision to a person. Earlier rounds report in the applied form above.
 - the remaining Minor findings
-- each ledger row the caller handed over, one line for each: the row, then fixed, recorded for the PR body, or declined with the reason — that it no longer stands, or why the finding it became was rejected
+- each ledger row the caller handed over, one line for each: the row, then fixed, recorded for the PR body, or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding an earlier round accepted and fixed reports `fixed`, that earlier fix being the evidence it no longer stands
 - what verification ran, and its actual result — or that verification was skipped as unchanged, citing the covering result the caller handed over
 - the verdict: clean, or the blocking findings that remain — flagging separately any Critical finding that invalidates the approved design, per **Escalation**
