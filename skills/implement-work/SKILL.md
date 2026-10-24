@@ -146,7 +146,14 @@ Two judgements stay here: delegation only pays when a task is big enough to cove
 **The execution method does not carry the work into integration.**
 
 - Its own procedure ends by presenting integration options; the completion gate runs first, and **Hand off** owns the terminal step.
-- What that cuts is the transition only — the method's own cleanup before it, such as removing its scratch workspace, still runs.
+- What that cuts is the transition only — the method's own cleanup still runs, with the one exception the paragraph below moves.
+
+**Its last review is not run here.**
+
+- Do not run the method's final whole-branch review, the fix wave that review would dispatch, or the scoped re-review of that wave. The completion gate's step 3 reads the whole branch against this task's requirements; a tail review second-guesses the only verdict this flow can stand on, through a fix wave that is itself a source of regressions.
+- Run the method's **Finish**, except for the workspace deletion it gates on that review: this flow deletes the workspace at its own end, below, and does the collection Finish would do at Finish's position, itself.
+- Before anything is deleted, collect every ledger line carrying the method's ruling marker (`Ruling:`) into what **Report** hands the person, each with what it costs if wrong. This loop is the carrier, not the method: a ruling that dies with the workspace was a decision made in secret.
+- The method's scratch workspace is deleted at this flow's end — after **Report** holds those rulings, and, where the gate took its normal exit, after **Hand off**. Nothing deletes it on the way out of **Execution**: step 3 reads the plan and ledger that workspace holds, and **Hand off** pushes the branch the same workspace carried.
 
 ## Completion gate
 
