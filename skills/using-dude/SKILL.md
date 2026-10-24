@@ -26,6 +26,7 @@ The same holds for a skill you invoke: when a sub-skill's own procedure ends by 
 
 - What this cuts is the transition only.
 - A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
+  - Cutting one is what that forbids; moving it is not. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
 
 ### Workflow selection
 

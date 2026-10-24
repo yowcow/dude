@@ -19,7 +19,7 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Reviewer prompt
 
-`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, the read-root with its precedence passed beside the SHAs, and the measurement record's path with its instruction to read it. The caller's four inputs fill placeholders and may append after the template.
+`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, the read-root with its precedence passed beside the SHAs, and the measurement record's path with its instruction to read it. The caller's four inputs fill placeholders and may append after the template; a fifth, the ledger rows, is optional and appends after it too.
 
 The caller hands the scope in one of these four shapes:
 
@@ -36,7 +36,9 @@ When the caller has a measurement record covering the scope, pass its path besid
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
-**The requirements** fill `PLAN_OR_REQUIREMENTS` — the plan, or the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+**The requirements** fill `PLAN_OR_REQUIREMENTS` — the entry artifact where the caller has one, with the plan's location beside it where one exists, and otherwise the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+
+**The ledger rows** — when the caller hands any over, append them after the template with one instruction: answer each row against the code as it now stands, keeping the row with its answer — the finding it is and its severity, or that it no longer stands and why, and never as a `Declined to judge` line. They narrow nothing: the scope shape is the caller's and stays as it is, and every search still covers the whole scope at every severity, as it would without them.
 
 After the template, append only these viewpoint extras:
 
@@ -50,6 +52,8 @@ Also after the template: Confine every search to the project root or narrower. A
 Receive the template output as-is. Strengths, Recommendations, and Assessment are not findings. Assessment Ready to merge is not this skill declaring the code clean; clean remains the caller's, from whether blocking findings exist.
 
 For each finding: the finding as the reviewer stated it, its severity — Critical, Important, or Minor — its location, and its verdict, an `accept` with its fix, its value, and that value's reason; for each Declined to judge line, the line as the reviewer stated it, its verdict, and whether it stayed declined or became a finding, with a line that became a finding staying in the finding list too, for its severity and verdict.
+
+For each ledger row the caller handed over: the finding it became, returned in the finding list with the row it came from kept, or one line `Ledger row closed: <row> — <why it no longer stands>`. A row whose finding the earlier rounds' record already holds as rejected, or as accepted and recorded without a fix, is answered with that record's disposition instead: `Ledger row declined: <row> — <the reason the record gives for the rejection>`, or `Ledger row recorded: <row> — <the Minor it became and where it is recorded>`; neither is a candidate for `judge-findings`, and neither raises the finding again. A closed row is neither a finding nor a `Declined to judge` line — it is no candidate for `judge-findings`. Its closure is a fact about the code of the round that closed it, not a verdict carried forward: the ledger is the only carrier, so a later round answers the row again from the code as it then stands, and a fix that brings the condition back brings the row back as a finding.
 
 Keep the reviewer's text, severity, and location whole and separate from the verdict: the caller passes them on as the reviewer's own output, so anything reworded here reaches its reader in place of the reviewer's claim. Return each verdict as `judge-findings` returned it, its fix, value, and reason included and none of them reworded: a caller reads a non-blocking `accept` that arrives with no value as one never to fix.
 
