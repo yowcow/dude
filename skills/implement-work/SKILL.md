@@ -150,7 +150,7 @@ Two judgements stay here: delegation only pays when a task is big enough to cove
 
 **Its last review is not run here.**
 
-- Do not run the method's final whole-branch review, the fix wave that review would dispatch, or the scoped re-review of that wave. The completion gate's step 3 reads the whole branch against this task's requirements — that read is where the self-review the method ends with now runs, dispatched by the gate itself; a tail review second-guesses the only verdict this flow can stand on, through a fix wave that is itself a source of regressions.
+- Do not run the method's final whole-branch review, the fix wave that review would dispatch, or the scoped re-review of that wave. The completion gate's step 3 reads the whole branch against this task's requirements — that read is where the self-review the method ends with now runs, dispatched by the gate's step 3 through `review-code`; a tail review second-guesses the only verdict this flow can stand on, through a fix wave that is itself a source of regressions.
 - Run the method's **Finish**, except for the workspace deletion it gates on that review: this flow deletes the workspace at its own end, below.
 - Before anything is deleted, collect every ledger line carrying the method's ruling marker (`Ruling:`) into what **Report** hands the person, each with what it costs if wrong. This loop is the carrier, not the method: a ruling that dies with the workspace was a decision made in secret.
 - The method's scratch workspace is deleted at this flow's end — after **Report** holds those rulings, and, where the gate took its normal exit, after **Hand off**. Nothing deletes it on the way out of **Execution**: step 3 reads the plan and ledger that workspace holds, and **Hand off** pushes the branch the same workspace carried.
@@ -179,7 +179,7 @@ Add only what the execution method left undone.
 
    - **The requirements travel with the dispatch.** This task's own entry artifact as step 1 reads it — the binding source, its scope boundary included — and, where this flow drafted a detailed plan, where that plan sits: the plan travels as the artifact's transcription, exactly as step 1 says, never as a second source. `vet-code` reviews against the requirements it is handed. Without them, a completion criterion left unmet or a scope boundary crossed comes back clean.
    - **Where the execution method kept a ledger, its rows travel too** — at the path that method's workspace printed, and only the lines carrying its ruling marker (`Ruling:`) or its deferred-minor marker (`minor (deferred)`). Select by marker, never by row shape: methods spell the same marker differently, and a shape only a review this flow stops could produce matches nothing. Where the method kept no ledger — a manual run keeps none — the dispatch says so, and no triage runs that round.
-     - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of three states at **Hand off**: fixed in a round, recorded — in the PR body by **Hand off**, or in this Report when the gate halts before it — or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding is still open at such a halt is not ended: report it open with the blocking findings that stopped the gate.
+     - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of three states at **Hand off**: fixed in a round, recorded — in the PR body by **Hand off**, or in this Report when the gate halts before it — or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding this round returned and nothing closed is not ended: report it open with the blocking findings that stopped the gate.
      - The ledger travels every round, not the first alone: a row a later round's fix has moved past is answered again — closed again where it still does not stand, a finding again where that fix brought it back — and a row still standing is still standing.
    - The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
    - Record the tree with `<skill-dir>/scripts/record-tree.sh review` only when that verdict is clean.
@@ -255,7 +255,7 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**, han
 - the completion gate's `review-code` verdict, and any blocking finding left open
 - the completion gate's rounds, and the condition it exited on
 - the execution method's rulings, collected before its workspace was deleted, each with what it costs if wrong — or that it made none
-- the Minor findings recorded this run, where the gate halted before **Hand off** and no PR body carries them
+- the Minor findings recorded this run, where no PR body carries them
 - the base absorbed, how it was re-resolved, and what the absorb answered on the final round
 - the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
 - the concrete checks run, and any that couldn't be

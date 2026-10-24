@@ -36,7 +36,7 @@ When the caller has a measurement record covering the scope, pass its path besid
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
-**The requirements** fill `PLAN_OR_REQUIREMENTS` — the plan, or the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+**The requirements** fill `PLAN_OR_REQUIREMENTS` — the entry artifact where the caller has one, with the plan's location beside it where one exists, and otherwise the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
 
 **The ledger rows** — when the caller hands any over, append them after the template with one instruction: answer each row against the code as it now stands, keeping the row with its answer — the finding it is and its severity, or that it no longer stands and why, and never as a `Declined to judge` line. They narrow nothing: the scope shape is the caller's and stays as it is, and every search still covers the whole scope at every severity, as it would without them.
 
