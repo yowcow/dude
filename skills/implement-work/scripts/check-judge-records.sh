@@ -292,13 +292,6 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       done <<HEADERS_EOF
 $hdrs
 HEADERS_EOF
-      # An input header with no same line in the verdict never reached the
-      # judge.
-      if grep -qFxvf "$svf" <<HEADERS_EOF2; then
-$hdrs
-HEADERS_EOF2
-        GAP="$(add_round "$GAP" "$r")"
-      fi
     fi
     r=$((r + 1))
   done
