@@ -396,6 +396,67 @@ EOF
 run_in "$W"
 assert_row 'gap-in-two-rounds' 0 'GAP 1 2\n' 0
 
+# ---- a skipped non-latest round is named once a later round exists -----------------------
+
+row_start
+W="$(build_repo gap-skipped)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'skipped-non-latest-verdict' 0 'GAP 1\n' 0
+
+# ---- a Verdict line that is not first is prose, not a verdict -------------------------
+
+row_start
+W="$(build_repo gap-prose-verdict)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+note: holding for a second look
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'verdict-not-first-line' 0 'GAP 1\n' 0
+
+# ---- a Value line that is not second is prose, not a value -------------------------------
+
+row_start
+W="$(build_repo gap-prose-value)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+fix it first
+Value: apply
+EOF
+run_in "$W"
+assert_row 'value-not-second-line' 0 'GAP 1\n' 0
+
 # ---- an accept with no value: an incomplete record, never a judgment ---------------------
 
 row_start

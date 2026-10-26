@@ -14,8 +14,9 @@
 #   IDENTITY <n>...   -- Commit names no object, or Tree is not that commit's
 #                        tree (a verdict authorising a fix on another tree)
 #   GAP <n>...        -- an input item the verdict does not cover, an accept
-#                        without its fix/value, or a rejected candidate dropped
-#                        instead of re-offered
+#                        without its fix/value, a non-empty input round with
+#                        no verdict file once a later round exists, or a
+#                        rejected candidate dropped instead of re-offered
 #   DIRTY             -- uncommitted changes; `git status --porcelain` on stderr
 #   UNCOVERED <n>     -- the latest round's tree moved with no verdict, or with
 #                        a verdict authorising no code change
@@ -233,7 +234,8 @@ fi
 
 # ---- GAP --------------------------------------------------------------------
 # An input item the verdict does not cover, an accept without its fix/value,
-# or a rejected candidate dropped instead of re-offered in a later input. A
+# a non-empty input round with no verdict file once a later round exists, or
+# a rejected candidate dropped instead of re-offered in a later input. A
 # declined candidate on the final round needs no re-offer. Closed/recorded
 # ledger rows are never candidates and never appear in these files.
 verdict_block() {
@@ -242,9 +244,45 @@ verdict_block() {
   H="$2" awk '$0==ENVIRON["H"]{f=1;next} /^(Finding|Candidate): /{if(f)exit} f' "$1"
 }
 
+verdict_of() {
+  # <stripped-verdict-file> <header>: the item's verdict as "accept apply",
+  # "accept record", "reject", "needs-user", or "bad" (no or malformed
+  # Verdict/Value lines). Positional: the Verdict line is the block's first
+  # line and, for accept, the Value line the second -- a prose line mimicking
+  # a prefix elsewhere in the block is not a verdict.
+  local block vline v2
+  block="$(verdict_block "$1" "$2")"
+  vline="$(printf '%s' "$block" | sed -n '1p')"
+  case "$vline" in
+    'Verdict: accept')
+      v2="$(printf '%s' "$block" | sed -n '2p')"
+      case "$v2" in
+        'Value: apply') printf 'accept apply' ;;
+        'Value: record') printf 'accept record' ;;
+        *) printf 'bad' ;;
+      esac
+      ;;
+    'Verdict: reject') printf 'reject' ;;
+    'Verdict: needs-user') printf 'needs-user' ;;
+    *) printf 'bad' ;;
+  esac
+}
+
 MAX_INPUT="$(printf '%s' "$INPUTS" | awk '$1>m{m=$1} END{print m+0}')"
 GAP=""
 if [ "$MAX_INPUT" -gt 0 ]; then
+  # A non-empty input round with no verdict file is a skipped judgment once a
+  # later round exists. The latest round without movement stays pending (OK)
+  # and with movement reports UNCOVERED.
+  r=1
+  while [ "$r" -lt "$MAX_INPUT" ]; do
+    if ! has_round "$VERDICTS" "$r" && has_round "$INPUTS" "$r"; then
+      if [ -n "$(headers "$(path_of "$INPUTS" "$r")")" ]; then
+        GAP="$(add_round "$GAP" "$r")"
+      fi
+    fi
+    r=$((r + 1))
+  done
   r=1
   while [ "$r" -le "$MAX_INPUT" ]; do
     if has_round "$VERDICTS" "$r"; then
@@ -255,23 +293,16 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       hdrs="$(headers "$inf")"
       while IFS= read -r h; do
         [ -n "$h" ] || continue
-        block="$(verdict_block "$svf" "$h")"
-        vline="$(printf '%s' "$block" | sed -n '/^Verdict: /p' | sed -n '1p')"
-        case "$vline" in
-          'Verdict: accept')
-            if ! printf '%s' "$block" | grep -qE '^Value: (apply|record)$'; then
-              GAP="$(add_round "$GAP" "$r")"
-            fi
-            ;;
-          'Verdict: reject' | 'Verdict: needs-user')
-            ;;
-          *)
-            GAP="$(add_round "$GAP" "$r")"
+        verdict="$(verdict_of "$svf" "$h")"
+        case "$verdict" in
+          'accept apply' | 'accept record' | reject | needs-user) ;;
+          *) GAP="$(add_round "$GAP" "$r")"
+            continue
             ;;
         esac
         case "$h" in
           'Candidate: '*)
-            if [ "$vline" = 'Verdict: reject' ] && [ "$r" -lt "$MAX_INPUT" ]; then
+            if [ "$verdict" = reject ] && [ "$r" -lt "$MAX_INPUT" ]; then
               s=$((r + 1))
               found=0
               while [ "$s" -le "$MAX_INPUT" ]; do
@@ -335,9 +366,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       authorised=0
       while IFS= read -r h; do
         [ -n "$h" ] || continue
-        block="$(verdict_block "$svf" "$h")"
-        if printf '%s' "$block" | grep -q '^Verdict: accept$' &&
-          printf '%s' "$block" | grep -q '^Value: apply$'; then
+        if [ "$(verdict_of "$svf" "$h")" = 'accept apply' ]; then
           authorised=1
           break
         fi
