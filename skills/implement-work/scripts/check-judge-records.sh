@@ -57,7 +57,6 @@ INPUTS=""   # "round path" per line, rounds validated numeric and positive
 VERDICTS="" # "round path" per line, same validation
 
 if [ -d "$RECORD_DIR" ]; then
-  f=""
   for f in "$RECORD_DIR"/judge-input-*.md "$RECORD_DIR"/judge-verdict-*.md; do
     [ -e "$f" ] || continue
     base="${f##*/}"
@@ -218,12 +217,10 @@ if [ "$MAX" -gt 0 ]; then
       t="$(field "$inf" 'Tree')"
       if ! git cat-file -e "$c" 2>/dev/null; then
         IDENTITY="${IDENTITY} $r"
-      else
-        if ! wt="$(git rev-parse "${c}^{tree}" 2>/dev/null)"; then
-          IDENTITY="${IDENTITY} $r"
-        elif [ "$wt" != "$t" ]; then
-          IDENTITY="${IDENTITY} $r"
-        fi
+      elif ! wt="$(git rev-parse "${c}^{tree}" 2>/dev/null)"; then
+        IDENTITY="${IDENTITY} $r"
+      elif [ "$wt" != "$t" ]; then
+        IDENTITY="${IDENTITY} $r"
       fi
     fi
     r=$((r + 1))
@@ -255,7 +252,6 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       vf="$(path_of "$VERDICTS" "$r")"
       svf="${TMPD}/judge-verdict-${r}.stripped"
       sed 's/[[:space:]]*$//' "$vf" >"$svf"
-      h=""
       while IFS= read -r h; do
         [ -n "$h" ] || continue
         block="$(verdict_block "$svf" "$h")"
@@ -307,9 +303,6 @@ HEADERS_EOF2
   done
 fi
 if [ -n "$GAP" ]; then
-  # shellcheck disable=SC2086
-  GAP="$(printf '%s\n' $GAP | sort -n | tr '\n' ' ')"
-  GAP=" ${GAP% }"
   echo "GAP${GAP}"
   exit 0
 fi
@@ -336,11 +329,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
   inf="$(path_of "$INPUTS" "$MAX_INPUT")"
   if [ -n "$(headers "$inf")" ]; then
     c="$(field "$inf" 'Commit')"
-    moved=""
     if [ -n "$(git rev-list --first-parent --no-merges "${c}..HEAD" 2>/dev/null || true)" ]; then
-      moved=1
-    fi
-    if [ -n "$moved" ]; then
       if ! has_round "$VERDICTS" "$MAX_INPUT"; then
         echo "UNCOVERED ${MAX_INPUT}"
         exit 0
@@ -349,7 +338,6 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       svf="${TMPD}/judge-verdict-${MAX_INPUT}.stripped"
       sed 's/[[:space:]]*$//' "$vf" >"$svf"
       authorised=0
-      h=""
       while IFS= read -r h; do
         [ -n "$h" ] || continue
         block="$(verdict_block "$svf" "$h")"

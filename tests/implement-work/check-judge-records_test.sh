@@ -365,6 +365,37 @@ EOF
 run_in "$W"
 assert_row 'input-item-missing-from-verdict' 0 'GAP 1\n' 0
 
+# ---- gaps in two rounds report both, ascending ----------------------------------------
+
+row_start
+W="$(build_repo gap-two-rounds)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Finding: first extra text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Finding: second extra text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Verdict: reject
+wrong
+EOF
+run_in "$W"
+assert_row 'gap-in-two-rounds' 0 'GAP 1 2\n' 0
+
 # ---- an accept with no value: an incomplete record, never a judgment ---------------------
 
 row_start
