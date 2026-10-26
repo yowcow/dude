@@ -154,7 +154,9 @@ fi
 # A verdict naming another round's input file, the same non-empty identity
 # recorded as two rounds (the Exit-batch double-run shape: the batch ran
 # twice and recorded the same judgment as a new round), or a verdict filed
-# for an empty input.
+# for an empty input. Verdict Commit/Tree echoes the input's identity and is
+# never read: the anchor is the input's Commit/Tree plus the verdict's Input:
+# pointer.
 DOUBLE=""
 if [ "$MAX" -gt 0 ]; then
   r=1
