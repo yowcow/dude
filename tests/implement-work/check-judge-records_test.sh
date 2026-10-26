@@ -25,7 +25,8 @@
 #   - use --no-merges without --first-parent: `merge-only-after-judgment`
 #   - drop the stateful GAP parse, keep header-set difference only:
 #     `accept-without-value`, `declined-candidate-not-reoffered`
-#   - drop the candidate re-offer check: `declined-candidate-not-reoffered`
+#   - drop the candidate re-offer check: `declined-candidate-not-reoffered`,
+#     `finding-needs-user-not-reoffered`
 #   - drop the DIRTY check: `dirty-tree`, `untracked-file`,
 #     `untracked-file-hidden-by-config`
 #   - probe with `git status --porcelain` (no --untracked-files=normal):
@@ -596,6 +597,39 @@ Finding: second finding text
 EOF
 run_in "$W"
 assert_row 'needs-user-candidate-not-reoffered' 0 'GAP 1\n' 0
+
+# ---- a needs-user finding dropped instead of re-offered ----
+
+row_start
+W="$(build_repo gap-dropped-finding-needs-user)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Finding: second finding text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Finding: second finding text
+Verdict: needs-user
+needs a human
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: third finding text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: third finding text
+Verdict: reject
+wrong
+EOF
+run_in "$W"
+assert_row 'finding-needs-user-not-reoffered' 0 'GAP 1\n' 0
 
 # ---- a rejected candidate re-offered in the next input ------------------------------------------
 

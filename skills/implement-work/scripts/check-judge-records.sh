@@ -243,8 +243,8 @@ fi
 # ---- GAP --------------------------------------------------------------------
 # An input item the verdict does not cover, an accept without its fix/value,
 # a non-empty input round with no verdict file once a later round exists, or
-# a rejected or needs-user candidate dropped instead of re-offered in a
-# later input. A declined or needs-user candidate on the final round needs
+# a rejected or needs-user item dropped instead of re-offered in a
+# later input. A declined or needs-user item on the final round needs
 # no re-offer. Closed/recorded
 # ledger rows are never candidates and never appear in these files.
 verdict_block() {
@@ -309,7 +309,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
             ;;
         esac
         case "$h" in
-          'Candidate: '*)
+          'Candidate: '* | 'Finding: '*)
             if [ "$r" -lt "$MAX_INPUT" ] && { [ "$verdict" = reject ] || [ "$verdict" = needs-user ]; }; then
               s=$((r + 1))
               found=0
