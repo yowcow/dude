@@ -14,6 +14,12 @@ The duplication measured on 2026-10-22 was inside one session, where four worker
 
 A missing field would be machine-checkable. Whether a measurement record still covers the question a worker is asked is not: that stays the orchestrator's judgment, so a script would enforce only the envelope and leave the expensive question untouched. AUTHORING's generic-operation rule keeps this prose, with nothing new to maintain.
 
+## Judge input and verdict records
+
+The completion gate keeps the judge handoff outside the tree, in `dude-measurements/implement-work/`: `judge-input-<round>.md` holds what the caller handed `judge-findings`, and `judge-verdict-<round>.md` holds what `judge-findings` returned, recorded whole and unreworded. Without the pair a later check cannot tell a dropped input from a judgment. `pr-to-ready` and standalone `review-code` identity stay out of scope here.
+
+The input file carries the scope identity, the requirements pointer, every Issues finding whole, every Declined to judge line verbatim, the earlier rounds' record, the measurement record's path, and the acceptance criteria text. A line missing there reads as an incomplete record, never as a judgment, because the file is the handoff. The verdict file carries each item as given with its verdict and the input file's name. Rewording a fix there silently turns a `record` accept into a fix. Both files carry the tree hash `record-tree.sh` printed for the judged tree, so a verdict recorded on one tree never authorizes a fix on another. With no items there is no judge worker and no verdict file, but the caller still writes the empty input file with its identity, so a later check reads "nothing to cover" rather than "record missing".
+
 ## The roster
 
 The target class is a skill whose judgment can rest on a measurement a read-only worker would otherwise re-derive: it dispatches such workers, produces the measurement as its own deliverable, or is an entry whose own dispatch carries a measurement record. The Reason column records the applicability decision and the gap as this PR's tree stands; the worker-contract, entry, and measurement-deliverable changes that close a gap are later issues and are out of scope here.
