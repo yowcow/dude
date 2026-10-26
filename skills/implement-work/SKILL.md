@@ -182,6 +182,7 @@ Add only what the execution method left undone.
      - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of three states at **Hand off**: fixed in a round, recorded — in the PR body by **Hand off**, or in this Report when the gate halts before it — or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding this round returned as a **blocking** finding and nothing closed is not ended: report it open with the blocking findings that stopped the gate.
      - The ledger travels every round, not the first alone: a row a later round's fix has moved past is answered again — closed again where it still does not stand, a finding again where that fix brought it back — and a row still standing is still standing.
    - The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
+   - Each round writes its judge pair for that round through `vet-code` — the input file even when no items mean no worker ran, the verdict file carrying the input file's name when one did — and the round number increments per gate round.
    - Record the tree with `<skill-dir>/scripts/record-tree.sh review` only when that verdict is clean.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
 
@@ -225,6 +226,8 @@ Add only what the execution method left undone.
 The deliverable is a **draft PR** on a pushed branch of verified commits — exactly what `pr-to-ready` takes as its entry. Once the completion gate takes its normal exit, check, push, and then open the PR, in that order.
 
 Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`. On any line other than `OK`, go back to the completion gate's step 1, and the pass that follows is one of its rounds.
+
+Also run `<skill-dir>/scripts/check-judge-records.sh`. On any line other than `OK`, go back to the completion gate's step 1, and the pass that follows is one of its rounds. That script's header is the single source for what each line means.
 
 Push the branch to `origin` under its own name; the check's `OK` is its only precondition.
 
