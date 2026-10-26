@@ -188,6 +188,19 @@ EOF
 run_in "$W"
 assert_row 'same-identity-two-rounds' 0 'DOUBLE 1 2\n' 0
 
+# ---- empty identity twice is malformed, not a double record ----
+
+row_start
+W="$(build_repo empty-identity)"
+write_input "$W" 1 '' '' <<'EOF'
+Finding: first finding text
+EOF
+write_input "$W" 2 '' '' <<'EOF'
+Finding: first finding text
+EOF
+run_in "$W"
+assert_row 'empty-identity-two-rounds' 0 'IDENTITY 1 2\n' 0
+
 # ---- a verdict naming another round's input file ---------------------------
 
 row_start
@@ -242,6 +255,19 @@ Finding: first finding text
 EOF
 run_in "$W"
 assert_row 'unknown-commit' 0 'IDENTITY 1\n' 0
+
+# ---- a Commit line in the prose is not the envelope ----
+
+row_start
+W="$(build_repo prose-commit)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+{
+  printf 'Round: 1\nTree: %s\n\n' "$T"
+  printf 'Finding: first finding text\nCommit: %s\n' "$C"
+} >"$(recdir "$W")/judge-input-1.md"
+run_in "$W"
+assert_row 'commit-in-prose-not-envelope' 0 'IDENTITY 1\n' 0
 
 # ---- uncommitted edit: DIRTY, not anything else -------------------------------
 
@@ -524,6 +550,34 @@ wrong
 EOF
 run_in "$W"
 assert_row 'declined-candidate-not-reoffered' 0 'GAP 1\n' 0
+
+# ---- a needs-user candidate dropped instead of re-offered ----
+
+row_start
+W="$(build_repo gap-dropped-needs-user)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Candidate: declined line text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Candidate: declined line text
+Verdict: needs-user
+needs a human
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+EOF
+run_in "$W"
+assert_row 'needs-user-candidate-not-reoffered' 0 'GAP 1\n' 0
 
 # ---- a rejected candidate re-offered in the next input ------------------------------------------
 

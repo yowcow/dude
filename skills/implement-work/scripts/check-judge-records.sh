@@ -16,7 +16,8 @@
 #   GAP <n>...        -- an input item the verdict does not cover, an accept
 #                        without its fix/value, a non-empty input round with
 #                        no verdict file once a later round exists, or a
-#                        rejected candidate dropped instead of re-offered
+#                        rejected or needs-user candidate dropped instead of
+#                        re-offered
 #   DIRTY             -- uncommitted changes; `git status --porcelain` on stderr
 #   UNCOVERED <n>     -- the latest round's tree moved with no verdict, or with
 #                        a verdict authorising no code change
@@ -96,9 +97,11 @@ path_of() {
   printf '%s' "$line"
 }
 
-# field <file> <key> -- the value of the first "Key: value" line, if any.
+# field <file> <key> -- the value of the first "Key: value" line in the
+# envelope (lines before the first blank line), if any. Prose after the
+# blank line stays verbatim and may mimic a prefix, so it is never read.
 field() {
-  sed -n "s/^$2: //p" "$1" 2>/dev/null | sed -n '1p'
+  sed -n '1,/^$/p' "$1" 2>/dev/null | sed -n "s/^$2: //p" | sed -n '1p'
 }
 
 # has_round <list> <round>
@@ -175,9 +178,9 @@ if [ "$MAX" -gt 0 ]; then
   while [ "$r" -le "$MAX" ]; do
     if has_round "$INPUTS" "$r"; then
       inf="$(path_of "$INPUTS" "$r")"
-      if [ -n "$(headers "$inf")" ]; then
-        c_r="$(field "$inf" 'Commit')"
-        t_r="$(field "$inf" 'Tree')"
+      c_r="$(field "$inf" 'Commit')"
+      t_r="$(field "$inf" 'Tree')"
+      if [ -n "$(headers "$inf")" ] && [ -n "$c_r" ] && [ -n "$t_r" ]; then
         s=$((r + 1))
         while [ "$s" -le "$MAX" ]; do
           if has_round "$INPUTS" "$s"; then
@@ -235,8 +238,9 @@ fi
 # ---- GAP --------------------------------------------------------------------
 # An input item the verdict does not cover, an accept without its fix/value,
 # a non-empty input round with no verdict file once a later round exists, or
-# a rejected candidate dropped instead of re-offered in a later input. A
-# declined candidate on the final round needs no re-offer. Closed/recorded
+# a rejected or needs-user candidate dropped instead of re-offered in a
+# later input. A declined or needs-user candidate on the final round needs
+# no re-offer. Closed/recorded
 # ledger rows are never candidates and never appear in these files.
 verdict_block() {
   # <stripped-verdict-file> <header>: the lines after that header up to the
@@ -302,7 +306,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
         esac
         case "$h" in
           'Candidate: '*)
-            if [ "$verdict" = reject ] && [ "$r" -lt "$MAX_INPUT" ]; then
+            if [ "$r" -lt "$MAX_INPUT" ] && { [ "$verdict" = reject ] || [ "$verdict" = needs-user ]; }; then
               s=$((r + 1))
               found=0
               while [ "$s" -le "$MAX_INPUT" ]; do
