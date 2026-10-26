@@ -229,7 +229,7 @@ Before the push, always run `<skill-dir>/scripts/check-tree-records.sh`. On any 
 
 Also run `<skill-dir>/scripts/check-judge-records.sh`. On any line other than `OK`, go back to the completion gate's step 1, and the pass that follows is one of its rounds. That script's header is the single source for what each line means.
 
-Push the branch to `origin` under its own name; the check's `OK` is its only precondition.
+Push the branch to `origin` under its own name; each check's `OK` is its precondition — both must read `OK`.
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
