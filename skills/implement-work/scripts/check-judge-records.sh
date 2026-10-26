@@ -119,7 +119,7 @@ add_round() {
 # headers <file> -- the Finding:/Candidate: header lines, trailing whitespace
 # stripped, so both sides compare the same bytes.
 headers() {
-  grep -h '^Finding: \|^Candidate: ' "$1" 2>/dev/null | sed 's/[[:space:]]*$//' || true
+  grep '^Finding: \|^Candidate: ' "$1" 2>/dev/null | sed 's/[[:space:]]*$//' || true
 }
 
 # max_round -- the highest round seen across both lists, 0 when neither holds
