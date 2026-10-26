@@ -252,6 +252,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       vf="$(path_of "$VERDICTS" "$r")"
       svf="${TMPD}/judge-verdict-${r}.stripped"
       sed 's/[[:space:]]*$//' "$vf" >"$svf"
+      hdrs="$(headers "$inf")"
       while IFS= read -r h; do
         [ -n "$h" ] || continue
         block="$(verdict_block "$svf" "$h")"
@@ -289,12 +290,12 @@ if [ "$MAX_INPUT" -gt 0 ]; then
             ;;
         esac
       done <<HEADERS_EOF
-$(headers "$inf")
+$hdrs
 HEADERS_EOF
       # An input header with no same line in the verdict never reached the
       # judge.
       if grep -qFxvf "$svf" <<HEADERS_EOF2; then
-$(headers "$inf")
+$hdrs
 HEADERS_EOF2
         GAP="$(add_round "$GAP" "$r")"
       fi
@@ -327,7 +328,8 @@ fi
 # latest input is nothing to cover.
 if [ "$MAX_INPUT" -gt 0 ]; then
   inf="$(path_of "$INPUTS" "$MAX_INPUT")"
-  if [ -n "$(headers "$inf")" ]; then
+  hdrs="$(headers "$inf")"
+  if [ -n "$hdrs" ]; then
     c="$(field "$inf" 'Commit')"
     if [ -n "$(git rev-list --first-parent --no-merges "${c}..HEAD" 2>/dev/null || true)" ]; then
       if ! has_round "$VERDICTS" "$MAX_INPUT"; then
@@ -347,7 +349,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
           break
         fi
       done <<HEADERS_EOF
-$(headers "$inf")
+$hdrs
 HEADERS_EOF
       if [ "$authorised" -eq 0 ]; then
         echo "UNCOVERED ${MAX_INPUT}"
