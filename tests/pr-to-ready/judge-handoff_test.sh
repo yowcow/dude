@@ -113,6 +113,14 @@ if ! grep -qF 'gate-rounds' <<<"$PREP"; then
   printf 'FAIL rounds: 0-3 does not read the gate-rounds value\n'
   fails_here=1
 fi
+if ! grep -qF 'N+1' <<<"$TWO_ONE"; then
+  printf 'FAIL rounds: 2-1 does not name the first pr-to-ready round as N+1\n'
+  fails_here=1
+fi
+if ! grep -qF 'each non-empty input' <<<"$PREP"; then
+  printf 'FAIL rounds: 0-3 demands a verdict file for empty-input rounds\n'
+  fails_here=1
+fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
