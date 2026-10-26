@@ -63,17 +63,17 @@ if ! grep -qF "$CHECK" <<<"$EXIT_BATCH"; then
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# Row 4: 0-3 refuses a fresh ATTACHED worktree with no judge records.
-# The script answers OK on an empty record dir, so that OK is never clean.
+# Row 4: 0-3 carries no gate handoff check. Numbering always starts at 1 in
+# this run's own record dir, so a fresh ATTACHED worktree needs no carry.
 total=$((total + 1))
 PREP="$(sed -n '/^### 0-3/,/^## Step 1/p' "$SKILL")"
 fails_here=0
-if ! grep -qF 'judge' <<<"$PREP"; then
-  printf 'FAIL carry: 0-3 says nothing about judge records\n'
-  fails_here=1
-fi
 if ! grep -qF 'ATTACHED' <<<"$PREP"; then
   printf 'FAIL carry: 0-3 names no ATTACHED case\n'
+  fails_here=1
+fi
+if grep -qF 'gate-rounds' <<<"$PREP"; then
+  printf 'FAIL carry: 0-3 still reads a gate-rounds value\n'
   fails_here=1
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
@@ -96,29 +96,25 @@ if ! grep -qF 'subagent-driven-development' "$SKILL"; then
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# Row 6: 0-1 records the gate rounds from the completion gate's Report and
-# 0-3 reads that value, so the input cannot be dropped from either side.
+# Row 6: 0-1 asks two things with no gate rounds question, and 2-1 numbers
+# from 1. The gate handoff input was dropped: no round is carried in.
 total=$((total + 1))
 ONE="$(sed -n '/^### 0-1/,/^### 0-2/p' "$SKILL")"
 fails_here=0
-if ! grep -qF 'gate-rounds' <<<"$ONE"; then
-  printf 'FAIL rounds: 0-1 records no gate-rounds value\n'
+if grep -qF 'gate-rounds' <<<"$ONE"; then
+  printf 'FAIL rounds: 0-1 still records a gate-rounds value\n'
   fails_here=1
 fi
-if ! grep -qF "completion gate's Report" <<<"$ONE"; then
-  printf 'FAIL rounds: 0-1 names no source for the gate rounds\n'
+if ! grep -qF 'two things' <<<"$ONE"; then
+  printf 'FAIL rounds: 0-1 does not ask two things\n'
   fails_here=1
 fi
-if ! grep -qF 'gate-rounds' <<<"$PREP"; then
-  printf 'FAIL rounds: 0-3 does not read the gate-rounds value\n'
+if ! grep -qF 'numbering starts at 1' <<<"$TWO_ONE"; then
+  printf 'FAIL rounds: 2-1 does not start numbering at 1\n'
   fails_here=1
 fi
-if ! grep -qF 'N+1' <<<"$TWO_ONE"; then
-  printf 'FAIL rounds: 2-1 does not name the first pr-to-ready round as N+1\n'
-  fails_here=1
-fi
-if ! grep -qF 'each non-empty input' <<<"$PREP"; then
-  printf 'FAIL rounds: 0-3 demands a verdict file for empty-input rounds\n'
+if grep -qF 'N+1' <<<"$TWO_ONE"; then
+  printf 'FAIL rounds: 2-1 still continues gate numbering as N+1\n'
   fails_here=1
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
