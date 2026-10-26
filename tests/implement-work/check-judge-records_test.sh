@@ -299,4 +299,286 @@ W="$(build_repo args)"
 run_in "$W" extra
 assert_row 'one-argument' 2 '' 0
 
+# ---- accept+apply, then a fix commit: covered ----------------------------------
+
+row_start
+W="$(build_repo apply-fixed)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+git_repo_commit "$W" tracked.txt 'fixed\n' 'c2'
+run_in "$W"
+assert_row 'clean-accept-apply-fixed' 0 'OK\n' 0
+
+# ---- all reject, tree unmoved -----------------------------------------------------
+
+row_start
+W="$(build_repo all-reject)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: reject
+wrong
+EOF
+run_in "$W"
+assert_row 'all-reject-no-change' 0 'OK\n' 0
+
+# ---- empty latest input, tree moved: nothing to cover -------------------------------
+
+row_start
+W="$(build_repo empty-moved)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" </dev/null
+git_repo_commit "$W" tracked.txt 'unjudged work\n' 'c2'
+run_in "$W"
+assert_row 'empty-input-tree-moved' 0 'OK\n' 0
+
+# ---- an input item missing from the verdict --------------------------------------------
+
+row_start
+W="$(build_repo gap-missing)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Finding: second finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'input-item-missing-from-verdict' 0 'GAP 1\n' 0
+
+# ---- an accept with no value: an incomplete record, never a judgment ---------------------
+
+row_start
+W="$(build_repo gap-no-value)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+fix it
+EOF
+run_in "$W"
+assert_row 'accept-without-value' 0 'GAP 1\n' 0
+
+# ---- a reworded header is a different header -----------------------------------------------
+
+row_start
+W="$(build_repo gap-reword)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text, fixed
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'reworded-header' 0 'GAP 1\n' 0
+
+# ---- a rejected candidate dropped instead of re-offered ---------------------------------------
+
+row_start
+W="$(build_repo gap-dropped)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Candidate: declined line text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Candidate: declined line text
+Verdict: reject
+already judged
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Verdict: reject
+wrong
+EOF
+run_in "$W"
+assert_row 'declined-candidate-not-reoffered' 0 'GAP 1\n' 0
+
+# ---- a rejected candidate re-offered in the next input ------------------------------------------
+
+row_start
+W="$(build_repo gap-reoffered)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Candidate: declined line text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Candidate: declined line text
+Verdict: reject
+already judged
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Candidate: declined line text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+Verdict: reject
+wrong
+Candidate: declined line text
+Verdict: reject
+still declined
+EOF
+run_in "$W"
+assert_row 'declined-candidate-reoffered' 0 'OK\n' 0
+
+# ---- a rejected candidate on the final round needs no re-offer --------------------------------------
+
+row_start
+W="$(build_repo gap-final)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Candidate: declined line text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Candidate: declined line text
+Verdict: reject
+already judged
+EOF
+run_in "$W"
+assert_row 'declined-on-final-round' 0 'OK\n' 0
+
+# ---- tree moved with no verdict at all: the judge bypassed -----------------------------------------------
+
+row_start
+W="$(build_repo uncovered-none)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: second finding text
+EOF
+git_repo_commit "$W" tracked.txt 'unjudged fix\n' 'c3'
+run_in "$W"
+assert_row 'tree-moved-no-verdict' 0 'UNCOVERED 2\n' 0
+
+# ---- tree moved under an all-reject verdict ---------------------------------------------------
+
+row_start
+W="$(build_repo uncovered-reject)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: reject
+wrong
+EOF
+git_repo_commit "$W" tracked.txt 'unjudged fix\n' 'c2'
+run_in "$W"
+assert_row 'tree-moved-all-reject' 0 'UNCOVERED 1\n' 0
+
+# ---- tree moved under a record-only verdict -------------------------------------------------------
+
+row_start
+W="$(build_repo uncovered-record)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: record
+noted
+EOF
+git_repo_commit "$W" tracked.txt 'unjudged fix\n' 'c2'
+run_in "$W"
+assert_row 'tree-moved-record-only' 0 'UNCOVERED 1\n' 0
+
+# ---- a base absorb merged in after judging: first-parent is quiet --------------------------------------
+#
+# The base branch advances with a real non-merge commit and merges back with
+# --no-ff, so the merge is a genuine merge commit rather than a fast-forward:
+# only --first-parent keeps the absorbed side out of the rev-list. The verdict
+# rejects, so the movement is unauthorised and the row discriminates: without
+# --first-parent it answers UNCOVERED.
+
+row_start
+W="$(build_repo merge-only)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: reject
+wrong
+EOF
+git_repo_checkout "$W" base main
+git_repo_commit "$W" base.txt 'from base\n' 'base moves'
+git_repo_checkout "$W" main
+git -C "$W" merge --no-ff --no-edit -q base
+run_in "$W"
+assert_row 'merge-only-after-judgment' 0 'OK\n' 0
+
 harness_exit "$failed" "$total"

@@ -106,6 +106,17 @@ has_round() {
   path_of "$1" "$2" >/dev/null
 }
 
+# add_round <list> <round> -- the list with that round appended unless already
+# a member. Prints the result; the caller assigns it back. The trailing space
+# in the probe is load-bearing: without it the last member never matches and
+# is added twice.
+add_round() {
+  case "$1 " in
+    *" $2 "*) printf '%s' "$1" ;;
+    *) printf '%s %s' "$1" "$2" ;;
+  esac
+}
+
 # headers <file> -- the Finding:/Candidate: header lines, trailing whitespace
 # stripped, so both sides compare the same bytes.
 headers() {
@@ -174,14 +185,8 @@ if [ "$MAX" -gt 0 ]; then
             if [ -n "$(headers "$inf_s")" ] &&
               [ "$(field "$inf_s" 'Commit')" = "$c_r" ] &&
               [ "$(field "$inf_s" 'Tree')" = "$t_r" ]; then
-              case "$DOUBLE" in
-                *" $r "*) ;;
-                *) DOUBLE="${DOUBLE} $r" ;;
-              esac
-              case "$DOUBLE" in
-                *" $s "*) ;;
-                *) DOUBLE="${DOUBLE} $s" ;;
-              esac
+              DOUBLE="$(add_round "$DOUBLE" "$r")"
+              DOUBLE="$(add_round "$DOUBLE" "$s")"
             fi
           fi
           s=$((s + 1))
@@ -258,19 +263,13 @@ if [ "$MAX_INPUT" -gt 0 ]; then
         case "$vline" in
           'Verdict: accept')
             if ! printf '%s' "$block" | grep -qE '^Value: (apply|record)$'; then
-              case "$GAP" in
-                *" $r "*) ;;
-                *) GAP="${GAP} $r" ;;
-              esac
+              GAP="$(add_round "$GAP" "$r")"
             fi
             ;;
           'Verdict: reject' | 'Verdict: needs-user')
             ;;
           *)
-            case "$GAP" in
-              *" $r "*) ;;
-              *) GAP="${GAP} $r" ;;
-            esac
+            GAP="$(add_round "$GAP" "$r")"
             ;;
         esac
         case "$h" in
@@ -288,10 +287,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
                 s=$((s + 1))
               done
               if [ "$found" -eq 0 ]; then
-                case "$GAP" in
-                  *" $r "*) ;;
-                  *) GAP="${GAP} $r" ;;
-                esac
+                GAP="$(add_round "$GAP" "$r")"
               fi
             fi
             ;;
@@ -304,10 +300,7 @@ HEADERS_EOF
       if grep -qFxvf "$svf" <<HEADERS_EOF2; then
 $(headers "$inf")
 HEADERS_EOF2
-        case "$GAP" in
-          *" $r "*) ;;
-          *) GAP="${GAP} $r" ;;
-        esac
+        GAP="$(add_round "$GAP" "$r")"
       fi
     fi
     r=$((r + 1))
