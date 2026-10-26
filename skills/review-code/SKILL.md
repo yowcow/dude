@@ -52,14 +52,14 @@ One invocation is one pass, and a pass is as many rounds as it takes:
    With them come one answer per ledger row: the finding it became, keeping the row it came from, or a `Ledger row closed`, `Ledger row declined`, or `Ledger row recorded` line as the worker returned it. A closed row is answered for its round — it takes no verdict, joins no earlier rounds' record, and is handed to no judge, whose candidates are `Declined to judge` lines alone; the ledger re-hands it to the next round, which answers it from the code as it then stands.
 4. Count the `needs-user` verdicts before applying anything.
   - One or more ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: go to step 7 and leave non-clean, per **Escalation**.
-  - Otherwise apply only findings whose verdict is `accept` with value `apply` yourself — severity does not decide this — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. Never apply an `accept` with value `record`, and never fix a Declined to judge line itself; fixing a Minor straight from the reviewer's text silently applies work the judge never accepted.
+  - Otherwise apply only findings whose verdict is `accept` with value `apply` yourself — severity does not decide this — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. Never apply an `accept` with value `record`, and never fix a Declined to judge line itself; fixing straight from the reviewer's text silently applies work the judge never accepted.
   - When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
   - Record findings whose verdict is `accept` with value `record`; don't fix them.
 5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output. When step 4 applied nothing, skip this check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**. A pass whose step 4 ended on a `needs-user` does not come back here.
 7. Report per **Report**.
 
-A round is one review → judge → fix → verify cycle. The pass is clean per `using-dude`'s **Loop convergence** loop-clean when a round's review produces no Critical or Important finding and no verdict came back `needs-user`. Minor findings are recorded, not blocking — except one whose verdict came back `needs-user`, per **Escalation**.
+A round is one review → judge → fix → verify cycle. The pass is clean per `using-dude`'s **Loop convergence** loop-clean when a round's review produces no Critical or Important finding and no verdict came back `needs-user`. Findings with value `record` are recorded rather than fixed — except one whose verdict came back `needs-user`, per **Escalation**. Whether a finding blocks is still its severity.
 
 ## Escalation
 
