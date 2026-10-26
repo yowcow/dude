@@ -26,12 +26,13 @@ This skill dispatches no marked worker of its own: the reviewer and the judging 
 
 ## Step 0: Set up the run
 
-### 0-1. Ask ready-on-clean and reviewers
+### 0-1. Ask ready-on-clean, reviewers, and the gate rounds
 
-Ask the user two things, once:
+Ask the user three things, once:
 
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer as the **ready-on-clean** flag. Step 3 branches on it.
 - Which of Copilot, Claude, and requesting-code-review should this run request? Ask it as a pick-any choice prompt over the three, plus none. Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review. Record the answer as the **reviewers** set. Step 2-1 requests only from that set. Do not probe availability here — that is 2-1, after 2-0.
+- Does this run follow a completion gate, and if so, which round did it hand off last? Record the answer as **gate-rounds** — that number, or 0 when no gate handed off and the branch was cut outside that flow. Its source is the completion gate's Report ("the completion gate's rounds"); ask rather than deriving it from the checkout, which cannot hold it. 0-3 checks rounds 1 through N are present, and 2-1 continues the same numbering.
 
 ### 0-2. Resolve the run from the PR reference
 
@@ -60,7 +61,7 @@ Call `tools/attach-workspace.sh <branch> <path>`. `<path>` follows `superpowers:
 - `ATTACHED <path>` — the branch existed locally or on the remote, and a new workspace now tracks it. Use it.
 - `CREATE` — **stop.** A PR's head branch exists on its repository's remote by definition, and 0-2 has already established that this checkout is that repository, so nothing to attach to means the branch was deleted under an open PR. Report it; don't cut a fresh branch, which would put an empty history under the name the PR points at.
 
-Once `REUSE` has measured clean or `ATTACHED` has answered, check the judge handoff carry: where this run follows a completion gate, the handed-off rounds' record files must be present in this worktree's record dir. Judge records are git-dir-local, so a fresh `ATTACHED` worktree holds none — take the third terminal state at selection, naming the missing rounds, and never fabricate records nor read the empty-dir `OK` as clean. The round-trip runs in the worktree holding the gate's records (`REUSE` on the same branch). Then run `<skill-dir>/scripts/clear-recheck-record.sh` and `<skill-dir>/scripts/exit-batch-record.sh clear` from `<path>`, before anything else there, so a new run starts with no batch marked. The record Step 3's re-confirmation leaves outlives the run, so an earlier run on the same SHA — one with ready-on-clean = no, say — would otherwise leave Step 3's ready open to a run that never re-confirmed.
+Once `REUSE` has measured clean or `ATTACHED` has answered, check the judge handoff carry: with **gate-rounds** at N above 0, rounds 1..N's input and verdict records must all be present in this worktree's record dir. Judge records are git-dir-local, so a fresh `ATTACHED` worktree holds none and fails that check whenever a gate handed off — name every missing round and take the third terminal state at selection, and never fabricate records nor read the empty-dir `OK` as clean. The round-trip runs in the worktree holding the gate's records (`REUSE` on the same branch). With N at 0 no gate handed off and there is nothing to carry. Then run `<skill-dir>/scripts/clear-recheck-record.sh` and `<skill-dir>/scripts/exit-batch-record.sh clear` from `<path>`, before anything else there, so a new run starts with no batch marked. The record Step 3's re-confirmation leaves outlives the run, so an earlier run on the same SHA — one with ready-on-clean = no, say — would otherwise leave Step 3's ready open to a run that never re-confirmed.
 
 **Run every later step from that workspace.** Without this, the run edits, commits and pushes in whatever tree the session started in — with `<branch>` unchecked-out, that is whatever branch was: Step 1's diagnosis fix and 2-3's blocking `accept` fixes are committed onto the default branch and pushed there, reviewed by nobody, while the PR they were written for does not move.
 

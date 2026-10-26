@@ -96,4 +96,23 @@ if ! grep -qF 'subagent-driven-development' "$SKILL"; then
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# Row 6: 0-1 records the gate rounds from the completion gate's Report and
+# 0-3 reads that value, so the input cannot be dropped from either side.
+total=$((total + 1))
+ONE="$(sed -n '/^### 0-1/,/^### 0-2/p' "$SKILL")"
+fails_here=0
+if ! grep -qF 'gate-rounds' <<<"$ONE"; then
+  printf 'FAIL rounds: 0-1 records no gate-rounds value\n'
+  fails_here=1
+fi
+if ! grep -qF "completion gate's Report" <<<"$ONE"; then
+  printf 'FAIL rounds: 0-1 names no source for the gate rounds\n'
+  fails_here=1
+fi
+if ! grep -qF 'gate-rounds' <<<"$PREP"; then
+  printf 'FAIL rounds: 0-3 does not read the gate-rounds value\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
