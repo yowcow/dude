@@ -78,4 +78,22 @@ if ! grep -qF 'ATTACHED' <<<"$PREP"; then
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
+# Row 5: the Exit batch marks itself single-shot and the SDD per-task and
+# tail reviews are declared out of scope for this wiring.
+total=$((total + 1))
+fails_here=0
+if ! grep -qF 'exit-batch-record.sh' <<<"$EXIT_BATCH"; then
+  printf 'FAIL batch: Exit batch does not cite the batch sentinel\n'
+  fails_here=1
+fi
+if ! grep -qF 'ALREADY-BATCHED' <<<"$EXIT_BATCH"; then
+  printf 'FAIL batch: Exit batch names no already-batched refusal\n'
+  fails_here=1
+fi
+if ! grep -qF 'subagent-driven-development' "$SKILL"; then
+  printf 'FAIL scope: SKILL declares no SDD per-task/tail scope boundary\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
 harness_exit "$failed" "$total"
