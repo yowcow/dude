@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Stale-detection gate for the pr-to-ready judge handoff prose contract.
+# Single source for the check is
+# skills/implement-work/scripts/check-judge-records.sh's header:
+# skills/pr-to-ready/SKILL.md cites that exact path and restates no output
+# literal, so a script output change cannot drift silently past the prose.
+set -euo pipefail
+
+# shellcheck source-path=SCRIPTDIR
+# shellcheck source=../lib/harness.sh
+# shellcheck disable=SC1091
+. "$(dirname -- "${BASH_SOURCE[0]}")/../lib/harness.sh"
+
+SKILL="${REPO_ROOT}/skills/pr-to-ready/SKILL.md"
+CHECK='check-judge-records.sh'
+
+failed=0
+total=0
+
+# Row 1: the SKILL cites the implement-work judge check by script name and
+# names that script's header as the single source. (A repo-root-relative
+# path into another skill's scripts/ dir is banned by skill-deps, so the
+# citation is by skill and script name, resolved from the worktree root.)
+total=$((total + 1))
+fails_here=0
+if ! grep -qF "$CHECK" "$SKILL"; then
+  printf 'FAIL cite: SKILL does not cite %s\n' "$CHECK"
+  fails_here=1
+fi
+if ! grep -qF 'single source' "$SKILL"; then
+  printf 'FAIL cite: SKILL names no single source for the judge check\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Row 2: the 2-1 requesting-code-review call carries the judge record
+# directory and round with the none-covers caveat.
+total=$((total + 1))
+TWO_ONE="$(sed -n '/^### 2-1/,/^### 2-2/p' "$SKILL")"
+fails_here=0
+if ! grep -qF 'judge record' <<<"$TWO_ONE"; then
+  printf 'FAIL carry: 2-1 does not name the judge record\n'
+  fails_here=1
+fi
+if ! grep -qF 'what is missing' <<<"$TWO_ONE"; then
+  printf 'FAIL carry: 2-1 names no none-covers caveat\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Row 3: every 2-3 fix push and the Exit batch run the judge check first.
+total=$((total + 1))
+TWO_THREE="$(sed -n '/^### 2-3/,/^### Clean/p' "$SKILL")"
+fails_here=0
+if ! grep -qF "$CHECK" <<<"$TWO_THREE"; then
+  printf 'FAIL gate: 2-3 does not run the judge check before pushing\n'
+  fails_here=1
+fi
+EXIT_BATCH="$(sed -n '/^\*\*Exit batch\.\*\*/, /Step 3/p' "$SKILL")"
+if ! grep -qF "$CHECK" <<<"$EXIT_BATCH"; then
+  printf 'FAIL gate: Exit batch does not run the judge check before pushing\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# Row 4: 0-3 refuses a fresh ATTACHED worktree with no judge records.
+# The script answers OK on an empty record dir, so that OK is never clean.
+total=$((total + 1))
+PREP="$(sed -n '/^### 0-3/,/^## Step 1/p' "$SKILL")"
+fails_here=0
+if ! grep -qF 'judge' <<<"$PREP"; then
+  printf 'FAIL carry: 0-3 says nothing about judge records\n'
+  fails_here=1
+fi
+if ! grep -qF 'ATTACHED' <<<"$PREP"; then
+  printf 'FAIL carry: 0-3 names no ATTACHED case\n'
+  fails_here=1
+fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+harness_exit "$failed" "$total"
