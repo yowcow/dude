@@ -459,6 +459,7 @@ row_start
 W="$(build_repo args)"
 run_in "$W" extra
 assert_row 'one-argument' 2 '' 0
+tally check_stderr_has 'one-argument: usage is printed' 'Usage:'
 
 # ---- accept+apply, then a fix commit: covered ----------------------------------
 
