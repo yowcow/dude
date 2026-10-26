@@ -255,7 +255,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
       while IFS= read -r h; do
         [ -n "$h" ] || continue
         block="$(verdict_block "$svf" "$h")"
-        vline="$(printf '%s' "$block" | sed -n 's/^\(Verdict: .*\)/\1/p' | sed -n '1p')"
+        vline="$(printf '%s' "$block" | sed -n '/^Verdict: /p' | sed -n '1p')"
         case "$vline" in
           'Verdict: accept')
             if ! printf '%s' "$block" | grep -qE '^Value: (apply|record)$'; then
@@ -275,7 +275,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
               found=0
               while [ "$s" -le "$MAX_INPUT" ]; do
                 if has_round "$INPUTS" "$s"; then
-                  if printf '%s\n' "$(headers "$(path_of "$INPUTS" "$s")")" | grep -qFx -- "$h"; then
+                  if headers "$(path_of "$INPUTS" "$s")" | grep -qFx -- "$h"; then
                     found=1
                     break
                   fi
