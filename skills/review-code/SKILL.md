@@ -75,6 +75,7 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
 
 - the scope reviewed and how it was resolved, including whether requirements were available
 - the number of rounds run
+- where this pass wrote pairs, the consumed round count k and the next-start S+k
 - accepted findings, with location and what changed
 - rejected findings, with the reason
 - on a `needs-user` stop, the stopped round's verdicts as they stand unapplied — each `accept` with its proposed fix, each `reject` with its reason, and each `needs-user` finding with why the worker put the decision to a person. Earlier rounds report in the applied form above.
