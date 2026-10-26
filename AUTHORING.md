@@ -58,6 +58,10 @@ A script whose GitHub reads and writes move onto the facts contract (`skills/imp
 
 The contracts those shared tools implement live under `skills/implement-work/references/` and are cited from `tools/` and other skills by path. That direction is intentional and stays: the contracts were written where their first callers lived, moving them churns every header and test that cites them, and the citations are documentation — no script sources another skill's file, every call goes through `SCRIPT_DIR` to an executable.
 
+## Uniform, branch-free behavior
+
+Compose layers from transparent parts: each part does one thing without branching on who calls it, and the combination does the rest. A shared part behaves the same from any caller; a caller-specific case means the structure is wrong and gets refactored, not another branch. (SOLID's single-responsibility and open-closed behind the first sentence, Liskov substitution behind the second, DRY in refusing the duplicated branch.) The (c): a shared script branching on its caller's name silently serves the old default to a new caller, and no gate on the new path reads that branch to catch it.
+
 ## Findings that ask for more text
 
 This material has been trimmed and grown back before, every time through the same door: a review finding of the form "case X is missing". Written as the author's own restraint, the deletion test never reaches that door — the author is not the one asking. So it binds the **reader of a finding** too.
