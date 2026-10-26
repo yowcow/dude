@@ -280,10 +280,9 @@ if [ "$MAX_INPUT" -gt 0 ]; then
   # and with movement reports UNCOVERED.
   r=1
   while [ "$r" -lt "$MAX_INPUT" ]; do
-    if ! has_round "$VERDICTS" "$r" && has_round "$INPUTS" "$r"; then
-      if [ -n "$(headers "$(path_of "$INPUTS" "$r")")" ]; then
-        GAP="$(add_round "$GAP" "$r")"
-      fi
+    if ! has_round "$VERDICTS" "$r" && has_round "$INPUTS" "$r" &&
+      [ -n "$(headers "$(path_of "$INPUTS" "$r")")" ]; then
+      GAP="$(add_round "$GAP" "$r")"
     fi
     r=$((r + 1))
   done
@@ -324,9 +323,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
             fi
             ;;
         esac
-      done <<HEADERS_EOF
-$hdrs
-HEADERS_EOF
+      done <<<"$hdrs"
     fi
     r=$((r + 1))
   done
@@ -374,9 +371,7 @@ if [ "$MAX_INPUT" -gt 0 ]; then
           authorised=1
           break
         fi
-      done <<HEADERS_EOF
-$hdrs
-HEADERS_EOF
+      done <<<"$hdrs"
       if [ "$authorised" -eq 0 ]; then
         echo "UNCOVERED ${MAX_INPUT}"
         exit 0
