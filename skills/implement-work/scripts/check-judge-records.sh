@@ -74,8 +74,10 @@ if [ -d "$RECORD_DIR" ]; then
         is_input=0
         ;;
     esac
+    # A leading zero is not a round: judge-input-01.md would otherwise
+    # collide with judge-input-1.md in path_of, which keeps the first match.
     case "$r" in
-      '' | *[!0-9]*) continue ;;
+      '' | *[!0-9]* | 0[0-9]*) continue ;;
     esac
     r="$((10#$r))"
     [ "$r" -le 0 ] && continue
@@ -100,8 +102,11 @@ path_of() {
 # field <file> <key> -- the value of the first "Key: value" line in the
 # envelope (lines before the first blank line), if any. Prose after the
 # blank line stays verbatim and may mimic a prefix, so it is never read.
+# A file with no blank line has no envelope, so nothing is read from it.
 field() {
-  sed -n '1,/^$/p' "$1" 2>/dev/null | sed -n "s/^$2: //p" | sed -n '1p'
+  if grep -q '^$' "$1" 2>/dev/null; then
+    sed -n '1,/^$/p' "$1" 2>/dev/null | sed -n "s/^$2: //p" | sed -n '1p'
+  fi
 }
 
 # has_round <list> <round>
@@ -120,10 +125,12 @@ add_round() {
   esac
 }
 
-# headers <file> -- the Finding:/Candidate: header lines, trailing whitespace
-# stripped, so both sides compare the same bytes.
+# headers <file> -- the Finding:/Candidate: header lines of the body
+# (lines after the first blank line), trailing whitespace stripped, so both
+# sides compare the same bytes. The envelope is never scanned: a
+# header-looking line there is a malformed envelope, not an item.
 headers() {
-  grep '^Finding: \|^Candidate: ' "$1" 2>/dev/null | sed 's/[[:space:]]*$//' || true
+  awk 'f; /^$/{f=1}' "$1" 2>/dev/null | grep '^Finding: \|^Candidate: ' | sed 's/[[:space:]]*$//' || true
 }
 
 # max_round -- the highest round seen across both lists, 0 when neither holds
@@ -154,7 +161,9 @@ fi
 # A verdict naming another round's input file, the same non-empty identity
 # recorded as two rounds (the Exit-batch double-run shape: the batch ran
 # twice and recorded the same judgment as a new round), or a verdict filed
-# for an empty input. Verdict Commit/Tree echoes the input's identity and is
+# for an empty input. A missing Input: pointer is a malformed envelope, not
+# a double record: the GAP section reports it. Verdict Commit/Tree echoes
+# the input's identity and is
 # never read: the anchor is the input's Commit/Tree plus the verdict's Input:
 # pointer.
 DOUBLE=""
@@ -163,7 +172,8 @@ if [ "$MAX" -gt 0 ]; then
   while [ "$r" -le "$MAX" ]; do
     if has_round "$VERDICTS" "$r"; then
       vf="$(path_of "$VERDICTS" "$r")"
-      if [ "$(field "$vf" 'Input')" != "judge-input-${r}.md" ]; then
+      ptr="$(field "$vf" 'Input')"
+      if [ -n "$ptr" ] && [ "$ptr" != "judge-input-${r}.md" ]; then
         DOUBLE="${DOUBLE} $r"
       elif has_round "$INPUTS" "$r"; then
         inf="$(path_of "$INPUTS" "$r")"
@@ -213,7 +223,8 @@ if [ "$MAX" -gt 0 ]; then
 fi
 
 # ---- IDENTITY --------------------------------------------------------------
-# Commit names no object, or Tree is not that commit's tree. The cat-file
+# Commit names no object, Tree is not that commit's tree, or the envelope
+# Round: disagrees with the filename's round. The cat-file
 # guard runs first and every rev-parse is failure-safe, so a bad commit
 # answers IDENTITY instead of dying under `set -e`.
 IDENTITY=""
@@ -230,6 +241,8 @@ if [ "$MAX" -gt 0 ]; then
         IDENTITY="${IDENTITY} $r"
       elif [ "$wt" != "$t" ]; then
         IDENTITY="${IDENTITY} $r"
+      elif [ "$(field "$inf" 'Round')" != "$r" ]; then
+        IDENTITY="${IDENTITY} $r"
       fi
     fi
     r=$((r + 1))
@@ -242,7 +255,9 @@ fi
 
 # ---- GAP --------------------------------------------------------------------
 # An input item the verdict does not cover, an accept without its fix/value,
-# a non-empty input round with no verdict file once a later round exists, or
+# a non-empty input round with no verdict file once a later round exists, a
+# verdict with no Input: pointer, duplicate identical headers sharing one
+# verdict block, or
 # a rejected or needs-user item dropped instead of re-offered in a
 # later input. A declined or needs-user item on the final round needs
 # no re-offer. Closed/recorded
@@ -296,9 +311,15 @@ if [ "$MAX_INPUT" -gt 0 ]; then
     if has_round "$VERDICTS" "$r"; then
       inf="$(path_of "$INPUTS" "$r")"
       vf="$(path_of "$VERDICTS" "$r")"
+      if [ -z "$(field "$vf" 'Input')" ]; then
+        GAP="$(add_round "$GAP" "$r")"
+      fi
       svf="${TMPD}/judge-verdict-${r}.stripped"
       sed 's/[[:space:]]*$//' "$vf" >"$svf"
       hdrs="$(headers "$inf")"
+      if [ -n "$(printf '%s\n' "$hdrs" | sort | uniq -d)" ]; then
+        GAP="$(add_round "$GAP" "$r")"
+      fi
       while IFS= read -r h; do
         [ -n "$h" ] || continue
         verdict="$(verdict_of "$svf" "$h")"

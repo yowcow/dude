@@ -26,7 +26,19 @@
 #   - drop the stateful GAP parse, keep header-set difference only:
 #     `accept-without-value`, `declined-candidate-not-reoffered`
 #   - drop the candidate re-offer check: `declined-candidate-not-reoffered`,
-#     `finding-needs-user-not-reoffered`
+#     `finding-needs-user-not-reoffered`, `finding-reject-not-reoffered`
+#   - scan headers over the whole file instead of the post-envelope body:
+#     `envelope-mimic-not-header` (answers GAP 1 instead of OK)
+#   - drop the envelope Round: check: `round-label-mismatch` (answers OK
+#     instead of IDENTITY 1)
+#   - accept leading-zero numerals as rounds: `zero-padded-input-not-a-round`
+#     (answers OK instead of MISSING 1)
+#   - drop the duplicate-header check: `duplicate-header-single-block`
+#     (answers OK instead of GAP 1)
+#   - report a missing Input: pointer as DOUBLE: `verdict-without-input-pointer`
+#     (answers DOUBLE 1 instead of GAP 1)
+#   - read field() past a missing blank line: `no-blank-line-is-malformed`
+#     (answers OK instead of IDENTITY 1)
 #   - drop the DIRTY check: `dirty-tree`, `untracked-file`,
 #     `untracked-file-hidden-by-config`
 #   - probe with `git status --porcelain` (no --untracked-files=normal):
@@ -146,6 +158,30 @@ EOF
 run_in "$W"
 assert_row 'round-gap' 0 'MISSING 2\n' 0
 
+# ---- a zero-padded filename is not a round -----------------------------------
+#
+# judge-input-01.md carries round 1's shape but never enters the scan, so the
+# verdict pointing at the canonical name has no same-round input: MISSING 1.
+# Without the canonical-numeral check the padded file is read as round 1 and
+# the run answers OK.
+
+row_start
+W="$(build_repo zero-padded)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+{
+  printf 'Round: 1\nCommit: %s\nTree: %s\n\n' "$C" "$T"
+  printf 'Finding: first finding text\n'
+} >"$(recdir "$W")/judge-input-01.md"
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'zero-padded-input-not-a-round' 0 'MISSING 1\n' 0
+
 # ---- a verdict with no same-round input -----------------------------------
 
 row_start
@@ -253,6 +289,26 @@ EOF
 run_in "$W"
 assert_row 'verdict-for-empty-input' 0 'DOUBLE 1\n' 0
 
+# ---- a verdict with no Input line is malformed, not a double record ---------
+#
+# The pointer is empty, so the DOUBLE name check is skipped and the GAP
+# section reports the malformed envelope. Without the distinction this
+# answers DOUBLE 1.
+
+row_start
+W="$(build_repo missing-pointer)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+{
+  printf 'Round: 1\nCommit: %s\nTree: %s\n\n' "$C" "$T"
+  printf 'Finding: first finding text\nVerdict: accept\nValue: apply\nfix it\n'
+} >"$(recdir "$W")/judge-verdict-1.md"
+run_in "$W"
+assert_row 'verdict-without-input-pointer' 0 'GAP 1\n' 0
+
 # ---- Tree line does not match the Commit line -------------------------------
 
 row_start
@@ -287,6 +343,66 @@ T="$(head_tree "$W")"
 } >"$(recdir "$W")/judge-input-1.md"
 run_in "$W"
 assert_row 'commit-in-prose-not-envelope' 0 'IDENTITY 1\n' 0
+
+# ---- a header-looking line in the envelope is not an item -------------------
+#
+# headers() scans the body only, so the envelope mimic never becomes an item
+# and the covered round stays OK. A whole-file scan reads it as an uncovered
+# item and answers GAP 1.
+
+row_start
+W="$(build_repo envelope-mimic)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+{
+  printf 'Round: 1\nFinding: mimic in envelope, not an item\nCommit: %s\nTree: %s\n\n' "$C" "$T"
+  printf 'Finding: first finding text\n'
+} >"$(recdir "$W")/judge-input-1.md"
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'envelope-mimic-not-header' 0 'OK\n' 0
+
+# ---- an envelope Round disagreeing with the filename is mislabeled ----------
+#
+# Round: 2 in judge-input-1.md answers IDENTITY 1. Without the check the
+# covered round reads as fine and the run answers OK.
+
+row_start
+W="$(build_repo round-mismatch)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+{
+  printf 'Round: 2\nCommit: %s\nTree: %s\n\n' "$C" "$T"
+  printf 'Finding: first finding text\n'
+} >"$(recdir "$W")/judge-input-1.md"
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'round-label-mismatch' 0 'IDENTITY 1\n' 0
+
+# ---- a file with no blank line has no envelope ------------------------------
+#
+# field() reads nothing without the blank-line split, so the commit is empty
+# and the file answers IDENTITY 1. Without the guard the whole file is read
+# as the envelope and the run answers OK.
+
+row_start
+W="$(build_repo no-blank-line)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+printf 'Round: 1\nCommit: %s\nTree: %s\nFinding: first finding text\n' "$C" "$T" \
+  >"$(recdir "$W")/judge-input-1.md"
+run_in "$W"
+assert_row 'no-blank-line-is-malformed' 0 'IDENTITY 1\n' 0
 
 # ---- uncommitted edit: DIRTY, not anything else -------------------------------
 
@@ -409,6 +525,29 @@ fix it
 EOF
 run_in "$W"
 assert_row 'input-item-missing-from-verdict' 0 'GAP 1\n' 0
+
+# ---- duplicate identical headers share one verdict block --------------------
+#
+# Two identical input lines read the same single block, so the second item is
+# uncovered: GAP 1. Without the duplicate check both iterations read the one
+# block as covered and the run answers OK.
+
+row_start
+W="$(build_repo duplicate-header)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: same text twice
+Finding: same text twice
+EOF
+write_verdict "$W" 1 1 "$C" "$T" <<'EOF'
+Finding: same text twice
+Verdict: accept
+Value: apply
+fix it
+EOF
+run_in "$W"
+assert_row 'duplicate-header-single-block' 0 'GAP 1\n' 0
 
 # ---- gaps in two rounds report both, ascending ----------------------------------------
 
@@ -630,6 +769,43 @@ wrong
 EOF
 run_in "$W"
 assert_row 'finding-needs-user-not-reoffered' 0 'GAP 1\n' 0
+
+# ---- a rejected finding dropped instead of re-offered ----
+#
+# The symmetric half of the Finding: re-offer gate: a reject dropped in a
+# later input answers GAP 1, like the needs-user shape above and both
+# Candidate: shapes.
+
+row_start
+W="$(build_repo gap-dropped-finding-reject)"
+C1="$(head_sha "$W")"
+T1="$(head_tree "$W")"
+write_input "$W" 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Finding: second finding text
+EOF
+write_verdict "$W" 1 1 "$C1" "$T1" <<'EOF'
+Finding: first finding text
+Verdict: accept
+Value: apply
+fix it
+Finding: second finding text
+Verdict: reject
+wrong
+EOF
+git_repo_commit "$W" tracked.txt 'round two\n' 'c2'
+C2="$(head_sha "$W")"
+T2="$(head_tree "$W")"
+write_input "$W" 2 "$C2" "$T2" <<'EOF'
+Finding: third finding text
+EOF
+write_verdict "$W" 2 2 "$C2" "$T2" <<'EOF'
+Finding: third finding text
+Verdict: reject
+wrong
+EOF
+run_in "$W"
+assert_row 'finding-reject-not-reoffered' 0 'GAP 1\n' 0
 
 # ---- a rejected candidate re-offered in the next input ------------------------------------------
 
