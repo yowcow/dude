@@ -15,6 +15,9 @@
 # pre-fix version; each deliberately broken variant below is one defect wide,
 # and the rows it must fail are named:
 #   - drop the identical-identity DOUBLE check: `same-identity-two-rounds`
+#   - drop the header-equality condition in the identical-identity DOUBLE
+#     check (old over-broad behavior): `same-identity-different-findings`
+#     (answers DOUBLE instead of GAP)
 #   - drop the verdict-Input-name check: `verdict-names-wrong-input`
 #   - drop the verdict-for-empty-input DOUBLE check: `verdict-for-empty-input`
 #   - compare Tree to HEAD^{tree} instead of <commit>^{tree}:
@@ -187,6 +190,21 @@ Finding: first finding text
 EOF
 run_in "$W"
 assert_row 'same-identity-two-rounds' 0 'DOUBLE 1 2\n' 0
+
+# ---- same identity, different findings: a re-judgment, not a double ------
+
+row_start
+W="$(build_repo same-identity-diff)"
+C="$(head_sha "$W")"
+T="$(head_tree "$W")"
+write_input "$W" 1 "$C" "$T" <<'EOF'
+Finding: first finding text
+EOF
+write_input "$W" 2 "$C" "$T" <<'EOF'
+Finding: second finding text
+EOF
+run_in "$W"
+assert_row 'same-identity-different-findings' 0 'GAP 1\n' 0
 
 # ---- empty identity twice is malformed, not a double record ----
 

@@ -174,8 +174,10 @@ if [ "$MAX" -gt 0 ]; then
     fi
     r=$((r + 1))
   done
-  # Identical non-empty (Commit, Tree) in two input files. Empty-item rounds
-  # are excluded: repeated clean polls legitimately re-record.
+  # Identical non-empty (Commit, Tree) with identical headers in two input
+  # files. Empty-item rounds are excluded: repeated clean polls legitimately
+  # re-record. Same tree with different findings is a re-judgment, not a
+  # double record.
   r=1
   while [ "$r" -le "$MAX" ]; do
     if has_round "$INPUTS" "$r"; then
@@ -189,7 +191,8 @@ if [ "$MAX" -gt 0 ]; then
             inf_s="$(path_of "$INPUTS" "$s")"
             if [ -n "$(headers "$inf_s")" ] &&
               [ "$(field "$inf_s" 'Commit')" = "$c_r" ] &&
-              [ "$(field "$inf_s" 'Tree')" = "$t_r" ]; then
+              [ "$(field "$inf_s" 'Tree')" = "$t_r" ] &&
+              [ "$(headers "$inf_s")" = "$(headers "$inf")" ]; then
               DOUBLE="$(add_round "$DOUBLE" "$r")"
               DOUBLE="$(add_round "$DOUBLE" "$s")"
             fi
