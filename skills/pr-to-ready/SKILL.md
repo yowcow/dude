@@ -28,11 +28,11 @@ Request each selected reviewer by the agent's own means; skip a name that is una
 
 ## Clean
 
-Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work for re-approval.
+Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work for re-approval — otherwise the loop silently ships work the agreed design no longer covers.
 
 ## Replies
 
-Answer each threaded finding in its thread and resolve the thread; record every threadless finding in one plain comment, without elaborate formatting. Suppressed-comment blocks are a read source alongside threads: a finding that never became a thread still needs its verdict recorded, and quoting a review must never re-trigger the reviewer it came from.
+Answer each threaded finding in its thread and resolve the thread; record every threadless finding in one plain comment, without elaborate formatting. Suppressed-comment blocks are a read source alongside threads: a finding that never became a thread still needs its verdict recorded, and quoting a review must never re-trigger the reviewer it came from — otherwise the quote silently summons a fresh review of the run's own words.
 
 ## Base retarget
 
