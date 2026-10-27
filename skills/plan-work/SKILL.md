@@ -9,8 +9,8 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 
 - The orchestrator owns every decision: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, folding accepted findings in, calling convergence or escalation, and publishing. Delegated decisions publish a plan nobody decided, reported as agreed.
 - Those two skills own their internal procedures: supply their inputs and act on their outputs, never reaching inside or dispatching reviewers, or the plan reads as reviewed without passing review. `review-plan` never edits what it reviewed, so folding in and re-running belong here: expecting it to apply edits publishes the pre-findings list as if findings were folded in.
-- Nothing else drafts the TODO list: no sub-skill produces a PR-granularity breakdown, so write it here against **Output contract**, or **Publish** ships items `implement-work` cannot pick up one at a time.
-- This skill dispatches no worker. Invoke `propose-alternatives` by name; it owns its procedure, not a local reimplementation no gate catches.
+- Nothing else drafts the TODO list: no sub-skill produces a PR-granularity breakdown, so write it here against **Output contract**.
+- This skill dispatches no worker. Invoke `propose-alternatives` by name; it owns its procedure.
 
 ## Boundaries
 
@@ -51,7 +51,7 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 
 ## Publish
 
-- Converge the `review-plan` loop first; nothing reaches GitHub before that. An unreviewed design published first collects children citing it, and the later renumbering silently invalidates every citation.
+- Converge the `review-plan` loop first; nothing reaches GitHub before that.
 - Settle where the artifact gets published before posting anything. On the findings entry, first check the tracking issue's comments for the report itself: already there, cite that comment's URL; in chat only, post it ahead of the design comment, via `using-dude`'s **Stage boundaries** confirm-then-publish ask; if that ask is declined, settle with a person how the design comment meets **Output contract**'s citation rule. A report left in chat with no URL cited leaves children carrying a parent URL with no baseline under it.
 - Post the design, the split policy, and the numbered TODO list as one comment for this work, and take its id now, before any child exists; never edit your last comment on the issue instead. Editing it instead overwrites that comment's content, such as the findings report just posted, while the run reports a fresh publish.
 - On re-entry there is no new post: that comment exists, and its id is the `#issuecomment-<id>` fragment of the URL the children carry, so recover it there and edit. Posting again leaves two design comments with the children citing the older one.
@@ -60,8 +60,8 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 
 ## Pass
 
-1. Resolve **Entry**. A design invalidated downstream skips steps 2 and 3. Investigation findings skip step 2. Routing findings via step 2 renames the purpose to the findings text, so the alternatives pass reviews the wrong problem.
-2. Invoke `propose-alternatives` once when the purpose is named: the tracking issue's problem, or the request's problem with no issue. Hand it that purpose, the current artifact — the issue or request and the means it asks for — and the read root, the default branch: use the session checkout only when it already sits on that branch, otherwise read the default-branch ref at its current tip, never the session tree; create no worktree. Reading the session tree on a feature branch judges alternatives against unmerged commits, recommending a shape that holds only atop work that may never merge. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are `propose-alternatives`'s own procedure: on return continue, and on revisit design take the finding to **Design agreement** without proceeding to step 3. Carrying a revisit-design finding onward brings an unapproved shape into the TODO list while the record claims agreement.
+1. Resolve **Entry**. A design invalidated downstream skips steps 2 and 3. Investigation findings skip step 2.
+2. Invoke `propose-alternatives` once when the purpose is named: the tracking issue's problem, or the request's problem with no issue. Hand it that purpose, the current artifact — the issue or request and the means it asks for — and the read root, the default branch: use the session checkout only when it already sits on that branch, otherwise read the default-branch ref, fetched to its current tip, never the session tree; create no worktree. Reading the session tree on a feature branch judges alternatives against unmerged commits, recommending a shape that holds only atop work that may never merge. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are `propose-alternatives`'s own procedure: on return continue, and on revisit design take the finding to **Design agreement** without proceeding to step 3. Carrying a revisit-design finding onward brings an unapproved shape into the TODO list while the record claims agreement.
 3. Research: read the issue, where there is one, and the relevant code before asking or proposing. Proposing before reading publishes boundaries contradicting the codebase, and `review-plan` reviews fictional scope.
 4. Reach **Design agreement**.
 5. Draft the design write-up and the numbered TODO list yourself against **Output contract**, on re-entry including the match against existing children, settled before step 6. Drafting without that match lets review approve a list silently duplicating or dropping existing children.
@@ -72,7 +72,7 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 ## Escalation
 
 - This is clean per `using-dude`'s **Loop convergence** loop-clean when the published artifact satisfies **Output contract** and the last `review-plan` pass returned no blocking finding.
-- This loop's stopping conditions are `using-dude`'s **Loop convergence**. One round is one `review-plan` pass plus its fold-in; a finding repeats when a later pass makes the same objection to the same item in new words. A Critical finding invalidating the agreed design is never fixed in this loop: stop and return to **Design agreement** for re-approval. Fixing it in the loop ships a new design under the old agreement, showing approval that never happened.
+- This loop's stopping conditions are `using-dude`'s **Loop convergence**. One round is one `review-plan` pass plus its fold-in; a finding repeats when a later pass makes the same objection to the same item, whatever words it arrives in. A Critical finding invalidating the agreed design is never fixed in this loop: stop and return to **Design agreement** for re-approval. Fixing it in the loop ships a new design under the old agreement, showing approval that never happened.
 
 ## Report
 
