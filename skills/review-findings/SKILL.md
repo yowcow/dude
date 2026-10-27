@@ -17,7 +17,7 @@ One invocation is one pass. This skill never re-reviews on its own, never edits 
 
 ## Target
 
-One invocation reviews exactly one target, and **the caller declares it**: the findings or judgment report that is about to become the canonical record. The caller states the artifact, the question it answers, and the sources it rests on, including the measurement record's path when one covers the claims, per `using-dude`'s **Measurement records**.
+One invocation reviews exactly one target, and **the caller declares it**: the findings or judgment report that is about to become the canonical record. The caller states the artifact, the question it answers, and the sources it rests on.
 
 A findings report and a ruling published as an issue comment differ in format only. The failure modes read for here — evidence that does not carry the claim, a sweep that stopped early, a hypothesis promoted without a measurement — are the same in both, so they are one target rather than two.
 
@@ -34,7 +34,7 @@ A finding that passes the test flags that claim. It does not block publication, 
 Six, and none of them lowers the bar in **What counts as a finding**. Run the ones this report can fail under; skip the rest and say which and why.
 
 - **Evidence sufficiency** — whether each claim names its backing artifact: a `path:line`, a command plus its measured value, or a source/window/record per claim; and whether that artifact carries the claim.
-- **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the report itself left, not by re-running the sweep: the command issued, the count it returned, and no `| head` or page cut between the two. The measurement record the caller hands, while its recorded identity matches the report's subject, supplements that trace, and the reviewer reads its raw output before judging the claim: a claim whose trace is in neither the report nor the record is a finding.
+- **Sweep completeness** — every claim of absence, exhaustiveness, or "only" is met against the trace the report itself left, not by re-running the sweep: the command issued, the count it returned, and no `| head` or page cut between the two.
 - **Hypothesis separation** — whether anything stated as a conclusion is in fact an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**. This is that rule checked by a reader rather than by the run that has been living with the hypothesis.
 - **Completeness** — whether the explanation accounts for the symptom as observed: its magnitude, its timing, and its scope, or the unknowns documented in place of them.
 - **Consistency** — claims that contradict each other, a timeline that disagrees with the narrative, terminology that shifts meaning between sections, a summary that overstates what the body establishes.
@@ -44,7 +44,7 @@ Six, and none of them lowers the bar in **What counts as a finding**. Run the on
 
 ## Dispatch
 
-Each reviewer gets its assigned lenses, the target report, the question it answers, the sources it rests on, the measurement record's path the caller hands when it matches the report's subject, **What counts as a finding**, and **Finding contract**. Every reviewer takes the same stance: try to make a claim fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
+Each reviewer gets its assigned lenses, the target report, the question it answers, the sources it rests on, **What counts as a finding**, and **Finding contract**. Every reviewer takes the same stance: try to make a claim fail. One you cannot break passes — but a finding you cannot evidence is not a finding.
 
 Size the fan-out for shortest wall-clock. Independence is what a split buys — neither sees the other's findings, so neither anchors on them. Use `superpowers:dispatching-parallel-agents` for the dispatch itself when there is more than one worker; this is independent fact-finding, not implementation. Don't restate its prompt-construction guidance here.
 
@@ -65,7 +65,7 @@ Report "no findings" explicitly rather than inventing one.
 
 ## Pass
 
-1. Gather the inputs: the target report, the question it answers, its stated sources, and the measurement record's path the caller hands when it matches the report's subject. One invocation reviews exactly one target, once.
+1. Gather the inputs: the target report, the question it answers, and its stated sources. One invocation reviews exactly one target, once.
 2. Dispatch reviewers, sized per **Dispatch**, always in a fresh context at the `highest` tier.
 3. Take the union of the findings they return. Re-judge none of them: the pass is additive, so a finding any reviewer evidenced stays in (recall maximization).
 4. Report per **Report**, and stop there — restating flagged claims and publishing are the caller's job. This skill never re-invokes itself.

@@ -20,14 +20,13 @@ The caller hands:
 
 - **The named purpose** — the problem to solve, not the means.
 - **The read-root** — not the current work tree. Which ref that is belongs to the caller.
-- **The measurement record's path** — when the caller has one whose recorded identity matches the read-root, per `using-dude`'s **Measurement records**. A record sitting outside the read-root is still readable because the path names it.
 - **The caller's budget for the one measurement** — when the caller has one. Without it a default this dispatch names applies.
 
 ## Pass
 
 - Unnamed purpose: skip; do not dispatch; return that skip. This is the only skip.
-- Otherwise dispatch once. Besides the purpose, the worker is handed only the read-root (it reads that ref, not the session work tree, and creates no worktree; a measurement needing an executable copy of that ref is outside what the worker may take, so it measures only what read-only plumbing against that ref can answer), the measurement record's path when the caller has one, the time limit for the one measurement it may take — the caller's budget when it has one, otherwise a default this dispatch names — the write directory for output too large to return, which is the directory holding the measurement record when a path was handed and otherwise a directory outside the work tree that this dispatch names, and the proposal shape: the most direct route to the purpose (including doing nothing / doing something else), what it reuses, and its trade-offs. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
-- The worker reads the measurement record it was handed before measuring anything, and measures only what that record does not cover: one measurement at most, within that time limit, taken against that ref, returning the command and its raw output rather than a summary — or the path of each file it wrote when the output is too large to return.
+- Otherwise dispatch once. Besides the purpose, the worker is handed only the read-root (it reads that ref, not the session work tree, and creates no worktree; a measurement needing an executable copy of that ref is outside what the worker may take, so it measures only what read-only plumbing against that ref can answer), the time limit for the one measurement it may take — the caller's budget when it has one, otherwise a default this dispatch names — the write directory for output too large to return, a directory outside the work tree that this dispatch names, and the proposal shape: the most direct route to the purpose (including doing nothing / doing something else), what it reuses, and its trade-offs. Do not show the current artifact, the current means, an issue URL or body, or this session's context.
+- The worker measures at most once, within that time limit, taken against that ref, returning the command and its raw output rather than a summary — or the path of each file it wrote when the output is too large to return.
 - Return the worker's proposal as-is. Do not rewrite a proposal into "the current direction is fine".
 
 ## Output

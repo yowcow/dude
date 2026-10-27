@@ -17,7 +17,7 @@ Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core
 ## Orchestration model
 
 - Step 2 sources (logs, dashboards, queue/process state, usage exports) can be captured by one worker per source.
-- A worker that captures or sweeps returns the command it ran and its raw output — or, for a capture or sweep that ran no command, its source, window, and the export, snapshot, or records it read — for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
+- A worker that captures or sweeps returns the command it ran and its raw output — or, for a capture or sweep that ran no command, its source, window, and the export, snapshot, or records it read.
 - Step 4 change classes are independent — fan out one worker per class; the orchestrator merges the results into the timeline.
 - Hypothesis testing (Step 5) stays sequential in the orchestrator: each verdict informs the next hypothesis choice.
 
@@ -36,8 +36,6 @@ An observed symptom and where it was observed: the error text or metric values, 
 
 - Record the symptom as observed: exact error text/codes or metric values and their source, first and last occurrence, and current status (ongoing vs recovered).
 - Snapshot anything that rotates or expires: logs, dashboards, queue depths, process state, billing/usage exports.
-- Each capture, each sweep's count with the command that produced it, or, where the sweep ran no command, its source and window along with the count read, and every test this run runs are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the commit and tree it was taken against, or, off a git tree, the path or record and how that identity was fixed.
-- A run that takes a record up in another session or worktree, where its path does not resolve, captures it once more under the window Step 3 anchors and keeps that as a new measurement record, citing it instead — never a path it could not resolve. Where that one re-capture cannot be taken — including when the window's evidence has rotated away — the claims it backed go to **Open questions**, each with what would settle it.
 
 ### Step 3: Reconstruct the timeline
 
@@ -72,7 +70,7 @@ Sweep every change class across the last-good → first-bad window:
 - The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; publish per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format (blameless)
 
@@ -81,7 +79,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 3. **Timeline**
 4. **Root cause / Trigger / Contributing factors**
 5. **Detection gaps** — why it wasn't caught sooner.
-6. **Reproduction or observation baseline** — what makes the symptom observable again: the steps that reproduce it, or the window and metrics that show it; the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the baseline, timeline, and root cause rest on. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
+6. **Reproduction or observation baseline** — what makes the symptom observable again: the steps that reproduce it, or the window and metrics that show it.
 7. **Remediation options** — immediate mitigation vs preventive fixes.
 8. **Open questions**
 
