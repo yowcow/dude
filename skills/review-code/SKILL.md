@@ -32,7 +32,7 @@ Resolve what to review in this order, and declare the resolved scope before disp
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree, commits ahead of `<base>`** — run `tools/resolve-range.sh` with no argument.
   - `<base>` is resolved, not assumed: the script reads back the `Base-Branch:` trailer that `implement-work` records when it cuts a branch from a prerequisite's PR, settles the base from what state that PR is now in, and falls back to the default branch where there is no trailer.
-  - The trailer's contract, the state-to-base table, and why the lookups are tested the way they are all live in `implement-work`'s `references/base-branch.md`, under **The contract**, **Reading the trailer back**, and **Why the lookups are tested the way they are**. This table is owned by the referenced contract; duplicating it here would drift.
+  - The trailer's contract and the state-to-base table live in `implement-work`'s `references/base-branch.md`, under **The contract** and **Reading the trailer back**. This table is owned by the referenced contract; duplicating it here would drift.
 4. **Nothing to review** — no uncommitted change, and no range with anything in it. Ask the user what to review. Never widen to the whole repository on a guess.
 
 Either invocation answers in one line:
