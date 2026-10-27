@@ -3,18 +3,9 @@
 # be listed in tests/word-limits.txt and stay within its listed word cap.
 # Usage: word-limits.sh [<repo-root>]
 #
-# Why this exists: without a cap the prose re-inflates after each trim and
-# nobody observes it (#760). Caps start at the current count and only go down;
-# a raise is a visible line in the PR diff.
-#
 # Words are counted with awk's field splitting, not `wc -w`: under the C locale
 # GNU `wc` drops tokens made only of non-ASCII bytes and BSD `wc` does not, so
 # caps seeded from `wc` would break on another machine.
-#
-# The root is anchored on this file's own location, never the cwd; the optional
-# argument lets tests/word-limits_test.sh point the gate at a synthetic tree.
-# That test's first case runs this against the real tree, which is how `make
-# test` runs it with no Makefile or workflow change.
 #
 # `set -e` is deliberately absent: this is an accumulating reporter, and one
 # problem must not stop it from naming the rest.
@@ -42,7 +33,6 @@ err() {
 FOUND=""
 LISTED=""
 
-# An unmatched glob stays literal, and the -f test drops it.
 for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/skills/*/references/*.md; do
   [ -f "$f" ] || continue
   n="$(LC_ALL=C awk '{n+=NF} END{print n+0}' "$f")"

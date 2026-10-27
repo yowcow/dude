@@ -29,8 +29,7 @@ directory**. A plugin install carries the whole repository, `tests/` included
 - `tests/word-limits.sh` + `tests/word-limits.txt` — the word-limit gate: every
   `skills/*/SKILL.md` and `skills/*/references/*.md` must be listed with a cap
   and stay at or under it; `word-limits_test.sh` runs it, so `make test` fails
-  otherwise. Lower a cap when a file shrinks; a raise shows in the PR diff for a
-  person to judge.
+  otherwise.
 - `tests/lib/harness_test.sh` — a self-test of the harness mechanism itself
   (no script under test).
 - `<name>_test.sh` anywhere under `tests/` — the actual test cases.

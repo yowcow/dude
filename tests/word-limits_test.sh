@@ -4,9 +4,7 @@
 # tests/word-limits.txt, or is not listed.
 #
 # Case 0 runs the gate against the real tree; it is how the gate reaches
-# `make test`. Every other case builds a synthetic tree under $HARNESS_TMP,
-# because the failure modes cannot be produced in the real tree without
-# leaving the checkout dirty.
+# `make test`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -15,7 +13,6 @@ set -euo pipefail
 . "$(dirname -- "${BASH_SOURCE[0]}")/lib/harness.sh"
 
 SUT="${SUT:-${REPO_ROOT}/tests/word-limits.sh}"
-SUT="$(CDPATH='' cd -- "$(dirname -- "$SUT")" && pwd)/${SUT##*/}"
 
 failed=0
 total=0
@@ -23,7 +20,7 @@ total=0
 tree_new() {
   local r
   r="$(mktemp -d "${HARNESS_TMP}/tree.XXXXXX")"
-  mkdir -p "$r/skills" "$r/tests"
+  mkdir -p "$r/tests"
   printf '%s\n' "$r"
 }
 
@@ -51,12 +48,11 @@ if ! check_eq 'real tree: exit' 0 "$SUT_STATUS"; then
 fi
 
 # --- case 1: at the cap passes; comment and blank lines are accepted ----------
-total=$((total + 1))
 root="$(tree_new)"
 mk_md "$root" skills/a/SKILL.md 10
 mk_list "$root" '# a comment' '' '10 skills/a/SKILL.md'
 run_gate "$root"
-if ! check_eq 'at cap: exit' 0 "$SUT_STATUS"; then failed=$((failed + 1)); fi
+tally check_eq 'at cap: exit' 0 "$SUT_STATUS"
 
 # --- case 2: over the cap fails, naming file, count and limit -----------------
 total=$((total + 1))
@@ -66,9 +62,7 @@ mk_md "$root" skills/a/SKILL.md 11
 mk_list "$root" '10 skills/a/SKILL.md'
 run_gate "$root"
 if ! check_eq 'over cap: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'over cap: path' 'skills/a/SKILL.md'; then fails_here=1; fi
-if ! check_stderr_has 'over cap: count' '11'; then fails_here=1; fi
-if ! check_stderr_has 'over cap: limit' '10'; then fails_here=1; fi
+if ! check_stderr_has 'over cap: message' 'skills/a/SKILL.md: 11 words, limit 10'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 3: an unlisted reference fails --------------------------------------
@@ -133,8 +127,7 @@ root="$(tree_new)"
 mk_md "$root" skills/a/SKILL.md 3
 run_gate "$root"
 if ! check_eq 'no list: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'no list: file' 'word-limits.txt'; then fails_here=1; fi
-if ! check_stderr_has 'no list: message' 'cannot read'; then fails_here=1; fi
+if ! check_stderr_has 'no list: message' "cannot read ${root}/tests/word-limits.txt"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 9: every problem is reported, not just the first --------------------
