@@ -7,9 +7,7 @@
 # name, or by a glob such as `investigate-*`, which counts as an edge to every
 # skill the prefix matches. using-dude is neither owner nor target: every skill
 # may name it. Only an edge's presence is checked, never how many mentions it
-# has, so editing a flow's prose does not move this file. The measurement-record
-# roster under skills/implement-work/references/ is exempt: its rows classify
-# every skill and imply no dependency, so a new row asks for no EDGES entry.
+# has, so editing a flow's prose does not move this file.
 #
 # Usage: tests/skill-deps_test.sh [<root>]   — <root> defaults to this repository.
 set -euo pipefail
@@ -45,9 +43,6 @@ implement-work pr-to-ready hand-off, plus contracts: **Hand off** continues into
 pr-to-ready implement-work hand-off: its input is the draft PR implement-work left, title and body follow implement-work'"'"'s **Hand off**, and a conflicted base, or a mergeability left `UNKNOWN`, is handed back there for a person'"'"'s explicit re-entry.
 pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the finding, the branch, and its state.
 review-code implement-work contract (PR #549 R6): cites the Base-Branch trailer contract in implement-work/references/base-branch.md, its single source.
-vet-code implement-work contract: cites the judge-input contract in implement-work/references/measurement-record.md, its single source.
-judge-findings implement-work contract: cites the judge-verdict contract in implement-work/references/measurement-record.md, its single source.
-vet-code pr-to-ready record handoff: names pr-to-ready rounds as the second caller that writes judge-input/verdict records beside the completion gate.
 review-pr implement-work contract: script headers cite implement-work/references/script-conventions.md and stop-registry.md, the shared conventions.
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
 audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
@@ -125,10 +120,8 @@ done
 # mentions: "<owner> <target> <file>:<line>", one per mention.
 mentions="${HARNESS_TMP}/mentions"
 : >"$mentions"
-roster="$ROOT/skills/implement-work/references/measurement-record.md"
 nfiles=0
 while IFS= read -r f; do
-  [ "$f" != "$roster" ] || continue
   nfiles=$((nfiles + 1))
   rel="${f#"$ROOT"/}"
   owner="${rel#skills/}"
@@ -169,39 +162,6 @@ for s in "${skills[@]}"; do
     bad=1
   fi
 done
-failed=$((failed + bad))
-
-# --- every skill directory has a measurement-record roster row ---------------
-# The roster under skills/implement-work/references/ decides every skill's
-# applicability, so a directory missing a row leaves its half of the rule
-# unowned. targets, not skills: using-dude is a skill directory too. The
-# Applicability cell is fixed to the two values and the Reason cell must open
-# with text; the wording of a reason stays free.
-total=$((total + 1))
-bad=0
-rel="${roster#"$ROOT"/}"
-if [ ! -f "$roster" ] || [ ! -r "$roster" ]; then
-  printf 'FAIL skill-deps: %s is missing or unreadable — the measurement-record roster cannot be checked\n' \
-    "$rel"
-  bad=1
-else
-  for t in "${targets[@]}"; do
-    rows="$(grep -c "^| \`${t}\` |" "$roster" || true)"
-    ok="$(grep -cE "^\| \`${t}\` \| (applies|does not apply) \| [^ |]" "$roster" || true)"
-    if [ "$rows" -eq 0 ]; then
-      printf 'FAIL skill-deps: %s is not named by the measurement-record roster\n' "$t"
-      bad=1
-    elif [ "$ok" -ne 1 ] || [ "$rows" -ne 1 ]; then
-      printf 'FAIL skill-deps: the measurement-record roster row for %s needs "applies" or "does not apply" and a reason (well-formed rows: %s of %s)\n' \
-        "$t" "$ok" "$rows"
-      bad=1
-    fi
-  done
-  if grep -qF " ${rel}:" "$mentions"; then
-    printf 'FAIL skill-deps: %s is scanned for dependency mentions\n' "$rel"
-    bad=1
-  fi
-fi
 failed=$((failed + bad))
 
 # --- every upward or lateral edge has a row ----------------------------------

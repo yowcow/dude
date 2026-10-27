@@ -126,7 +126,7 @@
 #   The reader-boundary rows at the end of this file are RED through SUT= the
 #   ordinary way, not by removing a guard: point it at the pre-fix script
 #   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
-#   that holds every sibling -- the same tree records 1-3 and 5-8 need -- and
+#   that holds every sibling -- the tree copy records 1-3 and 5-8 need -- and
 #   only those four rows and their two stderr tallies fail: `not ok 6/39`,
 #   measured before the facts-capture rows existed. The three facts-capture
 #   rows at the end were RED the same way, against the `master` of the time in

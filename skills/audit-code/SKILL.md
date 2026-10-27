@@ -11,7 +11,7 @@ Scan a repository or path and report what to fix. This skill finds; it never edi
 
 - The axes are independent of each other, so fan out one worker per axis. Each finding stays with the orchestrator.
 - Hand each worker its axis as the pair written for it — the invariant attacked and how it is expected to break — never as a field's name alone. Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
-- A worker that sweeps or runs a probe returns the command it ran and that command's raw output beside its finding, for the orchestrator to record as a **measurement record** per `using-dude`'s **Measurement records**.
+- A worker that sweeps or runs a probe returns the command it ran and that command's raw output beside its finding.
 - **Any worker that sweeps for absence or exhaustiveness, or probes a behaviour axis, is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and a probe that never ran hands back a `no finding` line — neither the orchestrator nor any later reader of the report can tell that from a result.
 
 ## Entry
@@ -38,8 +38,6 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 ### Step 3: Fix the measurement base
 
 - Record what was actually read: the revision, tree, or path, including the source of Step 1's inventory. An installed tree and the repository it came from are different artifacts, and so are a branch and its base; a promise from a tree the record does not name is not this artifact's.
-- Each command behind this base and each sweep's command, with the raw output of each — or, for a base read that ran no command, the file, path, or record read and how its content was captured — are kept as a **measurement record** per `using-dude`'s **Measurement records** — whole, never summarized, and carrying the identity this step fixed: the commit and tree, or, off a git tree, the path or record and how that identity was fixed.
-- A run that takes this base up in another session or worktree, where the record's path does not resolve, measures once more — under the bound Step 4 gives a probe, and, for a sweep, run to completion and read whole — keeps that as a new measurement record, and cites it instead — never a path it could not resolve. Where that one re-measurement cannot be taken, the claims it backed go to Not measured.
 - Every claim of absence, exhaustiveness, or "only" names the sweep that produced it — run to completion and read whole, never a truncated or paged view of the output.
 
 ### Step 4: Sweep each axis
@@ -58,12 +56,12 @@ Keep it as your own list, separate from the axes: the axes are drawn from it, an
 - Every axis has its verdict and the decisive evidence behind it — the verdict of an axis whose probe found nothing being that it was swept; or
 - the axis is recorded as not measured, with what would measure it and who decides.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report together with the paths of the measurement records it rests on (one path per record), and naming what the report rests on that no record covers; restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is chat, or the tracking issue's comment when one tracks the work; another repository on request, chat-only also allowed. A bare `#N` only when the posting repository is the scanned one; otherwise qualify as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
+Once the report below is drafted, run `review-findings` on it for one pass, handing it the report; restate flagged claims as unsettled / not measured, then confirm the report destination with a person: default is chat, or the tracking issue's comment when one tracks the work; another repository on request, chat-only also allowed. A bare `#N` only when the posting repository is the scanned one; otherwise qualify as `owner/repo#N`. Post only on yes, per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
   1. **Verdict** — what to fix, in priority order, in one paragraph; a candidate that would be a finding only if an external contract is not honored is named here as conditional.
-  2. **Measurement base** — the identity the measurement record carries, that record's path, and the session or worktree it was taken in and is valid for, for each measurement record the base and the swept claims rest on; and the sweep behind each claim of absence. Where a record this run took can no longer be read, say so and name its identity and the session or worktree it was valid for, in place of a path.
+  2. **Measurement base** — the revision, tree, or path measured, and the sweep behind each claim of absence.
   3. **Invariants attacked** — per axis, the pair handed to the worker. An invariant no axis attacked and no finding names belongs to Not measured instead.
   4. **Findings** — per axis or invariant, the verdict and the observation that decided it, plus, for each finding, the `path:line` where it breaks.
   5. **Next items** — concrete next actions in order. Not work to start here.
