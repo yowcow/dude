@@ -90,7 +90,7 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 2. Invoke `propose-alternatives` once when the purpose is named.
    - **Purpose:** the tracking issue's problem; with no issue, the request's problem. Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
    - **Read-root:** the default branch. Use the session checkout only when it is already that branch; otherwise read the default-branch ref, fetched to its current tip, and do not pass the session tree. Do not create a worktree, read-only or not.
-   - Else invoke `propose-alternatives` once with that purpose, read-root.
+   - Else invoke `propose-alternatives` once with that purpose, read-root, and the current artifact.
    - Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 3. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
 4. Reach **Design agreement**.

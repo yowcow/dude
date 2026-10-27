@@ -107,7 +107,7 @@ Then invoke `propose-alternatives` once when the purpose is named. "Run 2-0" inc
 
 - **Purpose:** what the issue behind a closing keyword states. Not the PR body, not a prescribed means, not a parent design in place of that issue. If that issue states no purpose → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the PR's base (the base the PR points at now, which Step 1 settled), fetched to its current tip before the worker reads it — not head, not the 0-3 workspace, not the session checkout.
-- Else invoke `propose-alternatives` once with that purpose, read-root.
+- Else invoke `propose-alternatives` once with that purpose, read-root, and the current artifact.
 - Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR (body or inline).
 
 ### 2-1. Request the reviewers
