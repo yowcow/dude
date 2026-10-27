@@ -51,7 +51,7 @@ One invocation is one pass, and a pass is as many rounds as it takes:
 3. Take back the judged findings `vet-code` returns — each `accept` with its fix, `reject` with its reason, or `needs-user` — and re-judge none of them; carry any caveat it returns (paths-only scope, no requirements) into **Report**.
    With them come one answer per ledger row: the finding it became, keeping the row it came from, or a `Ledger row closed` or `Ledger row declined` line as the worker returned it. A closed row is answered for its round — it takes no verdict, joins no earlier rounds' record, and is handed to no judge, whose candidates are `Declined to judge` lines alone; the ledger re-hands it to the next round, which answers it from the code as it then stands.
 4. Count the `needs-user` verdicts before applying anything.
-  - One or more ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: go to step 7 and leave non-clean, per **Escalation**.
+  - One or more on the person route ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: go to step 7 and leave non-clean, per **Escalation**. One on the measurement route is settled first: take that measurement yourself, once and bounded, and invoke `vet-code` again on the same code with the record before applying anything.
   - Otherwise apply only findings whose verdict is `accept` yourself — severity does not decide this — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. Never fix a Declined to judge line itself; fixing straight from the reviewer's text silently applies work the judge never accepted.
   - When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
 5. Verify with the concrete commands the project defines — in the README, Makefile, package scripts, or CI — and read their actual output. When step 4 applied nothing, skip this check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
@@ -65,7 +65,7 @@ A round is one review → judge → fix → verify cycle. The pass is clean per 
 - This loop stops per `using-dude`'s **Loop convergence**.
   - **Pass** says what a round is here, and two findings are the same when a later round faults the same location on the same grounds, however the wording moved — including a claim restated after a fix meant to resolve it.
   - A round that trips either of **Loop convergence**'s two non-clean conditions still applies and verifies its accepted findings before the loop ends; it just doesn't start another review.
-- **A `needs-user` verdict stops the pass non-clean**, with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: the round that stopped applied nothing, and the caller hands the finding to a person.
+- **A person-route `needs-user` verdict stops the pass non-clean**, with the meaning `judge-findings`'s **Verdicts** gives `needs-user`: the round that stopped applied nothing, and the caller hands the finding to a person.
 - A Critical finding that invalidates the approved design is not fixed in this loop.
   - Per `using-dude`'s **Escalation** it goes back for re-approval, and this skill is no exception.
   - What this pass hands over is the finding itself, reported separately from the ordinary verdict so the caller routes it rather than reading the pass as merely unfinished.
