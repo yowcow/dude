@@ -63,6 +63,3 @@ such script.
 | `0` | Answer on stdout, `NEED`/`WAIT` on stdout per `script-conventions.md`, or `STOP <slug>` on stdout where the script's header says so |
 | `1` | No answer and no STOP: fetch/lookup failed with nothing on stdout (the caller prints its STOP), or timeout where the script's header says so |
 | `2` | Usage error: `Usage: ...` on stderr, nothing on stdout |
-| `3` | Per-script availability answer, frozen: `watch-checks.sh` = no such commit on the remote, `watch-claude-review.sh` = no `@claude` workflow, `request-copilot-review.sh` = its own header's answer. No new exit-3 meanings; collisions are item 3's (yowcow/dude#421) to resolve |
-| `4`, `5` | Per-script answers owned by their headers (`watch-checks.sh`, `request-copilot-review.sh`, `list-suppressed-comments.sh`). No new meanings |
-| `6` | A command the script requires is not on PATH — `jq`, from `watch-checks.sh` and `watch-copilot-review.sh` |
