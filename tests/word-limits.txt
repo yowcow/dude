@@ -9,7 +9,7 @@
 787 skills/investigate-anomaly/SKILL.md
 692 skills/investigate-performance/SKILL.md
 765 skills/judge-findings/SKILL.md
-2544 skills/plan-work/SKILL.md
+2542 skills/plan-work/SKILL.md
 768 skills/pr-to-ready/SKILL.md
 705 skills/propose-alternatives/SKILL.md
 1371 skills/review-code/SKILL.md
