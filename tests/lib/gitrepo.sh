@@ -9,10 +9,10 @@
 # would encode whatever the test author believed about that rather than what
 # git does.
 #
-# The identity a repository presents is carried by its *path*:
-# resolve-pr-entry.sh reduces a remote URL to its last two segments, so a bare
-# repo at .../acme/widgets.git reads as `acme/widgets` while still being a
-# local directory that `git fetch` can reach without a network.
+# The identity a repository presents is carried by its *path*: a remote URL
+# is reduced to its last two segments, so a bare repo at .../acme/widgets.git
+# reads as `acme/widgets` while still being a local directory that `git fetch`
+# can reach without a network.
 #
 # The environment below is set once, at source time, and deliberately cuts the
 # developer's own git configuration out of the picture. `url.<base>.insteadOf`

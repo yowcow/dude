@@ -442,7 +442,7 @@ SUT="$tmp/old.sh" tests/run.sh <one-test-file>
 ```
 
 The specific commits named below, and in the `RED verification` headers of the
-test files under `tests/pr-to-ready/`, come from more than one history. Some are
+test files, come from more than one history. Some are
 this repository's own and resolve here — `0c685b4`, `6ef604b` and `253c615`
 among them — and some were recorded in this suite's original home in
 `yowcow/dotfiles` and may not. Check a hash before relying on it —
@@ -456,19 +456,15 @@ and none at this repository's issues. They read as provenance for a
 measurement — which report or item established the behaviour the comment
 records — and a reader chasing one wants `yowcow/dotfiles`, not `yowcow/dude`.
 
-A script that shells out to a sibling needs that sibling beside the copy:
-`watch-copilot-review.sh` finds `list-copilot-reviews.sh` through
-`dirname "$0"`, so a pre-fix copy alone in a temp dir cannot find it, every
-listing comes back empty, and rows fail for a reason that has nothing to do
-with the defect.
+A script that shells out to a sibling needs those siblings beside the copy:
+`origin-repo.sh` reaches `normalize-repo-path.sh` through `SCRIPT_DIR`, so a
+pre-fix copy alone in a temp dir has no reducer beside it, and every row fails
+for a reason that has nothing to do with the defect.
 
 ```bash
-cp skills/pr-to-ready/scripts/list-copilot-reviews.sh "$tmp/"
+cp -a tools "$tmp/tools"
+cp "$tmp/old.sh" "$tmp/tools/origin-repo.sh"
 ```
-
-Only a `watch-claude-review.sh` copy at or after `253c615` pins `-R`: the
-runnable recipe is the `RED verification` header of
-`tests/pr-to-ready/watch-claude-review_test.sh`.
 
 `SUT` names one script under test in place of a test file's default. `run.sh`
 refuses to run more than one test file while `SUT` is set, since it names a
@@ -482,10 +478,6 @@ an empty one makes them all pass, which reads as a test with no detection power.
 root, so a branch that recorded nothing picked up whatever trailer it inherited
 from shared history and handed that branch back as `--base` (#171).
 
-`retarget-pr.sh` → `80376f3^` — a matching `baseRefName` was treated as the
-whole answer, so a run whose push had failed reported `BASE-OK` on its next
-attempt while the remote branch was still the pre-merge one (#170).
-
 `run.sh` → `f2b1e41^` — a `SUT` naming a nonexistent or an empty file was
 accepted, and the resulting failures were indistinguishable from a successful
 RED verification (#214). Also `f2b1e41` itself, **without** the caret: that
@@ -494,8 +486,3 @@ commit is where the guard above landed, and it checked `-f` and `-s` but not
 the same false RED, reached by permission rather than absence (#217). No caret,
 because `f2b1e41` is where that second defect was left standing rather than
 introduced.
-
-`watch-claude-review.sh` → `2bd1745^` — `--limit 20` pushed the target run out
-of the listing, so the filter printed `[]` and the caller read the review as
-never arriving (#173). Also `e14114a^`, where the workflow search was
-cwd-relative: from a subdirectory it reported Claude as unavailable.

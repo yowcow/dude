@@ -1,7 +1,0 @@
-{
-  "total_count": 2,
-  "check_runs": [
-    { "id": 101, "name": "build", "status": "completed", "conclusion": "success" },
-    { "id": 102, "name": "lint", "status": "completed", "conclusion": "skipped" }
-  ]
-}

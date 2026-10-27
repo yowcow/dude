@@ -103,12 +103,12 @@ if ! check_eq "helper rejects an exit status above 255" 1 "$status"; then fails_
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 5: the counter counts invocations, not lines of argv ------------
-# A real argv may legitimately carry a newline — the GraphQL query that
-# list-unresolved-threads.sh passes as `-f query='...'` spans many lines. If the
-# call index were derived by counting lines in the log of past argvs, one such
-# call would advance the index by as many lines as it spans, and from then on an
-# exact-index entry would answer a different call than the one it was written
-# for: the poll-loop tests would silently stub the wrong iteration.
+# A real argv may legitimately carry a newline — a multi-line GraphQL query
+# passed as `-f query='...'` spans many lines. If the call index were derived
+# by counting lines in the log of past argvs, one such call would advance the
+# index by as many lines as it spans, and from then on an exact-index entry
+# would answer a different call than the one it was written for: the poll-loop
+# tests would silently stub the wrong iteration.
 row_start
 fails_here=0
 gh api "$(printf 'first\nsecond')" >/dev/null 2>&1 || true
@@ -118,9 +118,9 @@ if ! check_eq "counter: the next call is index 2" 2 "$(gh_call_count)"; then fai
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- property 6: an argv spanning lines can be stubbed and matched exactly ----
-# The GraphQL query list-unresolved-threads.sh passes as `-f query='...'` spans
-# many lines. Refusing it would leave that script untestable; matching it loosely
-# would let a different query be served this case's body.
+# A multi-line GraphQL query passed as `-f query='...'` spans many lines.
+# Refusing it would leave that script untestable; matching it loosely would
+# let a different query be served this case's body.
 row_start
 fails_here=0
 multi="$(printf 'query {\n  field\n}')"
@@ -385,7 +385,7 @@ if [ "$sl_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 # --- gitrepo.sh: git cannot leave the machine, whatever URL it is handed ---
 #
 # This is the guarantee that makes it safe to let a script under test run a
-# real `git push`. Convention is not enough: `retarget-pr.sh` pushes to
+# real `git push`. Convention is not enough: a script under test pushes to
 # whatever `origin` says, and a test that mis-wired a remote would otherwise
 # push to a real repository. GIT_ALLOW_PROTOCOL (exported by gitrepo.sh) makes
 # git itself refuse every network transport before it opens a socket, so the
@@ -475,7 +475,7 @@ if [ "$deny_fails" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- gitrepo.sh: a ref that points at a blob rather than a commit ------------
 #
-# retarget-pr.sh's ancestor gate has a third branch for `git merge-base
+# an ancestor gate with a third branch for `git merge-base
 # --is-ancestor` failing for a reason of its own, rather than returning either
 # verdict. A ref pointing at a non-commit is how that is reachable with real
 # git and no stub: the fetch succeeds, FETCH_HEAD is a blob, and the ancestor

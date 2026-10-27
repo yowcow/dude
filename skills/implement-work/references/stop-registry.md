@@ -16,7 +16,6 @@ such script.
 | Slug | Printed by |
 | --- | --- |
 | `abandoned-prerequisite` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh` |
-| `ancestor-check-failed` | `pr-to-ready/retarget-pr.sh` |
 | `ask-base-repo` | `tools/ensure-draft-pr.sh` |
 | `ask-default-branch` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `ask-multiple-prereqs` | `implement-work/resolve-base.sh` |
@@ -24,17 +23,12 @@ such script.
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh`, `implement-work/resolve-base.sh` |
 | `base-resolve-failed` | `tools/ensure-draft-pr.sh` |
-| `branch-fetch-failed` | `pr-to-ready/retarget-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
 | `body-unreadable` | `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
-| `checkout-required` | `pr-to-ready/retarget-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
-| `conditions-unmet` | `pr-to-ready/mark-ready.sh` |
-| `cross-fork` | `pr-to-ready/resolve-pr-entry.sh` |
 | `default-fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `detached-head` | `implement-work/absorb-base.sh` |
 | `dirty-tree` | `implement-work/absorb-base.sh` |
-| `dirty-worktree` | `pr-to-ready/retarget-pr.sh` |
 | `fact-count` | `tools/facts.sh` |
 | `fact-enum` | `tools/facts.sh` |
 | `fact-malformed` | `tools/facts.sh` |
@@ -42,34 +36,25 @@ such script.
 | `fact-missing` | `tools/facts.sh` |
 | `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
 | `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
-| `fetch-failed` | `tools/resolve-pr-base.sh`, `pr-to-ready/retarget-pr.sh`, `tools/resolve-range.sh` |
+| `fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `fork-unread` | `tools/ensure-draft-pr.sh` |
-| `head-moved` | `pr-to-ready/mark-ready.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
 | `merge-base-failed` | `tools/resolve-range.sh` |
-| `merge-conflict` | `pr-to-ready/retarget-pr.sh` |
 | `merge-failed` | `implement-work/absorb-base.sh` |
 | `no-merge-in-progress` | `implement-work/commit-merge.sh` |
-| `no-pr` | `pr-to-ready/resolve-pr-entry.sh` |
 | `no-prereq-pr` | `tools/read-base-trailer.sh` |
-| `no-record` | `pr-to-ready/mark-ready.sh` |
 | `not-implemented` | `implement-work/resolve-base.sh` |
-| `pr-lookup-failed` | `pr-to-ready/resolve-pr-entry.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
-| `pr-not-open` | `pr-to-ready/resolve-pr-entry.sh` |
-| `pr-read-failed` | `pr-to-ready/check-pr-state.sh`, `pr-to-ready/mark-ready.sh`, `pr-to-ready/retarget-pr.sh` |
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
-| `push-failed` | `tools/ensure-draft-pr.sh`, `pr-to-ready/retarget-pr.sh` |
-| `ready-failed` | `pr-to-ready/mark-ready.sh` |
+| `push-failed` | `tools/ensure-draft-pr.sh` |
 | `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
-| `retarget-failed` | `pr-to-ready/retarget-pr.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
 | `trailer-answer-malformed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `trailer-read-failed` | `tools/read-base-trailer.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
-| `wrong-checkout` | `pr-to-ready/resolve-pr-entry.sh`, `review-pr/check-pr-repo.sh` |
+| `wrong-checkout` | `review-pr/check-pr-repo.sh` |
 
 ## Exit codes
 
@@ -78,6 +63,3 @@ such script.
 | `0` | Answer on stdout, `NEED`/`WAIT` on stdout per `script-conventions.md`, or `STOP <slug>` on stdout where the script's header says so |
 | `1` | No answer and no STOP: fetch/lookup failed with nothing on stdout (the caller prints its STOP), or timeout where the script's header says so |
 | `2` | Usage error: `Usage: ...` on stderr, nothing on stdout |
-| `3` | Per-script availability answer, frozen: `watch-checks.sh` = no such commit on the remote, `watch-claude-review.sh` = no `@claude` workflow, `request-copilot-review.sh` = its own header's answer. No new exit-3 meanings; collisions are item 3's (yowcow/dude#421) to resolve |
-| `4`, `5` | Per-script answers owned by their headers (`watch-checks.sh`, `request-copilot-review.sh`, `list-suppressed-comments.sh`). No new meanings |
-| `6` | A command the script requires is not on PATH — `jq`, from `watch-checks.sh` and `watch-copilot-review.sh` |

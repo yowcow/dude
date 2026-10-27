@@ -11,8 +11,8 @@ if [ "$#" -gt 0 ]; then
 else
   # Collected with `find` rather than `**`, which needs bash 4's globstar. The
   # sibling scripts this suite tests are deliberately kept running on bash 3.2
-  # (skills/pr-to-ready/scripts/resolve-pr-entry.sh says so where it avoids
-  # ${x,,}), and `shopt -s globstar` there fails while nullglob still applies —
+  # (tools/normalize-repo-path.sh says so where it avoids ${x,,}), and
+  # `shopt -s globstar` there fails while nullglob still applies —
   # so `**` degrades to a single `*` and silently matches only the one nesting
   # depth, dropping any test file shallower or deeper than that. Files nobody
   # noticed were skipped would read as a suite that passed.
