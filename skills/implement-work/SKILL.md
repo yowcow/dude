@@ -39,7 +39,7 @@ Record a non-default base as one `Base-Branch: <base>` trailer line on this task
 
 After **Isolation**, before **Plan gate**. The small-change lane still runs this, then **Execution**.
 
-Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An unnamed purpose means skip — do not invoke, note the skip, and continue. Read-root is the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a task with no issue — handed as `origin/<base>`, fetched to its current tip. Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact.
+Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An unnamed purpose means skip — do not invoke, note the skip, and continue. Read-root is the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a task with no issue — handed as `origin/<base>`, fetched to its current tip. Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure.
 
 ## Plan gate
 
