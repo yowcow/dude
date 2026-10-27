@@ -96,7 +96,7 @@ mk_md "$root" skills/a/SKILL.md 3
 mk_list "$root" 'abc skills/a/SKILL.md'
 run_gate "$root"
 if ! check_eq 'malformed: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
-if ! check_stderr_has 'malformed: path' 'skills/a/SKILL.md'; then fails_here=1; fi
+if ! check_stderr_has 'malformed: message' 'malformed line'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 6: a duplicate entry fails ------------------------------------------
@@ -141,6 +141,16 @@ run_gate "$root"
 if ! check_eq 'accumulate: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'accumulate: over cap' 'skills/a/SKILL.md'; then fails_here=1; fi
 if ! check_stderr_has 'accumulate: unlisted' 'skills/b/SKILL.md'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 10: a zero cap for an empty file is accepted ------------------------
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_md "$root" skills/a/SKILL.md 0
+mk_list "$root" '0 skills/a/SKILL.md'
+run_gate "$root"
+if ! check_eq 'zero cap: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 harness_exit "$failed" "$total"
