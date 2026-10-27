@@ -31,7 +31,7 @@ audit-code part
 investigate-* part
 settle-question part
 vet-code component
-review-findings component
+review-findings primitive
 propose-alternatives component
 judge-findings primitive'
 
@@ -44,7 +44,6 @@ pr-to-ready implement-work hand-off: its input is the draft PR implement-work le
 pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the finding, the branch, and its state.
 review-code implement-work contract (PR #549 R6): cites the Base-Branch trailer contract in implement-work/references/base-branch.md, its single source.
 review-pr implement-work contract: script headers cite implement-work/references/script-conventions.md and stop-registry.md, the shared conventions.
-review-pr plan-work hand-back: on revisit design the person returns to plan-work.
 audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
 review-findings review-plan lens ownership: cites review-plan'"'"'s four lens names only to say it skips them.'
 
