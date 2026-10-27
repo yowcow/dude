@@ -56,7 +56,8 @@ facts_file() {
 
 # Make `sleep` instant for this test file. Opt-in: a bounded poll loop in a
 # script under test is worth asserting the *count* of, never the wall clock,
-# and check-pr-state.sh's UNKNOWN re-read alone would otherwise cost 15s a row.
+# and a bounded UNKNOWN re-read in a script under test alone would otherwise
+# cost 15s a row.
 # The resolution is asserted rather than assumed, for the same reason the `gh`
 # assertion above exists: a PATH mistake would leave the suite silently slow
 # instead of failing.
@@ -120,9 +121,9 @@ no_jq_path() {
 # gh_stub_raw_response <index|*> <exit-status> <argv...>   body on stdin
 #   The body is the raw **response gh received**, and the stub applies the
 #   call's own --jq to it. Use it when the filter is part of what is under test:
-#   list-unresolved-threads.sh's `select(.isResolved == false)` lives in the
-#   script, so a pre-filtered fixture would decide the answer the test is
-#   supposed to be checking, and "zero unresolved threads" would assert nothing.
+#   the script's own `--jq` filter (e.g. `select(.isResolved == false)`) lives
+#   in the script under test, so a pre-filtered fixture would decide the answer
+#   the test is supposed to be checking, and "zero unresolved threads" would assert nothing.
 gh_stub_response() {
   _gh_stub_entry filtered "$@"
 }
@@ -148,9 +149,9 @@ _gh_stub_entry() {
     # different argv lists join to the same bytes — ["a\x1fb"] and ["a","b"] —
     # and the stub would serve one case's body to the other. Tabs and newlines
     # are fine: the joined argv goes to its own file, not into the TSV manifest.
-    # Real argvs need that — list-copilot-reviews.sh:46-48 passes a three-line
-    # --jq filter, and list-unresolved-threads.sh a multi-line GraphQL query — and
-    # refusing them would leave those calls unstubbable.
+    # Real argvs need that — a three-line --jq filter, and a multi-line
+    # GraphQL query passed as `-f query='...'` — and refusing them would leave
+    # those calls unstubbable.
     case "$arg" in
       *$'\x1f'*)
         printf '%s\n' "${FUNCNAME[1]}: argv element contains the \\x1f separator: '${arg}'" >&2
@@ -377,9 +378,9 @@ check_no_violations() {
 # three-argument call aborts the file instead — the loud failure. The default
 # was dead flexibility besides: every call site passed a fourth argument.
 #
-# Not every row can use this. watch-claude-review_test.sh compares stdout
-# against a file rather than inline bytes, so it keeps a local definition whose
-# third argument means something else; see tests/README.md.
+# Not every row can use this. A test comparing stdout against a file rather
+# than inline bytes keeps a local definition whose third argument means
+# something else; see tests/README.md.
 assert_row() {
   local name="$1" want_exit="$2" want_out="$3" want_calls="$4" fails=0
   if ! check_eq "${name}: exit" "$want_exit" "$SUT_STATUS"; then fails=1; fi

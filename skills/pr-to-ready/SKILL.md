@@ -14,6 +14,10 @@ Ask the user two things, once, before anything else:
 - Once CI is green and review is clean, should this run mark the PR ready, or leave its status as it is? Record the answer; the finish branches on it.
 - Which reviewers should this run request? Offer Copilot, Claude, and requesting-code-review as a pick-any choice, plus none. Offer all three verbatim, without omission or rename — a dropped or respelled choice silently proceeds without the wanted review.
 
+## Main entry: a PR reference
+
+Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions, before any workspace. A bare number names no repository: ask which repository it belongs to, offering origin's own first — otherwise the run drives a same-numbered PR in another repository, and nothing it does lands where it was asked. From a URL take the owner and repo it names; confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace — otherwise the workspace attaches the same branch name on a remote that is not the PR's, and every fix is committed and pushed where no reviewer watches while the PR does not move. A head that lives on another remote is not driven from here; hand it back.
+
 ## Fallback entry: a branch with no PR yet
 
 Where the caller gave a branch name instead of a PR reference, drive `tools/ensure-draft-pr.sh` per the output contract in its header, opening the draft PR by the agent's own means. On `STOP ask-base-repo` or `STOP fork-unread`, ask which repository the draft targets, offering origin's own first — otherwise the draft opens against the wrong repository, a fork instead of its parent or the other way round. Title and body follow `implement-work`'s Hand off: always draft, with a closing keyword on the issue this work resolves.

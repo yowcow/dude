@@ -120,7 +120,7 @@ serve() {
 #
 # It lives in its own file holding nothing but the integer, and is deliberately
 # NOT derived by counting lines in the argv log below. An argument may carry a
-# newline of its own — the GraphQL query list-unresolved-threads.sh passes as
+# newline of its own — a multi-line GraphQL query passed as
 # `-f query='...'` spans many lines — and counting lines would then advance the
 # index by that many for one call, so every later exact-index entry would answer a
 # different call than the one it was written for.
@@ -168,7 +168,7 @@ lookup() {
   [ -f "${GH_STUB_DIR}/manifest" ] || return 0
   while IFS=$'\t' read -r idx status body argv_file mode; do
     # The joined argv lives in its own file because an element may carry a tab
-    # or a newline — the GraphQL query list-unresolved-threads.sh passes as
+    # or a newline — a multi-line GraphQL query passed as
     # `-f query='...'` spans many lines — which a TSV field cannot hold. The
     # comparison is still on the exact bytes, not on a digest of them: a digest
     # would have to fold characters, and two argvs folding to one key would
