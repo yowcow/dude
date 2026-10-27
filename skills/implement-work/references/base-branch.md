@@ -18,16 +18,16 @@ Never guess a branch name. Two rungs, in order — the remote's own HEAD, read l
 
 Where a stack runs deeper than one, the nearest trailer wins. Look the prerequisite's PR up by its head branch name, and settle the base from its state — never from whether the branch still exists.
 
-| trailer / prerequisite PR state | `review-code`'s `<base>` | `pr-to-ready`'s `--base` |
+| trailer / prerequisite PR state | `review-code`'s `<base>` | `pr-to-ready`'s retarget |
 | --- | --- | --- |
-| no trailer | the default branch | omit |
-| `OPEN` | `git fetch origin <recorded>`, then `FETCH_HEAD` | `<recorded>` |
-| `MERGED` | `git fetch origin refs/pull/<n>/head`, then `FETCH_HEAD` | the default branch — omit `--base`, and retarget an existing PR that still points at `<recorded>` |
+| no trailer | the default branch | none |
+| `OPEN` | `git fetch origin <recorded>`, then `FETCH_HEAD` | back to `<recorded>` |
+| `MERGED` | `git fetch origin refs/pull/<n>/head`, then `FETCH_HEAD` | the default branch, retargeting an existing PR that still points at `<recorded>` |
 | anything else — ask a person | **stop** | **stop** |
 
 `<n>` is the PR number the lookup printed beside the state. The no-trailer row needs no lookup.
 
-A surviving branch may be long merged, so reading `OPEN` from the branch's existence hands `pr-to-ready` that branch as `--base`, and merging a PR into an already-merged branch puts nothing into the default branch. A vanished branch proves only that somebody tidied up, so reading "finished with" from its absence sends `review-code` to the default branch, where `merge-base(<default>, HEAD)` lands below the prerequisite and sweeps its commits into the reviewed range.
+A surviving branch may be long merged, so reading `OPEN` from the branch's existence hands `pr-to-ready` that branch as its base, and merging a PR into an already-merged branch puts nothing into the default branch. A vanished branch proves only that somebody tidied up, so reading "finished with" from its absence sends `review-code` to the default branch, where `merge-base(<default>, HEAD)` lands below the prerequisite and sweeps its commits into the reviewed range.
 
 ## Absorbing the base at the completion gate
 
