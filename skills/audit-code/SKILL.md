@@ -61,7 +61,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
 ### Report format
 
   1. **Verdict** — what to fix, in priority order, in one paragraph; a candidate that would be a finding only if an external contract is not honored is named here as conditional.
-  2. **Measurement base** — the sweep behind each claim of absence.
+  2. **Measurement base** — the revision, tree, or path measured, and the sweep behind each claim of absence.
   3. **Invariants attacked** — per axis, the pair handed to the worker. An invariant no axis attacked and no finding names belongs to Not measured instead.
   4. **Findings** — per axis or invariant, the verdict and the observation that decided it, plus, for each finding, the `path:line` where it breaks.
   5. **Next items** — concrete next actions in order. Not work to start here.
