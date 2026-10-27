@@ -46,7 +46,7 @@ fi
 
 while read -r limit path extra; do
   case "$limit" in '' | '#'*) continue ;; esac
-  if [ -z "$path" ] || [ -n "$extra" ] || ! printf '%s\n' "$limit" | grep -Eq '^[1-9][0-9]*$'; then
+  if [ -z "$path" ] || [ -n "$extra" ] || ! printf '%s\n' "$limit" | grep -Eq '^(0|[1-9][0-9]*)$'; then
     err "malformed line in tests/word-limits.txt: ${limit} ${path} ${extra}"
     continue
   fi
