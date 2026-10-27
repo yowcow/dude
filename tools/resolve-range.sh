@@ -1,23 +1,13 @@
 #!/usr/bin/env bash
-# Resolve the committed range this review covers, printed as two SHAs.
-#
-# Two input shapes, one purpose. Given a PR number, the range is the PR's own
-# head and its merge-base with the base OID the PR's record carries, both
-# fetched: anything derived from the local checkout instead reviews whatever
-# this working copy happens to sit on, which is not the PR's diff wherever the
-# two have diverged, and nothing in the findings would say so. Given no
-# argument, the range runs from the base this branch was cut from to HEAD, and
-# that base is read back from the Base-Branch trailer rather than assumed.
-#
-# Reading it back is what the reviewed range depends on. Squash and rebase
-# merges rewrite a prerequisite's commits under fresh SHAs, so falling back to
-# the default branch where a prerequisite is recorded puts merge-base *below*
-# that prerequisite and sweeps its whole diff into the range — the reviewer
-# then reports findings against code this task never wrote. See
-# skills/implement-work/references/base-branch.md, "## The contract",
-# "## Reading the trailer back", "### Why the state is re-read and the branch
-# is not" and "## Resolving the default branch" — this script implements that
-# table's `review-code`'s `<base>` column.
+# Resolve the committed range this review covers, printed as two SHAs. Given a PR
+# number, the range is the PR's own head and its merge-base with the base OID its
+# record carries, both fetched — never derived from the local checkout. Given no
+# argument, the range runs from the trailer-read-back base to HEAD, never assumed:
+# falling back to the default branch where a prerequisite is recorded sweeps
+# rewritten prerequisite commits into the range.
+# Spec: skills/implement-work/references/base-branch.md, "## The contract",
+# "## Reading the trailer back" and "## Resolving the default branch" (this script
+# implements that table's `review-code`'s `<base>` column).
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

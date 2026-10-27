@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Stale-detection gate for the implement-work Hand off prose contract.
-# Single source is tools/ensure-draft-pr.sh's header:
-# skills/implement-work/SKILL.md cites it as the single source and restates
-# no output literal, so a script output change cannot drift silently past the prose.
+# Single source is superpowers:finishing-a-development-branch Option 2:
+# skills/implement-work/SKILL.md cites it as the procedure and restates
+# no output literal, so a procedure change cannot drift silently past the prose.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -16,12 +16,12 @@ SCRIPT="${REPO_ROOT}/tools/ensure-draft-pr.sh"
 failed=0
 total=0
 
-# Row 1: the SKILL cites the script as the single source.
+# Row 1: the SKILL cites finishing-a-development-branch Option 2 as the procedure.
 total=$((total + 1))
-if grep -qF 'ensure-draft-pr.sh' "$SKILL" && grep -qF 'single source' "$SKILL"; then
+if grep -qF 'finishing-a-development-branch' "$SKILL" && grep -qF 'Option 2' "$SKILL"; then
   : ok
 else
-  printf 'FAIL cite: SKILL does not cite ensure-draft-pr.sh as the single source\n'
+  printf 'FAIL cite: SKILL does not cite finishing-a-development-branch Option 2 as the procedure\n'
   failed=$((failed + 1))
 fi
 

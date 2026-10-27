@@ -1,18 +1,14 @@
 #!/usr/bin/env bash
-# Fetch one ref from origin and print its tip SHA on stdout.
-#
-# This is the canonical fetch-to-SHA source: `resolve-range.sh`,
-# `retarget-pr.sh` and `resolve-pr-base.sh` fetch through it rather than
-# inlining `git fetch` plus their own `git rev-parse FETCH_HEAD`.
+# Fetch one ref from origin and print its tip SHA on stdout. The canonical
+# fetch-to-SHA source: `resolve-range.sh`, `retarget-pr.sh` and
+# `resolve-pr-base.sh` fetch through it rather than inlining `git fetch`.
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs callers print for the exit-1 path:
 # skills/implement-work/references/stop-registry.md
 # (`default-fetch-failed`, `fetch-failed`, `branch-fetch-failed`).
 #
-# The exit-1 path prints nothing so the caller can print its own STOP slug:
-# a slug printed here would land in the caller's command substitution and be
-# read back as a SHA (resolve-default-branch.sh precedent). FETCH_HEAD is
-# read before anything else can fetch again and rewrite it (conventions doc).
+# The exit-1 path prints nothing so the caller can print its own STOP slug;
+# FETCH_HEAD is read before anything else can fetch again and rewrite it.
 #
 # Usage: fetch-to-sha.sh <ref>
 set -euo pipefail

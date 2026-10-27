@@ -1,34 +1,14 @@
 #!/usr/bin/env bash
 # Read a branch's Base-Branch trailer back and report the prerequisite's PR by
-# its *current* state -- never by testing whether the prerequisite's branch
-# still exists. One line on stdout, always:
+# its *current* state, never by whether its branch still exists. One line on
+# stdout, always: NO-TRAILER | PREREQ <branch> <n> <OPEN|MERGED> |
+# NEED <token>... | STOP <slug>. Implements "## Reading the trailer back" in
+# skills/implement-work/references/base-branch.md; the rows where the two readers
+# differ stay with the callers.
 #
-#   NO-TRAILER                                  no trailer in the revs given
-#   PREREQ <branch> <pr-number> <OPEN|MERGED>   the prerequisite and its state
-#   NEED <token>...                             facts the caller reads, then runs again
-#   STOP <slug>                                 the caller stops and says so
-#
-# This implements the cases of the state-to-base table where the two readers
-# print the same bytes -- skills/implement-work/references/base-branch.md,
-# "## Reading the trailer back". The rows where they differ (no trailer,
-# OPEN, MERGED) stay with the callers: NO-TRAILER and PREREQ hand those
-# decisions back rather than taking them here.
-#
-# Called as a subprocess by two other shared tools --
-# tools/resolve-pr-base.sh and tools/resolve-range.sh -- and by no SKILL.md.
-# There is deliberately no caller contract for it in any SKILL.md: it is one
-# answer two skills need, and it lives here because the spec it implements
-# does. Without this paragraph the next reader takes the absent caller for
-# an oversight and either wires a contract for it into a SKILL.md that never
-# calls it, or deletes the script as unreferenced.
-# tools/resolve-default-branch.sh sits here for the same reason; the one
-# difference is that pr-to-ready's Step 2-1 names it directly.
-#
-# The revs come from the caller and go straight to `git log`, because the two
-# callers scan different histories: one reads a branch it has just fetched,
-# bounded by the default branch; the other reads the checkout it is in. Which
-# range is right is the caller's question, and a range decided here would be
-# wrong for one of them with nothing reporting it.
+# Shared by tools/resolve-pr-base.sh and tools/resolve-range.sh, called by no
+# SKILL.md: do not delete as unreferenced. The revs come from the caller and go
+# straight to `git log`, because the two callers scan different histories.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

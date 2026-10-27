@@ -1,25 +1,14 @@
 #!/usr/bin/env bash
 # Read the prerequisite line out of an issue body: the one line
 # `Blocked-By: #<n>` plan-work writes into a stacked child, which
-# implement-work's resolve-base.sh reads to pick the base. Both sides parse
-# through here, so a line the writer's read-back accepts is one the reader
-# accepts. Format and reasons: skills/implement-work/references/base-branch.md.
+# implement-work's resolve-base.sh reads to pick the base.
+# Format and reasons: skills/implement-work/references/base-branch.md.
 #
-# A line is a prerequisite line when, after any leading whitespace, list
-# marker or quote, it begins `blocked-by` or `blocked by` in any case; only
-# `Blocked-By: #<n>` exactly, alone on its line, is well formed. A near-miss
-# answers MALFORMED rather than being skipped: skipped, `Blocked-by #571`
-# reads as no prerequisite, and the task is cut from the default branch
-# without its prerequisite's changes. `owner/repo#<n>` is malformed too: the
-# base is looked up in origin's repository, where that number names another
-# issue.
-#
-# A carriage return ending a line is dropped first: a body saved from the web
-# editor ends its lines in CRLF, and every such line would otherwise read as
-# malformed.
-#
-# Answers through its caller: an unreadable file exits 1 with nothing on
-# stdout, and the caller prints its own slug.
+# Only `Blocked-By: #<n>` exactly, alone on its line, is well formed; a
+# near-miss answers MALFORMED rather than being skipped as no prerequisite,
+# which would cut the task from the default branch without its prerequisite's
+# changes. A CR ending a line is dropped first; an unreadable file exits 1 with
+# nothing on stdout and the caller prints its own slug.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 #

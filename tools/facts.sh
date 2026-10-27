@@ -2,27 +2,13 @@
 # The shared half of the facts contract: the self-check a script runs before
 # it uses a GitHub fact, the read that follows it, and the WAIT round counter.
 #
-# A facts file holds one `name=value` per line; a list repeats its name once
-# per element and carries `<name>.total`, the count its source reported.
 # Format and catalogue: skills/implement-work/references/facts.md.
 #
-# `check` prints one line its caller relays verbatim. Each self-check stops a
-# wrong record from reaching the caller's decision:
-#   identifier (`name=value`) — another record than the one asked for was
-#     read; measured over MCP, a head filter without its owner is ignored and
-#     unrelated PRs come back.
-#   count (`name[]`, or a scalar given twice) — a list shorter than its total
-#     is a truncated page, read as the whole list.
-#   enum (`name:A,B`) — a value outside the set the caller branches on.
-#   unfilled — an empty value or `null`, which is what an unreadable field
-#     becomes when it is written anyway; a fact is never guessed.
-#
-# `wait` counts the rounds of a WAIT. The state lives in a file this script
-# writes and the agent hands back unchanged, so a missing or unrecognised
-# state file is a STOP rather than a count restarted from zero: a restart waits past the
-# limit the porting script inherited.
-# Only a file carrying the `dude-wait` mark is one this script wrote: a caller's
-# file that merely spells `round=N` would otherwise be rewritten and removed.
+# `check` prints one line its caller relays verbatim; its identifier, count,
+# enum, and unfilled self-checks stop a wrong record from reaching the caller's
+# decision. `wait` counts WAIT rounds in a `dude-wait`-marked state file the
+# agent hands back unchanged; a missing or unrecognised state is a STOP, never
+# a count restarted from zero.
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.

@@ -5,11 +5,8 @@
 # the working tree and would rewrite somebody else's code.
 #
 # It reads no GitHub itself. Without facts it answers NEED, pinning the PR to
-# origin's repository and the number given: a PR read under the same number
-# in another repository (an upstream the means defaults to) is a mismatch and
-# stops, never an answer about the wrong PR. A login that could not be read is
-# a STOP, never a guess: reading it as OTHER sends review-code's caller away
-# from their own PR.
+# origin's repository and the number given, and an unread login is a STOP,
+# never a guess as OTHER.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.
