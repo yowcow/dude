@@ -14,36 +14,33 @@ and **Waiting**.
   value with leading or trailing whitespace.
 - A list repeats its name once per element, in the order read, and adds
   `<name>.total=<n>`, the count the source reported — not the count of lines
-  written. A source that reports no count (a paginated list) gives the number
-  of elements read once every page has been read; a read that stopped before
-  the last page is a read that failed, written as an empty total.
-  `<name>.total=0` with no element lines is an empty list.
-- An identifier the `NEED` line pinned as `name=value` is written from the
-  record actually read — or, for a parameter of the read (`target`, `head`,
-  `prereq.head`), from the read actually made — never copied from the `NEED`
-  line: the copy passes the check whichever record was read.
-- A fact that could not be read is written with an empty value; an empty
-  value or `null` stops the script. Never fill it from elsewhere.
-- A file serves one call sequence — one script with the same arguments; a
-  call with other arguments, or to another script, starts a new file: its
-  pins name other records and the check stops.
+  written. A source reporting no count (a paginated list) gives the elements
+  read once every page is read; stopped-before-last-page is a failed read,
+  written as an empty total. `<name>.total=0` with no element lines is empty.
+- A `NEED`-pinned `name=value` identifier is written from the record actually
+  read — or, for a read parameter (`target`, `head`, `prereq.head`), from the
+  read actually made — never copied from the `NEED` line: the copy passes
+  whichever record was read.
+- A fact that could not be read is written empty; an empty value or `null`
+  stops the script. Never fill it from elsewhere.
+- One file per call sequence — one script with the same arguments. Other
+  arguments, or another script, start a new file: its pins name other records
+  and the check stops.
 
 ## Facts
 
 ### `repo`
 
 `<owner>/<repo>` of the repository the record was read from, lower-case.
-Pinned from origin's fetch URL. Read the PR in this repository, not in the
-one the means defaults to: with an `upstream` remote present, a bare PR
-number resolves there, and the same number names a different PR.
+Pinned from origin's fetch URL. Read the PR in this repository, not the one
+the means defaults to: with an `upstream` remote present, a bare PR number
+resolves there, and the same number names a different PR.
 
 ### `pr.number`
 
 The number on the PR record read. Pinned from the script's argument or the
-`NEED` line.
-
-Read in the repository its list was read in: `target` for `head.open-pr`,
-`repo` for `prereq.head-pr` and `prereq.closing-pr`.
+`NEED` line. Read in the repository its list was read in: `target` for
+`head.open-pr`, `repo` for `prereq.head-pr` and `prereq.closing-pr`.
 
 ### `pr.author.login`
 
@@ -62,56 +59,49 @@ The number on the issue record read. Pinned from the script's argument.
 ### `issue.body-file`
 
 The path of a file holding that issue record's body exactly as read: every
-line kept, line endings included. The body, not a comment and not the title;
-the line a script looks for is written into the body.
+line kept, line endings included. The body, not a comment and not the title.
 
 ### `prereq.number`
 
-The number on the prerequisite issue's record read. Pinned from the `NEED`
-line.
+The number on the prerequisite issue's record read.
 
 ### `prereq.closing-pr` (list)
 
 The number of each PR that record names as closing it, open or merged, with
-`prereq.closing-pr.total` the count the record reports. A record that carries
-the count beside a shortened reference list is written as read — fewer
-elements than the total stops the script, never one PR read as the only one.
+`prereq.closing-pr.total` the count the record reports. Written as read: a
+count beside a shortened reference list stops the script, never one PR read
+as the only one.
 
 ### `prereq.head`
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
-`repo`'s owner. Pinned from the `NEED` line; written as the head filter
-actually sent. Filter on the head with its owner: a filter without one has
-been measured ignored, returning unrelated PRs. The PR record read next pins
-its own head — branch and owner — which is what catches a filter the means
-ignored.
+`repo`'s owner. Filter with the owner: a filter without one has been measured
+ignored, returning unrelated PRs. The PR record read next pins its own head —
+branch and owner — which catches a filter the means ignored.
 
 ### `prereq.head-pr` (list)
 
 The number of each PR in `repo`, in any state, whose head is `prereq.head`,
 with `prereq.head-pr.total` the count the source reports. Read by the head
-branch's name, which a PR record keeps after the branch is deleted. Only the
-numbers come from the list; the state comes from each PR's own record.
+branch's name, which a PR record keeps after the branch is deleted. Numbers
+from the list, state from each PR's own record.
 
 ### `pr.state`
 
 `OPEN`, `MERGED` or `CLOSED`, from that one PR's record — never from a list,
-which has been measured reporting a merged PR as not merged. A record that
-says `closed` with a merged flag set is `MERGED`; with the flag unset,
-`CLOSED`.
+which has been measured reporting a merged PR as not merged. A record saying
+`closed` with the merged flag set is `MERGED`; unset, `CLOSED`.
 
 ### `pr.head.ref`
 
 The PR record's head branch, as the bare name: no `owner:` prefix, no
-`refs/heads/`. A `NEED` line may pin it (`pr.head.ref=<branch>`); written
-from the record, never from the list or the `NEED` line.
+`refs/heads/`.
 
 ### `pr.head.owner`
 
-The login of the owner of the PR record's head repository, lower-case. A
-`NEED` line may pin it (`pr.head.owner=<owner>`); written from the record,
-never from the list or the `NEED` line. The branch name alone does not tell
-two heads apart: `other-fork:feature` and `acme:feature` share it.
+The login of the owner of the PR record's head repository, lower-case. The
+branch name alone does not tell two heads apart: `other-fork:feature` and
+`acme:feature` share it.
 
 ### `pr.base.sha`
 
@@ -122,28 +112,23 @@ merge-base itself.
 ### `target`
 
 `<owner>/<repo>`, lower-case: the repository a branch's own PR is looked up
-and opened in — the base repository a person chose, else origin's. Pinned
-from the `NEED` line; written as the repository the list was actually read
-in.
+and opened in — the base repository a person chose, else origin's.
 
 ### `head`
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
-origin's owner. Pinned from the `NEED` line; written as the head filter
-actually sent. Filter with the owner (see
-`prereq.head`), and by head, never by looking the branch name up as a PR
+origin's owner. Filter by head, never by looking the branch name up as a PR
 reference: a numeric branch name reads as that PR's number.
 
 ### `head.open-pr` (list)
 
 The number of each open PR in `target` whose head is `head`, with
-`head.open-pr.total` the count the source reports. A read that failed is
-written as an empty total, never as `0`: "no PR" opens a second PR on top of
-one that could not be seen. Read it from the repository's open-PR list
-filtered on `head` (REST `GET /repos/<target>/pulls?state=open&head=<head>`,
-or any means backed by that list), never from a search: a search index may
-not yet hold a PR just opened, and the read-back after `--created` would then
-answer `pr-not-created` for a PR that exists.
+`head.open-pr.total` the count the source reports. A failed read is written
+as an empty total, never `0`: "no PR" opens a second PR on top of one that
+could not be seen. Read from the repository's open-PR list filtered on `head`,
+never from a search: a search index may not yet hold a PR just opened, and
+the read-back after `--created` would then answer `pr-not-created` for a PR
+that exists.
 
 ### `pr.draft`
 
@@ -155,32 +140,28 @@ The PR record's web URL.
 
 ### `pr.base.ref`
 
-The PR record's base branch, as the bare name. A `NEED` line may pin it;
-written from the record.
+The PR record's base branch, as the bare name.
 
 ### `review.id`
 
-The id of the review the create made, and the record is read by that id —
-never the PR's newest review, which may be someone else's. It is the id the
-create call returned; when the create returns none, it is the id of the
-viewer's one `PENDING` review on the PR, read right after the create
-succeeded and before any other step, since a submitted review is no longer
-pending. Written from the record read. Pinned from the script's `--posted`
-argument.
+The id the create call returned, and the record is read by that id — never
+the PR's newest review, which may be someone else's. When the create returns
+none, it is the id of the viewer's one `PENDING` review on the PR, read right
+after the create succeeded and before any other step. Pinned from the
+script's `--posted` argument.
 
 ### `review.commit`
 
 The commit the review record is anchored to. Pinned to the head that was
 reviewed: a review created without naming that commit anchors to the PR's
-current head, and after an author push each inline comment lands on
-whatever line sits at its number there. Written from the record, never from
-the create call's arguments.
+current head, and after an author push each inline comment lands on whatever
+line sits at its number there.
 
 ### `review.state`
 
-`PENDING`, `APPROVED` or `COMMENTED`, from that review record — never
-inferred from the submit call having returned. Any other value
-(`CHANGES_REQUESTED`, `DISMISSED`) is outside what this flow posts.
+`PENDING`, `APPROVED` or `COMMENTED`, from that review record — never inferred
+from the submit call having returned. Any other value (`CHANGES_REQUESTED`,
+`DISMISSED`) is outside what this flow posts.
 
 ### `review.body-file`
 
@@ -194,8 +175,8 @@ The review record's web URL.
 
 ### `repo.fork` (list)
 
-`true` or `false` for each repository record read for `repo`: whether it is a
-fork. `repo.fork.total` is the number of records the read returned — 1 for
-the repository's own record. A repository search returns a fork only when
-the query includes forks; a search that misses it reports total 0, written
-as read: the script stops on it, never reading it as "not a fork".
+`true` or `false` for each repository record read for `repo`. `repo.fork.total`
+is the number of records the read returned — 1 for the repository's own
+record. A repository search returns a fork only when the query includes
+forks; a search that misses it reports total 0, written as read: the script
+stops on it, never reading it as "not a fork".

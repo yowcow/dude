@@ -47,12 +47,9 @@ file format are in `facts.md`.
 
 - Without the file, or with a needed fact absent from it, the script answers
   `NEED <token>...` on stdout, exit 0. A bare token names a fact to read. A
-  `name=value` token pins the identifier the read is for; how the caller
-  writes `name` back is in `facts.md`, **The file** — never copied from the
-  `NEED` line.
+  `name=value` token pins the identifier the read is for.
 - The caller reads every named fact, writes the file, and calls the script
-  again with `--facts <file>`. A fact it could not read is written with an
-  empty value, never guessed; the check stops on it.
+  again with `--facts <file>`. A fact it could not read is written empty.
 - Any `NEED …` or `STOP …` line `check` prints is relayed verbatim and the
   script exits 0. This is the one slug that comes out of a command substitution:
   the relayed line is the script's answer, never data it goes on to use.
@@ -74,8 +71,8 @@ and calls the script again with the same arguments plus
 - The state file is written by the script and read by nothing else; the
   first call has none.
 - Whether the limit is reached or the result is stable is the script's
-  decision alone. A porting script keeps the limit and interval it had.
-  On the last round it answers its own final word in place of `WAIT`.
+  decision alone. On the last round it answers its own final word in place of
+  `WAIT`.
 
 ## FETCH_HEAD
 

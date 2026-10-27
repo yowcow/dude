@@ -5,14 +5,11 @@ around it. A slug not on this list must not be printed; add it here first.
 
 Slugs are owned by their printing script. `fetch-to-sha.sh`, `origin-repo.sh` and
 `resolve-default-branch.sh` print no slug: they exit 1 with empty stdout and
-the caller prints its own slug from this list. One script prints through a
-variable: `tools/facts.sh`'s `echo "STOP ${slug}"`. A literal `STOP <slug>`
-grep therefore misses `fact-count`, `fact-enum`, `fact-mismatch` and
-`fact-missing`.
-
-Scripts on the facts contract relay the line `tools/facts.sh check` prints
-verbatim, so its slugs are listed as printed by `tools/facts.sh` and reach
-stdout through every such script.
+the caller prints its own slug from this list. `tools/facts.sh` prints through a
+variable (`echo "STOP ${slug}"`), so a literal `STOP <slug>` grep misses
+`fact-count`, `fact-enum`, `fact-mismatch` and `fact-missing`; scripts on the
+facts contract relay its `check` line verbatim, reaching stdout through every
+such script.
 
 ## Slugs
 
