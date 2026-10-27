@@ -81,7 +81,7 @@ A phase is *clean* when its checks pass (phase-clean — the gate sense, distinc
 
 A flow that produces no code sets its own bar instead, and each skill defines its own.
 
-Where a tracking issue backs the work, `plan-work` splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
+Where a tracking issue backs the work, `plan-work`'s **Splitting into sub-issues** splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
 
 - Each turn takes one sub-issue through `implement-work`'s own entry and gates.
 - A later PR is never a continuation of the previous turn, and never inherits its verification.
@@ -98,7 +98,7 @@ The deliverable is an evidence-backed explanation of an observed problem, or a j
 
 #### Investigation → Change transition
 
-- An investigation never starts editing. When a fix is wanted, enter `plan-work` with the findings as input.
+- An investigation never starts editing. When a fix is wanted, enter `plan-work`'s **Entry** with the findings as input.
 - Carry the reproduction forward: it becomes the regression test for the fix.
 
 ### Worker tier
@@ -153,6 +153,6 @@ Every loop that checks work and fixes what came back stops on the same condition
   - the Investigation workflow's framing for an Investigation
   - Workflow selection if the task's type changed.
 - **A Critical finding that invalidates the agreed design is never fixed in place, and never worked around.**
-  - It goes back to `plan-work` for re-approval wherever it surfaces.
+  - It goes back to `plan-work`'s **Entry** for re-approval wherever it surfaces.
   - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
 - Report what's uncertain, the options and trade-offs, and your recommendation. What a flow hands over on this exit belongs to that skill's own **Escalation** section; the contract for receiving it is `plan-work`'s **Entry**.

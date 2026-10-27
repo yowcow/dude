@@ -32,7 +32,7 @@ Take the PR number or URL from the caller; if none was given, ask.
 - **Purpose unknown**: make no purpose-versus-means check and run the rest of the review as usual. The requirements are what the linked issues state, if any. Skip `propose-alternatives`; do not invoke; chat the skip; continue. No new prompt.
 - Where no requirements result, say so.
 - **Purpose settled:** invoke `propose-alternatives` once with that settled purpose, the read-root below, and the current artifact. **Read-root:** the PR's base at its current tip, the `pr.base.sha` fact fetched as a SHA — not the range's `<base>` merge-base, not `<head>`, not the head worktree Step 3 creates, not the session checkout.
-- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue; on revisit design, stop the review and the person returns to `plan-work` with the finding, the branch name, and that branch's state.
+- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue; on revisit design, stop the review and the person returns to `plan-work`'s **Entry** with the finding, the branch name, and that branch's state.
 
 ### 3. Vet
 

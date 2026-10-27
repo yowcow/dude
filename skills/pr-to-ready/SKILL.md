@@ -32,7 +32,7 @@ Request each selected reviewer by the agent's own means; skip a name that is una
 
 ## Clean
 
-Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work for re-approval — otherwise the loop silently ships work the agreed design no longer covers.
+Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work's **Entry** for re-approval — otherwise the loop silently ships work the agreed design no longer covers.
 
 ## Replies
 

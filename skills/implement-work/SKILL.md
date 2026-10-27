@@ -7,14 +7,14 @@ description: Use to implement one PR-sized task.
 
 ## Entry
 
-One PR-sized task: a sub-issue, an issue that fits a single PR, or a request of that size. Work larger than one PR, or a design not yet agreed, goes back to `plan-work` — splitting is a design decision.
+One PR-sized task: a sub-issue, an issue that fits a single PR, or a request of that size. Work larger than one PR, or a design not yet agreed, goes back to `plan-work`'s **Entry** — splitting is a design decision.
 
 ## Binding `<branch>`
 
 Bind one concrete name here, before **Isolation** reads it. Take the first rung that applies:
 
 1. **The caller named one** — a direct invocation, or a hand-off carrying a name. The name is already the answer: use it verbatim, never search.
-2. **The task carries one** — an item returned from `plan-work` with its design invalidated names its branch in the sub-issue body. The name is already the answer: use it verbatim, never search.
+2. **The task carries one** — an item returned from `plan-work` with its design invalidated names its branch in the sub-issue body, per its **Output contract**. The name is already the answer: use it verbatim, never search.
 3. **Neither** — derive `<issue-number>-<slug>` where an issue backs the task, `<slug>` where none does. `<slug>` is a short kebab-case description of the change.
 
 A rung-3 name with no issue behind it is never searched — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search by that issue number through `scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue, one name per line. Count the lines: none — `<branch>` is the name just derived; exactly one — `<branch>` becomes that branch, and the run below resumes on it; two or more — stop and ask, since which line of work to carry on is a human call.
@@ -31,7 +31,7 @@ Use `superpowers:using-git-worktrees`, then establish a verified baseline there.
 
 Only `CREATE` above needs this. A task with no tracking issue branches from the default branch; everything below applies only when an issue backs the task.
 
-`scripts/resolve-base.sh <issue-number>` reads the prerequisite from the one `Blocked-By: #N` line `plan-work` writes in the issue body, and settles the base from the state of the PR closing that prerequisite: `OPEN` takes that PR's head, `MERGED` takes the default branch — both fetched first, so the cut branch contains what it is meant to. On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. Read its one-line answer: `BASE <branch>` cuts the new branch from `origin/<branch>`, never the bare name. On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
+`scripts/resolve-base.sh <issue-number>` reads the prerequisite from the one `Blocked-By: #N` line `plan-work`'s **Splitting into sub-issues** writes in the issue body, and settles the base from the state of the PR closing that prerequisite: `OPEN` takes that PR's head, `MERGED` takes the default branch — both fetched first, so the cut branch contains what it is meant to. On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. Read its one-line answer: `BASE <branch>` cuts the new branch from `origin/<branch>`, never the bare name. On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
 
 Record a non-default base as one `Base-Branch: <base>` trailer line on this task's first commit — the bare branch name, never an `origin/` prefix. Branching from the default branch records nothing. The trailer contract lives in `references/base-branch.md`.
 
@@ -45,7 +45,7 @@ Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An un
 
 The small-change lane in `using-dude`'s **Workflow selection** skips this gate outright.
 
-1. Read the task. A sub-issue carries its own body plus a link to the parent's design comment; an issue that fits one PR carries its own comment; a request with no issue is itself the input, with whatever `plan-work` left in chat.
+1. Read the task. A sub-issue carries its own body plus a link to the parent's design comment; an issue that fits one PR carries its own comment; a request with no issue is itself the input, with whatever `plan-work` left in chat per its **Output contract**.
 2. Dispatch a drafter at fresh context with `superpowers:writing-plans`. The brief carries references to where step 1 found the design — never the design itself — plus the workspace path and the branch. The worker drafts the plan and returns its path; it never implements. What this gate takes back has been through that skill's own self-review. The plan lives in the workspace, git-ignored and never committed.
 3. Dispatch `review-plan` on the implementation plan, fold every accepted finding except one that invalidates the agreed design — which is not folded at all — then re-run `review-plan`, handing over the previous pass's findings.
 4. Leave by exactly one of three exits: **Clean** per `using-dude`'s **Loop convergence** goes to **Execution**; **Design invalidated** by a Critical finding takes **Escalation**; **Stalled** on a non-clean stopping condition with a surviving blocking finding stops for the user, per that rule. A round is one `review-plan` pass and the fold-in that follows it; two findings are the same when they fault the same step for the same reason.
@@ -101,6 +101,6 @@ Push the branch under its own name, then open the draft PR through `superpowers:
 
 ## Escalation
 
-Per `using-dude`'s **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work` for re-approval — not in the plan gate, and not in the completion gate, is this skill an exception.
+Per `using-dude`'s **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work`'s **Entry** for re-approval — not in the plan gate, and not in the completion gate, is this skill an exception.
 
 What this flow hands over is the branch: its name, whether it is pushed, and any PR open on it. Where the finding surfaced in the completion gate, the branch already carries the round's commits, since the gate commits before taking either exit.
