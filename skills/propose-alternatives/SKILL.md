@@ -47,8 +47,6 @@ Only a material regression, or a purpose that is invalid or unmet, is a finding.
 
 Skip; or continue with no finding; or the comparison, the one `review-findings` pass over it, and the person's continue-vs-revisit-design answer — alongside the worker's proposal (including doing nothing / doing something else), what it reuses, and its trade-offs — plus, when the worker measured, the command and raw output it returned, or the path of each file it wrote when that output was too large to return; and, where the measurement it needed is not one of those, what could not be measured and what would settle it.
 
+Neither the proposal nor the comparison is a finding, `needs-user`, or Critical auto-reapproval, or is posted to a PR — body, inline, or review.
+
 Never an empty return that means the current direction is fine.
-
-## Caller reference
-
-Invoke with the named purpose, the read-root, and the current artifact; continue except on revisit design, which the caller handles under `using-dude`'s **Escalation**.

@@ -14,7 +14,7 @@ This skill holds two gates: one on the detailed plan, before any code, and the c
 **This skill dispatches one worker of its own: the plan drafter.**
 
 - It goes out at **Plan gate** step 2.
-- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `propose-alternatives`, `review-findings`, `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
+- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `propose-alternatives`, `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
 
 The orchestrator owns the task, the workspace, both gates, the execution-method choice, every commit, and the hand-off, and decides when a gate is clean. Workers do bounded, single-task work and hand back — never an objective spanning more than one task, and never a gate declared clean by a worker.
 
@@ -86,7 +86,7 @@ After Isolation, before **Plan gate**. The small-change lane still runs this, th
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a chat-only task — with `NEED` and `STOP` handled as there. Hand `origin/<base>`, fetched to its current tip, never the bare name, the workspace path, HEAD, or the session checkout.
 - Else invoke `propose-alternatives` once with that purpose, the read-root, and the current artifact.
-- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation.
 
 ## Plan gate
 
@@ -162,7 +162,7 @@ Add only what the execution method left undone.
 3. **Review** — run `review-code`, handing it the check result covering the tree: step-2's check run where step 2 ran one; otherwise this round's step-1 Verify result while that run's subject is still this tree. Where neither run's subject is this tree, the dispatch carries no check result and says what was missing. Where the change Simplify applied was doc-only, the dispatch also hands the judged claims table, since no project check proves the prose. Never the previous round's result.
 
    - **The requirements travel with the dispatch.** This task's own entry artifact as step 1 reads it — the binding source, its scope boundary included — and, where this flow drafted a detailed plan, where that plan sits: the plan travels as the artifact's transcription, exactly as step 1 says, never as a second source. `vet-code` reviews against the requirements it is handed. Without them, a completion criterion left unmet or a scope boundary crossed comes back clean.
-   - **Where the execution method kept a ledger, its rows travel too** — at the path that method's workspace printed, and only the lines carrying its ruling marker (`Ruling:`). Select by marker, never by row shape: methods spell the same marker differently, and a shape only a review this flow stops could produce matches nothing. Where the method kept no ledger — a manual run keeps none — the dispatch says so, and no triage runs that round.
+   - **Where the execution method kept a ledger, its rows travel too** — at the path that method's workspace printed, and only the lines carrying its ruling marker (`Ruling:`) or its deferred-minor marker (`minor (deferred)`). Select by marker, never by row shape: methods spell the same marker differently, and a shape only a review this flow stops could produce matches nothing. Where the method kept no ledger — a manual run keeps none — the dispatch says so, and no triage runs that round.
      - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of two states at **Hand off**: fixed in a round, or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding this round returned as a **blocking** finding and nothing closed is not ended: report it open with the blocking findings that stopped the gate.
      - The ledger travels every round, not the first alone: a row a later round's fix has moved past is answered again — closed again where it still does not stand, a finding again where that fix brought it back — and a row still standing is still standing.
    - The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.

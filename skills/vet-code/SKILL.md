@@ -41,7 +41,7 @@ When the caller's scope includes a read-root — a directory already bound as th
 After the template, append only these viewpoint extras:
 
 - **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
-- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings rejected with the reason. The record does not narrow the review: tell the reviewer to cover the whole scope at every severity, places unchanged since the previous round included, and that the record stops only a finding it holds as rejected from being raised again; a finding accepted and fixed that still stands is raised again. A reviewer not shown the rejections re-litigates them.
+- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings or Declined to judge lines rejected with the reason. The record does not narrow the review: tell the reviewer to cover the whole scope at every severity, places unchanged since the previous round included, and that the record stops only a finding it holds as rejected from being raised again; a finding accepted and fixed that still stands is raised again. A reviewer not shown the rejections re-litigates them.
 
 Also after the template: Confine every search to the project root or narrower. Answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
 
