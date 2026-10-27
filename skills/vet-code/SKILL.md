@@ -57,4 +57,4 @@ Keep the reviewer's text, severity, and location whole and separate from the ver
 
 Verdicts carry the meanings `judge-findings`'s **Verdicts** gives them.
 
-Alongside the findings, return whichever caveat **Reviewer prompt** asks for: a paths-only scope, or no requirements — and a `not measured` line for any question the record did not cover, naming what would have to be measured.
+Alongside the findings, return whichever caveat **Reviewer prompt** asks for: a paths-only scope, or no requirements — and any `not measured` line `judge-findings` returned.
