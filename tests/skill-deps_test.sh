@@ -31,7 +31,7 @@ audit-code part
 investigate-* part
 settle-question part
 vet-code component
-review-findings component
+review-findings primitive
 propose-alternatives component
 judge-findings primitive'
 

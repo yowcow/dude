@@ -14,7 +14,7 @@ This skill holds two gates: one on the detailed plan, before any code, and the c
 **This skill dispatches one worker of its own: the plan drafter.**
 
 - It goes out at **Plan gate** step 2.
-- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `propose-alternatives`, `review-findings`, `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
+- Nothing else leaves the main loop: every other worker in this flow is dispatched by a sub-skill it calls — `propose-alternatives`, `review-plan`, the execution method, `simplify-code`, `review-code` — each declaring its own fan-out, so add none here.
 
 The orchestrator owns the task, the workspace, both gates, the execution-method choice, every commit, and the hand-off, and decides when a gate is clean. Workers do bounded, single-task work and hand back — never an objective spanning more than one task, and never a gate declared clean by a worker.
 
@@ -85,10 +85,8 @@ After Isolation, before **Plan gate**. The small-change lane still runs this, th
 
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a chat-only task — with `NEED` and `STOP` handled as there. Hand `origin/<base>`, fetched to its current tip, never the bare name, the workspace path, HEAD, or the session checkout.
-- Else invoke `propose-alternatives` once with that purpose and the read-root.
-- Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
-- Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+- Else invoke `propose-alternatives` once with that purpose, the read-root, and the current artifact.
+- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation.
 
 ## Plan gate
 
@@ -165,7 +163,7 @@ Add only what the execution method left undone.
 
    - **The requirements travel with the dispatch.** This task's own entry artifact as step 1 reads it — the binding source, its scope boundary included — and, where this flow drafted a detailed plan, where that plan sits: the plan travels as the artifact's transcription, exactly as step 1 says, never as a second source. `vet-code` reviews against the requirements it is handed. Without them, a completion criterion left unmet or a scope boundary crossed comes back clean.
    - **Where the execution method kept a ledger, its rows travel too** — at the path that method's workspace printed, and only the lines carrying its ruling marker (`Ruling:`) or its deferred-minor marker (`minor (deferred)`). Select by marker, never by row shape: methods spell the same marker differently, and a shape only a review this flow stops could produce matches nothing. Where the method kept no ledger — a manual run keeps none — the dispatch says so, and no triage runs that round.
-     - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of three states at **Hand off**: fixed in a round, recorded — in the PR body by **Hand off**, or in this Report when the gate halts before it — or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding this round returned as a **blocking** finding and nothing closed is not ended: report it open with the blocking findings that stopped the gate.
+     - Each row comes back as a finding, handled from there like any other, or as a row that no longer stands, with the reason it does not. Every row ends in one of two states at **Hand off**: fixed in a round, or declined with the reason — that it no longer stands, or why the finding it became was rejected. A row whose finding this round returned and nothing closed is not ended: report it open with the findings that stopped the gate.
      - The ledger travels every round, not the first alone: a row a later round's fix has moved past is answered again — closed again where it still does not stand, a finding again where that fix brought it back — and a row still standing is still standing.
    - The only basis for declaring this gate clean is a verdict it produced itself: any review an execution method may have run belongs to that method's own procedure, so its scope and verdict can't be checked from here.
 4. **Commit** the round's work in the same round that produced it, so the tree is clean before either exit below hands the branch onward.
@@ -213,14 +211,13 @@ Push the branch to `origin` under its own name.
 
 - The push is what turns the branch into a deliverable rather than local state: opening a PR needs a remote ref, so an unpushed branch leaves the next flow nothing to enter on — in a later session, or a checkout that never held the branch.
 
-Then call `tools/ensure-draft-pr.sh <branch>`. It looks for a PR already on `<branch>`, and only when none is found resolves the base and answers with the repository, head and base to open one on. Branch on the one line it prints — the output contract in that script's header is the single source. Handle `NEED` as **Base branch** does. On its create answer, open the draft PR by your own means in that repository, from that head, onto that base, with the title and body below; then call it again with the same branch and base repository, if one was chosen, plus `--created <base>` and a new facts file read afresh. If opening the PR fails, report it and hand the branch over. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. Its body is brought up to date too: add this run's recorded Minors to the **Known minors (recorded, not fixed)** list below, creating it where the body has none, and leave the rest of the body as it was. A body update that cannot be written is reported like a failed PR opening. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
+Then call `tools/ensure-draft-pr.sh <branch>`. It looks for a PR already on `<branch>`, and only when none is found resolves the base and answers with the repository, head and base to open one on. Branch on the one line it prints — the output contract in that script's header is the single source. Handle `NEED` as **Base branch** does. On its create answer, open the draft PR by your own means in that repository, from that head, onto that base, with the title and body below; then call it again with the same branch and base repository, if one was chosen, plus `--created <base>` and a new facts file read afresh. If opening the PR fails, report it and hand the branch over. A found PR is the deliverable and its status is left as it is: a person may have marked it ready, and pulling it back to draft would take a PR out of review that nobody asked to reopen. A created PR is this run's deliverable. A stop is reported and the branch handed over regardless.
 
 Where it answers `STOP ask-base-repo` or `STOP fork-unread`, origin is a fork or has another remote beside it (or whether it is a fork could not be read), and no base repository was chosen: ask the user which repository the draft PR should target, offering origin's own repository first, then call the same script again with the chosen repository appended and a new facts file. A found or created PR from there on is the deliverable as above. A stop is reported and the branch handed over regardless.
 
 Title and body follow the repo's PR template when it has one.
 
 - The body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, fully qualified as `owner/repo#NNN` when that issue lives in another repository.
-- The body lists every Minor this gate recorded — the review's own, and any a ledger row raised — under **Known minors (recorded, not fixed)**. The session report is where they live otherwise, and it ends with the session; the PR body is what a reviewer reads.
 - The PR is always opened as a draft — nothing here has run CI or been reviewed, so nothing has yet earned a person's merge attention.
 
 Then stop, and name `pr-to-ready` as the next entry **without invoking it**, handing it the `url=` value from that line — that reference is its whole entry. Which flow runs next is the caller's decision, not this skill's.
@@ -238,7 +235,6 @@ Then stop, and name `pr-to-ready` as the next entry **without invoking it**, han
 - the completion gate's `review-code` verdict, and any blocking finding left open
 - the completion gate's rounds, and the condition it exited on
 - the execution method's rulings, collected before its workspace was deleted, each with what it costs if wrong — or that it made none
-- the Minor findings recorded this run, where no PR body carries them
 - the base absorbed, how it was re-resolved, and what the absorb answered on the final round
 - the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
 - the concrete checks run, and any that couldn't be

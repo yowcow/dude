@@ -12,7 +12,7 @@ Turns an issue or a planning request into work `implement-work` can pick up one 
 - The orchestrator owns everything that decides: research, invoking `superpowers:brainstorming` and `review-plan`, drafting the TODO list, folding the accepted findings in, calling convergence or escalation, and publishing.
 - Those two skills own their own internal procedures — dispatch model, lenses, self-review, user gate. Supply their inputs and act on their outputs; never reach inside them, dispatch reviewers yourself, or reimplement what they already do. `review-plan` never edits what it reviewed, so folding findings in and re-running belong here.
 - **Nothing else drafts the TODO list.** No sub-skill produces a PR-granularity breakdown, so don't go looking for one to delegate to — write it here, against **Output contract**.
-- This skill dispatches no worker of its own. Invoke `propose-alternatives` and, on a finding, `review-findings` by name; those skills own their procedures.
+- This skill dispatches no worker of its own. Invoke `propose-alternatives` by name; it owns its procedure.
 
 ## Boundaries
 
@@ -90,10 +90,8 @@ One sub-issue per item, whatever the count. Where a tracking issue exists they a
 2. Invoke `propose-alternatives` once when the purpose is named.
    - **Purpose:** the tracking issue's problem; with no issue, the request's problem. Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
    - **Read-root:** the default branch. Use the session checkout only when it is already that branch; otherwise read the default-branch ref, fetched to its current tip, and do not pass the session tree. Do not create a worktree, read-only or not.
-   - Else invoke `propose-alternatives` once with that purpose, read-root.
-   - Compare the proposal with the work as currently framed — the issue or request and the means it asks for — on purpose, means, and cost, per `propose-alternatives`'s **Caller contract**.
-   - Empty finding → no `review-findings`; do not wait; continue; chat.
-   - Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: take the finding to **Design agreement**). Do not proceed to step 3 except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+   - Else invoke `propose-alternatives` once with that purpose, read-root, and the current artifact — the issue or request and the means it asks for.
+   - Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue; on revisit design, take the finding to **Design agreement** and do not proceed to step 3.
 3. Research: read the issue, where there is one, and the relevant code before asking anything or proposing a design.
 4. Reach **Design agreement**.
 5. Draft the design write-up and the numbered TODO list yourself, against **Output contract** — on re-entry, including the match against existing children, settled before step 6.
