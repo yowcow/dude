@@ -13,8 +13,8 @@ fi
 ```
 
 Shape, not just number: `Usage: ...` on stderr, nothing on stdout, exit 2.
-Numeric arguments are validated with `[[ "$X" =~ ^[0-9]+$ ]]`
-(`resolve-thread.sh` regex-shape precedent; its own exit stays 1); a non-numeric value is a usage error.
+Numeric arguments are validated with `[[ "$X" =~ ^[0-9]+$ ]]`;
+a non-numeric value is a usage error.
 Remaining `exit 1` paths are runtime failures, not usage.
 `resolve-default-branch.sh` takes an optional `[repo]` — more than one argument is a usage error.
 
