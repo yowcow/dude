@@ -56,7 +56,7 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
 - **A separate session picking the plan up later** goes to `superpowers:executing-plans`.
 - **Manual** is the fitting method on the small-change lane in `using-dude`'s **Workflow selection**, and an exception needing a named reason anywhere else.
 
-Say which method runs and why. Delegation only pays when a task covers the hand-off, so inline trivially small independent changes; take on no refactoring the task did not ask for. The method does not carry the work into integration, and its final whole-branch review does not run here — the completion gate's own review is the verdict this flow stands on. Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong, and hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged.
+Say which method runs and why. Delegation only pays when a task covers the hand-off, so inline trivially small independent changes; take on no refactoring the task did not ask for. The method does not carry the work into integration, and its final whole-branch review does not run here — the completion gate's own review is the verdict this flow stands on. Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong, and hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged. Run the method's own Finish except its workspace deletion: step 3 hands the ledger's lines every round, so the workspace stays until this flow ends — after **Report** holds the rulings and, on the normal exit, after **Hand off**.
 
 ## Completion gate
 
@@ -80,7 +80,7 @@ One round is verify against the entry artifact, every round, then `simplify-code
 
 ## Hand off
 
-Push the branch under its own name, then open the draft PR through `superpowers:finishing-a-development-branch` Option 2. The dude delta on that procedure is only this: always draft; the body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository; the base is whatever **Base branch** would settle. Then name `pr-to-ready` as the next entry without invoking it.
+Push the branch under its own name, then open the draft PR through `superpowers:finishing-a-development-branch` Option 2. The dude delta on that procedure is only this: always draft; the body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository; the base is whatever **Base branch** would settle. A PR already open on the branch is the deliverable, its status left as is. Where origin is a fork or has another remote, ask which repository the draft PR targets, offering origin's own first. Then name `pr-to-ready` as the next entry without invoking it.
 
 ## Report
 

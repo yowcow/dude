@@ -18,7 +18,7 @@
 #
 # Usage: ensure-draft-pr.sh <branch> [<base-repo>] [--created <base>] [--facts <file>]
 #
-# Output contract (single source; skills/implement-work/SKILL.md cites this):
+# Output contract (single source; skills/pr-to-ready/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
 #   CREATE repo=<owner>/<repo> head=<head> base=<base> -- no PR exists: open a
 #     draft PR in <repo> from <head> onto <base>, then call again with the
