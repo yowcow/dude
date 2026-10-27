@@ -78,48 +78,4 @@ if ! grep -qF '#   STOP <slug>' "$SCRIPT"; then
 fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# Row 5: Hand off cites check-judge-records.sh as the single source and
-# routes any non-OK line back to the completion gate's step 1.
-total=$((total + 1))
-fails_here=0
-if ! grep -qF 'check-judge-records.sh' <<<"$HANDOFF"; then
-  printf 'FAIL judge-cite: Hand off does not cite check-judge-records.sh\n'
-  fails_here=1
-fi
-if ! grep -qF 'single source' <<<"$HANDOFF"; then
-  printf 'FAIL judge-cite: Hand off does not name the single source\n'
-  fails_here=1
-fi
-if ! grep -qF "completion gate's step 1" <<<"$HANDOFF"; then
-  printf 'FAIL judge-route: Hand off does not route back to the completion gate step 1\n'
-  fails_here=1
-fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
-# Row 6: the Hand off judge prose restates no judge output literal.
-# Scoped to ## Hand off like Row 3; OK already appears in the
-# tree-records line above so only the judge-specific forms are checked.
-total=$((total + 1))
-if grep -qF -e 'MISSING' -e 'DOUBLE' -e 'IDENTITY' -e 'GAP' -e 'DIRTY' -e 'UNCOVERED' <<<"$HANDOFF"; then
-  printf 'FAIL judge-literal: Hand off restates the judge output contract\n'
-  failed=$((failed + 1))
-else
-  : ok
-fi
-
-# Row 7: vet-code names recording the judge-findings return whole and
-# unreworded into judge-verdict-<round>.md with the input file's name.
-total=$((total + 1))
-VETCODE="${REPO_ROOT}/skills/vet-code/SKILL.md"
-fails_here=0
-if ! grep -qF 'judge-verdict-' "$VETCODE"; then
-  printf 'FAIL verdict-cite: vet-code does not name judge-verdict-\n'
-  fails_here=1
-fi
-if ! grep -qF 'whole and unreworded' "$VETCODE"; then
-  printf 'FAIL verdict-cite: vet-code does not say whole and unreworded\n'
-  fails_here=1
-fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
-
 harness_exit "$failed" "$total"

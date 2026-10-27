@@ -4,7 +4,6 @@
 5562 skills/implement-work/SKILL.md
 1503 skills/implement-work/references/base-branch.md
 1356 skills/implement-work/references/facts.md
-1398 skills/implement-work/references/measurement-record.md
 629 skills/implement-work/references/script-conventions.md
 583 skills/implement-work/references/stop-registry.md
 1044 skills/investigate-anomaly/SKILL.md
