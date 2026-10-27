@@ -9,6 +9,10 @@
 #
 # `set -e` is deliberately absent: this is an accumulating reporter, and one
 # problem must not stop it from naming the rest.
+#
+# The list lookups below read all of grep's input (no `-q`): an early exit would
+# SIGPIPE `cut` once the list outgrows a pipe buffer, and `pipefail` would then
+# misreport the match.
 set -uo pipefail
 
 HERE="$(CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,7 +54,7 @@ while read -r limit path extra; do
     err "malformed line in tests/word-limits.txt: ${limit} ${path} ${extra}"
     continue
   fi
-  if printf '%s' "$LISTED" | cut -f1 | grep -Fxq -- "$path"; then
+  if printf '%s' "$LISTED" | cut -f1 | grep -Fx -- "$path" >/dev/null; then
     err "${path} is listed more than once in tests/word-limits.txt"
     continue
   fi
@@ -75,7 +79,7 @@ EOF2
 
 while IFS="	" read -r path _; do
   [ -n "$path" ] || continue
-  if ! printf '%s' "$FOUND" | cut -f1 | grep -Fxq -- "$path"; then
+  if ! printf '%s' "$FOUND" | cut -f1 | grep -Fx -- "$path" >/dev/null; then
     err "${path} is listed but does not exist"
   fi
 done <<EOF2
