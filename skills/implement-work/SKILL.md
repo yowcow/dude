@@ -7,7 +7,7 @@ description: Use to implement one PR-sized task.
 
 ## Entry
 
-One PR-sized task: a sub-issue, an issue that fits a single PR, or a request of that size. Work larger than one PR, or a design not yet agreed, goes back to `plan-work`'s **Entry** — splitting is a design decision.
+One PR-sized task: a sub-issue, an issue fitting a single PR, or a request of that size. Work larger than one PR, or a design not yet agreed, goes back to `plan-work`'s **Entry** — splitting is a design decision.
 
 ## Binding `<branch>`
 
@@ -17,9 +17,9 @@ Bind one concrete name here, before **Isolation** reads it. Take the first rung 
 2. **The task carries one** — an item returned from `plan-work` with its design invalidated names its branch in the sub-issue body, per its **Output contract**. The name is the answer: use it verbatim, never search.
 3. **Neither** — derive `<issue-number>-<slug>` where an issue backs the task, `<slug>` where none does. `<slug>` is a short kebab-case description of the change.
 
-A rung-3 name with no issue behind it is never searched — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search by that issue number through `scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue, one name per line. Count the lines: none — `<branch>` is the name derived; exactly one — `<branch>` becomes that branch, and the run below resumes on it; two or more — stop and ask, which line of work to carry on is a human call.
+A rung-3 name with no issue behind it is never searched — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search by that issue number through `scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue, one name per line. Count the lines: none — `<branch>` is the name derived; exactly one — `<branch>` becomes that branch, and the run below resumes on it; two or more — stop and ask: which line of work to carry on is a human call.
 
-Whatever creates the workspace puts it on this exact name: a tool that decorates the name it is handed leaves a branch this search cannot find, so the next session derives a fresh name and opens a second branch for the same task.
+Whatever creates the workspace must put it on this exact name: a tool that decorates the name it is handed leaves a branch this search cannot find, so the next session derives a fresh name and opens a second branch for the same task.
 
 ## Isolation
 
