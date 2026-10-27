@@ -153,20 +153,23 @@ run_gate "$root"
 if ! check_eq 'zero cap: exit' 0 "$SUT_STATUS"; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# Cases 11 and 12 pad each path to ~220 bytes so ~500 entries pass a 64 KB
-# pipe buffer while the gate's per-entry loop stays fast.
+# Cases 11 and 12 pad each path so ~500 entries pass a pipe buffer while the
+# gate's per-entry loop stays fast. Case 12 creates its paths, so its pad stays
+# under NAME_MAX; case 11 only lists them, so its pad is longer.
 pad="$(awk 'BEGIN{for(i=0;i<200;i++)printf "x"}')"
+pad11="$(awk 'BEGIN{for(i=0;i<600;i++)printf "x"}')"
 
 # --- case 11: a list far past a pipe buffer still detects a duplicate ---------
 # A `grep -q` early exit SIGPIPEs `cut` and `pipefail` then reports the
-# duplicate as absent.
+# duplicate as absent. The ~300 KB list exceeds what grep reads at once (up to
+# 96 KiB) plus the pipe buffer, so `cut` cannot finish before grep exits.
 total=$((total + 1))
 fails_here=0
 root="$(tree_new)"
 mk_md "$root" skills/a/SKILL.md 3
 {
   printf '3 skills/a/SKILL.md\n'
-  awk -v pad="$pad" 'BEGIN{for(i=0;i<500;i++)printf "3 skills/%s%05d/SKILL.md\n", pad, i}'
+  awk -v pad="$pad11" 'BEGIN{for(i=0;i<500;i++)printf "3 skills/%s%05d/SKILL.md\n", pad, i}'
   printf '30 skills/a/SKILL.md\n'
 } >"${root}/tests/word-limits.txt"
 run_gate "$root"
