@@ -20,6 +20,7 @@ The caller hands:
 
 - **The named purpose** — the problem to solve, not the means.
 - **The read-root** — not the current work tree. Which ref that is belongs to the caller.
+- **The current artifact** — the work as currently framed. The worker never sees it.
 - **The caller's budget for the one measurement** — when the caller has one. Without it a default this dispatch names applies.
 
 ## Pass
@@ -29,15 +30,9 @@ The caller hands:
 - The worker measures at most once, within that time limit, taken against that ref, returning the command and its raw output rather than a summary — or the path of each file it wrote when the output is too large to return.
 - Return the worker's proposal as-is. Do not rewrite a proposal into "the current direction is fine".
 
-## Output
+## Compare
 
-Skip, or the most direct route to the purpose (including doing nothing / doing something else), what it reuses, and its trade-offs — plus, when the worker measured, the command and raw output it returned, or the path of each file it wrote when that output was too large to return; and, where the measurement it needed is not one of those, what could not be measured and what would settle it.
-
-Never an empty return that means the current direction is fine.
-
-## Caller contract
-
-The caller compares the proposal with the current artifact on purpose, means, and cost.
+This skill compares the proposal with the current artifact on purpose, means, and cost — never the worker, never the caller.
 
 - **Purpose:** whether the named purpose is a real problem; doing nothing or doing something else included.
 - **Means:** whether the current work is warranted for that purpose and reaches it.
@@ -45,4 +40,15 @@ The caller compares the proposal with the current artifact on purpose, means, an
 
 Only a material regression, or a purpose that is invalid or unmet, is a finding. An alternative that reaches the same result and differs only in preference is not.
 
-This skill does not apply that bar.
+- No finding: return continue with no finding; the caller continues its work.
+- Finding: run `review-findings` for exactly one pass on that comparison, and follow it nowhere further. Then chat the finding with its trade-offs and a recommendation, and wait for the person's **continue** vs **revisit design** per `using-dude`'s **Escalation**. Return that answer to the caller. A revisit returns the finding to the caller; where the revisit lands is the caller's under `using-dude`'s **Escalation**.
+
+## Output
+
+Skip; or continue with no finding; or the comparison, the one `review-findings` pass over it, and the person's continue-vs-revisit-design answer — alongside the worker's proposal (including doing nothing / doing something else), what it reuses, and its trade-offs — plus, when the worker measured, the command and raw output it returned, or the path of each file it wrote when that output was too large to return; and, where the measurement it needed is not one of those, what could not be measured and what would settle it.
+
+Never an empty return that means the current direction is fine.
+
+## Caller reference
+
+Invoke with the named purpose, the read-root, and the current artifact; continue except on revisit design, which the caller handles under `using-dude`'s **Escalation**.
