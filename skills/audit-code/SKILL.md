@@ -67,7 +67,7 @@ Once the report below is drafted, run `review-findings` on it for one pass, hand
   5. **Next items** — concrete next actions in order. Not work to start here.
   6. **Not measured** — a first line `Assumed: <what was treated as holding as a contract external to the scanned tree>`, or `Assumed: none — no candidate rested on an external contract`; then the invariants, axes, and claims left unaudited, and what would settle each.
 
-**Verdict** and **Next items** arrive shaped for `plan-work`'s question-shaped input — never work this one starts. A scan has no reproduction to carry forward.
+**Verdict** and **Next items** arrive shaped for `plan-work`'s question-shaped **Entry** — never work this one starts. A scan has no reproduction to carry forward.
 
 ## Escalation
 

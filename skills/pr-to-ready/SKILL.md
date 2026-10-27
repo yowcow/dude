@@ -16,7 +16,7 @@ Ask the user two things, once, before anything else:
 
 ## Main entry: a PR reference
 
-Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions, before any workspace. A bare number names no repository: ask which repository it belongs to, offering origin's own first — otherwise the run drives a same-numbered PR in another repository, and nothing it does lands where it was asked. From a URL take the owner and repo it names; confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace — otherwise the workspace attaches the same branch name on a remote that is not the PR's, and every fix is committed and pushed where no reviewer watches while the PR does not move. A head that lives on another remote is not driven from here; hand it back.
+Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions, before any workspace. A bare number names no repository: ask which repository it belongs to, offering origin's own first — otherwise the run drives a same-numbered PR in another repository, and nothing it does lands where it was asked. From a URL take the owner and repo it names; confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace — otherwise the workspace attaches the same branch name on a remote that is not the PR's, and every fix is committed and pushed where no reviewer watches while the PR does not move. A head on another remote is not driven from here; hand it back.
 
 ## Fallback entry: a branch with no PR yet
 
@@ -32,7 +32,7 @@ Request each selected reviewer by the agent's own means; skip a name that is una
 
 ## Clean
 
-Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work for re-approval — otherwise the loop silently ships work the agreed design no longer covers.
+Clean holds when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings. A red check is diagnosed and fixed in a new round. Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission — keyed on the reader's status, every PR reads as blocked. A conflict, or a mergeability value still UNKNOWN past the bounded re-read, is handed back for a person's explicit re-entry — an undetermined mergeability is never taken for a clean one. A finding that invalidates the agreed design is never fixed here; it takes Escalation back to plan-work's **Entry** for re-approval — otherwise the loop silently ships work the agreed design no longer covers.
 
 ## Replies
 

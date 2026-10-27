@@ -14,7 +14,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
   - The orchestrator owns control flow and declares which execution method it chose.
   - A skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf.
   - One that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
-- SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body ever disagree, this body wins and the stub needs a fix under its own issue.
+- SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body disagree, this body wins and the stub needs a fix under its own issue.
 - A script's `NEED` asks for facts, and is not a stop; a fact that could not be read is left unfilled, never guessed.
 - Put each question to a person in its own shape: a free-form question is asked in plain chat; a choice prompt carries two or more options, with a "none" option when answering is optional or when none of the options may apply; a question where any number of the options may apply is a pick-any choice prompt, never a pick-one.
 
@@ -22,11 +22,11 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 
 The orchestrator decides when each phase is complete and drives every transition; a worker never gets an objective spanning multiple phases, and never declares a phase complete or advances the workflow itself.
 
-The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site too.
+The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site.
 
 - What this cuts is the transition only.
 - A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
-  - Cutting one is what that forbids; moving it is not. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
+  - That forbids cutting one, not moving it. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
 
 ### Workflow selection
 
@@ -81,7 +81,7 @@ A phase is *clean* when its checks pass (phase-clean — the gate sense, distinc
 
 A flow that produces no code sets its own bar instead, and each skill defines its own.
 
-Where a tracking issue backs the work, `plan-work` splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
+Where a tracking issue backs the work, `plan-work`'s **Splitting into sub-issues** splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
 
 - Each turn takes one sub-issue through `implement-work`'s own entry and gates.
 - A later PR is never a continuation of the previous turn, and never inherits its verification.
@@ -98,7 +98,7 @@ The deliverable is an evidence-backed explanation of an observed problem, or a j
 
 #### Investigation → Change transition
 
-- An investigation never starts editing. When a fix is wanted, enter `plan-work` with the findings as input.
+- An investigation never starts editing. When a fix is wanted, enter `plan-work`'s **Entry** with the findings as input.
 - Carry the reproduction forward: it becomes the regression test for the fix.
 
 ### Worker tier
@@ -153,6 +153,6 @@ Every loop that checks work and fixes what came back stops on the same condition
   - the Investigation workflow's framing for an Investigation
   - Workflow selection if the task's type changed.
 - **A Critical finding that invalidates the agreed design is never fixed in place, and never worked around.**
-  - It goes back to `plan-work` for re-approval wherever it surfaces.
+  - It goes back to `plan-work`'s **Entry** for re-approval wherever it surfaces.
   - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
 - Report what's uncertain, the options and trade-offs, and your recommendation. What a flow hands over on this exit belongs to that skill's own **Escalation** section; the contract for receiving it is `plan-work`'s **Entry**.
