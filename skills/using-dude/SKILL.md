@@ -14,7 +14,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
   - The orchestrator owns control flow and declares which execution method it chose.
   - A skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf.
   - One that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
-- SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body ever disagree, this body wins and the stub needs a fix under its own issue.
+- SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body disagree, this body wins and the stub needs a fix under its own issue.
 - A script's `NEED` asks for facts, and is not a stop; a fact that could not be read is left unfilled, never guessed.
 - Put each question to a person in its own shape: a free-form question is asked in plain chat; a choice prompt carries two or more options, with a "none" option when answering is optional or when none of the options may apply; a question where any number of the options may apply is a pick-any choice prompt, never a pick-one.
 
@@ -22,11 +22,11 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 
 The orchestrator decides when each phase is complete and drives every transition; a worker never gets an objective spanning multiple phases, and never declares a phase complete or advances the workflow itself.
 
-The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site too.
+The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site.
 
 - What this cuts is the transition only.
 - A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
-  - Cutting one is what that forbids; moving it is not. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
+  - That forbids cutting one, not moving it. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
 
 ### Workflow selection
 

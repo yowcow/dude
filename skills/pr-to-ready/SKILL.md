@@ -16,7 +16,7 @@ Ask the user two things, once, before anything else:
 
 ## Main entry: a PR reference
 
-Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions, before any workspace. A bare number names no repository: ask which repository it belongs to, offering origin's own first — otherwise the run drives a same-numbered PR in another repository, and nothing it does lands where it was asked. From a URL take the owner and repo it names; confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace — otherwise the workspace attaches the same branch name on a remote that is not the PR's, and every fix is committed and pushed where no reviewer watches while the PR does not move. A head that lives on another remote is not driven from here; hand it back.
+Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions, before any workspace. A bare number names no repository: ask which repository it belongs to, offering origin's own first — otherwise the run drives a same-numbered PR in another repository, and nothing it does lands where it was asked. From a URL take the owner and repo it names; confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace — otherwise the workspace attaches the same branch name on a remote that is not the PR's, and every fix is committed and pushed where no reviewer watches while the PR does not move. A head on another remote is not driven from here; hand it back.
 
 ## Fallback entry: a branch with no PR yet
 
