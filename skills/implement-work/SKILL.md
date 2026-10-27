@@ -39,7 +39,7 @@ Record a non-default base as one `Base-Branch: <base>` trailer line on this task
 
 After **Isolation**, before **Plan gate**. The small-change lane still runs this, then **Execution**.
 
-Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An unnamed purpose means skip — do not invoke, note the skip, and continue. Read-root is the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a task with no issue — handed as `origin/<base>`, fetched to its current tip. Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure.
+Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An unnamed purpose means skip — do not invoke, note the skip, and continue. Read-root is the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a task with no issue — handed as `origin/<base>`, fetched to its current tip. Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue; on revisit design, take **Escalation** with the finding and do not proceed to **Plan gate**.
 
 ## Plan gate
 
@@ -53,10 +53,10 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
 ## Execution
 
 - **Default** goes to `superpowers:subagent-driven-development`.
-- **A separate session picking the plan up later** goes to `superpowers:executing-plans`.
+- **Inline** — the person chose inline execution, or no subagent tool is available — goes to `superpowers:executing-plans`.
 - **Manual** is the fitting method on the small-change lane in `using-dude`'s **Workflow selection**, and an exception needing a named reason anywhere else.
 
-Say which method runs and why. Delegation only pays when a task covers the hand-off, so inline trivially small independent changes; take on no refactoring the task did not ask for. The method does not carry the work into integration, and its final whole-branch review does not run here — the completion gate's own review is the verdict this flow stands on. Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong, and hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged. Run the method's own Finish except its workspace deletion: step 3 hands the ledger's lines every round, so the workspace stays until this flow ends, then delete it — after **Report** holds the rulings and, on the normal exit, after **Hand off**.
+Say which method runs and why. Delegation only pays when a task covers the hand-off, so inline trivially small independent changes; take on no refactoring the task did not ask for. The method does not carry the work into integration, and its final whole-branch review does not run here — the completion gate's own review is the verdict this flow stands on. Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong, and hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged. Run the method's own Finish except its deletion of the plan's workspace (the directory holding its ledger): step 3 hands the ledger's lines every round, so that directory stays until this flow ends, then delete it — after **Report** holds the rulings and, on the normal exit, after **Hand off**.
 
 ## Completion gate
 
