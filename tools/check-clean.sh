@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
-# Report whether the working tree is clean, by output rather than exit
-# status: `git status --porcelain` exits 0 whether or not anything is
-# pending, so branching on its exit code directly would read a dirty tree as
-# clean and let the completion gate hand off a branch that omits uncommitted
-# edits — edits that then vanish with the worktree, unrecoverable and
-# invisible in the diff, with no trace of what was lost.
+# Report whether the working tree is clean, by output rather than exit status:
+# `git status --porcelain` exits 0 either way, so branching on its exit code
+# would hand a dirty tree to the completion gate as clean, and uncommitted
+# edits would vanish with the worktree.
 # Usage: check-clean.sh
 set -euo pipefail
 

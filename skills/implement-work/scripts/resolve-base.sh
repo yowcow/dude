@@ -5,15 +5,10 @@
 # while a prerequisite PR is still OPEN would simply omit that prerequisite's
 # changes, so the task's own checks then fail for a reason nowhere in its diff.
 #
-# It reads no issue or PR itself. It answers NEED in up to three rounds — the
-# issue's body, then the PRs that close the prerequisite, then that PR's state
-# and head — each read pinned to origin's repository and to the number the
-# round before produced, so a record read for another issue or PR stops.
-#
-# The closing PRs are counted, never tested for emptiness: one PR and two need
-# opposite answers. A PR's state has three values and is read from that PR's
-# own record: MERGED and CLOSED need opposite answers, so "not open" is never
-# the test.
+# It reads no issue or PR itself: answers NEED in up to three rounds, each pinned
+# to origin's repository and the number the round before produced. The closing
+# PRs are counted, never tested for emptiness; a PR's state is read from its own
+# record, never as "not open".
 #
 # Facts: ../references/facts.md.
 # Conventions: ../references/script-conventions.md.

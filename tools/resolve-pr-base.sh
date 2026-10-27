@@ -1,22 +1,13 @@
 #!/usr/bin/env bash
-# Resolve which branch a task branch should sit on, by reading its
-# Base-Branch trailer and re-checking the prerequisite PR's *current* state —
-# never by testing whether the prerequisite's branch still exists.
-#
-# This always prints a concrete branch name, even where the cited table says
-# to omit `--base` — Step 1's base settlement compares this answer against the
-# base the PR currently points at, and has nothing to compare against if the
-# no-trailer case answers with an absence. Naming the default branch there
-# selects exactly what omitting the flag would have.
-#
-# A merged prerequisite's branch commonly survives (branch deletion is a
-# person's separate step), so a plain existence test would read a long-since
-# merged prerequisite as "still in flight" and hand back its branch as
-# --base. Merging this task into that branch then puts nothing into the
-# default branch, and the change silently fails to land. See
-# skills/implement-work/references/base-branch.md, "## Reading the trailer
-# back" and "### Why the state is re-read and the branch is not" — this
-# script implements that table's `pr-to-ready`'s `--base` column.
+# Resolve which branch a task branch should sit on, by reading its Base-Branch
+# trailer and re-checking the prerequisite PR's *current* state — never by testing
+# whether the prerequisite's branch still exists, which commonly survives its merge
+# and would hand back an already-merged branch as --base, silently landing nothing
+# into the default branch.
+# Spec: skills/implement-work/references/base-branch.md, "## Reading the trailer
+# back" (this script implements that table's `pr-to-ready`'s `--base` column; the
+# no-trailer row answers the default branch so Step 1's settlement has something
+# to compare against).
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

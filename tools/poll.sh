@@ -1,19 +1,13 @@
 #!/usr/bin/env bash
-# Run a check command until it exits 0 or the iteration cap runs out.
+# Run a check command until it exits 0 or the iteration cap runs out. The
+# canonical poll loop for single-predicate retries (`watch-copilot-review.sh`
+# polls through it); not `watch-checks.sh`'s stateful settle loop.
+# Conventions: skills/implement-work/references/script-conventions.md.
 #
-# This is the canonical poll loop for single-predicate retries
-# (`watch-copilot-review.sh` polls through it). It does not cover
-# `watch-checks.sh`'s stateful settle loop (stability window, empty-grace,
-# fast-fail exits 3/4/5, last-good-rows timeout print). Conventions:
-# skills/implement-work/references/script-conventions.md.
-#
-# A non-zero check exit means "not yet", whatever the code: a failing `gh`
-# call is a blip the next poll may ride out (watch-checks.sh precedent). A
-# check command that can never succeed burns the whole cap to exit 1 rather
-# than failing fast — the documented ceiling of this helper. On success
-# prints the attempt's stdout (nothing if empty) and exits 0; on
-# cap-exhausted prints the last attempt's stdout (nothing if empty) and
-# exits 1.
+# Any non-zero check exit means "not yet", even a failing `gh` call; a check
+# that can never succeed burns the whole cap to exit 1 rather than failing
+# fast. On success prints the attempt's stdout and exits 0; on cap-exhausted
+# prints the last attempt's stdout and exits 1.
 #
 # Usage: poll.sh <max-iterations> <interval-seconds> <command> [args...]
 set -euo pipefail

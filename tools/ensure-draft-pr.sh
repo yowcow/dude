@@ -3,20 +3,14 @@
 # none: it says what to read or do next, the agent opens the draft PR by its
 # own means, and a second call reads the record back.
 #
-# The push-if-local-only check runs FIRST, on every call, before any fact is
-# asked for. resolve-pr-base.sh fetches the branch to read its Base-Branch
-# trailer, so it hard-stops on a branch that isn't on the remote yet;
-# resolving the base before pushing would stop an unpushed local branch
-# before it ever got pushed.
+# The push-if-local-only check runs FIRST, on every call: resolving the base
+# first would stop an unpushed local branch before it ever got pushed.
 #
-# Fork-ness is the fact `repo.fork`, asked only once no PR was found and no
-# other remote decided it; an unread value, or a read that found no repository
-# record, stops instead of reading as "not a fork", which would open the PR
-# against the fork when its owner meant the parent.
+# Fork-ness (`repo.fork`) is asked only once no PR was found; an unread value
+# stops instead of reading as "not a fork" and opening the PR against the fork.
 #
-# After CREATE, the read-back pins the record's head and base: a create whose
-# head defaulted to the checked-out branch reads back no PR, and one opened onto
-# another base is a mismatch -- neither is reported as created.
+# After CREATE, the read-back pins head and base, so a mis-targeted create is
+# never reported as created.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

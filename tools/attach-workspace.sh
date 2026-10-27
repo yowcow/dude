@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
-# Attach a workspace to a branch that may already have a worktree, exist only
-# locally, or exist only on the remote — checked in that order, remote before
-# giving up. A transient failure checking the remote (network, auth, DNS)
-# must not be read the same as "branch doesn't exist": either would fall
-# through to CREATE and cut a fresh branch from the default, leaving
-# already-pushed work stranded as a separate history under the same name
-# (force-push is banned, so there is no recovering it).
+# Attach a workspace to a branch with a worktree, local-only, or remote-only
+# shape — in that order. A transient remote-check failure (network, auth, DNS)
+# must not read as "branch doesn't exist": falling through to CREATE would cut
+# a fresh branch and strand already-pushed work under the same name.
 # Usage: attach-workspace.sh <branch> <path>
 set -euo pipefail
 
