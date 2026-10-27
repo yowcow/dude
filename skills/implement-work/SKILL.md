@@ -86,9 +86,7 @@ After Isolation, before **Plan gate**. The small-change lane still runs this, th
 - **Purpose:** the task's own purpose (sub-issue / single-PR issue / request). Unnamed → skip; do not invoke; chat the skip; continue. No new prompt.
 - **Read-root:** the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a chat-only task — with `NEED` and `STOP` handled as there. Hand `origin/<base>`, fetched to its current tip, never the bare name, the workspace path, HEAD, or the session checkout.
 - Else invoke `propose-alternatives` once with that purpose and the read-root.
-- Compare with the current artifact per `propose-alternatives`'s **Caller contract** (purpose, means, cost).
-- Empty finding → no `review-findings`; do not wait; continue; chat.
-- Finding → `review-findings` one pass per `using-dude`'s **Stage boundaries**; chat; wait for **continue** vs **revisit design** (revisit: the person returns to `plan-work` with the finding, the branch name, and that branch's state — what `plan-work`'s **Entry** asks for). Do not proceed to **Plan gate** or **Execution** except on **continue**. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
+- Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue or revisit per using-dude Escalation. **Don't follow `review-findings` onward to the next skill.** The proposal is not a finding, not `needs-user`, not Critical auto-reapproval, and is not posted to a PR.
 
 ## Plan gate
 
