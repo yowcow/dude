@@ -14,7 +14,7 @@ description: Use to scan a repository or path and report what to fix, without ch
 - Fan out one worker per axis, since the axes are independent of each other.
 - Keep each finding with the orchestrator.
 - Hand each worker its axis as the pair written for it — the invariant attacked and how it is expected to break.
-- Hand never a field's name alone.
+- Never hand a field's name alone.
   - Handed a field, a worker returns what a text search can count, and the orchestrator writes an invariant beside it afterwards for something never swept.
 - Return from a worker that sweeps or runs a probe the command it ran and that command's raw output beside its finding.
 - Mark any worker that sweeps for absence or exhaustiveness, or that probes a behaviour axis.
@@ -31,10 +31,9 @@ description: Use to scan a repository or path and report what to fix, without ch
 
 - Collect what the artifact is expected to do before selecting axes.
 - Collect it from three layers:
-
-- **Declared** — what the artifact says of itself, or what the issue that asked for it asked for: contract comments, README sentences, test names, schemas.
-- **Observed by callers** — what a caller already relies on: output it parses or branches on, a return value it uses as-is, a file or state it expects to exist afterwards.
-- **Conventional for the genre** — what that kind of artifact is ordinarily expected to do.
+  - **Declared** — what the artifact says of itself, or what the issue that asked for it asked for: contract comments, README sentences, test names, schemas.
+  - **Observed by callers** — what a caller already relies on: output it parses or branches on, a return value it uses as-is, a file or state it expects to exist afterwards.
+  - **Conventional for the genre** — what that kind of artifact is ordinarily expected to do.
 
 - Keep the inventory as your own list separate from the axes, since the axes are drawn from it.
 - Write into the report's **Invariants attacked** only the pairs actually handed out.
@@ -78,7 +77,7 @@ description: Use to scan a repository or path and report what to fix, without ch
 - Name the bound among the observations.
 - Treat a probe stopped at a bound its promise set as observing a wait outlasting that promise.
 - Record what the artifact does under Not measured with the reason, when the artifact cannot be run or only mutation could settle the invariant.
-- Probe never invariants that only reading can settle — documentation, or the presence of a declared field, since one search would count as a probe and leave only the impression of having checked.
+- Never probe invariants that only reading can settle — documentation, or the presence of a declared field, since one search would count as a probe and leave only the impression of having checked.
 - Treat as evidence what was observed — the output, the ending exit state, the state left behind, the time taken.
 - Quote the line for a claim a boundary can judge without a spec.
 - Treat a path from trigger to wrong result as the shape of the claim, never as evidence for it.
@@ -97,8 +96,7 @@ description: Use to scan a repository or path and report what to fix, without ch
 
 ### Exit criteria
 
-- Give every axis its verdict and the decisive evidence behind it, with the verdict of an axis whose probe found nothing being that it was swept; or
-- record the axis as not measured, with what would measure it and who decides.
+- Give every axis its verdict and the decisive evidence behind it, with the verdict of an axis whose probe found nothing being that it was swept, or record the axis as not measured, with what would measure it and who decides.
 
 - Run `review-findings` on the report per its **Caller contract**.
 - Confirm the report destination with a person afterwards.
@@ -116,7 +114,7 @@ description: Use to scan a repository or path and report what to fix, without ch
   6. **Not measured** — a first line `Assumed: <what was treated as holding as a contract external to the scanned tree>`, or `Assumed: none — no candidate rested on an external contract`; then the invariants, axes, and claims left unaudited, and what would settle each.
 
 - Shape **Verdict** and **Next items** for `plan-work`'s question-shaped **Entry**.
-- Start never work here.
+- Never start work here.
 - Carry forward no reproduction from a scan.
 
 ## Escalation
@@ -124,5 +122,5 @@ description: Use to scan a repository or path and report what to fix, without ch
 - Take this run's stopping conditions from `using-dude`'s **Loop convergence**.
 - Count one round as one sweep pass over an axis.
 - Count a finding as repeating when a later pass faults the same axis for the same reason.
-- Settle never in place a finding that invalidates the scan as asked.
+- Never settle in place a finding that invalidates the scan as asked.
 - Hand such a finding back to the person who asked, per **Synthesize**'s second exit criterion.
