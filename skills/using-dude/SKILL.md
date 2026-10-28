@@ -55,7 +55,19 @@ A Change that carries no design decision has a lane of its own, not an exemption
 - This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution, while the completion gate and `pr-to-ready` still run in full — integration goes through a PR at any size.
 - The moment a design decision surfaces, the lane is over: take **Escalation**.
 
-Change runs through three flows, each entered on its own, each with its own deliverable and hand-off: `plan-work` leaves the agreed design plus the numbered TODO list at PR granularity, published once as a comment on the tracking issue plus one sub-issue per item, or in chat with no sub-issues when no issue tracks the work. `implement-work` leaves a draft PR on a pushed branch of verified commits. `pr-to-ready` leaves a PR whose CI passes and whose review is clean, at ready or draft. A phase is phase-clean when its checks pass — verification by the relevant test, lint, build, typecheck, smoke test, or manual check plus the deliverable meeting the task's own requirements, simplification with `simplify-code` leaving no behavior-preserving cleanup, review with `review-code` leaving no blocking findings — distinct from the Loop convergence loop-clean below. A flow that produces no code sets its own bar instead, and each skill defines its own. Where a tracking issue backs the work, the TODO list runs as a loop, not a single pass, once per sub-issue in order: each turn takes one sub-issue through `implement-work`'s entry and gates, a later PR never continues the previous turn, and never inherits its verification. **Merging is a person's responsibility, and so is everything that depends on it** — the merge itself, the parent issue's closure, and cleaning up the branch and worktree all belong to a human afterward, so a remaining sub-issue starts a separate session.
+Change runs through three flows, each entered on its own, each with its own deliverable and hand-off: `plan-work` leaves the agreed design plus the numbered TODO list at PR granularity, published once as a comment on the tracking issue plus one sub-issue per item, or in chat with no sub-issues when no issue tracks the work.
+
+`implement-work` leaves a draft PR on a pushed branch of verified commits.
+
+`pr-to-ready` leaves a PR whose CI passes and whose review is clean, at ready or draft.
+
+A phase is phase-clean when its checks pass — verification by the relevant test, lint, build, typecheck, smoke test, or manual check plus the deliverable meeting the task's own requirements, simplification with `simplify-code` leaving no behavior-preserving cleanup, review with `review-code` leaving no blocking findings — distinct from the Loop convergence loop-clean below.
+
+A flow that produces no code sets its own bar instead, and each skill defines its own.
+
+Where a tracking issue backs the work, the TODO list runs as a loop, not a single pass, once per sub-issue in order: each turn takes one sub-issue through `implement-work`'s entry and gates, a later PR never continues the previous turn, and never inherits its verification.
+
+**Merging is a person's responsibility, and so is everything that depends on it** — the merge itself, the parent issue's closure, and cleaning up the branch and worktree all belong to a human afterward, so a remaining sub-issue starts a separate session.
 
 ### Understand
 
