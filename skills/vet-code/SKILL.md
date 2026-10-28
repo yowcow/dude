@@ -19,31 +19,31 @@ Resolving the scope, applying or verifying a fix, deciding whether another round
 
 ## Reviewer prompt
 
-`superpowers:requesting-code-review` is the dispatch mechanism. The prompt body is that procedure's template. The prompt is complete only when the template's prompt is verbatim except placeholder fill, the replacements below, and the read-root with its precedence passed beside the SHAs. The caller's four inputs fill placeholders and may append after the template; a fifth, the ledger rows, is optional and appends after it too.
+`superpowers:requesting-code-review` is the dispatch mechanism. The prompt is that procedure's template verbatim with its four placeholders filled: nothing in the template body is replaced, dropped, or appended after. What the reviewer needs beyond the template travels inside `PLAN_OR_REQUIREMENTS`, since a placeholder's content is the caller's to write.
 
 The caller hands the scope in one of these four shapes:
 
-- **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` only.
-- **uncommitted changes** — where they are: staged, unstaged, and untracked alike. Do not send the reviewer to a worktree of its own here — a worktree holds a revision, and these changes are in none.
+- **a committed range** — the two SHAs bounding it. Fill `BASE_SHA` and `HEAD_SHA` with them.
+- **uncommitted changes** — where they are: staged, unstaged, and untracked alike.
 - **paths with no range** — the paths themselves, and that the review covers their current state on this checkout rather than a diff. Return the same caveat with the findings: nothing constrains the review to recent change, so the findings may be about code this work never touched.
 - **a PR** — the range the caller resolved for it, handed over as a committed range. Reviewing that diff locally is this skill's job.
 
-For uncommitted changes or paths with no range, replacing the Git Range to Review section as a whole (its two diff command lines included) with that shape's description is the fill. Do not invent SHAs. From that same constructed prompt, drop the template Read-Only Review sentence that tells the reviewer to create a worktree, or replace it — for uncommitted changes: review this checkout's current dirty state; do not create a worktree; for paths with no range: review this checkout's current state; do not create a worktree.
-
-When the caller's scope includes a read-root — a directory already bound as the only place to read and search the head — pass it beside the filled SHAs and tell the reviewer that for that dispatch it outranks the template's this-checkout, any instruction that the reviewer create its own worktree, and the project-root search confine: every search is confined to that directory.
+Do not invent SHAs: where the scope has none, fill both `BASE_SHA` and `HEAD_SHA` with `N/A`.
 
 **What was implemented** fills `DESCRIPTION` — what the change does, or for a paths-only scope what the code is for.
 
-**The requirements** fill `PLAN_OR_REQUIREMENTS` — the entry artifact where the caller has one, with the plan's location beside it where one exists, and otherwise the original request. When there is none, say so in that placeholder: the review then runs against the repository's own standards and the code's evident intent. Return that with the findings too, so a reader of the caller's report knows plan alignment was not checked.
+**The requirements** fill `PLAN_OR_REQUIREMENTS` — the entry artifact where the caller has one, with the plan's location beside it where one exists, and otherwise the original request; when there is none, say so there, so the review runs against the repository's own standards and the code's evident intent, and return that with the findings too, so a reader of the caller's report knows plan alignment was not checked. After that, in the same placeholder, write these as plain instructions, each only when it applies:
 
-**The ledger rows** — when the caller hands any over, append them after the template with one instruction: answer each row against the code as it now stands, keeping the row with its answer — the finding it is and its severity, or that it no longer stands and why, and never as a `Declined to judge` line. They narrow nothing: the scope shape is the caller's and stays as it is, and every search still covers the whole scope at every severity, as it would without them.
+- **Range shape** — for uncommitted changes or paths with no range: the scope as its shape above describes it, and that the Git Range to Review section does not apply and is to be ignored, its diff commands included. For uncommitted changes, read staged and unstaged changes together against HEAD and read untracked files separately.
+- **Worktree** — for uncommitted changes: review this checkout's current dirty state, and do not create a worktree, since a worktree holds a revision and these changes are in none. For paths with no range: review this checkout's current state; do not create a worktree.
+- **Read-root** — when the caller's scope includes one, a directory already bound as the only place to read and search the head: for this dispatch it outranks the template's this-checkout, any instruction to create a worktree, and the project-root search confine; every search is confined to that directory.
+- **Ledger rows** — when the caller hands any over: answer each row against the code as it now stands, keeping the row with its answer — the finding it is and its severity, or that it no longer stands and why, and never as a `Declined to judge` line. They narrow nothing: the scope shape is the caller's, and every search still covers the whole scope at every severity, as it would without them.
+- **Purpose** — only when the caller says the requirements include a settled purpose, the problem the change exists to solve: compare the means with that purpose and name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
+- **Earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings or Declined to judge lines rejected with the reason. The record does not narrow the review: cover the whole scope at every severity, places unchanged since the previous round included; the record stops only a finding it holds as rejected from being raised again, and a finding accepted and fixed that still stands is raised again. A reviewer not shown the rejections re-litigates them.
+- **Confine** — every search stays at the project root or narrower.
+- **Tests** — answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
 
-After the template, append only these viewpoint extras:
-
-- **Optionally, that the requirements include a settled purpose** — the problem the change exists to solve. Only when the caller says so, tell the reviewer to compare the means with that purpose and to name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects. A loss of that kind is rated by what it costs, not Minor because the code works.
-- **The earlier rounds** — from the caller's second round on, findings accepted and fixed, and findings or Declined to judge lines rejected with the reason. The record does not narrow the review: tell the reviewer to cover the whole scope at every severity, places unchanged since the previous round included, and that the record stops only a finding it holds as rejected from being raised again; a finding accepted and fixed that still stands is raised again. A reviewer not shown the rejections re-litigates them.
-
-Also after the template: Confine every search to the project root or narrower. Answer "All tests passing?" from the diff alone: run neither the project's checks nor any code from the range under review, and say the checks were not run.
+Close with one sentence: where these instructions and the template disagree, these win.
 
 ## Output
 
