@@ -29,7 +29,8 @@ description: Use to implement one PR-sized task.
 ## Isolation
 
 - Establish isolation before drafting the plan, since the plan file has to live inside the workspace the execution method reads it from.
-- Use `superpowers:using-git-worktrees`, then establish a verified baseline there.
+- Use `superpowers:using-git-worktrees`.
+- Establish a verified baseline there.
 - Look before creating on resumption, since that skill reads the current directory for existing isolation only and assumes a new branch on creation.
 - Read the one-line answer from `tools/attach-workspace.sh <branch> <path>`.
 - On `REUSE <path>`, use the workspace as-is, since it already carries `<branch>`.
@@ -111,8 +112,11 @@ description: Use to implement one PR-sized task.
 
 ## Hand off
 
-- Push the branch under its own name, then open the draft PR through `superpowers:finishing-a-development-branch` Option 2.
-- Keep the dude delta to only this: always draft, with the body carrying a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository, and the base whatever **Base branch** would settle.
+- Push the branch under its own name.
+- Open the draft PR through `superpowers:finishing-a-development-branch` Option 2.
+- Keep the dude delta to only this: always draft.
+- Carry a closing keyword (`fixes`/`closes`/`resolves`) in the body on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository.
+- Take the base whatever **Base branch** would settle.
 - Leave a PR already open on the branch as the deliverable, with its status as is.
 - Ask which repository the draft PR targets where origin is a fork or has another remote, offering origin's own first.
 - Name `pr-to-ready` as the next entry without invoking it.
