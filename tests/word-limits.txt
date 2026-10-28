@@ -9,10 +9,10 @@
 569 skills/implement-work/references/stop-registry.md
 777 skills/investigate-anomaly/SKILL.md
 678 skills/investigate-performance/SKILL.md
-765 skills/judge-findings/SKILL.md
+816 skills/judge-findings/SKILL.md
 2626 skills/plan-work/SKILL.md
 984 skills/pr-to-ready/SKILL.md
-705 skills/propose-alternatives/SKILL.md
+765 skills/propose-alternatives/SKILL.md
 1284 skills/review-code/SKILL.md
 1118 skills/review-findings/SKILL.md
 1115 skills/review-plan/SKILL.md
