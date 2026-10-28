@@ -46,7 +46,7 @@ Skills stack in five dependency layers, top down: `using-dude` (workflow rules),
 
 Shared mechanism lives once, in top-level `tools/`, called through `SCRIPT_DIR` rather than by bare name or cwd-relative path. What stays a script is what the Keep rule keeps: a dude contract (Base-Branch trailer, prerequisite-line base resolution, repo identity checks, merge guards) or a concrete silent failure the script's header names. A generic operation — neither — stays abstract prose under rule 1 and never becomes a script.
 
-A kept script leaves by a replacement test. The unit is the script, or every script its Keep entry covers when it has one; the test passes only if all of these hold, and the unit's scripts, their tests, and the Keep entry are then deleted together:
+A kept script leaves by a replacement test. The unit is the script; the test passes only if all of these hold, and the script and its tests are then deleted together:
 
 - The fixture is every behavior-test row of the unit's scripts, argument-check rows excepted.
 - The subject and the judge are blind: each is a fresh context that has not seen the unit's scripts or their tests.
@@ -54,7 +54,7 @@ A kept script leaves by a replacement test. The unit is the script, or every scr
 - Three independent runs agree with the oracle on every row, comparing only the result the caller branches on, not its literal text.
 - The prose under test is the exact text that would ship.
 
-A script whose GitHub reads and writes move onto the facts contract (`skills/implement-work/references/facts.md`) skips the replacement test and stays a script: each silent failure its header names moves into that catalogue or into the post-write read-back, and the port's PR says where each one went. A script whose feature is withdrawn — because only one of the means can perform it, or because the design removes the feature — and a shared script a port or a withdrawal leaves with no caller — skips the replacement test too, and is deleted together with its tests, the prose naming it, and its Keep entry.
+A script whose GitHub reads and writes move onto the facts contract (`skills/implement-work/references/facts.md`) skips the replacement test and stays a script: each silent failure its header names moves into that catalogue or into the post-write read-back, and the port's PR says where each one went. A script whose feature is withdrawn — because only one of the means can perform it, or because the design removes the feature — and a shared script a port or a withdrawal leaves with no caller — skips the replacement test too, and is deleted together with its tests, and the prose naming it.
 
 The contracts those shared tools implement live under `skills/implement-work/references/` and are cited from `tools/` and other skills by path. That direction is intentional and stays: the contracts were written where their first callers lived, moving them churns every header and test that cites them, and the citations are documentation — no script sources another skill's file, every call goes through `SCRIPT_DIR` to an executable.
 
