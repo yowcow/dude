@@ -45,7 +45,7 @@ Each is a failure mode; none lowers the bar above. **Targets** selects which app
   - Never a missing verification command on a TODO list: contractually forbidden there, so flagging it manufactures a finding per item.
 - **Consistency** — contradicting steps, ordering or dependency errors, state no earlier task produces, drifting terms.
 - **Reality** — mismatch with the repo: ignored failures, constraints, config.
-- **Assumptions** — unchecked preconditions, unverified dependency behaviour, assumed environment, permissions, data shape. List each, marked verified or unverified.
+- **Assumptions** — unchecked preconditions, unverified dependency behaviour, assumed environment, permissions, data shape. List each, marked verified or unverified. Reality catches what the repo contradicts; this catches what nobody has confirmed either way.
 - **Executability** — tasks too large or vague to implement and verify alone; shared files breaking independence; verification that would not show the change; a named command with unspecified result-testing.
 - **Risk** — blast radius, compatibility, data and security, half-landed state. On a TODO list: also whether every intermediate state holds with only some PRs merged.
 
