@@ -56,6 +56,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - An open PR of verified commits → `pr-to-ready`, given its number or URL, with a branch carrying no PR yet as that flow's own fallback entry.
 - A Change carrying no design decision has a lane of its own, not an exemption from the flows.
 - The test is that the change is determined once stated, with no interface, structure, or trade-off left open.
+- Declare that result in one line and carry it into the run's report, so the skipped gate stays checkable.
 - This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution.
 - The completion gate and `pr-to-ready` still run in full, since integration goes through a PR at any size.
 - The moment a design decision surfaces, the lane is over: take **Escalation**.
@@ -104,6 +105,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - What dude owns is only which worker goes to which tier.
 - The run's default is fine for every other worker, and this rule constrains nothing about them.
 - Which workers are marked, and at which tier, is each skill's own to say, in its **Orchestration model**.
+- Where the runtime has no means of choosing a tier, this rule settles nothing and the run proceeds unchanged.
 
 ### Stage boundaries
 
@@ -125,6 +127,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - Run it per `review-findings`' **Caller contract**.
 - Where `review-plan`, `review-code`, or `vet-code` already gates the artifact, this adds nothing on top.
 - For an Investigation, the tracking issue is the issue named as that run's requester, since a background mention is not.
+- When more than one issue URL is in play, list the candidates and name the target #N before asking.
 - Present the report in chat and ask whether to post that content to #N.
 - Post it as a comment on that issue only on yes.
 - A declined ask leaves the report unpublished.
