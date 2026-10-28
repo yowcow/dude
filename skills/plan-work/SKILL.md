@@ -63,7 +63,8 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 - From a question-shaped report there is no reproduction to carry: the findings-report citation is the baseline and the criteria verify against the cited verdict.
 - Cite the report by URL, since a sub-issue carries this comment's URL and nothing else, or `implement-work` verifies against no baseline and reports success on any green run.
 - From a design invalidated downstream, every item accounts for the existing branch.
-- A reused branch is named by the item, and a discarded branch is replaced by a newly named one, since `implement-work` reuses whatever branch it finds and an item carrying the old name quietly resumes atop the invalidated commits.
+- A reused branch is named by the item, since `implement-work` reuses whatever branch it finds, or an item carrying the old name quietly resumes atop the invalidated commits.
+- A discarded branch is replaced by a newly named one, since `implement-work` has no rung discarding one and reuses whatever branch it finds, or the item quietly resumes atop the invalidated commits.
 - Name the discarded branch in the artifact as a person's cleanup, with the worktree checked out on it and identified by that branch rather than by a path, since this flow is never handed one and a path-named cleanup strands the worktree.
 - Name any open PR by number, since its body still holds the closing keyword and merging it later lands the invalidated commits and closes the child behind them.
 - Each item names, by number, its existing child, so **Publish** acts on the reviewed match, or a re-derived match updates the wrong child.
