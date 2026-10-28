@@ -122,7 +122,7 @@ Where the runtime has no means of choosing a tier, this rule settles nothing and
 - You own this summary even when your runtime can't compact context on its own — when context is heavy and only the user can trigger compaction, prompt them to. Never let a summary or compaction relax a gate.
 - A hand-off between flows may land in a different session. The canonical record is the tracking issue's comment — chat only when no issue tracks the work.
 - At each flow's end, name the artifact the next flow picks up. The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
-- **A loop's intermediate state is orchestrator-facing.** Report each round to the caller in chat, and never to GitHub. Only the converged result reaches the canonical record above. The sole exception is `pr-to-ready`'s per-round pair — that round's vet-code result comment and its verdict comment covering all selected reviewers.
+- **A loop's intermediate state is orchestrator-facing.** Report each round to the caller in chat, and never to GitHub. Only the converged result reaches the canonical record above. The sole exception is `pr-to-ready`'s per-round vet-code result comment and its verdict comment.
 - **A deliverable whose substance is findings, a judgment, or a claim of absence goes through `review-findings` before it reaches that record.**
   - This covers an Investigation's report on any of its three routes, and equally a named-deliverable run that reaches a conclusion with no flow's procedure to place the step for it.
   - Run it per `review-findings`' **Caller contract**.
