@@ -41,7 +41,7 @@ This skill compares the proposal with the current artifact on purpose, means, an
 Only a material regression, or a purpose that is invalid or unmet, is a finding. An alternative that reaches the same result and differs only in preference is not.
 
 - No finding: return continue with no finding; the caller continues its work.
-- Finding: run `review-findings` for exactly one pass on that comparison, and follow it nowhere further. Then chat the finding with its trade-offs and a recommendation, and wait for the person's **continue** vs **revisit design** per `using-dude`'s **Escalation**. Return that answer to the caller. A revisit returns the finding to the caller; where the revisit lands is the caller's under `using-dude`'s **Escalation**.
+- Finding: run `review-findings` on that comparison per its **Caller contract**. Then chat the finding with its trade-offs and a recommendation, and wait for the person's **continue** vs **revisit design** per `using-dude`'s **Escalation**. Return that answer to the caller. A revisit returns the finding to the caller; where the revisit lands is the caller's under `using-dude`'s **Escalation**.
 
 ## Output
 

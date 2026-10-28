@@ -70,7 +70,7 @@ Sweep every change class across the last-good → first-bad window:
 - The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
 - the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report; publish per `using-dude`'s **Stage boundaries**.
+Run `review-findings` on the report per its **Caller contract**; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format (blameless)
 
