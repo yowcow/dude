@@ -78,7 +78,7 @@ jobs:
           CFLAGS="-O2 -std=gnu89" ./configure \
             --build="$triplet" --host="$triplet" \
             --without-bash-malloc --disable-nls
-          make
+          make -j"$(nproc)"
           echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"
 
       - name: make test (bash 3.2)
