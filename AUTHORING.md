@@ -80,5 +80,5 @@ This binds `using-dude` and every other skill alike. A rule's body and the ratio
   - One bullet carries exactly one rule.
   - A rule's reason stays in the same bullet or a directly nested child bullet.
   - The purpose is to reduce reader interpretation drift and trivial subjective review remarks.
-  - A reason stays only where **Rationale is single-source** above keeps it; delete the rest. The deletion test's (a)/(b)/(c) judgments are unchanged.
+  - A reason stays only where **Rationale is single-source** keeps it; delete the rest. The deletion test's (a)/(b)/(c) judgments are unchanged.
 - **SessionStart stub sentences are restated across emitters.** The four stub sentences live canonically in `hooks/session-start` and are repeated in `.opencode/plugins/dude.js` (plus a pointer in `skills/using-dude/SKILL.md` and prose in `README.md`). The test in `tests/opencode-plugin_test.sh` pins the repetition: the four stub sentences are compared whole across the two emitters, with only the install path and the cksum derived from it normalized. The (c): a divergent copy silently injects different workflow rules per runtime with no gate catching it.
