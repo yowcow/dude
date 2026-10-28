@@ -5,76 +5,107 @@ description: Use to simplify recently modified code and human-facing docs while 
 
 # Simplify Code
 
-One invocation is one simplification pass: propose, apply, verify, propose again, until nothing actionable is left. The pass stays local rather than delegated — a delegated simplifier draws no boundary against optimizations whose justification needs a measurement — and it never re-enters on its own; re-running after something else changed the code or a doc in scope is the caller's.
+- Run one simplification pass per invocation: propose, apply, verify, propose again, until nothing actionable is left.
+- Keep the pass local rather than delegating, since a delegated simplifier draws no boundary against optimizations whose justification needs a measurement.
+- Never re-enter on its own, since re-running after something else changed the code or a doc in scope belongs to the caller.
 
 ## Orchestration model
 
-**This skill dispatches one kind of read-only worker, proposers; judging goes to `judge-findings`.** Everything else runs in the main loop.
-
-- The orchestrator owns this pass: it dispatches the proposers, hands their proposals to `judge-findings`, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
-- Proposers are read-only workers: each gets the diff, the paths it touches, and its assigned lenses, and returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean — at the `high` tier in `using-dude`'s **Worker tier**. What that buys is a fresh context unanchored on why the code ended up this way; a proposal it doesn't return reads as nothing actionable.
+- Dispatch proposers as the only worker kind, with judging going to `judge-findings`.
+- Run everything else in the main loop.
+- Task the orchestrator with owning this pass: dispatching the proposers, handing their proposals to `judge-findings`, applying the accepted proposals, verifying, and reporting.
+- Let the orchestrator decide when nothing actionable remains, never a proposer.
+- Keep proposers read-only: each gets the diff, the paths it touches, and its assigned lenses, and returns proposals only.
+- Never let a proposer return an edited file, run the project's checks, or declare the pass clean.
+- Dispatch proposers at the `high` tier in `using-dude`'s **Worker tier**, since that buys a fresh context unanchored on why the code ended up this way.
+- Treat a proposal no proposer returns as nothing actionable.
 
 ## Scope
 
-Resolve what to simplify in this order, and declare the resolved scope before dispatching anything:
+- Resolve what to simplify in this order, and declare the resolved scope before dispatching anything.
 
 1. **Caller-supplied** — a SHA range or paths. Use it as given.
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree** — the commits ahead of the base the caller names; on a direct invocation, ask the user for the range instead of guessing it.
 4. **Nothing to simplify** — no uncommitted change, and no range with anything in it. Ask the user what to simplify. Never widen to the whole repository on a guess.
 
-Kept as a second copy so this pass resolves the same scope without borrowing: the caller hands it the same range the review runs on.
-
-**Docs are in scope by role, not by path.** Human-facing docs — prose a person reads to install, operate, or understand the project, such as a README, a guide, usage docs, or explanatory text under `docs/` — are part of what this pass simplifies when the diff touches them. Agent-facing text, which selects or constrains an agent's behavior — `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, agent instructions, and the plans or design records an agent reads — is out of scope, as are structured records such as changelogs and licences and anything generated or vendored. Judge by what the text does, and when the role is unclear leave it out. Code comments are not docs here; a comment that only restates the code belongs to **Noise**.
-
-- Don't broaden cleanup unless the user asks.
-- If a worthwhile simplification needs files outside the diff, report it instead of changing it.
-- Preserve code behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics. A human-facing doc keeps its facts instead, per **Proposal contract**'s claims table.
-- When the existing checks can't prove a code simplification behavior-preserving, add the minimal characterization test that can, and say so in the report. That's the proof, not scope creep. A doc change gets no test: its proof is the judged claims table, and no check stands in for it.
+- Judge docs in scope by role, not by path.
+- Simplify a human-facing doc — prose a person reads to install, operate, or understand the project, such as a README, a guide, usage docs, or explanatory text under `docs/` — when the diff touches it.
+- Keep agent-facing text out of scope: `SKILL.md`, `AGENTS.md`, `CLAUDE.md`, agent instructions, and the plans or design records an agent reads.
+- Keep structured records out of scope too: changelogs, licences, and anything generated or vendored.
+- Judge by what the text does, and leave it out when the role is unclear.
+- Treat code comments as not docs here; a comment that only restates the code belongs to **Noise**.
+- Broaden cleanup only when the user asks.
+- Report a worthwhile simplification needing files outside the diff instead of changing it.
+- Preserve code behavior exactly: outputs, public APIs, data migrations, test intent, and user-visible semantics.
+- Keep a human-facing doc's facts instead, per **Proposal contract**'s claims table.
+- Add the minimal characterization test that can prove a code simplification behavior-preserving when the existing checks can't, and say so in the report, since that test is the proof rather than scope creep.
+- Give a doc change no test, since its proof is the judged claims table and no check stands in for it.
 
 ## Lenses
 
-Each lens is a distinct kind of avoidable complexity, and every one preserves what it must: code behavior, or a human-facing doc's facts. How many proposers they map to is decided in **Dispatch** below.
+- Treat each lens as a distinct kind of avoidable complexity, with every lens preserving what it must: code behavior, or a human-facing doc's facts.
+- Decide how many proposers the lenses map to in **Dispatch** below.
 
 - **Structure** — unnecessary complexity, nesting, or branching; redundant or duplicated logic; unclear names; related logic that could be consolidated.
-- **Cost** — work the change itself added beyond what its result needs, where the excess is evident from reading the diff rather than from a measurement: per-iteration queries or IO that one call covers. Reshape to the same result at the lower cost.
+- **Cost** — flag only work the change itself added beyond what its result needs, where the excess is evident from reading the diff rather than from a measurement, such as per-iteration queries or IO that one call covers.
+- **Cost** — reshape that excess to the same result at the lower cost.
 - **Noise** — formatting churn unrelated to the task; comments that merely restate the code.
-- **Prose** — human-facing docs only. Give a paragraph one topic; turn an enumeration into a list; keep a condition, exception, or qualifier beside the sentence it governs; use one name for one referent; state a fact once. Reordering, emphasis, headings, sentence breaks, and paragraph breaks are free; the set of facts is not. Never drop an instruction or default, a prerequisite or condition, a side effect, a warning, an opt-in or opt-out entry, or what happens on failure.
-- **Reuse** — places where the diff reimplements what the repository already has. Search the shared and utility modules and the files adjacent to the change, and name the existing helper it should call instead.
+- **Prose** — human-facing docs only.
+- **Prose** — give a paragraph one topic.
+- **Prose** — turn an enumeration into a list.
+- **Prose** — keep a condition, exception, or qualifier beside the sentence it governs.
+- **Prose** — use one name for one referent.
+- **Prose** — state a fact once.
+- **Prose** — reordering, emphasis, headings, sentence breaks, and paragraph breaks are free; the set of facts is not.
+- **Prose** — never drop an instruction or default, a prerequisite or condition, a side effect, a warning, an opt-in or opt-out entry, or what happens on failure.
+- **Reuse** — name the existing helper the diff should call instead where it reimplements what the repository already has, searching the shared and utility modules and the files adjacent to the change.
 
 ## Don't over-simplify
 
-- No clever one-liners or dense expressions just to cut lines; no nested ternaries for multi-branch logic (prefer `if`/`else` or `switch`).
+- Avoid clever one-liners or dense expressions just to cut lines.
+- Avoid nested ternaries for multi-branch logic, preferring `if`/`else` or `switch`.
 - Keep helpful abstractions and separation of concerns; don't merge unrelated concerns into one unit.
 - Don't make code harder to debug, extend, or review.
-- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope. Report it. Repairing cost the diff itself introduced is not speculative, and the baseline decides which it is: restoring the cost the code had before the change is in scope, making it cheaper than it has ever been is not.
+- Don't optimize speculatively: anything whose justification needs a measurement — a different algorithm for scale, caching, concurrency, precomputed indexes — is out of scope.
+- Report a speculative optimization instead of making it.
+- Treat repairing cost the diff itself introduced as not speculative.
+- Let the baseline decide which it is: restoring the cost the code had before the change is in scope, while making it cheaper than it has ever been is not.
 
 ## Dispatch
 
-Proposers are read-only and share no mutable state, so they may run in parallel (`superpowers:dispatching-parallel-agents`). The fan-out is sized to the diff:
+- Run proposers in parallel, since they are read-only and share no mutable state (`superpowers:dispatching-parallel-agents`).
+- Size the fan-out to the diff:
 
 - **Default** — one proposer takes every lens.
 - **Large diff, or one spanning subsystems** — one proposer per lens, dispatched together.
 
-**Prose is assigned only when the diff contains human-facing docs.** With none, no proposer takes it: the default proposer's lens set is one smaller, and per-lens fan-out gains no worker. With docs present, per-lens fan-out gains the one Prose proposer, and the default proposer adds the lens.
-
-Dispatch a fresh proposer each round and give it the diff as it now stands, not the previous round's proposals — a proposer shown what was just applied anchors on it. Inline **Scope**, **Lenses**, **Proposal contract**, and **Don't over-simplify** into the prompt so the proposer doesn't go hunting for them, and confine its searches to the project root or narrower.
+- Assign **Prose** only when the diff contains human-facing docs.
+- With no docs, give the default proposer one fewer lens and gain no worker in per-lens fan-out.
+- With docs present, add the one **Prose** proposer to per-lens fan-out and the lens to the default proposer.
+- Dispatch a fresh proposer each round with the diff as it now stands, never the previous round's proposals, since a proposer shown what was just applied anchors on it.
+- Inline **Scope**, **Lenses**, **Proposal contract**, and **Don't over-simplify** into the prompt, so the proposer doesn't go hunting for them.
+- Confine its searches to the project root or narrower.
 
 ## Proposal contract
 
-Each proposer returns proposals only — never an edited file — with:
+- Return proposals only from each proposer — never an edited file — with:
 
 - **location** — `path:line` within the diff, numbered as the file now stands.
 - **lens**.
 - **change** — what the code should say instead.
-- **behavior preservation** — why the change cannot alter behavior, and which existing check would catch it if it did. When no existing check can prove it, propose the minimal characterization test that would, per **Scope**.
+- **behavior preservation** — why the change cannot alter behavior, and which existing check would catch it if it did.
+- Propose the minimal characterization test that would prove it when no existing check can, per **Scope**.
 
-**For human-facing docs, preservation is a judged claims table, not a check.** A doc proposal returns its before range, its exact after text, and two tables:
-
-- **before and after tables** — one row per fact a reader acts on or relies on, each labelled with the category it belongs to: instruction, default, prerequisite, condition, side effect, warning, opt-in / opt-out, failure behavior. Both tables cover the before range the proposal replaces.
-- **row-set equality is the proof** — order does not matter and a duplicated fact folds into one row. A fact the after text states that the before did not is an addition and out of scope. A fact that leaves the replaced range is preserved only when the after table names, as `path:line` in the same file and outside the replaced range, where it still stands; that is how removing a duplicate stays inside row-set equality.
-- **byte-identical tokens** — commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at.
-- **the exact after text**, which the judge returns unchanged when it accepts. Different wording is a reject, or a fresh after table verified again.
+- Prove preservation for a human-facing doc with a judged claims table, not a check.
+- Cover the replaced before range with both a before and an after table in a doc proposal.
+- Give each table one row per fact a reader acts on or relies on, labelled with its category: instruction, default, prerequisite, condition, side effect, warning, opt-in / opt-out, failure behavior.
+- Treat row-set equality as the proof: order does not matter and a duplicated fact folds into one row.
+- Treat a fact the after text states that the before did not as an addition, which is out of scope.
+- Treat a fact leaving the replaced range as preserved only when the after table names, as `path:line` in the same file outside the replaced range, where it still stands; that is how removing a duplicate stays inside row-set equality.
+- Keep byte-identical tokens: commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at.
+- Hand over the exact after text, which the judge returns unchanged when it accepts.
+- Treat different wording as a reject, or as a fresh after table verified again.
 
 ## Pass
 
@@ -87,12 +118,18 @@ Each proposer returns proposals only — never an edited file — with:
 
 ## Convergence
 
-This pass's loop stops per `using-dude`'s **Loop convergence**. A round here is one dispatch → judge → apply → verify cycle, and two proposals are the same finding when they target the same location with the same change, however the wording moved — including one re-raised after it was rejected.
+- Stop this pass's loop per `using-dude`'s **Loop convergence**.
+- Count one dispatch → judge → apply → verify cycle as one round here.
+- Count two proposals targeting the same location with the same change as the same finding, however the wording moved, including one re-raised after rejection.
 
 ## Report
 
-- the fan-out used
-- what changed, and what behavior was preserved — or, for a human-facing doc, the judged claims table that proved its facts survived, naming that the applied text is the text the judge accepted
-- proposals rejected, with the reason
-- the checks that ran, and what they actually printed — or that the check run was skipped as unchanged, citing the covering result the caller handed over, and for a doc change where no project check covers the prose, say the judged table is the proof rather than claiming a check
-- any simplification left undone, including anything reported instead of changed, and each proposal set aside on the person route, with its question
+- Report the fan-out used.
+- Report what changed and what behavior was preserved.
+- For a human-facing doc, report the judged claims table that proved its facts survived, naming that the applied text is the text the judge accepted.
+- Report proposals rejected, with the reason.
+- Report the checks that ran and what they actually printed.
+- Report a check run skipped as unchanged by citing the covering result the caller handed over.
+- For a doc change where no project check covers the prose, say the judged table is the proof rather than claiming a check.
+- Report any simplification left undone, including anything reported instead of changed.
+- Report each proposal set aside on the person route, with its question.
