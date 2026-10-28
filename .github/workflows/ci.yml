@@ -56,7 +56,17 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: restore bash 3.2.57 build cache
+        id: bash32-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/bash-3.2.57
+          # The version is part of the key, so bumping it builds afresh
+          # instead of testing against a stale bash.
+          key: bash-3.2.57-${{ runner.os }}-${{ runner.arch }}-v1
+
       - name: build bash 3.2.57
+        if: steps.bash32-cache.outputs.cache-hit != 'true'
         run: |
           set -o pipefail
           curl -fsSL --retry 3 --retry-connrefused \
@@ -79,7 +89,9 @@ jobs:
             --build="$triplet" --host="$triplet" \
             --without-bash-malloc --disable-nls
           make -j"$(nproc)"
-          echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"
+
+      - name: put bash 3.2 on PATH
+        run: echo "$RUNNER_TEMP/bash-3.2.57" >> "$GITHUB_PATH"
 
       - name: make test (bash 3.2)
         run: |
