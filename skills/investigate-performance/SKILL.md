@@ -5,7 +5,7 @@ description: Use to investigate an observed performance shortfall — a slow end
 
 # Investigate Performance
 
-Root-cause an observed performance shortfall. `superpowers:systematic-debugging` is the core loop and runs unchanged here. This skill adds only the performance-specific layers on top: what to measure, in what order, and how to report.
+Root-cause an observed performance shortfall. `superpowers:systematic-debugging` owns the core loop; its Phase 4 Implementation does not run here — an Investigation ends at findings. This skill adds only the performance-specific layers on top.
 
 ## Rules
 
@@ -45,7 +45,7 @@ An observed shortfall and where it was observed: the endpoint, job, or query tha
 Descend the layers, measuring each one's share of the total cost; stop at the first layer that accounts for the shortfall before drilling in.
 
 1. **System** — CPU/memory/disk/network saturation and errors (USE method); swapping, throttling, noisy neighbors.
-2. **Runtime** — GC pressure and pause time; scheduler/thread/goroutine/process-pool saturation; connection pools. Use the language's native profiler (e.g. pprof, NYTProf, Xdebug/Blackfire, fprof/recon, `--cpu-prof`).
+2. **Runtime** — GC pressure and pause time; scheduler/thread/goroutine/process-pool saturation; connection pools. Use the language's native profiler.
 3. **Application** — hot paths, repeated work in loops, per-request work that could be cached, lock contention, serialization cost, chatty external calls, retry amplification.
 4. **Query/IO** — slow queries and their plans, missing indexes, N+1 patterns, round-trip counts, payload sizes.
 
