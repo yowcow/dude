@@ -9,7 +9,7 @@ Settle an open question whose deliverable is a judgment. `superpowers:systematic
 
 ## Orchestration model
 
-- The points to settle are independent of each other, so fan out one worker per point.
+- The points to settle are independent of each other, so fan out one worker per point. Each verdict stays with the orchestrator.
 - A worker that measures, reads, or runs returns the command it ran and its raw output — or, for a read that ran no command, the file or record read and how its content was captured.
 - **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
