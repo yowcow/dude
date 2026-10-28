@@ -7,43 +7,65 @@ description: Use to implement one PR-sized task.
 
 ## Entry
 
-One PR-sized task: a sub-issue, an issue fitting a single PR, or a request of that size. Work larger than one PR, or a design not yet agreed, goes back to `plan-work`'s **Entry** — splitting is a design decision.
+- Take one PR-sized task here: a sub-issue, an issue fitting a single PR, or a request of that size.
+- Send work larger than one PR, or a design not yet agreed, back to `plan-work`'s **Entry**, since splitting is a design decision.
 
 ## Binding `<branch>`
 
-Bind one concrete name here, before **Isolation** reads it. Take the first rung that applies:
+- Bind one concrete name here, before **Isolation** reads it.
+- Take the first rung that applies:
 
 1. **The caller named one** — a direct invocation, or a hand-off carrying a name. The name is the answer: use it verbatim, never search.
 2. **The task carries one** — an item returned from `plan-work` with its design invalidated names its branch in the sub-issue body, per its **Output contract**. The name is the answer: use it verbatim, never search.
 3. **Neither** — derive `<issue-number>-<slug>` where an issue backs the task, `<slug>` where none does. `<slug>` is a short kebab-case description of the change.
 
-A rung-3 name with no issue behind it is never searched — there is no number to build a prefix from. A rung-3 name with an issue behind it gets one search by that issue number through `scripts/resolve-branch.sh <issue-number>`, which prints every branch already cut for that issue, one name per line. Count the lines: none — `<branch>` is the name derived; exactly one — `<branch>` becomes that branch, and the run below resumes on it; two or more — stop and ask: which line of work to carry on is a human call.
-
-Whatever creates the workspace must put it on this exact name: a tool that decorates the name it is handed leaves a branch this search cannot find, so the next session derives a fresh name and opens a second branch for the same task.
+- Never search a rung-3 name with no issue behind it, since there is no number to build a prefix from.
+- Give a rung-3 name with an issue behind it one search by that issue number through `scripts/resolve-branch.sh <issue-number>`, since it prints every branch already cut for that issue, one name per line.
+- Count that search's lines: none means `<branch>` is the name derived.
+- Count of exactly one means `<branch>` becomes that branch, and the run below resumes on it.
+- Count of two or more means stop and ask, since which line of work to carry on is a human call.
+- Put the workspace on this exact name, whatever creates it, since a tool decorating the handed name leaves a branch this search cannot find and the next session opens a second branch for the same task.
 
 ## Isolation
 
-Establish this before drafting the plan: the plan file has to live inside the workspace the execution method reads it from.
-
-Use `superpowers:using-git-worktrees`, then establish a verified baseline there. That skill reads the current directory for existing isolation only and assumes a new branch on creation, so on resumption look before creating: `tools/attach-workspace.sh <branch> <path>` answers in one line. `REUSE <path>` — a workspace already carries `<branch>`; use it as-is. `ATTACHED <path>` — no workspace existed but the branch did, locally or on the remote, and a new workspace now tracks it. `CREATE` — no branch exists anywhere; create it from the base **Base branch** settles. Check the remote before giving up: creating afresh where a branch already exists remotely strands that pushed work under a diverged history, with no recovering it.
+- Establish isolation before drafting the plan, since the plan file has to live inside the workspace the execution method reads it from.
+- Use `superpowers:using-git-worktrees`.
+- Establish a verified baseline there.
+- Look before creating on resumption, since that skill reads the current directory for existing isolation only and assumes a new branch on creation.
+- Read the one-line answer from `tools/attach-workspace.sh <branch> <path>`.
+- On `REUSE <path>`, use the workspace as-is, since it already carries `<branch>`.
+- On `ATTACHED <path>`, use the new workspace tracking the branch, since no workspace existed but the branch did locally or on the remote.
+- On `CREATE`, create the branch from the base **Base branch** settles, since no branch exists anywhere.
+- Check the remote before giving up, since creating afresh where a branch already exists remotely strands that pushed work under a diverged history with no recovering it.
 
 ## Base branch
 
-Only `CREATE` above needs this. A task with no tracking issue branches from the default branch; everything below applies only when an issue backs the task.
-
-`scripts/resolve-base.sh <issue-number>` reads the prerequisite from the one `Blocked-By: #N` line `plan-work`'s **Splitting into sub-issues** writes in the issue body, and settles the base from the state of the PR closing that prerequisite: `OPEN` takes that PR's head, `MERGED` takes the default branch — both fetched first, so the cut branch contains what it is meant to. On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks. Read its one-line answer: `BASE <branch>` cuts the new branch from `origin/<branch>`, never the bare name. On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
-
-Record a non-default base as one `Base-Branch: <base>` trailer line on this task's first commit — the bare branch name, never an `origin/` prefix. Branching from the default branch records nothing. The trailer contract lives in `references/base-branch.md`.
+- Apply this section only on `CREATE` above.
+- Branch a task with no tracking issue from the default branch.
+- Apply everything below only when an issue backs the task.
+- Resolve the base with `scripts/resolve-base.sh <issue-number>`, since it reads the prerequisite from the one `Blocked-By: #N` line `plan-work`'s **Splitting into sub-issues** writes in the issue body and settles the base from the state of the PR closing that prerequisite.
+- Take that PR's head on `OPEN`, and the default branch on `MERGED`, since both are fetched first so the cut branch contains what it is meant to.
+- On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
+- On `BASE <branch>`, cut the new branch from `origin/<branch>`, never the bare name.
+- On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
+- Record a non-default base as one `Base-Branch: <base>` trailer line on this task's first commit, using the bare branch name, never an `origin/` prefix.
+- Record nothing when branching from the default branch.
 
 ## Alternatives
 
-After **Isolation**, before **Plan gate**. The small-change lane still runs this, then **Execution**.
-
-Purpose is the task's own purpose: sub-issue, single-PR issue, or request. An unnamed purpose means skip — do not invoke, note the skip, and continue. Read-root is the base **Base branch** would settle — resolved on `REUSE` and `ATTACHED` too, and the default branch for a task with no issue — handed as `origin/<base>`, fetched to its current tip. Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact. Compare, the one review-findings pass, and the ask-person continue-vs-revisit are propose-alternatives's own procedure; on its return, continue; on revisit design, take **Escalation** with the finding, not **Plan gate**.
+- Run this after **Isolation** and before **Plan gate**.
+- Run this on the small-change lane too, then go to **Execution**.
+- Take the task's own purpose as the purpose: sub-issue, single-PR issue, or request.
+- Skip on an unnamed purpose: do not invoke, note the skip, and continue.
+- Take the base **Base branch** would settle as the read-root, resolved on `REUSE` and `ATTACHED` too and defaulting to the default branch for a task with no issue, handed as `origin/<base>` fetched to its current tip.
+- Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact.
+- Leave its compare, one review-findings pass, and ask-person continue-vs-revisit to that procedure.
+- Continue on its return.
+- Take **Escalation** with the finding on revisit design, never **Plan gate**.
 
 ## Plan gate
 
-The small-change lane in `using-dude`'s **Workflow selection** skips this gate outright.
+- Skip this gate outright on the small-change lane in `using-dude`'s **Workflow selection**.
 
 1. Read the task. A sub-issue carries its own body plus a link to the parent's design comment; an issue that fits one PR carries its own comment; a request with no issue is the input, with whatever `plan-work` left in chat per its **Output contract**.
 2. Dispatch a drafter at fresh context with `superpowers:writing-plans`. The brief carries references to where step 1 found the design — never the design itself — plus the workspace path and the branch. The worker drafts the plan and returns its path; it never implements. What this gate takes back has been through that skill's own self-review. The plan lives in the workspace, git-ignored and never committed.
@@ -55,12 +77,22 @@ The small-change lane in `using-dude`'s **Workflow selection** skips this gate o
 - **Default** goes to `superpowers:subagent-driven-development`.
 - **Inline** — the person chose inline execution, or no subagent tool is available — goes to `superpowers:executing-plans`.
 - **Manual** is the fitting method on the small-change lane in `using-dude`'s **Workflow selection**, and an exception needing a named reason anywhere else.
-
-Say which method runs and why. Delegation only pays when a task covers the hand-off, so inline trivially small independent changes; take no refactoring the task did not ask for. The method does not carry the work into integration, and its final whole-branch review does not run here — the completion gate's own review is the verdict this flow stands on. Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong, and hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged. Run the method's own Finish except its deletion of the plan's workspace (the directory holding its ledger): step 3 hands the ledger's lines every round, so that directory stays until this flow ends, then delete it — after **Report** holds the rulings and, on the normal exit, after **Hand off**.
+- Say which method runs and why.
+- Inline only trivially small independent changes, since delegation pays only when a task covers the hand-off.
+- Take no refactoring the task did not ask for.
+- Leave integration and the final whole-branch review to the completion gate, since its own review is the verdict this flow stands on.
+- Where the method kept a ledger, collect every line carrying its `Ruling:` marker into **Report**, each with what it costs if wrong.
+- Hand the lines carrying its `Ruling:` marker and its deferred-minor marker (`minor (deferred)`) to step 3 unchanged.
+- Run the method's own Finish except its deletion of the plan's workspace (the directory holding its ledger), since step 3 hands the ledger's lines every round and that directory stays until this flow ends.
+- Delete that directory after **Report** holds the rulings and, on the normal exit, after **Hand off**.
 
 ## Completion gate
 
-One round is verify against the entry artifact, every round, then `simplify-code`, then `review-code`; the loop stops per `using-dude`'s **Loop convergence**. The only normal exit is a round that changed nothing with step 3 clean and absorb answering `UP-TO-DATE`. A round is one pass of steps 1-5; a finding is the same one when a later round brings back what an earlier round already tried to resolve: the same claim about the same location, or the same unmet completion criterion.
+- Verify against the entry artifact every round, then run `simplify-code`, then `review-code`, since one round is that sequence.
+- Stop the loop per `using-dude`'s **Loop convergence**.
+- Exit normally only on a round that changed nothing with step 3 clean and absorb answering `UP-TO-DATE`.
+- Count one pass of steps 1-5 as one round.
+- Count a later round bringing back what an earlier round already tried to resolve as the same finding: the same claim about the same location, or the same unmet completion criterion.
 
 1. **Verify.** The checklist reads the task's own entry artifact, never the detailed plan: a sub-issue's purpose, scope boundary, and completion criteria; an issue's own comment; or the request itself where no issue tracks the work. Run it every round, even when nothing changed this round, and keep the verdict in the main loop — never dispatch it. The scope boundary is part of that source, not commentary on it: what it excludes never becomes a checklist row. An unmet criterion routes on one test — does meeting it require touching what the boundary excludes? No: it is this task's work, so implement it in this round. Yes: do not implement it; record it and take the design-invalidated exit in step 6. Criteria that contradict each other or the agreed design take `using-dude`'s **Escalation** by the same route, recorded the same way.
 2. **Simplify.** Run `simplify-code` on the recent diff only.
@@ -80,27 +112,35 @@ One round is verify against the entry artifact, every round, then `simplify-code
 
 ## Hand off
 
-Push the branch under its own name, then open the draft PR through `superpowers:finishing-a-development-branch` Option 2. The dude delta on that procedure is only this: always draft; the body carries a closing keyword (`fixes`/`closes`/`resolves`) on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository; the base is whatever **Base branch** would settle. A PR already open on the branch is the deliverable, its status left as is. Where origin is a fork or has another remote, ask which repository the draft PR targets, offering origin's own first. Then name `pr-to-ready` as the next entry without invoking it.
+- Push the branch under its own name.
+- Open the draft PR through `superpowers:finishing-a-development-branch` Option 2.
+- Keep the dude delta to only this: always draft.
+- Carry a closing keyword (`fixes`/`closes`/`resolves`) in the body on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository.
+- Take the base whatever **Base branch** would settle.
+- Leave a PR already open on the branch as the deliverable, with its status as is.
+- Ask which repository the draft PR targets where origin is a fork or has another remote, offering origin's own first.
+- Name `pr-to-ready` as the next entry without invoking it.
 
 ## Report
 
-- Whether the small-change lane was taken, and the one-line basis if it was
-- Whether `propose-alternatives` was invoked or skipped, and why
-- The execution method chosen, and why
-- The base the task was cut from, and which of **Base branch**'s outcomes chose it
-- The `review-plan` rounds on the detailed plan, and the final verdict
-- The `review-code` verdict, and any blocking finding left open
-- The completion gate's rounds, and the condition it exited on
-- The execution method's rulings, each with what it costs if wrong — or that it made none
-- The base absorbed, how it was re-resolved, and what the absorb answered on the final round
-- The completion criteria checked against the entry artifact: which were met, and any gap with how it was routed
-- The concrete checks run, and any that could not be
-- What changed and why
-- The pushed branch and the draft PR — found or opened by this run — with `pr-to-ready` named as the next entry
-- Assumptions made, and areas needing manual review
+- Report whether the small-change lane was taken.
+- Report the one-line basis when it was taken.
+- Report whether `propose-alternatives` was invoked or skipped, and why.
+- Report the execution method chosen, and why.
+- Report the base the task was cut from, and which of **Base branch**'s outcomes chose it.
+- Report the `review-plan` rounds on the detailed plan, and the final verdict.
+- Report the `review-code` verdict, and any blocking finding left open.
+- Report the completion gate's rounds, and the condition it exited on.
+- Report the execution method's rulings, each with what it costs if wrong, or that it made none.
+- Report the base absorbed, how it was re-resolved, and what the absorb answered on the final round.
+- Report the completion criteria checked against the entry artifact: which were met, and any gap with how it was routed.
+- Report the concrete checks run, and any that could not be.
+- Report what changed and why.
+- Report the pushed branch and the draft PR — found or opened by this run — with `pr-to-ready` named as the next entry.
+- Report assumptions made, and areas needing manual review.
 
 ## Escalation
 
-Per `using-dude`'s **Escalation**: a Critical finding that invalidates the agreed design goes back to `plan-work`'s **Entry** for re-approval — not in the plan gate, and not in the completion gate, is this skill an exception.
-
-What this flow hands over is the branch: its name, whether it is pushed, and any PR open on it. Where the finding surfaced in the completion gate, the branch already carries the round's commits, since the gate commits before taking either exit.
+- Send a Critical finding invalidating the agreed design back to `plan-work`'s **Entry** for re-approval per `using-dude`'s **Escalation**, since neither the plan gate nor the completion gate is an exception in this skill.
+- Hand over the branch on this exit: its name, whether it is pushed, and any PR open on it.
+- Keep the round's commits on the branch where the finding surfaced in the completion gate, since the gate commits before taking either exit.
