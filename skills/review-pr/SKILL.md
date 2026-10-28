@@ -102,7 +102,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run the script again with that file, for as long as it asks.
 - `POSTED <state> <url>` — report the URL.
 - `POSTED <state> <url>` — report the step that failed when one did.
-- `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, since its body may not be the draft's and the user must check the body then submit or delete it.
+- `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, since its body may not be the draft's.
+- `STOP review-pending-left` — have the user check the body and submit or delete it, since its body may not be the draft's.
 - Report any other `STOP <slug>` from the read-back with a review possibly on the PR in an unconfirmed state and a body not confirmed to be the draft's.
 
 ## Report
