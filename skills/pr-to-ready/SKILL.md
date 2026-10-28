@@ -74,9 +74,11 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 - Answer each threaded finding — one with a GitHub thread — in its thread and resolve the thread.
 - Post at most two standalone comments per round.
+- Post the round's applicable comments before leaving the round — advancing, requesting again, or handing back — since a hand-back decided first silently drops the round's verdicts into the session where no later round re-posts them.
 - Carry that round's vet-code findings in one result comment as verbatim whole plain text — finding text, severity, location, never paraphrased, with no added mentions or elaborate formatting.
 - Carry a per-finding verdict for every non-inline finding, suppressed included, in one verdict comment across all selected reviewers, with Copilot and Claude substance paraphrased and never verbatim quoted and with no mentions, since otherwise the quote silently summons a fresh review of the run's own words.
   - Treat suppressed-comment blocks as a read source alongside threads.
+- Open each result and verdict comment with the reviewed commit SHA, since without it a verdict posted before a merge reads as judging the merged head the reviewer never saw.
 - Create no new thread.
 - Send threadless vet-code-originated findings to the result comment and the verdict comment.
 - Send threadless Copilot or Claude findings to the verdict comment only, never transcribed into the result comment.
@@ -84,6 +86,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Transcribe all findings including Declined lines on mixed rounds.
 - Post no verdict comment where it has no non-inline verdict target, except the timeout partial verdict naming missing reviewers.
 - Put a needs-user verdict's question with the round's obtained verdicts in the same verdict comment.
+- Where a round ends both needs-user and unmergeable, still post both comments and hand back once naming both causes, since reporting only the conflict strands the unanswered questions off-PR.
 
 ## Base retarget
 
