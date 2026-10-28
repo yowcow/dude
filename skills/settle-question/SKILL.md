@@ -43,7 +43,7 @@ A question, or an issue carrying the points to be settled. Closing any gap again
 - Every point has a verdict with the decisive evidence behind it; or
 - the point is recorded as unsettled, with what would settle it and who decides.
 
-Once the report below is drafted, run `review-findings` on it for one pass, handing it the report; publish per `using-dude`'s **Stage boundaries**.
+Run `review-findings` on the report per its **Caller contract**; publish per `using-dude`'s **Stage boundaries**.
 
 ### Report format
 
