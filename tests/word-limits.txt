@@ -14,7 +14,7 @@
 984 skills/pr-to-ready/SKILL.md
 705 skills/propose-alternatives/SKILL.md
 1284 skills/review-code/SKILL.md
-1118 skills/review-findings/SKILL.md
+1454 skills/review-findings/SKILL.md
 1115 skills/review-plan/SKILL.md
 1570 skills/review-pr/SKILL.md
 662 skills/settle-question/SKILL.md
