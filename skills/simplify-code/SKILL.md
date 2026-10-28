@@ -5,9 +5,7 @@ description: Use to simplify recently modified code and human-facing docs while 
 
 # Simplify Code
 
-It is kept local rather than delegated: ready-made simplifiers draw no boundary against optimizations whose justification needs a measurement, and each is confined to a single assistant, so none can carry a pass that installs to all of them.
-
-One invocation is one simplification pass, and the pass owns its apply-verify loop: propose, apply, run the checks, propose again, until nothing actionable is left. Re-entry is not part of it — that belongs to the caller: this pass never re-enters on its own; re-running after something else changed the code or a doc in scope is the caller's.
+One invocation is one simplification pass: propose, apply, verify, propose again, until nothing actionable is left. The pass stays local rather than delegated — a delegated simplifier draws no boundary against optimizations whose justification needs a measurement — and it never re-enters on its own; re-running after something else changed the code or a doc in scope is the caller's.
 
 ## Orchestration model
 
@@ -15,7 +13,6 @@ One invocation is one simplification pass, and the pass owns its apply-verify lo
 
 - The orchestrator owns this pass: it dispatches the proposers, hands their proposals to `judge-findings`, applies the accepted proposals, verifies, and reports. It decides when nothing actionable remains — a proposer never does.
 - Proposers are read-only workers: each gets the diff, the paths it touches, and its assigned lenses, and returns proposals only — never an edited file, never a run of the project's checks, and never a verdict that the pass is clean — at the `high` tier in `using-dude`'s **Worker tier**. What that buys is a fresh context unanchored on why the code ended up this way; a proposal it doesn't return reads as nothing actionable.
-- Proposers stay read-only for one reason beyond that contract: `superpowers:verification-before-completion` makes the orchestrator re-verify a worker's claims anyway — so letting a worker apply and self-verify buys nothing.
 
 ## Scope
 
@@ -42,8 +39,8 @@ Each lens is a distinct kind of avoidable complexity, and every one preserves wh
 - **Structure** — unnecessary complexity, nesting, or branching; redundant or duplicated logic; unclear names; related logic that could be consolidated.
 - **Cost** — work the change itself added beyond what its result needs, where the excess is evident from reading the diff rather than from a measurement: per-iteration queries or IO that one call covers. Reshape to the same result at the lower cost.
 - **Noise** — formatting churn unrelated to the task; comments that merely restate the code.
-- **Prose** — human-facing docs only. Give a paragraph one topic; turn an enumeration into a list; keep a condition, exception, or qualifier beside the sentence it governs; use one name for one referent; state a fact once. A long sentence is a signal, not a rule. Reordering, emphasis, headings, sentence breaks, and paragraph breaks are free; the set of facts is not. Never drop an instruction or default, a prerequisite or condition, a side effect, a warning, an opt-in or opt-out entry, or what happens on failure.
-- **Reuse** — places where the diff reimplements what the repository already has. Grep the shared and utility modules and the files adjacent to the change, and name the existing helper it should call instead.
+- **Prose** — human-facing docs only. Give a paragraph one topic; turn an enumeration into a list; keep a condition, exception, or qualifier beside the sentence it governs; use one name for one referent; state a fact once. Reordering, emphasis, headings, sentence breaks, and paragraph breaks are free; the set of facts is not. Never drop an instruction or default, a prerequisite or condition, a side effect, a warning, an opt-in or opt-out entry, or what happens on failure.
+- **Reuse** — places where the diff reimplements what the repository already has. Search the shared and utility modules and the files adjacent to the change, and name the existing helper it should call instead.
 
 ## Don't over-simplify
 
@@ -54,7 +51,7 @@ Each lens is a distinct kind of avoidable complexity, and every one preserves wh
 
 ## Dispatch
 
-Proposers are read-only and share no mutable state, so they may run in parallel (`superpowers:dispatching-parallel-agents` — this is independent fact-finding, not implementation). The fan-out is sized to the diff:
+Proposers are read-only and share no mutable state, so they may run in parallel (`superpowers:dispatching-parallel-agents`). The fan-out is sized to the diff:
 
 - **Default** — one proposer takes every lens.
 - **Large diff, or one spanning subsystems** — one proposer per lens, dispatched together.
@@ -79,14 +76,12 @@ Each proposer returns proposals only — never an edited file — with:
 - **byte-identical tokens** — commands, flags, numbers, versions, paths, URLs, link targets, code blocks, and the headings a link points at.
 - **the exact after text**, which the judge returns unchanged when it accepts. Different wording is a reject, or a fresh after table verified again.
 
-Report "no proposals" explicitly rather than inventing one.
-
 ## Pass
 
 1. Gather the inputs: the diff and the paths it touches.
 2. Dispatch proposers against the diff, sized per **Dispatch**.
 3. Hand `judge-findings` every proposal of the round as an item, the lens in place of severity and no candidates, judged against the resolved **Scope** — with **Scope**'s "preserve code behavior exactly" as the requirement for code, and, for a human-facing doc, the judged claims table that proves its facts. For a doc proposal, hand it the before range, both claims tables, and the exact after text as well. Hand it the earlier rounds' record — proposals accepted, proposals rejected with the reason, proposals set aside with the question put to the person. As the acceptance criteria, hand Scope, Lenses, Don't over-simplify, and that a readability improvement is value worth applying. A proposal it returns as `needs-user` on the measurement route stays actionable for step 5: take that measurement yourself, one and bounded, record it, and hand the proposal back to `judge-findings` with the record. A proposal returned on the person route is not applied: it is set aside, its question joins that record, and it is not actionable for step 5, so a round left with only person-route set-asides ends the pass clean.
-4. Apply the accepted proposals yourself. Never apply two in the same round whose before ranges overlap, or where a residual location one names falls inside the other's before range: apply one, and let the next round propose the other against the file as it now stands, so the applied text always matches the table the judge verified. Then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. For a doc proposal no project check proves its facts, so the proof is the judged table's agreement with the text you applied. Code proposals keep the check or the characterization test, and a claims table never stands in for either. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the tree it invoked this skill on.
+4. Apply the accepted proposals yourself. Never apply two in the same round whose before ranges overlap, or where a residual location one names falls inside the other's before range: apply one, and let the next round propose the other against the file as it now stands, so the applied text always matches the table the judge verified. Then run the checks the project defines — in its README, Makefile targets, package scripts, or CI config — and read their actual output. For a doc proposal no project check proves its facts, so the proof is the judged table's agreement with the text you applied. Code proposals keep the check or the characterization test, and a claims table never stands in for either. When it applied nothing, skip that check run only when the caller passed, as an input to this invocation, a check result covering the exact tree this invocation ran on.
 5. Loop back to step 2 with a fresh proposer while actionable simplification remains, subject to **Convergence**.
 6. Report per **Report**.
 
