@@ -14,7 +14,7 @@ description: Use to investigate an observed anomaly — a failure, an incident, 
 
 - Record each hypothesis with its test and verdict.
 - Leave refuted hypotheses recorded and never retried.
-- Exit when the root cause explains all observations — magnitude, timing, and scope included.
+- Exit when the root cause explains all observations — magnitude, timing, and scope included; or
 - Exit when the remaining unknowns are explicitly documented along with how to resolve them.
 - Distinguish root cause from trigger and contributing factors.
 - Stay blameless: name systems and conditions, never people.
@@ -22,7 +22,7 @@ description: Use to investigate an observed anomaly — a failure, an incident, 
 
 ## Orchestration model
 
-- Capture Step 2 sources (logs, dashboards, queue/process state, usage exports) with one worker per source.
+- Step 2 sources (logs, dashboards, queue/process state, usage exports) can be captured by one worker per source.
 - Have a capturing or sweeping worker return the command it ran and its raw output.
 - For a capture or sweep that ran no command, have it return its source, window, and the export, snapshot, or records it read.
 - Fan out one worker per Step 4 change class, since the classes are independent.

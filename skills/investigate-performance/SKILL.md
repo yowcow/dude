@@ -15,7 +15,7 @@ description: Use to investigate an observed performance shortfall — a slow end
 - Preserve volatile evidence before anything else.
 - Record each hypothesis with its test and verdict.
 - Leave refuted hypotheses recorded and never retried.
-- Exit when the root cause explains all observations — magnitude, timing, and scope included.
+- Exit when the root cause explains all observations — magnitude, timing, and scope included; or
 - Exit when the remaining unknowns are explicitly documented along with how to resolve them.
 - Distinguish root cause from trigger and contributing factors.
 - Measure before guessing: propose no fix without a number behind it.
@@ -25,7 +25,7 @@ description: Use to investigate an observed performance shortfall — a slow end
 ## Orchestration model
 
 - Keep descending the layers (Step 3) sequential by design, since which layer to drill into depends on the previous measurement.
-- Send independent measurements within a layer (CPU vs memory vs IO saturation) each to a worker.
+- Within a layer, independent measurements (CPU vs memory vs IO saturation) can each go to a worker.
 - Have a measuring worker return the command it ran and its raw output.
 
 ## Entry
