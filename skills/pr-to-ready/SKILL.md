@@ -86,7 +86,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Transcribe all findings including Declined lines on mixed rounds.
 - Post no verdict comment where it has no non-inline verdict target, except the timeout partial verdict naming missing reviewers.
 - Put a needs-user verdict's question with the round's obtained verdicts in the same verdict comment.
-- Where a round ends both needs-user and unmergeable, still post both comments and hand back once naming both causes, since reporting only the conflict strands the unanswered questions off-PR.
+- Where a round ends both needs-user and unmergeable, still post both applicable comments and hand back once naming both causes, since reporting only the conflict strands the unanswered questions off-PR.
 
 ## Base retarget
 
