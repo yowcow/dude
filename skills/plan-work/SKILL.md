@@ -32,7 +32,7 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 ## Entry
 
 - Given an issue number, read the issue and its comments before anything else, or the plan contradicts decided context while reading as informed.
-- Given a planning request with no tracking issue, run the research in **Pass** step 3, or the draft argues against unread code.
+- Given a planning request with no tracking issue, run the research in **Pass** step 3, or you draft against unread code.
 - Given a planning request with no tracking issue, ask for a tracking issue in **Splitting into sub-issues** before publishing anything, since children with no parent have no design URL to cite.
 - Investigation findings enter at research (**Pass** step 3), skipping **Pass** step 2, since the root cause is established and research settles the fix shape.
 - The proposed options are input to the design agreement, never the agreement itself.
