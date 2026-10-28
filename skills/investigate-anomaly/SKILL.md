@@ -5,7 +5,7 @@ description: Use to investigate an observed anomaly — a failure, an incident, 
 
 # Investigate Anomaly
 
-Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core loop; this skill layers the anomaly-specific work on top of it: framing, evidence preservation, timeline reconstruction, change correlation, and blameless reporting.
+Root-cause an observed anomaly. `superpowers:systematic-debugging` owns the core loop; its Phase 4 Implementation does not run here — an Investigation ends at findings. This skill layers the anomaly-specific work on top of it: framing, evidence preservation, timeline reconstruction, change correlation, and blameless reporting.
 
 ## Rules
 
@@ -29,7 +29,7 @@ An observed symptom and where it was observed: the error text or metric values, 
 
 ### Step 1: Frame the symptom
 
-- Turn a vague concern ("costs keep growing", "something has felt off lately") into a measurable statement: what `using-dude`'s **Understand** asks an investigation to pin down, plus how large the deviation is against what baseline or expectation.
+- Turn a vague concern into a measurable statement: what `using-dude`'s **Understand** asks an investigation to pin down, plus how large the deviation is against what baseline or expectation.
 - If no number can be attached yet, producing one is the first evidence-gathering task — an anomaly that cannot be measured cannot be root-caused.
 
 ### Step 2: Capture and preserve
@@ -68,7 +68,7 @@ Sweep every change class across the last-good → first-bad window:
 ### Exit criteria
 
 - The explanation meets **Rules**' exit condition and accounts for the symptom's **shape** — a steady rate and a periodic spike of the same average are different symptoms; or
-- the unknowns are documented with the monitoring or logging that would catch the next occurrence — a recovered anomaly leaves nothing to re-measure.
+- the unknowns are documented with the monitoring or logging that would catch the next occurrence.
 
 Run `review-findings` on the report per its **Caller contract**; publish per `using-dude`'s **Stage boundaries**.
 
