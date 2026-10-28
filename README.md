@@ -12,24 +12,24 @@ names the next flow rather than absorbing it, and each has its own gate.
 
 ## Skills
 
-| Skill                     | What it produces                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------- |
-| `audit-code`              | A repository or path scanned, with what to fix reported and nothing changed         |
-| `implement-work`          | A draft PR on a pushed branch of verified commits, for one PR-sized task            |
-| `investigate-anomaly`     | A blameless findings report on a failure, incident, or drifting metric              |
-| `investigate-performance` | An evidence-backed explanation of a performance shortfall                           |
-| `judge-findings`          | Review findings judged accept, reject, or needs-user outside the caller's main loop |
-| `plan-work`               | An agreed design plus a numbered TODO list at PR granularity                        |
-| `propose-alternatives`    | The most direct route to a named purpose, including doing nothing or doing something else |
-| `pr-to-ready`             | A PR whose CI passes and whose review is clean                                      |
-| `review-code`             | A diff, branch, or working tree reviewed, with no blocking finding left unresolved  |
-| `review-findings`         | Findings on a findings or judgment report, before it becomes the canonical record   |
-| `review-plan`             | Findings on a TODO list or an implementation plan                                   |
-| `review-pr`               | A PR reviewed, its judged findings returned to it as one PR review                  |
-| `settle-question`         | A judgment on an open question, with the evidence that settles it                   |
-| `simplify-code`           | Recently changed code and human-facing docs simplified, behavior and facts preserved |
-| `using-dude`              | The workflow rules the other skills are wired by                                    |
-| `vet-code`                | One round of code review findings, each judged, handed to the skill that called it  |
+| Skill                     | When to use it |
+| ------------------------- | -------------- |
+| `audit-code`              | Use to scan a repository or path and report what to fix, without changing code. |
+| `implement-work`          | Use to implement one PR-sized task. |
+| `investigate-anomaly`     | Use to investigate an observed anomaly — a failure, an incident, or an unexplained metric or cost change other than a performance shortfall. |
+| `investigate-performance` | Use to investigate an observed performance shortfall — a slow endpoint, job, or query, or a latency, throughput, CPU, or memory metric that moved. |
+| `judge-findings`          | Use when another skill needs review findings judged accept, reject, or needs-user outside its own main loop. |
+| `plan-work`               | Use to plan a change, including a multi-PR fix that arrives on investigation findings. |
+| `propose-alternatives`    | Use as a component when another skill needs the most direct route to a named purpose, including doing nothing or doing something else. |
+| `pr-to-ready`             | Use to take an open PR to ready, or a branch with no PR yet to ready. |
+| `review-code`             | Use to review code. |
+| `review-findings`         | Use to review report claims. |
+| `review-plan`             | Use to review a planning artifact. |
+| `review-pr`               | Use to review a PR and return the findings to it as a PR review. |
+| `settle-question`         | Use to settle an open question whose deliverable is a judgment, with no runtime symptom to root-cause. |
+| `simplify-code`           | Use to simplify recently modified code and human-facing docs while preserving behavior and stated facts. |
+| `using-dude`              | Use when starting a task to classify it and select its workflow. |
+| `vet-code`                | Use as a component when another skill needs one round of code review findings, each already judged. |
 
 Skills by layer and the dependencies between them. Solid arrows point to a lower
 layer; dashed arrows are the upward and lateral edges. `using-dude` is left out because every skill may
@@ -54,11 +54,11 @@ flowchart TB
   end
   subgraph Components
     vet-code
-    review-findings
     propose-alternatives
   end
   subgraph Primitives
     judge-findings
+    review-findings
   end
 
   plan-work -.-> implement-work
@@ -78,12 +78,9 @@ flowchart TB
   plan-work --> review-findings
   implement-work --> review-code
   implement-work --> review-plan
-  implement-work --> review-pr
   implement-work --> simplify-code
   implement-work --> propose-alternatives
   implement-work --> review-findings
-  pr-to-ready --> review-code
-  pr-to-ready --> simplify-code
   pr-to-ready --> vet-code
   pr-to-ready --> judge-findings
   pr-to-ready --> propose-alternatives
@@ -96,6 +93,7 @@ flowchart TB
   review-pr --> vet-code
   review-pr --> propose-alternatives
   review-pr --> review-findings
+  propose-alternatives --> review-findings
   vet-code --> judge-findings
   review-code --> judge-findings
   review-plan --> judge-findings
@@ -118,7 +116,7 @@ repository or path needs sweeping for what to fix, and hands its report to
 
 dude requires [Superpowers](https://github.com/obra/superpowers#installation). Install it first, in the same runtime you are installing dude into. dude's skills name Superpowers procedures and neither ship nor reimplement them, so those calls have nowhere to go until Superpowers is present.
 
-It also requires [jq](https://jqlang.github.io/jq/), which `watch-checks.sh` and `watch-copilot-review.sh` use to read GitHub responses. Without it they stop with exit `6` naming it, rather than reporting your arguments or your CI as the fault.
+It also requires [jq](https://jqlang.github.io/jq/), which `review-pr`'s `build-review-payload.sh` and `post-review.sh` use to build and post the review. Without it they stop with exit `1` naming it, rather than reporting your arguments as the fault.
 
 ## Install
 
