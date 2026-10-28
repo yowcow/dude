@@ -61,7 +61,7 @@ total=$((total + 1))
 fails_here=0
 for needle in '**Range shape**' '**Worktree**' '**Read-root**' '**Ledger rows**' \
   '**Purpose**' '**Earlier rounds**' '**Confine**' '**Tests**' \
-  'these win'; do
+  'does not apply and is to be ignored' 'these win'; do
   if ! grep -qF -- "$needle" <<<"$REQS"; then
     printf 'FAIL extras: PLAN_OR_REQUIREMENTS lacks: %s\n' "$needle"
     fails_here=1
