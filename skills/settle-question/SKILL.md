@@ -5,11 +5,11 @@ description: Use to settle an open question whose deliverable is a judgment, wit
 
 # Settle Question
 
-Settle an open question whose deliverable is a judgment. `superpowers:systematic-debugging` owns the core loop and runs unchanged here; this skill layers on only what a question-shaped run needs — splitting the question into points that can be settled, fixing what was measured, and reporting. Its Phase 4 Implementation does not run: an Investigation ends at findings.
+Settle an open question whose deliverable is a judgment. `superpowers:systematic-debugging` owns the core loop here; this skill layers on only what a question-shaped run needs — splitting the question into points that can be settled, fixing what was measured, and reporting. Its Phase 4 Implementation does not run: an Investigation ends at findings.
 
 ## Orchestration model
 
-- The points to settle are independent of each other, so fan out one worker per point. Each verdict stays with the orchestrator.
+- The points to settle are independent of each other, so fan out one worker per point.
 - A worker that measures, reads, or runs returns the command it ran and its raw output — or, for a read that ran no command, the file or record read and how its content was captured.
 - **The worker that sweeps for absence or exhaustiveness is marked**: dispatch it at the `highest` tier in `using-dude`'s **Worker tier**. A sweep that stopped early hands back "nothing found", and neither the orchestrator nor any later reader of the report can tell that from an absence.
 
