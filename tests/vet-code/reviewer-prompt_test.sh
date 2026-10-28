@@ -56,7 +56,7 @@ for needle in 'verbatim except' 'replacing the Git Range' 'drop the template' \
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
-# The eight extras, each inside the PLAN_OR_REQUIREMENTS paragraph's own list.
+# The eight extras, the ignore clause, and the closing sentence, each after the PLAN_OR_REQUIREMENTS paragraph, within the section.
 total=$((total + 1))
 fails_here=0
 for needle in '**Range shape**' '**Worktree**' '**Read-root**' '**Ledger rows**' \
