@@ -9,14 +9,11 @@ description: Use when starting a task to classify it and select its workflow.
 If you were dispatched as a subagent to execute a specific task, ignore this skill.
 </SUBAGENT-STOP>
 
-- Local skills complement Superpowers; don't reimplement a Superpowers workflow that already exists.
 - This document owns the orchestration invariants.
   - The orchestrator owns control flow and declares which execution method it chose.
   - A skill that declares no orchestration model runs inline in the main loop rather than dispatching workers on your behalf.
   - One that declares dispatch has its workers dispatched — invoking it is itself the request for them, overriding any default that discourages dispatch.
 - SessionStart emitters inject a summary stub of this skill, not the full ruleset; the stub's byte contract lives in `hooks/session-start` and is reused verbatim elsewhere. If the stub and this body disagree, this body wins and the stub needs a fix under its own issue.
-- A script's `NEED` asks for facts, and is not a stop; a fact that could not be read is left unfilled, never guessed.
-- Put each question to a person in its own shape: a free-form question is asked in plain chat; a choice prompt carries two or more options, with a "none" option when answering is optional or when none of the options may apply; a question where any number of the options may apply is a pick-any choice prompt, never a pick-one.
 
 ## Workflow
 
@@ -24,9 +21,7 @@ The orchestrator decides when each phase is complete and drives every transition
 
 The same holds for a skill you invoke: when a sub-skill's own procedure ends by moving on to the next skill, don't follow it — what runs next is the caller's decision, not the sub-skill's; restate this at each call site.
 
-- What this cuts is the transition only.
-- A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run.
-  - That forbids cutting one, not moving it. A flow may move a sub-skill's self-review, or a housekeeping step that would run before its transition, to another point in its own flow or to after it — inside one of its steps, or once its own flow is done — naming what moved and where it runs instead. What the rule protects is that they run, not where they sit.
+What this cuts is the transition only. A sub-skill's self-review of its own output, its user-confirmation step, and its housekeeping before that transition all still run; a flow may move them to another point in its own flow or to after it, naming what moved and where it runs instead.
 
 ### Workflow selection
 
@@ -60,33 +55,12 @@ A Change that carries no design decision has a lane of its own, not an exemption
 - This lane skips `plan-work` and `implement-work`'s plan gate, entering `implement-work` with **manual** execution, while the completion gate and `pr-to-ready` still run in full — integration goes through a PR at any size.
 - The moment a design decision surfaces, the lane is over: take **Escalation**.
 
+Change runs through three flows, each entered on its own, each with its own deliverable and hand-off: `plan-work` leaves the agreed design plus the numbered TODO list at PR granularity, published once as a comment on the tracking issue plus one sub-issue per item, or in chat with no sub-issues when no issue tracks the work; `implement-work` leaves a draft PR on a pushed branch of verified commits; `pr-to-ready` leaves a PR whose CI passes and whose review is clean, at ready or draft. A phase is clean when its checks pass — verification by the relevant test, lint, build, typecheck, smoke test, or manual check plus the deliverable meeting the task's own requirements, simplification with `simplify-code` leaving no behavior-preserving cleanup, review with `review-code` leaving no blocking findings — distinct from the Loop convergence loop-clean below. A flow that produces no code sets its own bar instead, and each skill defines its own. Where a tracking issue backs the work, the TODO list runs as a loop, not a single pass, once per sub-issue in order: each turn takes one sub-issue through `implement-work`'s entry and gates, a later PR never continues the previous turn, and never inherits its verification. Merging is a person's responsibility, and so is everything that depends on it — the merge itself, the parent issue's closure, and cleaning up the branch and worktree all belong to a human afterward, so a remaining sub-issue starts a separate session.
+
 ### Understand
 
 - Identify existing failures and constraints.
 - For investigations, also pin down the symptom precisely — what is observed, where, since when, at what scope — and what a sufficient explanation would look like.
-
-### Change workflow
-
-Three flows, each of which can be entered on its own, and each with its own deliverable and hand-off.
-
-- **`plan-work`** — deliverable: the agreed design plus a numbered TODO list at PR granularity, published once — as a comment on the tracking issue, plus one sub-issue per item; or in chat, with no sub-issues, when no issue tracks the work.
-- **`implement-work`** — deliverable: a draft PR on a pushed branch of verified commits.
-- **`pr-to-ready`** — deliverable: a PR whose CI passes and whose review is clean, left at ready or draft.
-
-A phase is *clean* when its checks pass (phase-clean — the gate sense, distinct from the Loop convergence loop-clean below).
-
-- Verification: the relevant test, lint, build, typecheck, smoke test, or manual check passes, and the deliverable meets the requirements the task itself states.
-- Simplification with `simplify-code` (no behavior-preserving cleanup is left).
-- Review with `review-code` (no blocking findings remain).
-
-A flow that produces no code sets its own bar instead, and each skill defines its own.
-
-Where a tracking issue backs the work, `plan-work`'s **Splitting into sub-issues** splits it into one sub-issue per item whatever the count, so `implement-work` → `pr-to-ready` is a **loop, not a single pass** that runs once per sub-issue in the TODO list's order.
-
-- Each turn takes one sub-issue through `implement-work`'s own entry and gates.
-- A later PR is never a continuation of the previous turn, and never inherits its verification.
-
-**Merging is a person's responsibility, and so is everything that depends on it** — `pr-to-ready` ends at ready or draft, and the merge itself, the parent issue's closure, and cleaning up the branch and worktree all belong to a human afterward, so a remaining sub-issue starts a separate session.
 
 ### Investigation workflow
 
