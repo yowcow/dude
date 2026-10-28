@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
-# Guard a PR review before it is written and read it back after: the choice is
-# APPROVE or COMMENT (submitted) or PENDING (left unsubmitted for the user to
-# finish on GitHub).
-#
-# It writes nothing and calls no GitHub client. The first call answers WRITE;
-# the agent then creates a pending review anchored to <head>, adds each inline
-# comment, and submits it unless the choice is PENDING. The call with
-# `--posted <review-id>` reads the record back through facts.
+# Guard a PR review before it is written and read it back after.
 #
 # The choice is validated before any write, so an empty choice or
 # REQUEST_CHANGES cannot post: the agent has no WRITE to act on.

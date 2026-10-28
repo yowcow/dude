@@ -4,17 +4,11 @@
 #
 # A finding goes inline only on a line the reviewed diff adds: GitHub refuses
 # a review comment on a line outside the diff, and one refused comment fails
-# the whole review. Everything else -- a finding on an unchanged line, on a
-# file the PR did not touch, or with no line at all -- goes into the body under
-# its path and line. "Adds" is measured with --unified=0 on a rename-aware diff
+# the whole review. "Adds" is measured with --unified=0 on a rename-aware diff
 # of the whole range (see ADDED), changed lines only:
 # GitHub also accepts the context lines around a hunk, but its diff and this
 # one need not cut hunks alike, and a finding moved to the body is still
 # posted where a refused one takes the review down with it.
-#
-# <findings-file> is a JSON array of {path, line, body}; path and line may be
-# null, and line is a head-side line number. Severity and the proposed fix are
-# part of each body; this script does not read them.
 #
 # Conventions: ../../implement-work/references/script-conventions.md.
 #
