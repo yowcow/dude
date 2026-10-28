@@ -111,7 +111,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Report the PR and the range reviewed and whether requirements were available.
 - Report whether `propose-alternatives` was invoked or skipped and why.
 - Report an empty finding or a finding when invoked.
-- Report that the run waited on a finding.
+- Report that the run waited when invoked with a finding.
 - Report whether the purpose was checked against the means.
 - Report that no check against outside facts was made when the purpose was settled but none were given.
 - Report what was posted with its state and URL, or that nothing was posted, or that a pending review was left.
