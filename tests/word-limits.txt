@@ -7,8 +7,8 @@
 1140 skills/implement-work/references/facts.md
 591 skills/implement-work/references/script-conventions.md
 569 skills/implement-work/references/stop-registry.md
-818 skills/investigate-anomaly/SKILL.md
-697 skills/investigate-performance/SKILL.md
+834 skills/investigate-anomaly/SKILL.md
+712 skills/investigate-performance/SKILL.md
 765 skills/judge-findings/SKILL.md
 2626 skills/plan-work/SKILL.md
 984 skills/pr-to-ready/SKILL.md
@@ -17,7 +17,7 @@
 1118 skills/review-findings/SKILL.md
 1115 skills/review-plan/SKILL.md
 1570 skills/review-pr/SKILL.md
-695 skills/settle-question/SKILL.md
+704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
 2141 skills/using-dude/SKILL.md
 1572 skills/vet-code/SKILL.md

@@ -20,6 +20,7 @@ description: Use to investigate an observed performance shortfall — a slow end
 - Distinguish root cause from trigger and contributing factors.
 - Measure before guessing: propose no fix without a number behind it.
 - Account for variance, warm-up, and cold caches in the measurement itself before trusting a delta.
+  - A trusted delta measures noise.
 - Confirm you are measuring the thing you mean to (client-observed vs server-side time).
 
 ## Orchestration model
@@ -55,7 +56,7 @@ description: Use to investigate an observed performance shortfall — a slow end
 - Stop at the first layer that accounts for the shortfall before drilling in.
 
 1. **System** — CPU/memory/disk/network saturation and errors (USE method); swapping, throttling, noisy neighbors.
-2. **Runtime** — GC pressure and pause time; scheduler/thread/goroutine/process-pool saturation; connection pools. Use the language's native profiler.
+2. **Runtime** — GC pressure and pause time; scheduler/thread/goroutine/process-pool saturation; connection pools. Use the language's native profiler, since the wrong profiler silently measures the wrong layer.
 3. **Application** — hot paths, repeated work in loops, per-request work that could be cached, lock contention, serialization cost, chatty external calls, retry amplification.
 4. **Query/IO** — slow queries and their plans, missing indexes, N+1 patterns, round-trip counts, payload sizes.
 

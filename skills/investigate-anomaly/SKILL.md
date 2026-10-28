@@ -49,8 +49,10 @@ description: Use to investigate an observed anomaly — a failure, an incident, 
 ### Step 3: Reconstruct the timeline
 
 - Use a single stated timezone.
+  - Mixed zones silently corrupt the timeline.
 - Anchor **last known good** and **first known bad**, then interleave symptoms with events.
 - Treat a gap you cannot narrow between last-good and first-bad as itself a finding and record it.
+  - An un-narrowed gap silently drops the root-cause window.
 
 ### Step 4: Correlate with changes
 

@@ -37,6 +37,7 @@ description: Use to settle an open question whose deliverable is a judgment, wit
 - Record what was actually read: the revision, tree, or record.
 - Treat an installed tree and the repository it came from as different artifacts, and a branch and its base the same way.
 - Name, for every claim of absence, exhaustiveness, or "only", the sweep that produced it, run to completion and read whole, never a truncated or paged view of the output.
+  - A truncated view silently passes an incomplete sweep.
 
 ## Validate
 
