@@ -46,11 +46,11 @@ Skills stack in five dependency layers, top down: `using-dude` (workflow rules),
 
 Shared mechanism lives once, in top-level `tools/`, called through `SCRIPT_DIR` rather than by bare name or cwd-relative path. What stays a script is what the Keep rule keeps: a dude contract (Base-Branch trailer, prerequisite-line base resolution, repo identity checks, merge guards) or a concrete silent failure the script's header names. A generic operation — neither — stays abstract prose under rule 1 and never becomes a script.
 
-A kept script leaves by a replacement test. The unit is the script; the test passes only if all of these hold, and the script and its tests are then deleted together:
+A kept script leaves by a replacement test. It passes only if all of these hold, and the script and its tests are then deleted together:
 
-- The fixture is every behavior-test row of the unit's scripts, argument-check rows excepted.
-- The subject and the judge are blind: each is a fresh context that has not seen the unit's scripts or their tests.
-- The oracle (the unit's scripts) runs only after every verdict is in.
+- The fixture is every behavior-test row of the script, argument-check rows excepted.
+- The subject and the judge are blind: each is a fresh context that has not seen the script or its tests.
+- The oracle (the script) runs only after every verdict is in.
 - Three independent runs agree with the oracle on every row, comparing only the result the caller branches on, not its literal text.
 - The prose under test is the exact text that would ship.
 
@@ -77,7 +77,6 @@ This binds `using-dude` and every other skill alike. A rule's body and the ratio
 - **A rule body may be restated, and that is the exception.** The test is whether the rule loses at the point it has to bite — because the reader got there without its source, or because something read at that point competes with it. `using-dude` is installed alongside the other skills and reachable by name, and every citation writes that name, so a skill being readable on its own does not make the first case hold; the competing instruction is what usually earns the restatement, as with the sub-skill call-site rule under **Workflow** in `using-dude`. Where neither case holds, the copy is inertia: cut it and depend on the single source's name. A skill's own *procedure* still has to stand alone, which is completeness rather than duplication.
 - **Rationale is single-source.** Keep it beside the rule only where its absence gets the rule misapplied. A second case keeps it: rationale recording **why an obvious alternative is wrong**, which consolidation would otherwise strip as redundant. **Delete the rest**; git history and the issue hold it. What stays sits beside its rule, and one or two sentences always do. Only rationale past that floor *and* spanning several rules becomes a *candidate* for the skill's `references/` — it moves only once the gathered whole reads as its own document, and holding one is what gives a skill that directory. `using-dude` has no `references/` of its own, so there the choice is keep or delete.
 - **Skill rules are bullets, one rule per bullet.** Write a skill's rules as bullets; a higher word count from the bullets is acceptable.
-  - One bullet carries exactly one rule.
   - A rule's reason stays in the same bullet or a directly nested child bullet.
   - The purpose is to reduce reader interpretation drift and trivial subjective review remarks.
   - A reason stays only where **Rationale is single-source** keeps it; delete the rest. The deletion test's (a)/(b)/(c) judgments are unchanged.

@@ -27,9 +27,9 @@ directory**. A plugin install carries the whole repository, `tests/` included
   have a test file. Not named `*_test.sh`, so `run.sh` does not collect it
   directly; `scripts-have-tests_test.sh` is what runs it.
 - `tests/word-limits.sh` + `tests/word-limits.txt` — the word-limit gate: every
-  `skills/*/SKILL.md` and `skills/*/references/*.md` must be listed with a cap
-  and stay at or under it; `word-limits_test.sh` runs it, so `make test` fails
-  otherwise.
+  `skills/*/SKILL.md`, `skills/*/references/*.md`, and `AUTHORING.md` must be
+  listed with a cap and stay at or under it; `word-limits_test.sh` runs it, so
+  `make test` fails otherwise.
 - `tests/lib/harness_test.sh` — a self-test of the harness mechanism itself
   (no script under test).
 - `<name>_test.sh` anywhere under `tests/` — the actual test cases.
