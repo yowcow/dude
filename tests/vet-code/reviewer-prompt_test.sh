@@ -48,8 +48,8 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 total=$((total + 1))
 fails_here=0
 for needle in 'verbatim except' 'replacing the Git Range' 'drop the template' \
-  'After the template' 'append after the template' 'appends after it'; do
-  if grep -qF -- "$needle" <<<"$SECTION"; then
+  'after the template' 'appends after it'; do
+  if grep -qiF -- "$needle" <<<"$SECTION"; then
     printf 'FAIL deviation: template-editing wording remains: %s\n' "$needle"
     fails_here=1
   fi
