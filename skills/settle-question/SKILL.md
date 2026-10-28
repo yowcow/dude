@@ -5,7 +5,7 @@ description: Use to settle an open question whose deliverable is a judgment, wit
 
 # Settle Question
 
-Settle an open question whose deliverable is a judgment. `superpowers:systematic-debugging` owns the core loop and runs unchanged here; this skill layers on only what a question-shaped run needs — splitting the question into points that can be settled, fixing what was measured, and reporting. Its Phase 4 Implementation does not run: an Investigation ends at findings.
+Settle an open question whose deliverable is a judgment. `superpowers:systematic-debugging` owns the core loop here; this skill layers on only what a question-shaped run needs — splitting the question into points that can be settled, fixing what was measured, and reporting. Its Phase 4 Implementation does not run: an Investigation ends at findings.
 
 ## Orchestration model
 
