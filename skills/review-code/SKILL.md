@@ -21,8 +21,8 @@ One invocation runs the loop to completion: review, judge, fix, verify, review a
 
 Resolve what to review in this order, and declare the resolved scope before dispatching anything:
 
-1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range `tools/resolve-range.sh` bounds for it.
-   - Before that, run `tools/check-pr-author.sh`: on `OTHER`, apply nothing and stop — this loop rewrites the code it reviews, and that code is somebody else's. On `STOP`, report it and stop. On `SELF`, go on.
+1. **Caller-supplied** — a SHA range, paths, or a PR. Use it as given; a PR becomes the range `tools/resolve-range.sh <pr-number>` bounds for it.
+   - Before that, run `tools/check-pr-author.sh <pr-number>`: on `OTHER`, apply nothing and stop — this loop rewrites the code it reviews, and that code is somebody else's. On `STOP`, report it and stop. On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff: staged, unstaged, and untracked files.
 3. **Clean tree, commits ahead of `<base>`** — run `tools/resolve-range.sh` with no argument.
    - `<base>` is resolved, not assumed: the `Base-Branch:` trailer `implement-work` records is read back and the base settled from that PR's present state, falling back to the default branch where there is no trailer. The trailer's contract and the state-to-base table live in `implement-work`'s `references/base-branch.md`, never duplicated here.
@@ -35,9 +35,9 @@ Resolve what to review in this order, and declare the resolved scope before disp
 One invocation is one pass, and a pass is as many rounds as it takes:
 
 1. Resolve the scope per **Scope**.
-2. Invoke `vet-code` once on the code as it now stands, handing it the scope, the requirements, the ledger rows the caller handed over unchanged, and from the second round on the earlier rounds' record.
+2. Invoke `vet-code` once on the code as it now stands, handing it the scope, what was implemented, the requirements, the ledger rows the caller handed over unchanged, and from the second round on the earlier rounds' record.
 3. Take back the judged findings `vet-code` returns — each `accept` with its fix, `reject` with its reason, or `needs-user` with its question — and re-judge none of them; carry any caveat it returns (paths-only scope, no requirements) into **Report**. With them comes one answer per ledger row: the finding it became, keeping the row it came from, or a `Ledger row closed` or `Ledger row declined` line as the worker returned it. A closed row is answered for its round — it takes no verdict, joins no earlier rounds' record, and is handed to no judge, whose only candidates are `Declined to judge` lines; the ledger re-hands it to the next round, which answers it again from the code as it then stands.
-4. Count the `needs-user` verdicts before applying anything: one or more ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — go to step 7 and leave non-clean, per **Escalation**. Otherwise apply only findings whose verdict is `accept` yourself — severity does not decide this — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. Never fix a `Declined to judge` line itself; fixing straight from the reviewer's text silently applies work the judge never accepted.
+4. Count the `needs-user` verdicts before applying anything: one or more ends the pass's rounds here with the meaning `judge-findings`'s **Verdicts** gives `needs-user` — go to step 7 and leave non-clean, per **Escalation**. Otherwise apply only findings whose verdict is `accept` yourself — severity does not decide this — except one that invalidates the approved design, which is not fixed here at all: stop the pass, per **Escalation**. Never fix a `Declined to judge` line itself; fixing straight from the reviewer's text silently applies work the judge never accepted. When a finding describes a bug, write the failing regression test first and watch it fail, then fix it (`superpowers:test-driven-development`).
 5. Verify with the concrete checks the project defines — in the README, Makefile, package scripts, or CI — and read their actual output. When this step applied nothing, skip this check run only when the caller passed, as an input to this invocation, a check result covering the exact tree this invocation ran on.
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**. A pass that ended on a `needs-user` does not come back here.
 7. Report per **Report**.
