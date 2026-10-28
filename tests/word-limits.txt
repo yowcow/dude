@@ -10,7 +10,7 @@
 678 skills/investigate-performance/SKILL.md
 765 skills/judge-findings/SKILL.md
 2497 skills/plan-work/SKILL.md
-768 skills/pr-to-ready/SKILL.md
+948 skills/pr-to-ready/SKILL.md
 705 skills/propose-alternatives/SKILL.md
 1284 skills/review-code/SKILL.md
 1118 skills/review-findings/SKILL.md
