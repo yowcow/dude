@@ -93,6 +93,7 @@ flowchart TB
   review-pr --> vet-code
   review-pr --> propose-alternatives
   review-pr --> review-findings
+  propose-alternatives --> review-findings
   vet-code --> judge-findings
   review-code --> judge-findings
   review-plan --> judge-findings
