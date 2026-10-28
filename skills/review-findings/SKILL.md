@@ -5,86 +5,175 @@ description: Use to review report claims.
 
 # Review Findings
 
-Use on a report whose deliverable is findings, once drafted and before publication. This reviews what the report claims and what backs it, never the work that produced it and never the fix it might lead to.
+- Use it on a report whose deliverable is findings, once drafted and before publication.
+- Review what the report claims and what backs it there.
+- Review never the work that produced it there.
+- Review never any fix it might lead to there.
 
 ## Orchestration model
 
-**Always dispatch lens reviewers in a fresh context; never review inline.** The main loop gathers inputs, sizes the fan-out, takes the union, and reports. It re-judges none and dispatches no verdict worker.
+- Always dispatch lens reviewers in a fresh context there.
+- Never review inline there.
+- Gather inputs in the main loop there.
+- Size the fan-out there.
+- Take the union there.
+- Report there.
+- Re-judge nothing there.
+- Dispatch no verdict worker there.
 
-Each reviewer goes out at the `highest` tier in `using-dude`'s **Worker tier**: a miss returns as "nothing found".
+- Send each reviewer out at the `highest` tier in `using-dude`'s **Worker tier**, since a miss returns as "nothing found".
 
-One invocation is one pass. It never re-reviews on its own, never edits the report, and never declares a claim settled. The caller restates flagged claims and publishes.
+- Count one invocation as one pass.
+- Never re-review on its own there.
+- Never edit the report there.
+- Never declare a claim settled there.
+- Leave restating flagged claims and publishing to the caller.
 
 ## Target
 
-One invocation reviews exactly one target, and **the caller declares it**: the findings or judgment report about to become the canonical record, with the question it answers and the sources it rests on.
+- Review exactly one target per invocation.
+- Leave declaring it to the caller.
+- Take the findings or judgment report about to become the canonical record as the target.
+- Take the question it answers with it.
+- Take the sources it rests on with it.
 
-A findings report and a ruling published as an issue comment differ in format only: evidence not carrying the claim, a cut-short sweep, a hypothesis stated as concluded. One target, not two.
+- Treat a findings report and a ruling published as an issue comment as differing in format only, such as evidence not carrying the claim, a cut-short sweep, or a hypothesis stated as concluded.
+- Count that as one target, not two there.
 
 ## What counts as a finding
 
-One test with two sides. Side A: **left as is, would a reader acting on this record reach a wrong conclusion or wrong fix?** Side B: **followed as stated, would a reader waste a fix or lose a settled conclusion?** Either side admits it; reviewer preference admits nothing. The record outlives the run and reads as settled, so the reader is not the author.
+- Apply one test with two sides here.
+- Take Side A as: left as is, would a reader acting on this record reach a wrong conclusion or wrong fix.
+- Take Side B as: followed as stated, would a reader waste a fix or lose a settled conclusion.
+- Admit a claim as a finding where either side admits it.
+- Treat the reader as not the author, since the record outlives the run and reads as settled.
 
-This test overrides the lenses. A caveat worded loosely, a section ordered differently, a measurement more precise than needed — none change what a reader does, so none are findings. Reviewer preference is never a finding.
+- Let this test override the lenses.
+- Record none of a loosely worded caveat, a differently ordered section, or a more precise than needed measurement as a finding, since none changes what a reader does.
+- Record never reviewer preference as a finding.
 
-A passing finding flags the claim: the caller restates it as unsettled / not measured. Anything failing the test goes unsaid, never recorded as a note.
+- Flag the claim where a finding passes the test.
+- Leave restating it as unsettled / not measured to the caller.
+- Leave anything failing the test unsaid there.
+- Record it never as a note there.
 
 ## Lenses
 
-Six, none lowering the bar above. Run the ones this report can fail under; skip the rest and say which and why.
+- Judge against six lenses here, none lowering the bar above.
+- Run the ones this report can fail under.
+- Skip the rest there.
+- Say which were skipped and why there.
 
-- **Evidence sufficiency** — each claim names its backing artifact (`path:line`, command plus measured value, or source/window/record) and that artifact carries the claim.
-- **Sweep completeness** — each absence/exhaustiveness/"only" claim meets the trace the report left: the command issued, the count returned, no `| head` or page cut between them. Never re-run the sweep.
-- **Hypothesis separation** — nothing stated as concluded is an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**.
-- **Completeness** — the explanation covers the symptom as observed (magnitude, timing, scope) or documents the unknowns instead.
-- **Consistency** — contradicting claims, a timeline disagreeing with the narrative, shifting terminology, a summary overstating the body.
-- **Reality** — a version, config, code path, or constraint described wrongly.
+- **Evidence sufficiency** — require each claim to name its backing artifact there (`path:line`, command plus measured value, or source/window/record).
+- **Evidence sufficiency** — require that artifact to carry the claim there.
+- **Sweep completeness** — require each absence/exhaustiveness/"only" claim to meet the trace the report left.
+- **Sweep completeness** — take that trace as the command issued and the count returned there.
+- **Sweep completeness** — allow no `| head` or page cut between them there.
+- **Sweep completeness** — never re-run the sweep there.
+- **Hypothesis separation** — treat nothing stated as concluded as an unconfirmed hypothesis, per `using-dude`'s **Investigation workflow**.
+- **Completeness** — cover the symptom as observed there (magnitude, timing, scope), or document the unknowns instead.
+- **Consistency** — flag contradicting claims, a timeline disagreeing with the narrative, shifting terminology, or a summary overstating the body there.
+- **Reality** — flag a version, config, code path, or constraint described wrongly there.
 
-*Skip* **Necessity**, **Executability**, **Risk** and **Assumptions** — four `review-plan` lenses outside these six — and say so: the work the report may propose is not reviewed here, and what a report assumes is Evidence sufficiency's business.
+- Skip **Necessity**, **Executability**, **Risk** and **Assumptions** there, since those four are `review-plan` lenses outside these six and the work the report may propose is not reviewed here.
+- Treat what a report assumes as Evidence sufficiency's business there.
+- Say so there.
 
 ## Dispatch
 
-Each reviewer gets its lenses, the target report, the question, the sources, **What counts as a finding**, and **Finding contract**. Stance: try to make a claim fail. One that will not break passes — but an unevidenced finding is not a finding.
+- Hand each reviewer its lenses there.
+- Hand it the target report there.
+- Hand it the question there.
+- Hand it the sources there.
+- Hand it **What counts as a finding** there.
+- Hand it **Finding contract** there.
+- Take the stance of trying to make a claim fail there.
+- Let a claim that will not break pass there.
+- Count never an unevidenced finding as a finding there.
 
-Size for shortest wall-clock. A split buys independence — neither sees the other's findings. Use `superpowers:dispatching-parallel-agents` when dispatching more than one; this is fact-finding, not implementation.
+- Size for shortest wall-clock there.
+- Keep a split buying independence there, since neither reviewer sees the other's findings.
+- Use `superpowers:dispatching-parallel-agents` when dispatching more than one there, since this is fact-finding, not implementation.
 
-Confine every search to the project root or narrower.
+- Confine every search to the project root or narrower.
 
-Before the union, apply the intake filter: an item with no evidence pointer is rejected as an intake decision, not a finding; items sharing one exact `(lens, claim)` pair bundle into one finding with the union of evidence pointers and suggested changes. Cite each rejection's reason and each bundle's pair.
+- Apply the intake filter before the union there.
+- Reject an item with no evidence pointer as an intake decision there, never as a finding.
+- Bundle items sharing one exact `(lens, claim)` pair into one finding there, with the union of evidence pointers and suggested changes.
+- Cite each rejection's reason and each bundle's pair there.
 
 ## Finding contract
 
-Findings only — never a rewritten report — each with:
+- Return findings only there.
+- Rewrite never the report there.
 
-- **lens**
-- **claim** — one sentence on what is wrong
-- **evidence** — `path:line` or the quoted artifact line. No evidence, no finding
-- **suggested change** — the claim restated as unsettled / not measured, plus what would settle it
+- Give the lens for each finding there.
+- Give the claim in one sentence on what is wrong there.
+- Give the evidence as `path:line` or the quoted artifact line there.
+- Make no finding without evidence there.
+- Give the suggested change as the claim restated as unsettled / not measured there.
+- Give what would settle it with the suggested change there.
 
-Report "no findings" explicitly rather than inventing one.
+- Report "no findings" explicitly there rather than inventing one.
 
 ## Pass
 
-1. Gather the target report, its question, and its stated sources. One invocation reviews exactly one target, once.
+1. Gather the target report, its question, and its stated sources there.
 2. Dispatch reviewers per **Dispatch**, always fresh-context at the `highest` tier.
-3. Take the union; re-judge none. The pass is additive: any evidenced finding stays in.
-4. Report per **Report** and stop. Restating and publishing are the caller's; this skill never re-invokes itself.
-5. The only re-invocation is the caller's subtractive verification pass on the ledger: accepted entries plus rejected entries routed back through intake with new evidence, Evidence sufficiency lens only. Sustain each accepted entry if any pointer carries the claim; promote a routed rejected entry only if the new evidence carries it; flag nothing new. A re-flag without new evidence is not a finding; a claim with no ledger entry never is, even with evidence.
-6. One verification pass is one round under `using-dude`'s **Loop convergence**: a re-flag without new evidence is the same finding; clean is no accepted entry rejected and every accepted entry sustained.
+3. Take the union and re-judge none there.
+   - Keep the pass additive there, since any evidenced finding stays in.
+4. Report per **Report** and stop there.
+   - Leave restating and publishing to the caller there.
+   - Never re-invoke itself here.
+5. Take the caller's subtractive verification pass on the ledger as the only re-invocation there.
+   - Route accepted entries plus rejected entries back through intake with new evidence there.
+   - Apply Evidence sufficiency lens only there.
+   - Sustain each accepted entry where any pointer carries the claim there.
+   - Promote a routed rejected entry only where the new evidence carries it there.
+   - Flag nothing new there.
+   - Count never a re-flag without new evidence as a finding there.
+   - Count never a claim with no ledger entry as a finding there, even with evidence.
+6. Count one verification pass as one round under `using-dude`'s **Loop convergence** there.
+   - Count a re-flag without new evidence as the same finding there.
+   - Count clean as no accepted entry rejected and every accepted entry sustained there.
 
 ## Report
 
-Report to the caller in chat, never to GitHub, per `using-dude`'s **Stage boundaries**: the target, the fan-out, lenses run and skipped with why, the union per **Finding contract**, claims no lens flagged, and that the pass finished. The report is the ledger: flagged claims are accepted entries with pointers; checked-but-unflagged claims are rejected entries with the reason plus the pointer checked. The caller keeps it; a later pass reads it, not the report. List intake decisions with reasons and bundled pairs.
+- Report to the caller in chat there, never to GitHub, per `using-dude`'s **Stage boundaries**.
+- Cover the target there.
+- Cover the fan-out there.
+- Cover lenses run and skipped with why there.
+- Cover the union per **Finding contract** there.
+- Cover claims no lens flagged there.
+- Cover that the pass finished there.
+- Keep the report as the ledger there.
+- Keep flagged claims as accepted entries with pointers there.
+- Keep checked-but-unflagged claims as rejected entries with the reason plus the pointer checked there.
+- Leave keeping it to the caller there, since a later pass reads it, not the report.
+- List intake decisions with reasons and bundled pairs there.
 
 ## Measure
 
-Record per-lens accepted/rejected counts against the tracking issue, or chat with none, citing ledger entries and intake decisions. Only converged counts reach the issue, published by the caller per `using-dude`'s **Stage boundaries**. Reuse the ledger; keep no separate log.
+- Record per-lens accepted/rejected counts against the tracking issue there, or in chat with none.
+- Cite ledger entries and intake decisions there.
+- Publish only converged counts to the issue there, by the caller per `using-dude`'s **Stage boundaries**.
+- Reuse the ledger there.
+- Keep no separate log there.
 
 ## Caller contract
 
-This holds for every caller, never redefined at a call site.
+- Apply this contract to every caller there.
+- Redefine it never at a call site there.
 
-- **One invocation is one pass** over one declared target. A paraphrased or lightly edited report is the same target and opens no second invocation. The only re-invocation is the subtractive verification pass in **Pass**.
-- **Clean is that the pass finished** — every lens reported and the union reported — not that it found nothing.
-- **Only an unflagged claim is settled.** A flagged claim is restated by the caller as unsettled / not measured with what would settle it, then the whole report is published. Never re-run on that restatement; never edit the report here.
-- **Nothing publishes until the pass finishes.** Report in chat, never GitHub, per `using-dude`'s **Stage boundaries**.
+- Count one invocation as one pass over one declared target there.
+- Treat a paraphrased or lightly edited report as the same target there.
+- Open no second invocation for it there.
+- Take the subtractive verification pass in **Pass** as the only re-invocation there.
+- Count clean as the pass having finished there — every lens reported and the union reported — not as it having found nothing.
+- Treat only an unflagged claim as settled there.
+- Leave restating a flagged claim as unsettled / not measured with what would settle it to the caller there.
+- Publish the whole report after that restatement there.
+- Never re-run on that restatement there.
+- Never edit the report here.
+- Publish nothing until the pass finishes there.
+- Report in chat there, never to GitHub, per `using-dude`'s **Stage boundaries**.
