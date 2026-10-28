@@ -17,6 +17,6 @@
 1115 skills/review-plan/SKILL.md
 1481 skills/review-pr/SKILL.md
 673 skills/settle-question/SKILL.md
-1974 skills/simplify-code/SKILL.md
+1883 skills/simplify-code/SKILL.md
 2352 skills/using-dude/SKILL.md
 1457 skills/vet-code/SKILL.md
