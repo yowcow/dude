@@ -19,7 +19,7 @@ Review a PR, have every finding judged against the PR's own code, and return the
 ### 1. Resolve the PR
 
 1. Run the check-pr-repo script (`<skill-dir>/scripts/check-pr-repo.sh`) for the caller's PR reference. It answers `PR <n> repo=<owner>/<repo>` only when the repository the reference names is this checkout's `origin`. On `STOP <slug>`, report it and end the run.
-2. Put the reviewer's 👀 reaction on the PR itself, in the repository item 1 answered. From here on, remove the reviewer's 👀 from it when the run ends, however it ends, whether or not this run put it there. If it cannot be removed, the run still ends; the Report tells the user to remove it by hand.
+2. Put the reviewer's 👀 reaction on the PR itself, in the repository item 1 answered. From here on, remove the reviewer's 👀 from it when the run ends, however it ends, whether or not this run put it there. If it cannot be removed, don't stop the run; the Report tells the user to remove it by hand.
 
 ### 2. Resolve the range, the purpose, and the requirements
 
