@@ -47,7 +47,7 @@ description: Use to review code.
    - Ask the user what to review there.
    - Never widen to the whole repository on a guess.
 
-- Take the resolve-range script's answer in one line.
+- Take either script's answer in one line.
 - Take `RANGE <base>..<head>` as the two SHAs to review.
 - On `EMPTY`, fall through to 4, since the range holds nothing.
 - On `STOP`, report it and stop, since the base could not be settled and the range may be somebody else's.
