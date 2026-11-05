@@ -60,10 +60,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention and bind its absolute path as `<head-dir>`, since this checkout is not the PR's head and a worker reading files here judges code the PR does not contain.
 - Remove the worktree when the run ends.
-- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, and each finding stated in the body of the viewer's last submitted review whose body states a finding or carries the `### Earlier findings` heading Step 4 writes, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
-  - Skip a later review whose body does neither, such as an empty body, which each thread reply is recorded as, or one written by hand between two runs, since it would otherwise hide the still-standing findings of the review before it.
-  - Take from that body never an earlier finding it answers under that heading, since the restatement outside it carries a still-standing one and a resolved or not-valid one would otherwise be judged again every run.
-- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the replies to it beside it, from its thread or, for one from the body, from the PR conversation since that review — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
+- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
+- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
 - Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
@@ -77,9 +75,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Put each `needs-user` question to the user and ask which of those findings go into the PR.
 - Keep out of the findings any finding with the same claim about the same code as an earlier finding, wherever that code now sits, whatever that finding's judgment, and answer it only in that earlier finding's reply, since otherwise every run opens another thread for one finding.
 - Turn a resolved earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
-- Draft a reply to each threaded earlier finding giving its judgment, marking resolved and not-valid ones for resolving and leaving still-standing ones open.
-- Answer each earlier finding from the body in the summary with its judgment, under the heading `### Earlier findings`, apart from the findings, since the next run reads that body and must tell an answer from a finding.
-- Restate a still-standing one's text, severity, and location in the summary, outside that section, since the next run reads only that body for it.
+- Draft a reply to each earlier finding giving its judgment, marking resolved and not-valid ones for resolving and leaving still-standing ones open.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
