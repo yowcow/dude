@@ -62,7 +62,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Remove the worktree when the run ends.
 - Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, and each finding stated in the body of the viewer's last submitted review whose body states a finding or carries the `### Earlier findings` heading Step 4 writes, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
   - Skip a later review whose body does neither, such as an empty body, which each thread reply is recorded as, or one written by hand between two runs, since it would otherwise hide the still-standing findings of the review before it.
-  - Take from that body never an earlier finding it answers under that heading as resolved or not valid, since such an answer is closed and would otherwise be judged again every run.
+  - Take from that body never an earlier finding it answers under that heading, since the restatement outside it carries a still-standing one and a resolved or not-valid one would otherwise be judged again every run.
 - Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the replies to it beside it, from its thread or, for one from the body, from the PR conversation since that review — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
