@@ -64,7 +64,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, and each finding the body of the viewer's last submitted review states as a finding, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
   - Count no submitted review with an empty body as one, since each thread reply is recorded as a body-less review of its own.
   - Take from that body never an earlier finding it answers as resolved or not valid, since such an answer is closed and would otherwise be judged again every run.
-- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the author's replies beside it, from its thread or, for one from the body, from the PR conversation since that review — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
+- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the replies to it beside it, from its thread or, for one from the body, from the PR conversation since that review — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
 - Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
