@@ -61,7 +61,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention and bind its absolute path as `<head-dir>`, since this checkout is not the PR's head and a worker reading files here judges code the PR does not contain.
 - Remove the worktree when the run ends.
 - Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
-- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
+- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted with the commit it was posted on, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
 - Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
@@ -127,6 +127,6 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Report what was posted with its state and URL, or that nothing was posted, or that a pending review was left.
 - Report the rejected findings with their reasons and the `needs-user` questions.
 - Report that the 👀 is still on the PR and the user has to remove it by hand when it could not be removed.
-- Report which of the viewer's reviews of this PR this one is, counting submitted reviews with a body.
+- Report which of the viewer's reviews of this PR this one is, counting the viewer's submitted reviews with a body from before this run and then this one.
 - Report each earlier finding with its judgment.
 - Report the replies and resolves written and each drafted one not written, including all of them when no review was posted or draft only was chosen.
