@@ -135,6 +135,23 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - With no tracking issue, chat is the record.
 - Any other such deliverable publishes to the canonical record above.
 
+### Output form
+
+- Every dude output takes this form: chat replies, prompts shown to a person, issue and PR bodies, comments, and titles.
+  - That includes the draft PR body `implement-work`'s **Hand off** opens, since its "always draft" delta governs PR mechanics, not the body's form.
+- Lead with the point the reader acts on, and hang what supports it under it as indented bullets, paired by the kind of point, for example:
+  - conclusion → evidence
+  - judgment → reason
+  - cannot judge → what is missing
+  - request → the list of asks
+- Decompose a complex matter until a non-expert can follow it.
+- Never write a run-on sentence whose conclusion, gap, or ask is unclear.
+- A title, of an issue or a PR, carries one subject, short enough to read the point, never several items joined into one.
+- This form overrides a skill's "one paragraph" wording, while each skill keeps its own content order.
+- Leave text as it is wherever its reader takes it by exact form, since reshaping it breaks that reader:
+  - a line a script or another skill reads by its fixed form, such as a `Blocked-By: #N` line, an `Assumed:` first line, or a leading commit SHA
+  - text relayed verbatim, such as the `vet-code` findings `pr-to-ready` posts
+
 ### Loop convergence
 
 - Every loop checking work and fixing what came back stops on the same conditions.
