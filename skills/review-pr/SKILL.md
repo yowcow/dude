@@ -36,6 +36,14 @@ description: Use to review a PR and return the findings to it as a PR review.
 - On `RANGE <base>..<head>`, bind both SHAs.
 - On `EMPTY`, report that there is nothing to review and end the run.
 - On `STOP <slug>`, report it and end the run.
+- Bind `<since>` as `<base>` when the caller asks for a review of the whole PR.
+- Otherwise run the resolve-since script (`<skill-dir>/scripts/resolve-since.sh`) for the PR number and the range, handling `NEED` as above.
+- On `WHOLE`, bind `<since>` as `<base>`.
+- On `SINCE <sha>`, bind `<since>` as that SHA and tell the user in one line, without waiting for an answer, that this round reviews only the commits since the viewer's last review.
+- On `UNCHANGED`, bind `<since>` as `<head>` and tell the user in one line, without waiting for an answer, that nothing was pushed since the viewer's last review and only the earlier findings are judged.
+- On `STOP ask-since-rewritten` or `STOP ask-since-base-merged`, ask the user whether to review the whole PR or stop, binding `<since>` as `<base>` on whole and ending the run on stop.
+  - A rewritten history leaves no range since the last review, and a merged base would put the base's own changes into it.
+- On any other `STOP <slug>`, report it and end the run.
 - Take the candidate for the PR's purpose from the issues it links and, for a sub-issue, its parent, since the purpose is the problem the PR should solve.
 - Keep the PR body apart from the purpose, since the body is the author's claim and the means the author chose.
 - Show the user the candidate and ask whether it is right, needs correcting, or is unknown.
@@ -65,7 +73,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
 - Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
-- Invoke `vet-code` once, handing it the committed range `<base>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, and the earlier rounds' record below, since a worker does not inherit this session's working directory.
+- Skip `vet-code` when `<since>` is `<head>`, since there is no new commit to review.
+- Invoke `vet-code` once, handing it the committed range `<since>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, and the earlier rounds' record below, since a worker does not inherit this session's working directory.
 - Hand that record a resolved earlier finding as accepted and fixed, a not-valid one as rejected with its reason, and a still-standing one as accepted and not yet fixed.
   - Never hand a resolved one as rejected, since the record then stops the same problem from being raised when it comes back.
 - Take back its judged findings and re-judge none of them.
@@ -79,7 +88,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
-- Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for the range, the summary, and the findings.
+- Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
+- Say in the summary, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
 - Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
 - Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
 
@@ -119,6 +129,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 ## Report
 
 - Report the PR and the range reviewed and whether requirements were available.
+- Report, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
 - Report whether `propose-alternatives` was invoked or skipped and why.
 - Report an empty finding or a finding when invoked.
 - Report that the run waited when invoked with a finding.
