@@ -74,32 +74,32 @@ real_path() {
   (CDPATH='' cd -- "$1" && pwd -P)
 }
 
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_absent ...`
+# shellcheck disable=SC2317,SC2329 # invoked indirectly, as `tally check_absent ...`
 check_absent() {
   local got=present
   [ -e "$2" ] || got=absent
   check_eq "$1" 'absent' "$got"
 }
 
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_head ...`
+# shellcheck disable=SC2317,SC2329 # invoked indirectly, as `tally check_head ...`
 check_head() {
   check_eq "$1" "$3" "$(git -C "$2" rev-parse HEAD)"
 }
 
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_on_branch ...`
+# shellcheck disable=SC2317,SC2329 # invoked indirectly, as `tally check_on_branch ...`
 check_on_branch() {
   check_eq "$1" "$3" "$(git -C "$2" symbolic-ref --short HEAD)"
 }
 
 # check_local_branch <label> <repo> <branch> <yes|no>
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_local_branch ...`
+# shellcheck disable=SC2317,SC2329 # invoked indirectly, as `tally check_local_branch ...`
 check_local_branch() {
   local got=yes
   git -C "$2" show-ref --verify --quiet "refs/heads/$3" || got=no
   check_eq "$1" "$4" "$got"
 }
 
-# shellcheck disable=SC2317 # invoked indirectly, as `tally check_stderr_has ...`
+# shellcheck disable=SC2317,SC2329 # invoked indirectly, as `tally check_stderr_has ...`
 check_stderr_has() {
   local got=no
   grep -q -- "$2" "$SUT_STDERR" && got=yes
