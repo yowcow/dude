@@ -90,7 +90,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Map **comment only** to submit with COMMENT.
 - Map **draft only** to leaving a pending review unsubmitted.
 - Never offer requesting changes.
-- Recommend approve when no accepted finding and no still-standing earlier finding, at the higher of its original severity and a same finding's this round that is `accept` or a user-included `needs-user`, is Critical or Important, no verdict is `needs-user`, and the purpose is known.
+- Recommend approve when no accepted finding and no still-standing earlier finding, at the higher of its original severity and a same finding's this round that is `accept` or a user-included `needs-user`, is Critical or Important, no verdict of `vet-code`'s is `needs-user`, and the purpose is known.
 - Recommend comment only otherwise.
 
 ### 6. Post
