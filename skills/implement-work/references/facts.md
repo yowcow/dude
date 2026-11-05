@@ -173,6 +173,18 @@ write steps dropped reads back empty, which is what the read-back catches.
 
 The review record's web URL.
 
+### `viewer.review.commit` (list)
+
+The commit each of the viewer's (`viewer.login`) reviews on the PR is anchored
+to, for every review that is not `PENDING` and has a non-empty body, oldest
+first by submission. Reviews with no body are left out: a reply to a review
+thread is itself recorded as a bodyless `COMMENTED` review, anchored to the head
+at reply time, and taking it as the last review skips the commits pushed between
+the real review and the reply. `viewer.review.commit.total` is the number of
+reviews that pass this filter, counted after every page is read — not a count the
+source reports, since no source filters by body. A failed or partial read is
+written as an empty total.
+
 ### `repo.fork` (list)
 
 `true` or `false` for each repository record read for `repo`. `repo.fork.total`

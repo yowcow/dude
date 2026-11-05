@@ -21,6 +21,8 @@ such script.
 | `ask-multiple-prereqs` | `implement-work/resolve-base.sh` |
 | `ask-multiple-prs` | `tools/read-base-trailer.sh`, `implement-work/resolve-base.sh`, `tools/ensure-draft-pr.sh` |
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
+| `ask-since-base-merged` | `review-pr/resolve-since.sh` |
+| `ask-since-rewritten` | `review-pr/resolve-since.sh` |
 | `base-fetch-failed` | `implement-work/absorb-base.sh`, `implement-work/resolve-base.sh` |
 | `base-resolve-failed` | `tools/ensure-draft-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
@@ -34,8 +36,8 @@ such script.
 | `fact-malformed` | `tools/facts.sh` |
 | `fact-mismatch` | `tools/facts.sh` |
 | `fact-missing` | `tools/facts.sh` |
-| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
-| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
+| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh` |
+| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
@@ -47,7 +49,7 @@ such script.
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `prereq-line-malformed` | `implement-work/resolve-base.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh` |
-| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh` |
+| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `implement-work/resolve-base.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
 | `trailer-answer-malformed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
