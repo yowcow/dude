@@ -4,7 +4,7 @@
 1596 skills/audit-code/SKILL.md
 2315 skills/implement-work/SKILL.md
 592 skills/implement-work/references/base-branch.md
-1140 skills/implement-work/references/facts.md
+1259 skills/implement-work/references/facts.md
 591 skills/implement-work/references/script-conventions.md
 569 skills/implement-work/references/stop-registry.md
 834 skills/investigate-anomaly/SKILL.md
@@ -16,7 +16,7 @@
 1408 skills/review-code/SKILL.md
 1454 skills/review-findings/SKILL.md
 1359 skills/review-plan/SKILL.md
-2015 skills/review-pr/SKILL.md
+2299 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
 2163 skills/using-dude/SKILL.md
