@@ -74,7 +74,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Put each `needs-user` question to the user and ask which of those findings go into the PR.
 - Keep out of the findings any finding with the same claim about the same code as an earlier finding, wherever that code now sits, whatever that finding's judgment, and answer it only in that earlier finding's reply, since otherwise every run opens another thread for one finding.
-- Turn a resolved earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
+- Turn a resolved or not-valid earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
 - Draft a reply to each earlier finding giving its judgment, marking resolved and not-valid ones for resolving and leaving still-standing ones open.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
