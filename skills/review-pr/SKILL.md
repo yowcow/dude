@@ -57,6 +57,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Run the rest of the review as usual when the purpose is unknown.
 - Take what the linked issues state, if any, as the requirements when the purpose is unknown.
 - Skip `propose-alternatives` when the purpose is unknown: do not invoke it, chat the skip, and continue with no new prompt.
+- Skip `propose-alternatives` when `<since>` is `<head>`: do not invoke it, chat the skip, and continue, since nothing was pushed since the viewer's last review.
 - Say so when no requirements result.
 - Invoke `propose-alternatives` once with that settled purpose, the read-root below, and the current artifact when the purpose is settled.
 - Take the PR's base at its current tip as the read-root, since it is the `pr.base.sha` fact fetched as a SHA, never the range's `<base>` merge-base, `<head>`, the head worktree Step 3 creates, or the session checkout.
@@ -88,8 +89,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
-- Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
 - Say in the summary, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
+- Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
 - Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
 - Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
 
@@ -128,7 +129,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 ## Report
 
-- Report the PR and the range reviewed and whether requirements were available.
+- Report the PR, the range handed to `vet-code` (`<since>..<head>`) or that `vet-code` was skipped because nothing was pushed since the viewer's last review, and whether requirements were available.
 - Report, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
 - Report whether `propose-alternatives` was invoked or skipped and why.
 - Report an empty finding or a finding when invoked.
