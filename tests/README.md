@@ -98,7 +98,7 @@ Each row typically does:
    `assert_row`. The check is passed as a command because the checks are not
    all `check_eq`; a check reached only through `tally` is unreachable as far
    as ShellCheck can tell, so its definition needs a
-   `# shellcheck disable=SC2317` note saying so.
+   `# shellcheck disable=SC2317,SC2329` note saying so.
 
 ## The `gh_stub_response` / `gh_stub_raw_response` contract
 

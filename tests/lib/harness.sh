@@ -229,7 +229,7 @@ run_in() {
 # checks are not all check_eq: check_absent, check_head, check_unmerged and the
 # rest each do their own comparison and print their own FAIL line. A check
 # reached only through here is invisible to ShellCheck's reachability analysis,
-# so its definition carries a `# shellcheck disable=SC2317` note.
+# so its definition carries a `# shellcheck disable=SC2317,SC2329` note.
 tally() {
   total=$((total + 1))
   if ! "$@"; then

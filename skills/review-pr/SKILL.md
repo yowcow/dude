@@ -7,18 +7,16 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Review a PR.
 - Have every finding judged against the PR's own code.
-- Return the result to the PR as one review in the form the user picks.
+- Return the result to the PR as one review in the form the user picks, with replies and resolves on the viewer's earlier threads.
 - Never change the PR's code.
 - Never commit.
 - Never push.
-- Keep re-reviewing after the author pushes out of scope.
 - Keep requesting changes out of scope.
-- Keep replying to existing threads out of scope.
-- Keep resolving existing threads out of scope.
+- Keep replying to and resolving threads another login started out of scope.
 
 ## Orchestration model
 
-- Dispatch no worker of its own here, since the reviewer and the verdict workers are `vet-code`'s.
+- Dispatch no worker of its own here, since the reviewer and the verdict workers are `vet-code`'s and `judge-findings`'.
 - Invoke `propose-alternatives` before `vet-code` when the purpose is settled.
 
 ## Steps
@@ -62,17 +60,27 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention and bind its absolute path as `<head-dir>`, since this checkout is not the PR's head and a worker reading files here judges code the PR does not contain.
 - Remove the worktree when the run ends.
-- Invoke `vet-code` once, handing it the committed range `<base>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, since a worker does not inherit this session's working directory.
+- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
+- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted with the commit it was posted on, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
+- Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
+- Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
+- Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
+- Invoke `vet-code` once, handing it the committed range `<base>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, and the earlier rounds' record below, since a worker does not inherit this session's working directory.
+- Hand that record a resolved earlier finding as accepted and fixed, a not-valid one as rejected with its reason, and a still-standing one as accepted and not yet fixed.
+  - Never hand a resolved one as rejected, since the record then stops the same problem from being raised when it comes back.
 - Take back its judged findings and re-judge none of them.
 
 ### 4. Draft
 
 - Put each `needs-user` question to the user and ask which of those findings go into the PR.
+- Keep out of the findings any finding with the same claim about the same code as an earlier finding, wherever that code now sits, whatever that finding's judgment, and answer it only in that earlier finding's reply, since otherwise every run opens another thread for one finding.
+- Turn a resolved or not-valid earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
+- Draft a reply to each earlier finding giving its judgment, marking resolved and not-valid ones for resolving and leaving still-standing ones open.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
 - Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for the range, the summary, and the findings.
-- Show the user in chat the draft as it would be posted, with body and inline comments.
+- Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
 - Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
 
 ### 5. Choose
@@ -82,13 +90,13 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Map **comment only** to submit with COMMENT.
 - Map **draft only** to leaving a pending review unsubmitted.
 - Never offer requesting changes.
-- Recommend approve when no accepted finding is Critical or Important, no verdict is `needs-user`, and the purpose is known.
+- Recommend approve when no accepted finding and no still-standing earlier finding, at the higher of its original severity and a same finding's this round that is `accept` or a user-included `needs-user`, is Critical or Important, no verdict of `vet-code`'s is `needs-user`, and the purpose is known.
 - Recommend comment only otherwise.
 
 ### 6. Post
 
 - Run the post-review script (`<skill-dir>/scripts/post-review.sh`) for the choice the user made, with `APPROVE`, `COMMENT`, or `PENDING` for draft only.
-- Write nothing else to the PR in this run but the 👀 of Step 1.
+- Write nothing else to the PR in this run but the 👀 of Step 1 and the replies and resolves below.
 - Post nothing when the user chose none of the three.
 - Report a `STOP <slug>` from this first call as nothing posted.
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — create a pending review anchored to `<head>` by your own means in that repository.
@@ -102,6 +110,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run the script again with that file, for as long as it asks.
 - `POSTED <state> <url>` — report the URL.
 - `POSTED <state> <url>` — report the step that failed when one did.
+- `POSTED APPROVED` or `POSTED COMMENTED` — then post each drafted reply to its thread and resolve the threads marked for it, by your own means; post none on any other answer.
+- Stop at the first reply or resolve that fails and take no later one.
 - `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, since its body may not be the draft's.
 - `STOP review-pending-left` — have the user check the body and submit or delete it, since its body may not be the draft's.
 - Report any other `STOP <slug>` from the read-back with a review possibly on the PR in an unconfirmed state and a body not confirmed to be the draft's.
@@ -117,3 +127,6 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Report what was posted with its state and URL, or that nothing was posted, or that a pending review was left.
 - Report the rejected findings with their reasons and the `needs-user` questions.
 - Report that the 👀 is still on the PR and the user has to remove it by hand when it could not be removed.
+- Report which of the viewer's reviews of this PR this one is, counting the viewer's submitted reviews with a body from before this run and then this one.
+- Report each earlier finding with its judgment.
+- Report the replies and resolves written and each drafted one not written, including all of them when no review was posted or draft only was chosen.

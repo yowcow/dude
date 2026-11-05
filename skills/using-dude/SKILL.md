@@ -139,6 +139,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 
 - Every loop checking work and fixing what came back stops on the same conditions.
 - The rule binds a skill's own check-fix loop and the loop re-invoking it alike.
+- A person running a skill again on the same PR after its author responded is not a loop this rule binds.
 - **Clean** is a round coming back with nothing blocking: no blocking finding, or a failing check that now passes. This is the normal exit (loop-clean — the **Loop convergence** sense, distinct from the phase-clean gate sense above).
 - **The same finding survives three rounds** of fixes without resolving.
 - **Five rounds in total.**
