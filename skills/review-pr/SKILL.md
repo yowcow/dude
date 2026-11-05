@@ -76,11 +76,16 @@ description: Use to review a PR and return the findings to it as a PR review.
 ### 4. Draft
 
 - Put each `needs-user` question to the user and ask which of those findings go into the PR.
+- Keep out of the findings any finding with the same location and claim as an earlier finding, whatever that finding's judgment, and answer it only in that earlier finding's reply, since otherwise every run opens another thread for one finding.
+- Turn a resolved earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
+- Draft a reply to each threaded earlier finding giving its judgment, marking resolved and not-valid ones for resolving and leaving still-standing ones open.
+- Answer each earlier finding from the body in the summary with its judgment, under a section of its own apart from the findings, since the next run reads that body and must tell an answer from a finding.
+- Restate a still-standing one's text, severity, and location as a finding outside that section, since the next run reads only that body for it.
 - Write the review's summary and the `accept` findings as a JSON array of `{path, line, body}`, since `body` carries the severity and proposed fix, `path` is relative to the repository root never under `<head-dir>`, `line` is head-side, and either may be null.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
 - Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for the range, the summary, and the findings.
-- Show the user in chat the draft as it would be posted, with body and inline comments.
+- Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
 - Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
 
 ### 5. Choose
@@ -96,7 +101,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 ### 6. Post
 
 - Run the post-review script (`<skill-dir>/scripts/post-review.sh`) for the choice the user made, with `APPROVE`, `COMMENT`, or `PENDING` for draft only.
-- Write nothing else to the PR in this run but the 👀 of Step 1.
+- Write nothing else to the PR in this run but the 👀 of Step 1 and the replies and resolves below.
 - Post nothing when the user chose none of the three.
 - Report a `STOP <slug>` from this first call as nothing posted.
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — create a pending review anchored to `<head>` by your own means in that repository.
@@ -110,6 +115,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run the script again with that file, for as long as it asks.
 - `POSTED <state> <url>` — report the URL.
 - `POSTED <state> <url>` — report the step that failed when one did.
+- `POSTED APPROVED` or `POSTED COMMENTED` — then post each drafted reply to its thread and resolve the threads marked for it, by your own means; post none on any other answer.
+- Stop at the first reply or resolve that fails and take no later one.
 - `STOP review-pending-left` — report that a pending review is still on the PR, not submitted, with the step that failed when one did, since its body may not be the draft's.
 - `STOP review-pending-left` — have the user check the body and submit or delete it, since its body may not be the draft's.
 - Report any other `STOP <slug>` from the read-back with a review possibly on the PR in an unconfirmed state and a body not confirmed to be the draft's.
@@ -127,3 +134,4 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Report that the 👀 is still on the PR and the user has to remove it by hand when it could not be removed.
 - Report which of the viewer's reviews of this PR this one is, counting submitted reviews with a body.
 - Report each earlier finding with its judgment.
+- Report the replies and resolves written and each drafted one not written, including all of them when no review was posted or draft only was chosen.
