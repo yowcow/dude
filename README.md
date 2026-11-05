@@ -91,6 +91,7 @@ flowchart TB
   settle-question --> review-findings
   review-code --> vet-code
   review-pr --> vet-code
+  review-pr --> judge-findings
   review-pr --> propose-alternatives
   review-pr --> review-findings
   propose-alternatives --> review-findings

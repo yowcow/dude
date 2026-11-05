@@ -7,18 +7,17 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Review a PR.
 - Have every finding judged against the PR's own code.
-- Return the result to the PR as one review in the form the user picks.
+- Return the result to the PR as one review in the form the user picks, with replies and resolves on the viewer's earlier threads.
 - Never change the PR's code.
 - Never commit.
 - Never push.
-- Keep re-reviewing after the author pushes out of scope.
+- Never run again by itself after the author pushes, since whether to re-run is a person's call.
 - Keep requesting changes out of scope.
-- Keep replying to existing threads out of scope.
-- Keep resolving existing threads out of scope.
+- Keep replying to and resolving threads another login started out of scope.
 
 ## Orchestration model
 
-- Dispatch no worker of its own here, since the reviewer and the verdict workers are `vet-code`'s.
+- Dispatch no worker of its own here, since the reviewer and the verdict workers are `vet-code`'s and `judge-findings`'.
 - Invoke `propose-alternatives` before `vet-code` when the purpose is settled.
 
 ## Steps
@@ -62,7 +61,16 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention and bind its absolute path as `<head-dir>`, since this checkout is not the PR's head and a worker reading files here judges code the PR does not contain.
 - Remove the worktree when the run ends.
-- Invoke `vet-code` once, handing it the committed range `<base>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, since a worker does not inherit this session's working directory.
+- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, and each finding the body of the viewer's last submitted review states as a finding, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
+  - Count no submitted review with an empty body as one, since each thread reply is recorded as a body-less review of its own.
+  - Take from that body never an earlier finding it answers as resolved or not valid, since such an answer is closed and would otherwise be judged again every run.
+- Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted, with the author's replies beside it, from its thread or, for one from the body, from the PR conversation since that review — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
+- Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
+- Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
+- Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
+- Invoke `vet-code` once, handing it the committed range `<base>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, and the earlier rounds' record below, since a worker does not inherit this session's working directory.
+- Hand that record a resolved earlier finding as accepted and fixed, a not-valid one as rejected with its reason, and a still-standing one as accepted and not yet fixed.
+  - Never hand a resolved one as rejected, since the record then stops the same problem from being raised when it comes back.
 - Take back its judged findings and re-judge none of them.
 
 ### 4. Draft
@@ -82,7 +90,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Map **comment only** to submit with COMMENT.
 - Map **draft only** to leaving a pending review unsubmitted.
 - Never offer requesting changes.
-- Recommend approve when no accepted finding is Critical or Important, no verdict is `needs-user`, and the purpose is known.
+- Recommend approve when no accepted finding and no still-standing earlier finding, at its original severity, is Critical or Important, no verdict is `needs-user`, and the purpose is known.
 - Recommend comment only otherwise.
 
 ### 6. Post
@@ -117,3 +125,5 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Report what was posted with its state and URL, or that nothing was posted, or that a pending review was left.
 - Report the rejected findings with their reasons and the `needs-user` questions.
 - Report that the 👀 is still on the PR and the user has to remove it by hand when it could not be removed.
+- Report which of the viewer's reviews of this PR this one is, counting submitted reviews with a body.
+- Report each earlier finding with its judgment.
