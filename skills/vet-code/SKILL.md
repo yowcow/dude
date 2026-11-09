@@ -24,7 +24,7 @@ description: Use as a component when another skill needs one round of code revie
 - Dispatch one reviewer per invocation, fresh each time, since the fan-out here is fixed at one.
   - A diff does not warrant more.
 - Once the reviewer returns, classify its output by context, never by the heading it sits under.
-- Hand `judge-findings` as a candidate every claim of a defect within the scope, wherever the reviewer wrote it, a suggestion included.
+- Hand `judge-findings` as a candidate every claim of a defect, wherever the reviewer wrote it, a suggestion included.
 - Hand it as a candidate too every behavior the reviewer says it set aside as outside the plan or spec, one per line. This skill calls such a line a `Declined to judge` line, whatever the template calls it.
 - Hand the scope and the requirements the reviewer got.
 - Hand the earlier rounds' record.

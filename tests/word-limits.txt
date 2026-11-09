@@ -20,4 +20,4 @@
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
 2163 skills/using-dude/SKILL.md
-1734 skills/vet-code/SKILL.md
+1731 skills/vet-code/SKILL.md

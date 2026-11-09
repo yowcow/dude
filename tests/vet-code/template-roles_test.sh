@@ -69,6 +69,9 @@ total=$((total + 1))
 fails_here=0
 for needle in 'Return every candidate handed to `judge-findings`, wherever in the output it came from' \
   'Open no new output section' \
+  'Treat praise as not a finding' \
+  'Treat an overall merge verdict, even a positive one, as not this skill declaring the code clean' \
+  'with the severity `judge-findings` gave it' \
   'belongs in the finding list, `reject` included' \
   'goes back as a `Declined to judge` line'; do
   if ! grep -qF -- "$needle" <<<"$OUT"; then
