@@ -23,13 +23,14 @@ description: Use as a component when another skill needs one round of code revie
 - Send the reviewer out at the `high` tier in `using-dude`'s **Worker tier**, since a finding it does not return comes back as "nothing found" and the caller reads that as clean.
 - Dispatch one reviewer per invocation, fresh each time, since the fan-out here is fixed at one.
   - A diff does not warrant more.
-- Once the reviewer returns, hand `judge-findings` every Issues finding as a candidate.
-- Hand every Declined to judge line as a candidate too.
+- Once the reviewer returns, decide what is a candidate by context, never by the heading it sits under.
+- Hand `judge-findings` as a candidate every claim of a defect, wherever the reviewer wrote it, a suggestion included, once per claim however often the reviewer restates it.
+- Hand it as a candidate too every behavior the reviewer says it set aside as outside the plan or spec, one per line. This skill calls such a line a `Declined to judge` line, whatever the template calls it.
 - Hand the scope and the requirements the reviewer got.
 - Hand the earlier rounds' record.
 - Hand every Declined line however the earlier rounds' record holds it, since that record travels as context and never as a filter.
   - A line dropped as already judged never reaches the judge.
-- Hand the template's "The spec is a vision document" paragraph verbatim as the acceptance criteria.
+- Hand the template's passage on how to judge behavior the spec is silent on verbatim as the acceptance criteria.
 - Treat a candidate sitting outside the plan or spec as why the reviewer set it aside, never as a ground to reject it.
 - Treat code unchanged since the previous round as no ground to reject either, when the candidate claims something about that code.
 - Treat a line that only discloses part of the scope as unreviewed, never as such a candidate.
@@ -62,7 +63,7 @@ description: Use as a component when another skill needs one round of code revie
 - After that, write the following in the same placeholder as plain instructions, each only when it applies.
 
 - **Range shape** — for uncommitted changes or paths with no range, restate the scope as its shape above describes it.
-- Say there that the Git Range to Review section does not apply and is to be ignored, its diff commands included.
+- Say there that the part of the template built on `BASE_SHA` and `HEAD_SHA` does not apply and is to be ignored, its diff commands included.
 - For uncommitted changes, read staged and unstaged changes together against HEAD.
 - Read untracked files separately.
 - **Worktree** — for uncommitted changes, review this checkout's current dirty state.
@@ -77,32 +78,37 @@ description: Use as a component when another skill needs one round of code revie
 - **Ledger rows** — when the caller hands any over, answer each row against the code as it now stands.
 - Keep the row with its answer.
 - Answer the finding it is and its severity, or that it no longer stands and why.
-- Write never a `Declined to judge` line for a ledger row.
+- List never a ledger row among the behaviors set aside as outside the plan or spec.
 - Let ledger rows narrow nothing, since the scope shape stays the caller's.
 - Cover the whole scope at every severity still, as without them.
 - **Purpose** — only when the caller says the requirements include a settled purpose, the problem the change exists to solve, compare the means with that purpose.
 - Name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects.
 - Rate a loss of that kind by what it costs, never as Minor because the code works.
-- **Earlier rounds** — from the caller's second round on, take findings accepted and fixed, and findings or Declined to judge lines rejected with the reason.
+- **Earlier rounds** — from the caller's second round on, take findings accepted and fixed, and findings or set-aside behaviors rejected with the reason.
 - Let the record narrow the review in nothing, since it covers the whole scope at every severity with places unchanged since the previous round included.
 - Let the record stop only a finding it holds as rejected from being raised again.
 - Raise a finding accepted and fixed that still stands again.
 - Treat a reviewer not shown the rejections as re-litigating them.
 - **Confine** — keep every search at the project root or narrower.
-- **Tests** — answer "All tests passing?" from the diff alone.
+- **Tests** — answer any question the template asks about whether tests pass from the diff alone.
 - Run neither the project's checks nor any code from the range under review.
 - Say the checks were not run.
-- **Writing form** — always, hand over `using-dude`'s **Output form**, naming that section, as how the reviewer writes its own findings and Declined to judge lines, since the reviewer never reads `using-dude` and its text reaches GitHub verbatim.
+- **Writing form** — always, hand over `using-dude`'s **Output form**, naming that section, as how the reviewer writes its own findings and the behaviors it sets aside, since the reviewer never reads `using-dude` and its text reaches GitHub verbatim.
 - Hand over only its lead-with-the-point, pairing, decomposition, and run-on bullets, since its exemption for relayed `vet-code` findings reads to the reviewer as leaving its own findings as they are.
-- Say the template's sections, severities, and locations stay as the template sets them, since **Output** reads the reply by them.
+- Say the template's severities and locations stay as the template sets them, since **Output** returns them.
 - Say it binds only that writing, never the scope under review, since otherwise the reviewer raises form findings against the prose it reviews.
 - Close with one sentence: where these instructions and the template disagree, these win.
 
 ## Output
 
 - Receive the template output as-is.
-- Treat Strengths, Recommendations, and Assessment as not findings.
-- Treat Assessment Ready to merge as not this skill declaring the code clean, since clean remains the caller's from whether blocking findings exist.
+- Treat praise as not a finding.
+- Treat an overall merge verdict, even a positive one, as not this skill declaring the code clean, since clean remains the caller's from whether blocking findings exist.
+- Return every candidate handed to `judge-findings`, wherever in the output it came from, with the reviewer's text and its verdict.
+- Open no new output section, since callers read two kinds: findings and `Declined to judge` lines.
+- A candidate the reviewer gave a severity belongs in the finding list, `reject` included.
+- A candidate with no reviewer severity that is `accept` or `needs-user` belongs there with the severity `judge-findings` gave it.
+- A candidate with no reviewer severity that is `reject` goes back as a `Declined to judge` line.
 - For each finding, return the finding as the reviewer stated it.
 - Return its severity — Critical, Important, or Minor.
 - Return its location.
@@ -112,7 +118,6 @@ description: Use as a component when another skill needs one round of code revie
 - For each Declined to judge line, return the line as the reviewer stated it.
 - Return its verdict in the same three tokens.
 - Return whether it stayed declined or became a finding.
-- Keep a line that became a finding in the finding list too, for its severity and verdict.
 - For each ledger row the caller handed over, take only lines carrying the execution method's `Ruling:` marker, and deferred-minor lines where the caller kept them.
 - Return the finding it became in the finding list with the row it came from kept.
 - Or return one line `Ledger row closed: <row> — <why it no longer stands>`.
