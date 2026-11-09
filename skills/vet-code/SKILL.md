@@ -78,13 +78,13 @@ description: Use as a component when another skill needs one round of code revie
 - **Ledger rows** — when the caller hands any over, answer each row against the code as it now stands.
 - Keep the row with its answer.
 - Answer the finding it is and its severity, or that it no longer stands and why.
-- Write never a `Declined to judge` line for a ledger row.
+- List never a ledger row among the behaviors set aside as outside the plan or spec.
 - Let ledger rows narrow nothing, since the scope shape stays the caller's.
 - Cover the whole scope at every severity still, as without them.
 - **Purpose** — only when the caller says the requirements include a settled purpose, the problem the change exists to solve, compare the means with that purpose.
 - Name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects.
 - Rate a loss of that kind by what it costs, never as Minor because the code works.
-- **Earlier rounds** — from the caller's second round on, take findings accepted and fixed, and findings or Declined to judge lines rejected with the reason.
+- **Earlier rounds** — from the caller's second round on, take findings accepted and fixed, and findings or set-aside behaviors rejected with the reason.
 - Let the record narrow the review in nothing, since it covers the whole scope at every severity with places unchanged since the previous round included.
 - Let the record stop only a finding it holds as rejected from being raised again.
 - Raise a finding accepted and fixed that still stands again.
@@ -114,7 +114,6 @@ description: Use as a component when another skill needs one round of code revie
 - For each Declined to judge line, return the line as the reviewer stated it.
 - Return its verdict in the same three tokens.
 - Return whether it stayed declined or became a finding.
-- Keep a line that became a finding in the finding list too, for its severity and verdict.
 - For each ledger row the caller handed over, take only lines carrying the execution method's `Ruling:` marker, and deferred-minor lines where the caller kept them.
 - Return the finding it became in the finding list with the row it came from kept.
 - Or return one line `Ledger row closed: <row> — <why it no longer stands>`.

@@ -31,7 +31,7 @@ if ! check_eq 'scope: output starts at its heading' \
 total=$((total + 1))
 fails_here=0
 for needle in 'vision document' 'Git Range to Review' 'Hand every Declined to judge line' \
-  'Issues finding' 'All tests passing'; do
+  'Issues finding' 'All tests passing' 'Write never a `Declined to judge`'; do
   if grep -qF -- "$needle" "$SKILL"; then
     printf 'FAIL names: template wording remains: %s\n' "$needle"
     fails_here=1
