@@ -43,8 +43,8 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 total=$((total + 1))
 fails_here=0
 for needle in 'Strengths' 'Recommendations' 'Assessment'; do
-  if grep -qF -- "$needle" <<<"$OUT"; then
-    printf 'FAIL headings: Output routes by heading: %s\n' "$needle"
+  if grep -qF -- "$needle" "$SKILL"; then
+    printf 'FAIL headings: SKILL routes by heading: %s\n' "$needle"
     fails_here=1
   fi
 done
@@ -53,7 +53,7 @@ if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 # Classification by context, and the role-based range instruction.
 total=$((total + 1))
 fails_here=0
-for needle in 'classify its output by context, never by the heading' \
+for needle in 'decide what is a candidate by context, never by the heading' \
   'wherever the reviewer wrote it' \
   'set aside as outside the plan or spec' \
   'built on `BASE_SHA` and `HEAD_SHA` does not apply'; do

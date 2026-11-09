@@ -23,7 +23,7 @@ description: Use as a component when another skill needs one round of code revie
 - Send the reviewer out at the `high` tier in `using-dude`'s **Worker tier**, since a finding it does not return comes back as "nothing found" and the caller reads that as clean.
 - Dispatch one reviewer per invocation, fresh each time, since the fan-out here is fixed at one.
   - A diff does not warrant more.
-- Once the reviewer returns, classify its output by context, never by the heading it sits under.
+- Once the reviewer returns, decide what is a candidate by context, never by the heading it sits under.
 - Hand `judge-findings` as a candidate every claim of a defect, wherever the reviewer wrote it, a suggestion included.
 - Hand it as a candidate too every behavior the reviewer says it set aside as outside the plan or spec, one per line. This skill calls such a line a `Declined to judge` line, whatever the template calls it.
 - Hand the scope and the requirements the reviewer got.
