@@ -31,13 +31,27 @@ if ! check_eq 'scope: output starts at its heading' \
 total=$((total + 1))
 fails_here=0
 for needle in 'vision document' 'Git Range to Review' 'Hand every Declined to judge line' \
-  'Issues finding' 'All tests passing' 'Write never a `Declined to judge`'; do
+  'Issues finding' 'All tests passing'; do
   if grep -qF -- "$needle" "$SKILL"; then
     printf 'FAIL names: template wording remains: %s\n' "$needle"
     fails_here=1
   fi
 done
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# The reviewer never sees the Orchestration model, so `Declined to judge` there
+# is a template section name it cannot resolve. Heading checked before the grep.
+SECTION="$(sed -n '/^## Reviewer prompt/,/^## Output/p' "$SKILL")"
+
+total=$((total + 1))
+if ! check_eq 'scope: reviewer prompt starts at its heading' \
+  '## Reviewer prompt' "${SECTION%%$'\n'*}"; then failed=$((failed + 1)); fi
+
+total=$((total + 1))
+if grep -qF -- 'Declined to judge' <<<"$SECTION"; then
+  printf 'FAIL names: reviewer-facing text uses the template section name: Declined to judge\n'
+  failed=$((failed + 1))
+fi
 
 # No output heading routes anything.
 total=$((total + 1))
@@ -55,6 +69,7 @@ total=$((total + 1))
 fails_here=0
 for needle in 'decide what is a candidate by context, never by the heading' \
   'wherever the reviewer wrote it' \
+  'once per claim however often the reviewer restates it' \
   'set aside as outside the plan or spec' \
   'built on `BASE_SHA` and `HEAD_SHA` does not apply'; do
   if ! grep -qF -- "$needle" "$SKILL"; then
