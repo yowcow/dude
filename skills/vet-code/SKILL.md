@@ -23,13 +23,14 @@ description: Use as a component when another skill needs one round of code revie
 - Send the reviewer out at the `high` tier in `using-dude`'s **Worker tier**, since a finding it does not return comes back as "nothing found" and the caller reads that as clean.
 - Dispatch one reviewer per invocation, fresh each time, since the fan-out here is fixed at one.
   - A diff does not warrant more.
-- Once the reviewer returns, hand `judge-findings` every Issues finding as a candidate.
-- Hand every Declined to judge line as a candidate too.
+- Once the reviewer returns, classify its output by context, never by the heading it sits under.
+- Hand `judge-findings` as a candidate every claim of a defect within the scope, wherever the reviewer wrote it, a suggestion included.
+- Hand it as a candidate too every behavior the reviewer says it set aside as outside the plan or spec, one per line. This skill calls such a line a `Declined to judge` line, whatever the template calls it.
 - Hand the scope and the requirements the reviewer got.
 - Hand the earlier rounds' record.
 - Hand every Declined line however the earlier rounds' record holds it, since that record travels as context and never as a filter.
   - A line dropped as already judged never reaches the judge.
-- Hand the template's "The spec is a vision document" paragraph verbatim as the acceptance criteria.
+- Hand the template's passage on how to judge behavior the spec is silent on verbatim as the acceptance criteria.
 - Treat a candidate sitting outside the plan or spec as why the reviewer set it aside, never as a ground to reject it.
 - Treat code unchanged since the previous round as no ground to reject either, when the candidate claims something about that code.
 - Treat a line that only discloses part of the scope as unreviewed, never as such a candidate.
@@ -62,7 +63,7 @@ description: Use as a component when another skill needs one round of code revie
 - After that, write the following in the same placeholder as plain instructions, each only when it applies.
 
 - **Range shape** — for uncommitted changes or paths with no range, restate the scope as its shape above describes it.
-- Say there that the Git Range to Review section does not apply and is to be ignored, its diff commands included.
+- Say there that the part of the template built on `BASE_SHA` and `HEAD_SHA` does not apply and is to be ignored, its diff commands included.
 - For uncommitted changes, read staged and unstaged changes together against HEAD.
 - Read untracked files separately.
 - **Worktree** — for uncommitted changes, review this checkout's current dirty state.
@@ -89,7 +90,7 @@ description: Use as a component when another skill needs one round of code revie
 - Raise a finding accepted and fixed that still stands again.
 - Treat a reviewer not shown the rejections as re-litigating them.
 - **Confine** — keep every search at the project root or narrower.
-- **Tests** — answer "All tests passing?" from the diff alone.
+- **Tests** — answer any question the template asks about whether tests pass from the diff alone.
 - Run neither the project's checks nor any code from the range under review.
 - Say the checks were not run.
 - Close with one sentence: where these instructions and the template disagree, these win.
@@ -97,8 +98,13 @@ description: Use as a component when another skill needs one round of code revie
 ## Output
 
 - Receive the template output as-is.
-- Treat Strengths, Recommendations, and Assessment as not findings.
-- Treat Assessment Ready to merge as not this skill declaring the code clean, since clean remains the caller's from whether blocking findings exist.
+- Treat praise as not a finding.
+- Treat an overall merge verdict, even a positive one, as not this skill declaring the code clean, since clean remains the caller's from whether blocking findings exist.
+- Return every candidate handed to `judge-findings`, wherever in the output it came from, with the reviewer's text and its verdict.
+- Open no new output section, since callers read two kinds: findings and `Declined to judge` lines.
+- A candidate the reviewer gave a severity belongs in the finding list, `reject` included.
+- A candidate with no reviewer severity that is `accept` or `needs-user` belongs there with the severity `judge-findings` gave it.
+- A candidate with no reviewer severity that is `reject` goes back as a `Declined to judge` line.
 - For each finding, return the finding as the reviewer stated it.
 - Return its severity — Critical, Important, or Minor.
 - Return its location.
