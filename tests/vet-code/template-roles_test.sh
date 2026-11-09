@@ -20,19 +20,14 @@ failed=0
 total=0
 
 # Captured before matching: a negative grep on an empty extraction passes on
-# nothing, so each section's heading is checked first.
-ORCH="$(sed -n '/^## Orchestration model/,/^## Reviewer prompt/p' "$SKILL")"
+# nothing, so the Output heading is checked first.
 OUT="$(sed -n '/^## Output/,$p' "$SKILL")"
 
 total=$((total + 1))
-fails_here=0
-if ! check_eq 'scope: orchestration starts at its heading' \
-  '## Orchestration model' "${ORCH%%$'\n'*}"; then fails_here=1; fi
 if ! check_eq 'scope: output starts at its heading' \
-  '## Output' "${OUT%%$'\n'*}"; then fails_here=1; fi
-if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+  '## Output' "${OUT%%$'\n'*}"; then failed=$((failed + 1)); fi
 
-# The three template-section names are gone from the three rules naming them.
+# No rule names a part of the template by its wording.
 total=$((total + 1))
 fails_here=0
 for needle in 'vision document' 'Git Range to Review' 'Hand every Declined to judge line' \
