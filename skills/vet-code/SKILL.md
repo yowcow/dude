@@ -93,6 +93,10 @@ description: Use as a component when another skill needs one round of code revie
 - **Tests** — answer any question the template asks about whether tests pass from the diff alone.
 - Run neither the project's checks nor any code from the range under review.
 - Say the checks were not run.
+- **Writing form** — always, hand over `using-dude`'s **Output form**, naming that section, as how the reviewer writes its own findings and the behaviors it sets aside, since the reviewer never reads `using-dude` and its text reaches GitHub verbatim.
+- Hand over only its lead-with-the-point, pairing, decomposition, and run-on bullets, since its exemption for relayed `vet-code` findings reads to the reviewer as leaving its own findings as they are.
+- Say the template's severities and locations stay as the template sets them, since **Output** returns them.
+- Say it binds only that writing, never the scope under review, since otherwise the reviewer raises form findings against the prose it reviews.
 - Close with one sentence: where these instructions and the template disagree, these win.
 
 ## Output
