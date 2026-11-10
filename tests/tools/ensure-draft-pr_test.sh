@@ -38,19 +38,6 @@
 #   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
 #   their stderr tally, plus the three facts-capture rows.
 #
-# RED for the move from the trailer to the issue (#847), with that recipe and
-# `git show 35d16f6:tools/ensure-draft-pr.sh` as the mutation (the copy
-# holds the new resolve-pr-base.sh):
-#   - `SUT="$tmp/tools/old.sh"` does not know `--issue`, so every row that
-#     passes it is a usage error: `not ok 9/70`.
-#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
-#     old.sh, so the rows fail for the behaviour: the copy's resolve-pr-base.sh
-#     gets no issue and answers the default branch, so the two `base=dep`
-#     rows answer `base=main`, as do the rows that expect a NEED or STOP from the
-#     issue (the stubbed rows
-#     at the end fail too, as the wrapper is not copied beside old.sh):
-#     `not ok 15/70`.
-#
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
 # tools/facts.sh's; what is under test here is which facts this script asks
@@ -81,7 +68,7 @@ SUT="${SUT:-${REPO_ROOT}/tools/ensure-draft-pr.sh}"
 failed=0
 total=0
 
-# fixture <name> <branch> <where> [<trailer>] -- sets FIXTURE_WORK to the work
+# fixture <name> <branch> <where> -- sets FIXTURE_WORK to the work
 # repo's path and FIXTURE_BARE to its remote's. It prints nothing, and it must
 # be called as a plain statement: `W="$(fixture ...)"` would run it in a
 # subshell, both assignments would be discarded, and the first read of either
@@ -99,7 +86,7 @@ total=0
 #
 # Each shape's bare repo is built once and copied per row with `cp -R`, which
 # is what a row starts from: `remote` rows clone it on <branch>, whose commit
-# (trailer and all) is already in the template, while `local` and `nowhere` rows
+# is already in the template, while `local` and `nowhere` rows
 # clone `main`. The copy is per row because a bare repo's path is its identity,
 # so a shared one would let a `local` row's push show up in the next row.
 #
@@ -107,32 +94,21 @@ total=0
 # on an unborn `master` that no fixture creates, and `ls-remote --symref` then
 # names no default branch at all, which the sibling reads as a stop.
 #
-# task_commit <repo> <branch> <trailer> -- the task commit shape: branch off
-# main, then commit T.md with the trailer in the subject.
-#
-# The trailer `@separate` stands for the #845 shape instead: `Base-Branch:` in a
-# paragraph of its own with `Co-Authored-By:` after it, which git does not read
-# as a trailer. It is built here rather than by commit_msg, which only makes
-# readable ones.
+# task_commit <repo> <branch> -- the task commit shape: branch off main, then
+# commit T.md.
 task_commit() {
-  local repo="$1" branch="$2" trailer="$3" msg
-  git_repo_checkout "$repo" "$branch" main
-  if [ "$trailer" = '@separate' ]; then
-    msg="$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')"
-  else
-    msg="$(commit_msg 'task commit' "$trailer")"
-  fi
-  git_repo_commit "$repo" T.md 'task\n' "$msg"
+  git_repo_checkout "$1" "$2" main
+  git_repo_commit "$1" T.md 'task\n' 'task commit'
 }
 
-# template <branch> <where> <trailer> -- a bare repo built once per shape:
+# template <branch> <where> -- a bare repo built once per shape:
 # main, plus <branch> when <where> is remote. A row copies it instead of
 # building a remote from an empty repo every time.
 template() {
-  local branch="$1" where="$2" trailer="$3" t seed key
-  # Slash-free: only templates/ is created, so a slash in <branch> or <trailer>
+  local branch="$1" where="$2" t seed key
+  # Slash-free: only templates/ is created, so a slash in <branch>
   # would make git init fail with "not a directory".
-  key="$(printf '%s.%s.%s' "$branch" "$where" "$trailer" | tr '/' '_')"
+  key="$(printf '%s.%s' "$branch" "$where" | tr '/' '_')"
   t="${HARNESS_TMP}/templates/${key}.git"
   if [ -d "$t" ]; then
     printf '%s\n' "$t"
@@ -147,7 +123,7 @@ template() {
   git_repo_commit "$seed" README.md 'base\n' 'base commit'
   git_repo_push "$seed" "$t" main
   if [ "$where" = remote ]; then
-    task_commit "$seed" "$branch" "$trailer"
+    task_commit "$seed" "$branch"
     git_repo_push "$seed" "$t" "$branch"
   fi
   git_repo_bare_head "$t" main
@@ -155,19 +131,19 @@ template() {
 }
 
 fixture() {
-  local name="$1" branch="$2" where="$3" trailer="${4:--}" bare work
+  local name="$1" branch="$2" where="$3" bare work
   gitrepo_reject_traversal acme "$name"
   bare="${HARNESS_TMP}/remotes/acme/${name}.git"
   rm -rf -- "$bare"
   mkdir -p -- "${bare%/*}"
-  cp -R -- "$(template "$branch" "$where" "$trailer")" "$bare"
+  cp -R -- "$(template "$branch" "$where")" "$bare"
   if [ "$where" = remote ]; then
     work="$(git_repo_clone "work-${name}" "$bare" "$branch")"
   else
     work="$(git_repo_clone "work-${name}" "$bare" main)"
   fi
   if [ "$where" = local ]; then
-    task_commit "$work" "$branch" "$trailer"
+    task_commit "$work" "$branch"
   fi
   FIXTURE_BARE="$bare"
   FIXTURE_WORK="$work"
@@ -404,7 +380,7 @@ run_in "$FIXTURE_WORK" feature --facts "$(own remote-w 0 | facts_file)"
 assert_row 'another-remote-without-base-repo-stops' 0 'STOP ask-base-repo\n' 0
 
 # A given base repository skips the fork question: the file carries no
-# `repo.fork` line and no trailer exists.
+# `repo.fork` line.
 row_start
 fixture base-eq feature remote
 run_in "$FIXTURE_WORK" feature acme/base-eq --facts "$(own base-eq 0 | facts_file)"
@@ -465,11 +441,9 @@ assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url
 # owns that -- so what is under test here is only that each answer arrives and
 # that no CREATE is printed when the answer is a stop.
 #
-# Every fixture below is `fixture <name> feature remote [<trailer>]`, and
+# Every fixture below is `fixture <name> feature remote`, and
 # every row's file says no PR and "not a fork", so control always reaches the
-# sibling. The base comes from the issue (`--issue 203`), never the commits:
-# the task commit carries no Base-Branch trailer git can read, or a readable
-# one that is ignored.
+# sibling. The base comes from the issue (`--issue 203`).
 
 row_start
 fixture prereq-ask feature remote
@@ -479,14 +453,7 @@ assert_row 'base-resolution-asks-for-the-issue' 0 'NEED issue.number=203 issue.b
 row_start
 fixture prereq-open feature remote
 run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-open 0; one_repo_fork false; prereq_facts acme/prereq-open 1 55 OPEN; } | facts_file)"
-assert_row 'an-open-prerequisite-becomes-the-base-no-trailer' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
-
-row_start
-fixture prereq-separate feature remote @separate
-tally check_eq 'prereq-separate: git reads no trailer' '' \
-  "$(git -C "$FIXTURE_BARE" log -1 --format='%(trailers:key=Base-Branch)' feature)"
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-separate 0; one_repo_fork false; prereq_facts acme/prereq-separate 1 55 OPEN; } | facts_file)"
-assert_row 'an-open-prerequisite-becomes-the-base-trailer-in-separate-paragraph' 0 'CREATE repo=acme/prereq-separate head=feature base=dep\n' 0
+assert_row 'an-open-prerequisite-becomes-the-base' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
 
 row_start
 fixture prereq-merged feature remote

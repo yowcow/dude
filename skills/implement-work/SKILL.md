@@ -48,8 +48,6 @@ description: Use to implement one PR-sized task.
 - On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - On `BASE <branch>`, cut the new branch from `origin/<branch>`, never the bare name.
 - On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
-- Record a non-default base as one `Base-Branch: <base>` trailer line on this task's first commit, using the bare branch name, never an `origin/` prefix.
-- Record nothing when branching from the default branch.
 
 ## Alternatives
 

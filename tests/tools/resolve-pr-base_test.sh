@@ -11,11 +11,6 @@
 # reader, the default-branch lookup and the fetch instead, and build no
 # repository.
 #
-# The task branch's commits never decide the base: the regression rows pin
-# that a commit with no readable Base-Branch trailer (none at all, or one in
-# a paragraph git does not read as a trailer, the #845 shape) still gets the
-# issue's prerequisite, and a readable trailer is ignored.
-#
 # `STOP prereq-read-failed` has a row: the stubbed-reader rows at the end of
 # this file, which also pin the answers outside the reader's contract. The
 # reader's own tests are tests/tools/read-prereq-pr_test.sh.
@@ -33,20 +28,6 @@
 #   there and the failures say nothing about the mutation. The four stubbed
 #   rows at the end are the exception -- they copy the SUT into a tools/ tree
 #   that already holds every sibling, so a lone copy is enough for those.
-#
-#   RED for the move from the trailer to the issue (#847), both against the
-#   script as of 35d16f6, placed in a copy of tools/ (`cp -R tools
-#   "$tmp/tools"`, then `git show 35d16f6:tools/resolve-pr-base.sh
-#   >"$tmp/tools/old.sh"`):
-#   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
-#     is a usage error on every row that passes it: `not ok 15/33`.
-#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
-#     old.sh, so the rows fail for the behaviour and not the usage error: the
-#     regression rows answer `BASE main` (the old script reads no trailer
-#     there and falls back to the default) instead of `BASE dep`, and
-#     `readable-trailer-is-ignored` answers `NEED prereq.head=acme:stale-base
-#     prereq.head-pr` instead of `BASE main`: `not ok 16/33` (the four stubbed reader rows and
-#     their two tallies fail too, as the wrapper is not copied beside old.sh).
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -63,23 +44,17 @@ SUT="${SUT:-${REPO_ROOT}/tools/resolve-pr-base.sh}"
 failed=0
 total=0
 
-# build_remote <name> <main-trailer> <feature-trailer>... -- prints the path of
-# a new bare repo holding `main` (one commit) and `feature` (one commit per
-# feature-trailer, branched off main), its HEAD on `main`. Each trailer argument
-# is a branch name, or `-` for a commit carrying no trailer at all.
+# build_remote <name> -- prints the path of a new bare repo holding `main`
+# (one commit) and `feature` (one commit, branched off main), its HEAD on
+# `main`.
 build_remote() {
-  local name="$1" main_trailer="$2"
-  shift 2
-  local bare seed t i=0
+  local name="$1" bare seed
   bare="$(git_repo_bare acme "$name")"
   seed="$(git_repo_scratch "seed-${name}")"
   git_repo_init "$seed" main
-  git_repo_commit "$seed" README.md 'base\n' "$(commit_msg 'base commit' "$main_trailer")"
+  git_repo_commit "$seed" README.md 'base\n' 'base commit'
   git_repo_checkout "$seed" feature main
-  for t in "$@"; do
-    i=$((i + 1))
-    git_repo_commit "$seed" "F${i}.md" "feature ${i}\n" "$(commit_msg "feature commit ${i}" "$t")"
-  done
+  git_repo_commit "$seed" F1.md 'feature 1\n' 'feature commit 1'
   git_repo_push "$seed" "$bare" main feature
   git_repo_bare_head "$bare" main
   printf '%s\n' "$bare"
@@ -104,7 +79,7 @@ work_repo() {
 # HEAD on <default> (`main` or `trunk`).
 build_selected() {
   local bare
-  bare="$(build_remote "$1" - -)"
+  bare="$(build_remote "$1")"
   git -C "$bare" branch trunk main
   git_repo_bare_head "$bare" "$2"
   printf '%s\n' "$bare"
@@ -139,28 +114,7 @@ prereq_facts() {
   fi
 }
 
-# build_msg_remote <name> <message> -- a remote like build_remote's, whose one
-# feature commit carries <message> verbatim.
-build_msg_remote() {
-  local name="$1" bare seed
-  bare="$(git_repo_bare acme "$name")"
-  seed="$(git_repo_scratch "seed-${name}")"
-  git_repo_init "$seed" main
-  git_repo_commit "$seed" README.md 'base\n' 'base commit'
-  git_repo_checkout "$seed" feature main
-  git_repo_commit "$seed" F1.md 'feature 1\n' "$2"
-  git_repo_push "$seed" "$bare" main feature
-  git_repo_bare_head "$bare" main
-  printf '%s\n' "$bare"
-}
-
-# `feature` records nothing; `main` records nothing either.
-REMOTE_PLAIN="$(build_remote plain - -)"
-# `feature`'s commit has `Base-Branch:` in a paragraph of its own followed by
-# `Co-Authored-By:` (the #845 shape), which git does not read as a trailer.
-REMOTE_SEPARATE="$(build_msg_remote separate "$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')")"
-# `feature` carries a readable trailer naming a branch the issue does not.
-REMOTE_STALE="$(build_remote stale - stale-base)"
+REMOTE_PLAIN="$(build_remote plain)"
 # A remote carrying a `trunk` branch beside `main`: the selected-repo row
 # below needs a default that exists on origin (the selection only names it;
 # the fetch still reads it from origin) yet differs from every other row's
@@ -235,27 +189,12 @@ W="$(work_repo issue-no-facts "$REMOTE_PLAIN" main)"
 run_in "$W" feature --issue 203
 assert_row 'issue-without-facts-asks' 0 'NEED repo=acme/plain issue.number=203 issue.body-file\n' 0
 
-# ---- the base comes from the issue, never the commits --------------------
-#
-# Both commit shapes leave no Base-Branch trailer git can read; the answer is
-# the issue's prerequisite head either way.
+# ---- the base comes from the issue ---------------------------------------
 
 row_start
-W="$(work_repo regress-plain "$REMOTE_PLAIN" main)"
+W="$(work_repo open-prereq "$REMOTE_PLAIN" main)"
 run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/plain 1 55 OPEN | facts_file)"
-assert_row 'regression-open-prereq-no-trailer' 0 'BASE dep\n' 0
-
-row_start
-W="$(work_repo regress-separate "$REMOTE_SEPARATE" main)"
-tally check_eq 'regression-separate-paragraph: git reads no trailer' '' \
-  "$(git -C "$REMOTE_SEPARATE" log -1 --format='%(trailers:key=Base-Branch)' feature)"
-run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/separate 1 55 OPEN | facts_file)"
-assert_row 'regression-open-prereq-trailer-in-separate-paragraph' 0 'BASE dep\n' 0
-
-row_start
-W="$(work_repo stale-trailer "$REMOTE_STALE" main)"
-run_in "$W" feature --issue 203 --facts "$(issue_facts acme/stale 'nothing blocking\n' | facts_file)"
-assert_row 'readable-trailer-is-ignored' 0 'BASE main\n' 0
+assert_row 'open-prereq-answers-its-head' 0 'BASE dep\n' 0
 
 row_start
 W="$(work_repo prereq-merged "$REMOTE_PLAIN" main)"

@@ -1,8 +1,4 @@
-# Base-Branch trailer
-
-## The contract
-
-One `Base-Branch: <base>` line in the trailer block of the task's **first** commit. `<base>` is the bare branch name — no `origin/` prefix, no `refs/heads/` path. Branching from the default branch records nothing.
+# Base resolution
 
 ## The prerequisite line
 

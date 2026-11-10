@@ -474,10 +474,6 @@ running anything: a missing path makes nearly every row fail, which is the shape
 of a successful RED, an unreadable one fails them the same way at exit 126, and
 an empty one makes them all pass, which reads as a test with no detection power.
 
-`resolve-pr-base.sh` → `bb8d8b8^` — the `Base-Branch` trailer scan walked to
-root, so a branch that recorded nothing picked up whatever trailer it inherited
-from shared history and handed that branch back as `--base` (#171).
-
 `run.sh` → `f2b1e41^` — a `SUT` naming a nonexistent or an empty file was
 accepted, and the resulting failures were indistinguishable from a successful
 RED verification (#214). Also `f2b1e41` itself, **without** the caret: that

@@ -15,11 +15,11 @@ such script.
 
 | Slug | Printed by |
 | --- | --- |
-| `abandoned-prerequisite` | `tools/read-base-trailer.sh`, `tools/read-prereq-pr.sh` |
+| `abandoned-prerequisite` | `tools/read-prereq-pr.sh` |
 | `ask-base-repo` | `tools/ensure-draft-pr.sh` |
 | `ask-default-branch` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `ask-multiple-prereqs` | `tools/read-prereq-pr.sh` |
-| `ask-multiple-prs` | `tools/read-base-trailer.sh`, `tools/ensure-draft-pr.sh`, `tools/read-prereq-pr.sh` |
+| `ask-multiple-prs` | `tools/ensure-draft-pr.sh`, `tools/read-prereq-pr.sh` |
 | `ask-multiple-prs-after-create` | `tools/ensure-draft-pr.sh` |
 | `ask-since-base-merged` | `review-pr/resolve-since.sh` |
 | `ask-since-rewritten` | `review-pr/resolve-since.sh` |
@@ -36,25 +36,23 @@ such script.
 | `fact-malformed` | `tools/facts.sh` |
 | `fact-mismatch` | `tools/facts.sh` |
 | `fact-missing` | `tools/facts.sh` |
-| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
-| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/read-base-trailer.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
 | `merge-base-failed` | `tools/resolve-range.sh` |
 | `merge-failed` | `implement-work/absorb-base.sh` |
 | `no-merge-in-progress` | `implement-work/commit-merge.sh` |
-| `no-prereq-pr` | `tools/read-base-trailer.sh` |
 | `not-implemented` | `tools/read-prereq-pr.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
 | `prereq-answer-malformed` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `prereq-line-malformed` | `tools/read-prereq-pr.sh` |
 | `prereq-read-failed` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh` |
-| `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `repo-lookup-failed` | `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
-| `trailer-read-failed` | `tools/read-base-trailer.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `review-pr/check-pr-repo.sh` |
