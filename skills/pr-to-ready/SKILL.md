@@ -79,7 +79,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Carry a per-finding verdict for every non-inline finding, suppressed included, each under its own heading, in one verdict comment across all selected reviewers, with Copilot and Claude substance paraphrased and never verbatim quoted and with no mentions, since otherwise the quote silently summons a fresh review of the run's own words.
   - Treat suppressed-comment blocks as a read source alongside threads.
 - Open each result and verdict comment with the reviewed commit SHA, since without it a verdict posted before a merge reads as judging the merged head the reviewer never saw.
-- Follow the verdict comment's SHA line with a heading naming the round's conclusion, one value per round exit, since otherwise the reader has to count verdicts to guess it:
+- Follow the verdict comment's SHA line with a heading naming the round's conclusion, one value per round exit:
   - clean — advancing, only where that SHA satisfies **Clean**; never a round with an accepted fix or a red check.
   - fixed and re-requested — requesting again.
   - partial, naming the missing reviewers — handing back on the reviewer timeout.
