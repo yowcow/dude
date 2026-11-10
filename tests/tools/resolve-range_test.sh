@@ -36,8 +36,7 @@
 # stubbed rows at the end build that tree themselves, so for them a lone copy
 # of the SUT is enough. Records 1 and 3 remove a guard in
 # tools/read-prereq-pr.sh and record 4 one in tools/resolve-default-branch.sh,
-# the mutant being applied there. Eight were removed and are bound below, each
-# measured on this file:
+# the mutant being applied there. Eight were removed and are bound below:
 #
 #   1. The prerequisite's closing PRs being counted, zero meaning "not
 #      implemented". Deleting the `[ "$COUNT" -eq 0 ]` block of
