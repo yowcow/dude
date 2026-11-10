@@ -80,7 +80,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Write the summary it takes as the reviewed commit SHA line followed by one `<details>` block holding the round's `reject` findings and `Declined to judge` lines verbatim, since the tool appends only the findings it is handed and nothing else of the round reaches the PR.
   - Leave a blank line after `<summary>`, since otherwise the markdown inside the fold renders raw.
 - Before the create or the first thread reply, hand back where the viewer already holds a pending review on the PR, never adding to, submitting, or deleting it, since one login holds one pending review per PR and the round's comments otherwise land in, or submit, a draft the run never wrote.
-- Post no thread reply while the viewer holds a pending review on the PR, and name the unposted replies in the hand-back instead, since a reply by some means joins that pending review unseen and is submitted with it.
+- Post no thread reply while the viewer holds a pending review on the PR, and name the unposted review and replies in the hand-back instead, since a reply by some means joins that pending review unseen and is submitted with it.
 - Drive `tools/post-review.sh` with the PR, the reviewed commit, `COMMENT`, and the payload, per its header's output contract:
   - On `WRITE`, create a pending review anchored to the reviewed commit in the repository it names, add each inline comment, and submit it, putting the payload's body on whichever step the means lets set and on the submit too where the submit replaces it.
   - End the write at the first failed step, since carrying on submits a review that reads as complete without the failed part.
