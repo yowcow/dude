@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/review-pr/scripts/post-review.sh: the guard before the
+# Table test for tools/post-review.sh: the guard before the
 # agent writes (a choice outside APPROVE, COMMENT, PENDING never reaches a
 # write) and the read-back after it (the review record, read by its id, must
 # be anchored to the reviewed head, in the state the choice asks for, with the
@@ -33,7 +33,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/post-review.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/post-review.sh}"
 BASH_BIN="$(command -v bash)"
 
 failed=0
@@ -230,13 +230,12 @@ assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n"
 #
 # The read-back's self-check and every read are captured, so an exit that is
 # not relayed becomes empty stdout and a non-zero status. The copy's facts.sh
-# is replaced for these three rows only. The script reaches tools/ through
-# SCRIPT_DIR, so the copy keeps the skills/<skill>/scripts/ shape beside a
-# tools/ tree.
+# is replaced for these three rows only. The script reaches its siblings
+# through SCRIPT_DIR, so the copy sits inside a tools/ copy.
 CONTRACT="${HARNESS_TMP}/facts-contract"
-mkdir -p "${CONTRACT}/skills/review-pr/scripts"
+mkdir -p "$CONTRACT"
 cp -R "${REPO_ROOT}/tools" "${CONTRACT}/tools"
-cp "$SUT" "${CONTRACT}/skills/review-pr/scripts/post-review.sh"
+cp "$SUT" "${CONTRACT}/tools/post-review.sh"
 facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/facts.sh"; }
 
 # run_contract <work-dir> <argv...> -- run_in, for the copy's script.
@@ -244,7 +243,7 @@ run_contract() {
   local dir="$1"
   shift
   cd "$dir" || exit 1
-  run_sut bash "${CONTRACT}/skills/review-pr/scripts/post-review.sh" "$@"
+  run_sut bash "${CONTRACT}/tools/post-review.sh" "$@"
   cd "$REPO_ROOT" || exit 1
 }
 

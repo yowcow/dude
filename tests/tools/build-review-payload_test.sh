@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/review-pr/scripts/build-review-payload.sh: a finding
+# Table test for tools/build-review-payload.sh: a finding
 # becomes an inline comment only on a line the reviewed diff adds; one on an
 # unchanged line, an untouched file, a line next to a hunk, or with no line
 # goes into the body.
@@ -24,7 +24,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/build-review-payload.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/build-review-payload.sh}"
 BASH_BIN="$(command -v bash)"
 
 failed=0

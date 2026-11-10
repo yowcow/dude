@@ -10,7 +10,7 @@
 # one need not cut hunks alike, and a finding moved to the body is still
 # posted where a refused one takes the review down with it.
 #
-# Conventions: ../../implement-work/references/script-conventions.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
 #
 # Usage: build-review-payload.sh <base-sha> <head-sha> <summary-file> <findings-file>
 # Output: one line of JSON, {"body":...,"comments":[{"path","line","side","body"}]}
