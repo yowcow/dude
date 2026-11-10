@@ -54,8 +54,7 @@ such script.
 | `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `review-pending-left` | `review-pr/post-review.sh` |
 | `review-state-mismatch` | `review-pr/post-review.sh` |
-| `trailer-answer-malformed` | `tools/resolve-range.sh` |
-| `trailer-read-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh` |
+| `trailer-read-failed` | `tools/read-base-trailer.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `review-pr/check-pr-repo.sh` |

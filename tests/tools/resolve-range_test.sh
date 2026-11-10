@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Table test for tools/resolve-range.sh: which of its
-# two input shapes -- a PR number, or none -- the script resolves a reviewed
+# two input shapes -- a PR number, or none (optionally with --issue) -- the script resolves a reviewed
 # range from, and the exact line it prints for each answer.
 #
 # git is not stubbed. The range is the thing under test, and a git stub would
@@ -16,96 +16,79 @@
 # The PR shape reads the PR record's base oid as a fact (pr_facts below), so
 # its rows make no `gh` call at all; the gh call count is 0 throughout.
 #
-# The no-argument shape reads the prerequisite's PR as facts (prereq_facts
-# below), so its trailer rows make no `gh pr list` call; the rows without a
-# trailer pass no facts, which is what shows that path asks for nothing. Its
-# default branch is the remote's own HEAD (resolve-default-branch.sh) in every
-# row but the seven stubbed ones at the end; no row stubs `gh`.
+# The no-argument shape reads the issue's `Blocked-By: #N` line and the
+# prerequisite's closing PR as facts (prereq_facts below), through
+# tools/read-prereq-pr.sh; the rows without --issue pass no facts, which is
+# what shows that path asks for nothing. Its default branch is the remote's own
+# HEAD (resolve-default-branch.sh) in every row but the seven stubbed ones at
+# the end; no row stubs `gh`.
+#
+# The task branch's commits never decide the range: the regression rows pin
+# that a commit with no readable Base-Branch trailer (none at all, or one in a
+# paragraph git does not read as a trailer, the #845 shape) still gets the
+# issue's prerequisite, and `readable-trailer-is-ignored` pins that a readable
+# trailer is not consulted.
 #
 # RED verification (see tests/README.md). The reader guard this file's last
 # rows pin is RED the ordinary way -- the recipe and the measured count are in
 # the reader-boundary record below. The other guards named in the script's own
 # header were removed instead, one at a time, in a copy under `mktemp -d` --
 # never inside the repository, where lint.sh would select it by shebang -- and
-# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Records
-# 1, 3, 5 and 7 replace a guard in a sibling (read-base-trailer.sh or
-# resolve-default-branch.sh); records 2, 4, 6, 8 and 9 replace one in this
-# script (the MERGED fetch spec, emit_range, the OPEN fetch spec, the bounded
-# scan's `^<tip>` argument, the NO-TRAILER merge-base). Every mutant is applied
-# inside a copy of the tools/ tree regardless, because every row that reaches
-# the script's body reaches a sibling through `dirname "$0"` first: a lone copy
-# of this script answers `STOP ask-default-branch` (or `STOP repo-lookup-
-# failed`) instead, which pins nothing about the mutation. The stubbed rows at
-# the end build that tree themselves, so for them a lone copy of the SUT is
-# enough. Nine were removed and are bound below; the one that is only partly
-# observable is recorded as such, rather than counted as covered. What each
-# mutant actually produced, measured:
+# this file re-run against it as `SUT=<copy> tests/run.sh <this file>`. Every
+# mutant is applied inside a copy of the tools/ tree, because every row that
+# reaches the script's body reaches a sibling through `dirname "$0"` first: a
+# lone copy of this script answers `STOP ask-default-branch` (or `STOP
+# repo-lookup-failed`) instead, which pins nothing about the mutation. The
+# stubbed rows at the end build that tree themselves, so for them a lone copy
+# of the SUT is enough. Records 1 and 3 remove a guard in
+# tools/read-prereq-pr.sh and record 4 one in tools/resolve-default-branch.sh,
+# the mutant being applied there. Eight were removed and are bound below, each
+# measured on this file (49 checks) as `not ok N/49`:
 #
-#   1. The trailer read guarded as well as captured. This guard lives in
-#      tools/read-base-trailer.sh, so the mutant is applied there, in a copy
-#      of the tools/ tree. Appending `|| true` to the `git log` inside the
-#      `if ! TRAILER_LOG=...` test failed `trailer-read-fails` alone: want
-#      `STOP trailer-read-failed`, got `STOP merge-base-failed`. That is the
-#      widening this file exists to pin -- a read that failed, taken for a
-#      trailer that was absent, sends the range to the default branch.
-#   2. The MERGED boundary being the prerequisite's own head
-#      (the PREREQ_PR fetch spec). Replacing
-#      `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
-#      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")"`
-#      in a copy of the tools/ tree (the call resolves through `dirname "$0"`)
-#      failed `prereq-merged-uses-the-pr-head` and `merged-pull-ref-absent`
-#      on stdout, and the second assertion of the first row,
-#      `merged-base-is-not-the-default-branch`, flagged that the range then
-#      started at the default branch tip -- the widening this guard exists to
-#      prevent.
-#   3. A count of zero PRs being "no prerequisite PR". This guard lives in
-#      read-base-trailer.sh, so the mutant is applied there, in the same
-#      tree copy as record 1. Deleting the `[ "$COUNT" -eq 0 ]` block failed
-#      `prereq-has-no-pr` alone: want `STOP no-prereq-pr`, got a `NEED` for the
-#      PR record the empty list never named.
-#   4. Both shapes answering through emit_range. Replacing its body with an
+#   1. The prerequisite's closing PRs being counted, zero meaning "not
+#      implemented". Deleting the `[ "$COUNT" -eq 0 ]` block of
+#      tools/read-prereq-pr.sh failed `no-closing-pr` alone (`not ok 1/49`).
+#   2. The MERGED boundary being the prerequisite's own head (the PREREQ_PR
+#      fetch spec). Replacing `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
+#      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")"` failed
+#      `prereq-merged-uses-the-pr-head`, `merged-pull-ref-absent` and the second
+#      assertion of the first row, `merged-base-is-not-the-default-branch`
+#      (`not ok 3/49`) -- the widening this guard exists to prevent.
+#   3. No --issue meaning no prerequisite. Deleting the `[ -z "$ISSUE" ]`
+#      early answer of tools/read-prereq-pr.sh made every no-argument row ask
+#      for the issue's facts instead of answering the default branch, and
+#      failed `stale-symref-is-ignored`, `no-issue-is-default-range`,
+#      `trunk-history-trailer-is-ignored`,
+#      `no-issue-empty-when-head-is-the-default-tip` and
+#      `merge-base-fails-without-a-trailer` (`not ok 5/49`).
+#   4. The default branch being read rather than guessed. The mutant is a copy
+#      of the tools/ tree with tools/resolve-default-branch.sh's whole body
+#      replaced by `printf 'main\n'`. It failed twenty checks on stdout, every
+#      row that reaches the default branch (`not ok 20/49`) -- bar
+#      `default-fetch-fails`, whose fixture remote already lacks a `main`
+#      branch. This is why build_remote's default branch is called `trunk`:
+#      with the conventional name, this mutant passes every row.
+#   5. Both shapes answering through emit_range. Replacing its body with an
 #      unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
 #      `pr-shape-empty-when-head-is-the-base` and
-#      `no-trailer-empty-when-head-is-the-default-tip`.
-#   5. The default branch being read rather than guessed. That read lives in
-#      the shared tools/resolve-default-branch.sh this script reaches by its
-#      no-argument shape, so the mutant is a copy of the tools/ tree with that
-#      script's whole body replaced by `printf 'main\n'`. It failed nineteen
-#      rows on stdout -- every row that reaches the default branch except
-#      `default-fetch-fails`, whose fixture remote already lacks a `main`
-#      branch and whose stdout already expects `STOP default-fetch-failed`.
-#      This is why build_remote's default branch is called `trunk`: with the
-#      conventional name, this mutant passes every row.
-#   6. OPEN fetching the branch the trailer recorded (the OPEN arm).
+#      `no-issue-empty-when-head-is-the-default-tip` (`not ok 2/49`).
+#   6. OPEN fetching the branch the prerequisite's PR names (the OPEN arm).
 #      Replacing `FETCH_SPEC="${RECORDED}"` with the MERGED path's
-#      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
-#      two others. This is why `refs/pull/9/head` is a decoy under
+#      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch`, the
+#      two regression-open rows and `merge-base-fails-on-unrelated-history`
+#      (`not ok 4/49`). This is why `refs/pull/9/head` is a decoy under
 #      `with-dep`: pointed at dep's own commit, this mutant passes.
-#   7. The trailer scan keeping the newest trailer. This guard lives in
-#      read-base-trailer.sh (`awk 'NF{print;exit}'`), so the mutant is applied
-#      there, in the same tree copy as records 1 and 3. Replacing it with
-#      `awk 'NF{l=$0}END{print l}'` holds the last non-empty line -- the
-#      oldest, since the log is newest-first -- and failed ten rows, among them
-#      `newest-trailer-shadows-older`, which answered `STOP fact-mismatch`
-#      rather than the range: the facts name `dep`, the oldest trailer names
-#      `older-base`. `older-base` is also a ref on the fixture remote, so a
-#      mutant that fetched it would not stop at `STOP fetch-failed`.
-#   8. The trailer scan stopping at the default tip.
-#      build_remote's `trunk` advances one commit past `older-base` recording
-#      `Base-Branch: older-base`, so `plain`'s only trailer is the poisoned
-#      trunk history below its own tip. Removing `^${TIP_SHA}` from the
-#      read-base-trailer.sh call failed `trunk-history-trailer-is-ignored` on
-#      stdout (want `RANGE <trunk>..<plain>`), and with it `stale-symref-is-ignored`,
-#      `no-trailer-uses-the-remote-head` and
-#      `no-trailer-empty-when-head-is-the-default-tip`, which also record
-#      nothing of their own.
-#   9. The NO-TRAILER merge-base guard. Leaving `BASE_SHA="$(git merge-base
+#   7. The caller handing --issue on to the reader. Dropping
+#      `READ_ARGS+=("$ISSUE")` made the reader answer NO-PREREQ on every
+#      --issue row and failed eleven checks (`not ok 11/49`), among them both
+#      regression rows and `issue-without-facts-asks`.
+#   8. The NO-PREREQ merge-base guard. Leaving `BASE_SHA="$(git merge-base
 #      "${TIP_SHA}" HEAD)"` bare, so `set -e` aborts on git's exit 1 instead of
-#      printing the STOP, failed `merge-base-fails-without-a-trailer` alone:
-#      want `STOP merge-base-failed`, got exit 1 with empty stdout. Its PREREQ
-#      twin was already bound by `merge-base-fails-on-unrelated-history`, whose
-#      branch records a trailer; without this row the trailerless copy of the
-#      same guard could be deleted unnoticed.
+#      printing the STOP, failed `merge-base-fails-without-a-trailer` alone
+#      (`not ok 1/49`): want `STOP merge-base-failed`, got exit 1 with empty
+#      stdout. Its PREREQ twin is bound by
+#      `merge-base-fails-on-unrelated-history`; without this row the copy of the
+#      same guard on the no-issue path could be deleted unnoticed.
 #
 #   The `[repo]` fallback's two `exit 1`s are recorded rather than bound here,
 #   and for neither is the reason "no row could bind it". The
@@ -123,21 +106,29 @@
 #   stdout. Such a row belongs in tests/tools/resolve-default-branch_test.sh;
 #   recorded here as a gap, not as an impossible case.
 #
+#   RED for the move from the trailer to the issue (#847), both against the
+#   script as of the commit before it (`git show HEAD^:tools/resolve-range.sh`
+#   at the time), placed in a copy of tools/ (`cp -R tools "$tmp/tools"`):
+#   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
+#     is a usage error on every row that passes it: `not ok 19/49`.
+#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
+#     old.sh, so the rows fail for the behaviour and not the usage error: the
+#     regression rows read the (absent) trailer of a commit and answer the
+#     default branch's range instead of the prerequisite's, and
+#     `readable-trailer-is-ignored` answers the trailer's range instead of the
+#     default: `not ok 24/49` (the seven stubbed rows fail too, as the
+#     wrapper is not copied beside old.sh; `pr-and-issue-together` and the
+#     three `--issue` argument rows fail because the wrapper swallows the flag).
+#
 #   The reader-boundary rows at the end of this file are RED through SUT= the
 #   ordinary way, not by removing a guard: point it at the pre-fix script
 #   (`git show 9738174^:tools/resolve-range.sh`) dropped into a copy of tools/
-#   that holds every sibling -- the tree copy records 1-3 and 5-8 need -- and
-#   only those four rows and their two stderr tallies fail: `not ok 6/39`,
-#   measured before the facts-capture rows existed. The three facts-capture
-#   rows at the end were RED the same way, against the `master` of the time in
-#   a full tools/ tree: `not ok 3/42`. Neither figure is today's file:
-#   `9738174^` predates the facts capture, so it fails those rows too --
-#   measured `not ok 9/43` -- while today's `master` carries the capture and
-#   passes `ok 43/43`.
-#   Measured: the aborted reader exits 1 with empty stdout, and the answers
-#   its `case` does not name reach the fetch line with FETCH_SPEC unset, which
-#   answers STOP fetch-failed, with bash's `FETCH_SPEC: unbound variable`
-#   diagnostic on stderr beside it.
+#   that holds every sibling, and only those four rows and their two stderr
+#   tallies fail (the count was measured on a file that no longer exists).
+#   Measured: the aborted reader exits 1
+#   with empty stdout, and the answers its `case` does not name reach the fetch
+#   line with FETCH_SPEC unset, which answers STOP fetch-failed, with bash's
+#   `FETCH_SPEC: unbound variable` diagnostic on stderr beside it.
 #
 # Partly covered, and measured to be no more coverable than this: reading
 # FETCH_HEAD rather than a remote-tracking ref.
@@ -213,6 +204,12 @@ build_remote() {
   git_repo_commit "$seed" TRUNK-POISON.md 'poison\n' "$(commit_msg 'trunk poison' older-base)"
   git_repo_checkout "$seed" dep trunk
   git_repo_commit "$seed" DEP.md 'dep\n' "$(commit_msg 'dep commit' -)"
+  git_repo_checkout "$seed" notrailer dep
+  git_repo_commit "$seed" N.md 'no trailer\n' 'no trailer commit'
+  # `Base-Branch:` in a paragraph of its own followed by `Co-Authored-By:` (the
+  # #845 shape): git reads no trailer there.
+  git_repo_checkout "$seed" separate dep
+  git_repo_commit "$seed" S.md 'separate\n' "$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')"
   git_repo_checkout "$seed" task dep
   git_repo_commit "$seed" T1.md 'task one\n' "$(commit_msg 'task commit 1' older-base)"
   git_repo_commit "$seed" T2.md 'task two\n' "$(commit_msg 'task commit 2' dep)"
@@ -221,10 +218,10 @@ build_remote() {
   git_repo_commit "$seed" PLAIN.md 'plain\n' "$(commit_msg 'plain commit' -)"
   git_repo_checkout "$seed" fresh trunk
   if [ "$depmode" = with-dep ]; then
-    branches='trunk dep task plain fresh older-base'
+    branches='trunk dep notrailer separate task plain fresh older-base'
     pull9='plain:refs/pull/9/head'
   else
-    branches='trunk task plain fresh older-base'
+    branches='trunk notrailer separate task plain fresh older-base'
     pull9='dep:refs/pull/9/head'
   fi
   # shellcheck disable=SC2086
@@ -267,16 +264,30 @@ pr.base.sha=$2
 EOF
 }
 
-# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- the
-# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
-# concatenate with other lines first).
+# body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
+body() {
+  local f
+  f="$(mktemp "${HARNESS_TMP}/body.XXXXXX")"
+  printf '%b' "$1" >"$f"
+  printf '%s\n' "$f"
+}
+
+# issue_facts <repo> <body-text> -- the issue's facts, on stdout
+issue_facts() {
+  printf 'repo=%s\nissue.number=203\nissue.body-file=%s\n' "$1" "$(body "$2")"
+}
+
+# prereq_facts <repo> <total> [<pr> [<state> [<head>]]] -- the facts of an issue
+# carrying `Blocked-By: #77` and its prerequisite #77's closing PRs, on stdout
+# (pipe into facts_file, or concatenate with other lines first).
 prereq_facts() {
-  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
-  if [ "$#" -ge 4 ]; then
-    printf 'prereq.head-pr=%s\n' "$4"
+  issue_facts "$1" 'Blocked-By: #77\n'
+  printf 'prereq.number=77\nprereq.closing-pr.total=%s\n' "$2"
+  if [ "$#" -ge 3 ]; then
+    printf 'prereq.closing-pr=%s\n' "$3"
   fi
-  if [ "$#" -ge 5 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$4" "$5" "${6-${2#*:}}" "${7-${2%%:*}}"
+  if [ "$#" -ge 4 ]; then
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$3" "$4" "${5-dep}"
   fi
 }
 
@@ -367,14 +378,21 @@ row_start
 run_in "$PRWORK" 7 --facts
 assert_row 'pr-shape-facts-flag-without-file' 2 '' 0
 
+# The PR shape does not read the issue; a number passed beside it would be
+# ignored silently, so it is refused.
+row_start
+run_in "$PRWORK" 7 --issue 203
+assert_row 'pr-and-issue-together' 2 '' 0
+
 REMOTE="$(build_remote ranged with-dep)"
 TRUNK_SHA="$(bare_sha "$REMOTE" trunk)"
 PLAIN_SHA="$(bare_sha "$REMOTE" plain)"
 
-# ---- no trailer recorded: the default branch ----------------------------
+# ---- no prerequisite to read: the default branch ------------------------
 #
-# `plain` carries no Base-Branch trailer anywhere in its history, so each of
-# these rows exercises the default-branch read and nothing else. The first
+# no row below passes --issue, so the reader is never asked for the issue's
+# facts and each of these rows exercises the default-branch read and nothing
+# else. The first
 # plants a stale refs/remotes/origin/HEAD symref naming `task` -- the wrong
 # branch -- while the remote's HEAD names `trunk`, the right one, then asserts
 # the range comes from `trunk`: the symref is never consulted, so a stale
@@ -389,12 +407,22 @@ assert_row 'stale-symref-is-ignored' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
 row_start
 W="$(work_repo dflt-head "$REMOTE" plain -)"
 run_in "$W"
-assert_row 'no-trailer-uses-the-remote-head' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
+assert_row 'no-issue-is-default-range' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
 
 row_start
 W="$(work_repo trunk-trailer-ignored "$REMOTE" plain -)"
 run_in "$W"
 assert_row 'trunk-history-trailer-is-ignored' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
+
+row_start
+W="$(work_repo no-prereq-line "$REMOTE" plain -)"
+run_in "$W" --issue 203 --facts "$(issue_facts acme/ranged 'nothing blocking\n' | facts_file)"
+assert_row 'no-prereq-line-is-default-range' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
+
+row_start
+W="$(work_repo issue-no-facts "$REMOTE" plain -)"
+run_in "$W" --issue 203
+assert_row 'issue-without-facts-asks' 0 'NEED repo=acme/ranged issue.number=203 issue.body-file\n' 0
 
 row_start
 W="$(work_repo dflt-unreachable "$REMOTE" plain -)"
@@ -417,26 +445,42 @@ assert_row 'remote-head-unborn' 0 'STOP ask-default-branch\n' 0
 row_start
 W="$(work_repo empty-nopr "$REMOTE" fresh trunk)"
 run_in "$W"
-assert_row 'no-trailer-empty-when-head-is-the-default-tip' 0 'EMPTY\n' 0
+assert_row 'no-issue-empty-when-head-is-the-default-tip' 0 'EMPTY\n' 0
 
 DEP_SHA="$(bare_sha "$REMOTE" dep)"
 TASK_SHA="$(bare_sha "$REMOTE" task)"
+NOTRAILER_SHA="$(bare_sha "$REMOTE" notrailer)"
+SEPARATE_SHA="$(bare_sha "$REMOTE" separate)"
 
-# ---- a trailer the branch recorded itself -------------------------------
+# ---- the prerequisite comes from the issue, never the commits ----------
+#
+# `notrailer` and `separate` leave no Base-Branch trailer git can read (the
+# second is the #845 shape); the range still starts at the issue's
+# prerequisite head.
+
+row_start
+W="$(work_repo regress-notrailer "$REMOTE" notrailer trunk)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 OPEN | facts_file)"
+assert_row 'regression-open-prereq-no-trailer' 0 "RANGE ${DEP_SHA}..${NOTRAILER_SHA}\n" 0
+
+row_start
+W="$(work_repo regress-separate "$REMOTE" separate trunk)"
+tally check_eq 'regression-separate-paragraph: git reads no trailer' '' \
+  "$(git -C "$W" log -1 --format='%(trailers:key=Base-Branch)')"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 OPEN | facts_file)"
+assert_row 'regression-open-prereq-trailer-in-separate-paragraph' 0 "RANGE ${DEP_SHA}..${SEPARATE_SHA}\n" 0
+
+# `task` carries readable trailers naming `dep` and `older-base`; the issue
+# names no prerequisite, so the answer is the default branch.
+row_start
+W="$(work_repo trailer-ignored "$REMOTE" task trunk)"
+run_in "$W" --issue 203 --facts "$(issue_facts acme/ranged 'nothing blocking\n' | facts_file)"
+assert_row 'readable-trailer-is-ignored' 0 "RANGE ${TRUNK_SHA}..${TASK_SHA}\n" 0
 
 row_start
 W="$(work_repo prereq-open "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 OPEN | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 OPEN | facts_file)"
 assert_row 'prereq-open-uses-its-branch' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 0
-
-# `task` records `older-base` on its first commit and `dep` on its second, so
-# the two orders of reading the stack disagree about the answer. The facts name
-# `dep`, so an oldest-first scan asks about `older-base` and stops on the
-# pinned head (`STOP fact-mismatch`) instead of printing the range.
-row_start
-W="$(work_repo shadow "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 OPEN | facts_file)"
-assert_row 'newest-trailer-shadows-older' 0 "RANGE ${DEP_SHA}..${TASK_SHA}\n" 0
 
 # ---- MERGED: the boundary is the prerequisite's own head ----------------
 #
@@ -454,7 +498,7 @@ MERGED_TRUNK_SHA="$(bare_sha "$REMOTE_MERGED" trunk)"
 
 row_start
 W="$(work_repo prereq-merged "$REMOTE_MERGED" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/merged acme:dep 1 9 MERGED | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/merged 1 9 MERGED | facts_file)"
 assert_row 'prereq-merged-uses-the-pr-head' 0 "RANGE ${PULL9_SHA}..${MERGED_TASK_SHA}\n" 0
 
 # The measurement the row above is for, asserted on that same run: the base
@@ -479,55 +523,27 @@ fi
 
 row_start
 W="$(work_repo prereq-closed "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 CLOSED | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 CLOSED | facts_file)"
 assert_row 'prereq-closed-stops' 0 'STOP abandoned-prerequisite\n' 0
 
 row_start
 W="$(work_repo prereq-none "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 0 | facts_file)"
-assert_row 'prereq-has-no-pr' 0 'STOP no-prereq-pr\n' 0
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 0 | facts_file)"
+assert_row 'no-closing-pr' 0 'STOP not-implemented\n' 0
 
 row_start
 W="$(work_repo prereq-multiple "$REMOTE" task trunk)"
-run_in "$W" --facts "$({ prereq_facts acme/ranged acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
-assert_row 'prereq-has-several-prs' 0 'STOP ask-multiple-prs\n' 0
-
-# Changed answer: was prereq-lookup-fails / STOP prereq-lookup-failed, when the
-# `gh` call failed.
-row_start
-W="$(work_repo prereq-unreadable "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep '' | facts_file)"
-assert_row 'prereq-lookup-unread' 0 'STOP fact-missing\n' 0
+run_in "$W" --issue 203 --facts "$({ prereq_facts acme/ranged 2 9; printf 'prereq.closing-pr=8\n'; } | facts_file)"
+assert_row 'several-closing-prs' 0 'STOP ask-multiple-prs\n' 0
 
 # Changed answer: was exit 1 with an empty stdout.
 row_start
 W="$(work_repo prereq-unknown-state "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 9 DRAFT | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 DRAFT | facts_file)"
 assert_row 'prereq-state-unrecognised' 0 'STOP fact-enum\n' 0
-
-row_start
-W="$(work_repo trailer-asks "$REMOTE" task trunk)"
-run_in "$W"
-assert_row 'trailer-without-facts-asks' 0 'NEED repo=acme/ranged prereq.head=acme:dep prereq.head-pr\n' 0
 
 # ---- the three git failures the script converts into STOP ---------------
 #
-# The row this file exists for. A work repository with no commits at all
-# makes `git log HEAD` exit 128 (measured on git 2.43: "fatal: ambiguous
-# argument 'HEAD'"), which is the trailer read *failing* rather than the
-# trailer being absent -- two causes that must not collapse, because "absent"
-# sends the range to the default branch. refs/remotes/origin/HEAD is pointed
-# at `trunk` for realism only -- the default-branch lookup never reads it, so it
-# has no bearing on this row's answer. Fetch-first means the default resolve
-# and fetch pass and the scan fails, so this row asserts that STOP order.
-row_start
-W="$(git_repo_scratch trailer-unreadable)"
-git_repo_init "$W" task
-git_repo_remote "$W" origin "$REMOTE"
-git_repo_origin_head "$W" trunk
-run_in "$W"
-assert_row 'trailer-read-fails' 0 'STOP trailer-read-failed\n' 0
-
 # Two fetches can fail, and they carry distinct slugs from different rungs.
 # The first row's remote names a default it will not serve: `ls-remote
 # --symref` still reports `trunk` as HEAD, but the fetch of `trunk` fails
@@ -545,7 +561,7 @@ assert_row 'default-fetch-fails' 0 'STOP default-fetch-failed\n' 0
 # remote, so the spec that fails is the one the MERGED path builds itself.
 row_start
 W="$(work_repo fetch-pull "$REMOTE" task trunk)"
-run_in "$W" --facts "$(prereq_facts acme/ranged acme:dep 1 77 MERGED | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 77 MERGED | facts_file)"
 assert_row 'merged-pull-ref-absent' 0 'STOP fetch-failed\n' 0
 
 # Unrelated roots, the spelling absorb-base_test.sh uses: two repositories
@@ -561,14 +577,14 @@ git_repo_push "$LSEED" "$LONELY" unrelated
 git_repo_bare_head "$LONELY" unrelated
 W="$(git_repo_scratch lonely-work)"
 git_repo_init "$W" task
-git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' unrelated)"
+git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' -)"
 git_repo_remote "$W" origin "$LONELY"
-run_in "$W" --facts "$(prereq_facts acme/lonely acme:unrelated 1 9 OPEN | facts_file)"
+run_in "$W" --issue 203 --facts "$(prereq_facts acme/lonely 1 9 OPEN unrelated | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
 
 # An unrelated remote again (`LONELY`, from the row above), reached the other
-# way: the branch records no trailer at all and the run passes no facts, so it
-# takes the NO-TRAILER path, whose base is the default branch's tip. Nothing
+# way: the run passes no --issue, so it
+# takes the NO-PREREQ path, whose base is the default branch's tip. Nothing
 # else in its answer would show that git declined to answer.
 row_start
 W="$(git_repo_scratch lonely-work-no-trailer)"
@@ -582,7 +598,7 @@ assert_row 'merge-base-fails-without-a-trailer' 0 'STOP merge-base-failed\n' 0
 #
 # Same boundary as tests/tools/resolve-pr-base_test.sh's closing rows, and the
 # same fixture: a copy of tools/ with this file's subject dropped in and
-# read-base-trailer.sh replaced. The real reader cannot produce these answers
+# read-prereq-pr.sh replaced. The real reader cannot produce these answers
 # (a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, and
 # CLOSED stops as STOP abandoned-prerequisite), so the reader
 # is stubbed. Measured before the fix: a reader exiting 1 made this script exit
@@ -596,32 +612,46 @@ cp "$SUT" "${CONTRACT}/resolve-range.sh"
 printf '#!/usr/bin/env bash\necho trunk\n' >"${CONTRACT}/resolve-default-branch.sh"
 printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
 
-# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
-reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
+# reader <body> -- the copy's read-prereq-pr.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-prereq-pr.sh"; }
 
 row_start
 reader 'exit 1'
 run_sut bash "${CONTRACT}/resolve-range.sh"
-assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
+assert_row 'reader-abort-is-reported' 0 'STOP prereq-read-failed\n' 0
 
 row_start
 reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-range.sh"
-assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP prereq-answer-malformed\n' 0
 tally check_eq 'reader-unknown-kind: stderr' \
-  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
+  'unrecognised answer from read-prereq-pr.sh: WHAT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'echo "PREREQ task 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-range.sh"
-assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-unknown-state-is-reported' 0 'STOP prereq-answer-malformed\n' 0
 tally check_eq 'reader-unknown-state: stderr' \
   'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'true'
 run_sut bash "${CONTRACT}/resolve-range.sh"
-assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-empty-answer-is-reported' 0 'STOP prereq-answer-malformed\n' 0
+
+# ---- --issue validation ------------------------------------------------
+
+row_start
+run_in "$PRWORK" --issue
+assert_row 'issue-flag-without-value' 2 '' 0
+
+row_start
+run_in "$PRWORK" --issue abc
+assert_row 'issue-non-numeric' 2 '' 0
+
+row_start
+run_in "$PRWORK" --issue 0
+assert_row 'issue-zero' 2 '' 0
 
 # ---- facts.sh that stops instead of answering ---------------------------
 #
