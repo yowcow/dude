@@ -411,4 +411,37 @@ facts_stub 'case "$1" in check) echo OK ;; *) exit 1 ;; esac'
 run_contract "$W" 203 --facts "$(facts_file </dev/null)"
 assert_row 'facts-get-abort-is-reported' 0 'STOP facts-read-failed\n' 0
 
+# ---- read-prereq-pr.sh answers this caller cannot act on ------------------
+#
+# The real reader prints NO-PREREQ, PREREQ with OPEN or MERGED, NEED or STOP, so
+# these rows stub it in the same copy: what they pin is the boundary -- whatever
+# the reader answers, this script prints one line and exits 0.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/read-prereq-pr.sh"; }
+
+row_start
+W="$(work_repo reader-abort "$REMOTE" main)"
+reader 'exit 1'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'reader-abort-is-reported' 0 'STOP prereq-read-failed\n' 0
+
+row_start
+W="$(work_repo reader-garbage "$REMOTE" main)"
+reader 'echo WHAT'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP prereq-answer-malformed\n' 0
+tally check_eq 'reader-unknown-kind: stderr' \
+  'unrecognised answer from read-prereq-pr.sh: WHAT' "$(cat "$SUT_STDERR")"
+
+row_start
+W="$(work_repo reader-state "$REMOTE" main)"
+reader 'echo "PREREQ feature 9 DRAFT"'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'reader-unknown-state-is-reported' 0 'STOP prereq-answer-malformed\n' 0
+
+row_start
+W="$(work_repo reader-empty "$REMOTE" main)"
+reader 'true'
+run_contract "$W" 203 --facts "$(facts_file </dev/null)"
+assert_row 'reader-empty-answer-is-reported' 0 'STOP prereq-answer-malformed\n' 0
+
 harness_exit "$failed" "$total"

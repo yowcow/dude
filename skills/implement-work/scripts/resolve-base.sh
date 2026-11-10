@@ -5,10 +5,8 @@
 # while a prerequisite PR is still OPEN would simply omit that prerequisite's
 # changes, so the task's own checks then fail for a reason nowhere in its diff.
 #
-# It reads no issue or PR itself: answers NEED in up to three rounds, each pinned
-# to origin's repository and the number the round before produced. The closing
-# PRs are counted, never tested for emptiness; a PR's state is read from its own
-# record, never as "not open".
+# The prerequisite is read by ../../../tools/read-prereq-pr.sh (NEED rounds,
+# closing-PR count, state); this script only turns its answer into a base.
 #
 # Facts: ../references/facts.md.
 # Conventions: ../references/script-conventions.md.
@@ -59,82 +57,28 @@ base_default() {
   base "$default"
 }
 
-# need <spec>...: on OK return; otherwise answer and exit 0.
-need() {
-  local verdict
-  if ! verdict="$(bash "${TOOLS}/facts.sh" check "$FACTS" "$@")"; then
-    echo "STOP facts-read-failed"
-    exit 0
-  fi
-  case "$verdict" in
-    OK) return 0 ;;
-    "NEED "?* | "STOP "?*) echo "$verdict" ;;
-    *) echo "STOP facts-answer-malformed" ;;
-  esac
-  exit 0
-}
-
-# fact <var> <name>: assign the value into the caller's variable. The value is
-# never printed: called as $(fact ...) the exit 0 above would land in a
-# subshell, leaving the caller running and reading "STOP ..." back as data.
-fact() {
-  local value
-  if ! value="$(bash "${TOOLS}/facts.sh" get "$FACTS" "$2")"; then
-    echo "STOP facts-read-failed"
-    exit 0
-  fi
-  printf -v "$1" '%s' "$value"
-}
-
-if [ -z "$ISSUE" ]; then
-  base_default
-fi
-
-if ! REPO="$(bash "${TOOLS}/origin-repo.sh")"; then
-  echo "STOP repo-lookup-failed"
+READ_ARGS=()
+if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
+if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi
+# An empty array is an unbound-variable error under set -u before bash 4.4.
+if ! ANSWER="$(bash "${TOOLS}/read-prereq-pr.sh" ${READ_ARGS[@]+"${READ_ARGS[@]}"})"; then
+  echo "STOP prereq-read-failed"
   exit 0
 fi
-
-SPECS=("repo=${REPO}" "issue.number=${ISSUE}" issue.body-file)
-need "${SPECS[@]}"
-fact BODY_FILE issue.body-file
-
-if ! LINE="$(bash "${TOOLS}/prereq-line.sh" "$BODY_FILE")"; then
-  echo "STOP body-unreadable"
-  exit 0
-fi
-case "$LINE" in
-  NONE) base_default ;;
-  MULTIPLE)
-    echo "STOP ask-multiple-prereqs"
+read -r KIND HEAD_REF _ STATE <<<"$ANSWER"
+case "$KIND" in
+  NO-PREREQ) base_default ;;
+  PREREQ)
+    case "$STATE" in
+      OPEN) base "$HEAD_REF" ;;
+      MERGED) base_default ;;
+    esac
+    echo "unrecognised prerequisite state: ${STATE}" >&2
+    ;;
+  NEED | STOP)
+    echo "$ANSWER"
     exit 0
     ;;
-  MALFORMED)
-    echo "STOP prereq-line-malformed"
-    exit 0
-    ;;
+  *) echo "unrecognised answer from read-prereq-pr.sh: ${ANSWER}" >&2 ;;
 esac
-PREREQ="${LINE#PREREQ }"
-
-SPECS+=("prereq.number=${PREREQ}" 'prereq.closing-pr[]')
-need "${SPECS[@]}"
-fact COUNT prereq.closing-pr.total
-if [ "$COUNT" -eq 0 ]; then
-  echo "STOP not-implemented"
-  exit 0
-fi
-if [ "$COUNT" -ge 2 ]; then
-  echo "STOP ask-multiple-prs"
-  exit 0
-fi
-fact PR prereq.closing-pr
-
-SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' pr.head.ref)
-need "${SPECS[@]}"
-fact STATE pr.state
-fact HEAD_REF pr.head.ref
-case "$STATE" in
-  OPEN) base "$HEAD_REF" ;;
-  MERGED) base_default ;;
-  CLOSED) echo "STOP abandoned-prerequisite" ;;
-esac
+echo "STOP prereq-answer-malformed"
