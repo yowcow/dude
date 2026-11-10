@@ -82,7 +82,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Follow the verdict comment's SHA line with a heading naming the round's conclusion, one value per round exit:
   - clean — advancing, only where that SHA satisfies **Clean**; never a round with an accepted fix or a red check.
   - fixed and re-requested — requesting again.
-  - partial, naming the missing reviewers — handing back on the reviewer timeout.
+  - partial — handing back on the reviewer timeout.
   - waiting on a person — any other hand-back: needs-user, a conflict, undetermined mergeability, Escalation, or a `using-dude`'s **Loop convergence** stop.
 - Create no new thread.
 - Send threadless vet-code-originated findings to the result comment and the verdict comment.
