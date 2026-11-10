@@ -120,7 +120,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - **A loop's intermediate state is orchestrator-facing.**
 - Report each round to the caller in chat, and never to GitHub.
 - Only the converged result reaches the canonical record above.
-- The sole exception is `pr-to-ready`'s per-round vet-code review, with its inline comments, and its verdict comment.
+- The sole exception is `pr-to-ready`'s per-round vet-code review, with its inline comments, its thread replies, and its verdict comment.
 - **A deliverable whose substance is findings, a judgment, or a claim of absence goes through `review-findings` before it reaches that record.**
 - This covers an Investigation's report on any of its three routes.
 - It equally covers a named-deliverable run reaching a conclusion with no flow's procedure to place the step for it.
