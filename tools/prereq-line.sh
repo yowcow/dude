@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Read the prerequisite line out of an issue body: the one line
 # `Blocked-By: #<n>` plan-work writes into a stacked child, which
-# implement-work's resolve-base.sh reads to pick the base.
+# tools/read-prereq-pr.sh reads to pick the base.
 # Format and reasons: skills/implement-work/references/base-branch.md.
 #
 # Only `Blocked-By: #<n>` exactly, alone on its line, is well formed; a

@@ -25,21 +25,14 @@
 # the remote's own HEAD (resolve-default-branch.sh); every row asserts 0 gh
 # calls.
 #
-# RED verification (see tests/README.md) -- the trailer scan used to walk to
-# root, so a branch that recorded nothing picked up whatever Base-Branch it
-# inherited from shared history and handed that branch back as --base (#171):
-#   tmp="$(mktemp -d)"
-#   git show bb8d8b8^:skills/pr-to-ready/scripts/resolve-pr-base.sh >"$tmp/old.sh"
-#   SUT="$tmp/old.sh" tests/run.sh tests/tools/resolve-pr-base_test.sh
-#
+# RED verification (see tests/README.md):
 #   A copy of the *current* script needs the whole tools/ tree beside it
 #   (`cp -R tools "$tmp/tools"`, then `SUT="$tmp/tools/<copy>.sh"`): on every
 #   row that reaches a real sibling it resolves that sibling through dirname
 #   "$0", so a lone copy answers STOP ask-default-branch (or fails outright)
 #   there and the failures say nothing about the mutation. The four stubbed
 #   rows at the end are the exception -- they copy the SUT into a tools/ tree
-#   that already holds every sibling, so a lone copy is enough for those. The
-#   bb8d8b8^ version above predates the extractions and needs no sibling.
+#   that already holds every sibling, so a lone copy is enough for those.
 #
 #   RED for the move from the trailer to the issue (#847), both against the
 #   script as of origin/master, placed in a copy of tools/ (`cp -R tools
@@ -54,12 +47,6 @@
 #     `readable-trailer-is-ignored` answers `NEED prereq.head=acme:stale-base
 #     prereq.head-pr` instead of `BASE main`: `not ok 16/33` (the four stubbed reader rows and
 #     their two tallies fail too, as the wrapper is not copied beside old.sh).
-#
-#   The reader-boundary rows at the end of this file are RED the ordinary way:
-#   point SUT= at the pre-fix script
-#   (`git show 8410c39^:tools/resolve-pr-base.sh`) dropped into a copy of
-#   tools/ that holds every sibling, and only those four rows and their two
-#   stderr tallies fail: `not ok 6/29`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
