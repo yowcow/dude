@@ -199,7 +199,7 @@ run_sut() {
 # run_in <work-dir> <argv...>
 # Runs the script under test with <work-dir> as cwd, then returns to the
 # repository root. Almost every script under test reads cwd's repository --
-# its origin, its HEAD, its trailers -- so a row has to run from inside its
+# its origin and its HEAD -- so a row has to run from inside its
 # own fixture repository rather than from the scripts directory. A row run
 # from the wrong directory can pass for the wrong reason: a script that
 # reached its sibling through a cwd-relative path instead of
@@ -234,19 +234,6 @@ tally() {
   total=$((total + 1))
   if ! "$@"; then
     failed=$((failed + 1))
-  fi
-}
-
-# commit_msg <subject> <base-branch|->   a message for git_repo_commit
-# Carries a Base-Branch trailer unless the second argument is `-`. The trailer
-# goes in a paragraph of its own because that is where git's trailer parser
-# looks: appended to the subject line it is not a trailer at all, and a script
-# reading it with `git interpret-trailers` would see none.
-commit_msg() {
-  if [ "$2" = '-' ]; then
-    printf '%s\n' "$1"
-  else
-    printf '%s\n\nBase-Branch: %s\n' "$1" "$2"
   fi
 }
 

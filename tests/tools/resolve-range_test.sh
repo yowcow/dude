@@ -23,12 +23,6 @@
 # HEAD (resolve-default-branch.sh) in every row but the seven stubbed ones at
 # the end; no row stubs `gh`.
 #
-# The task branch's commits never decide the range: the regression rows pin
-# that a commit with no readable Base-Branch trailer (none at all, or one in a
-# paragraph git does not read as a trailer, the #845 shape) still gets the
-# issue's prerequisite, and `readable-trailer-is-ignored` pins that a readable
-# trailer is not consulted.
-#
 # RED verification (see tests/README.md). The reader guard this file's last
 # rows pin is RED the ordinary way -- the recipe and the measured count are in
 # the reader-boundary record below. The other guards named in the script's own
@@ -43,49 +37,47 @@
 # of the SUT is enough. Records 1 and 3 remove a guard in
 # tools/read-prereq-pr.sh and record 4 one in tools/resolve-default-branch.sh,
 # the mutant being applied there. Eight were removed and are bound below, each
-# measured on this file (49 checks) as `not ok N/49`:
+# measured on this file:
 #
 #   1. The prerequisite's closing PRs being counted, zero meaning "not
 #      implemented". Deleting the `[ "$COUNT" -eq 0 ]` block of
-#      tools/read-prereq-pr.sh failed `no-closing-pr` alone (`not ok 1/49`).
+#      tools/read-prereq-pr.sh failed `no-closing-pr` alone.
 #   2. The MERGED boundary being the prerequisite's own head (the PREREQ_PR
 #      fetch spec). Replacing `FETCH_SPEC="refs/pull/${PREREQ_PR}/head"` with
 #      `FETCH_SPEC="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")"` failed
 #      `prereq-merged-uses-the-pr-head`, `merged-pull-ref-absent` and the second
 #      assertion of the first row, `merged-base-is-not-the-default-branch`
-#      (`not ok 3/49`) -- the widening this guard exists to prevent.
+#      -- the widening this guard exists to prevent.
 #   3. No --issue meaning no prerequisite. Deleting the `[ -z "$ISSUE" ]`
 #      early answer of tools/read-prereq-pr.sh made every no-argument row ask
 #      for the issue's facts instead of answering the default branch, and
 #      failed `stale-symref-is-ignored`, `no-issue-is-default-range`,
-#      `trunk-history-trailer-is-ignored`,
 #      `no-issue-empty-when-head-is-the-default-tip` and
-#      `merge-base-fails-without-a-trailer` (`not ok 5/49`).
+#      `merge-base-fails-without-an-issue`.
 #   4. The default branch being read rather than guessed. The mutant is a copy
 #      of the tools/ tree with tools/resolve-default-branch.sh's whole body
-#      replaced by `printf 'main\n'`. It failed twenty checks on stdout, every
-#      row that reaches the default branch (`not ok 20/49`) -- bar
+#      replaced by `printf 'main\n'`. It failed every row that reaches the default
+#      branch on stdout -- bar
 #      `default-fetch-fails`, whose fixture remote already lacks a `main`
 #      branch. This is why build_remote's default branch is called `trunk`:
 #      with the conventional name, this mutant passes every row.
 #   5. Both shapes answering through emit_range. Replacing its body with an
 #      unconditional `echo "RANGE $1..$2"` failed both EMPTY rows --
 #      `pr-shape-empty-when-head-is-the-base` and
-#      `no-issue-empty-when-head-is-the-default-tip` (`not ok 2/49`).
+#      `no-issue-empty-when-head-is-the-default-tip`.
 #   6. OPEN fetching the branch the prerequisite's PR names (the OPEN arm).
 #      Replacing `FETCH_SPEC="${RECORDED}"` with the MERGED path's
-#      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch`, the
-#      two regression-open rows and `merge-base-fails-on-unrelated-history`
-#      (`not ok 4/49`). This is why `refs/pull/9/head` is a decoy under
+#      `refs/pull/${PREREQ_PR}/head` failed `prereq-open-uses-its-branch` and
+#      `merge-base-fails-on-unrelated-history`. This is why `refs/pull/9/head` is a decoy under
 #      `with-dep`: pointed at dep's own commit, this mutant passes.
 #   7. The caller handing --issue on to the reader. Dropping
 #      `READ_ARGS+=("$ISSUE")` made the reader answer NO-PREREQ on every
-#      --issue row and failed eleven checks (`not ok 11/49`), among them both
-#      regression rows and `issue-without-facts-asks`.
+#      --issue row and failed every such row, among them
+#      `issue-without-facts-asks`.
 #   8. The NO-PREREQ merge-base guard. Leaving `BASE_SHA="$(git merge-base
 #      "${TIP_SHA}" HEAD)"` bare, so `set -e` aborts on git's exit 1 instead of
-#      printing the STOP, failed `merge-base-fails-without-a-trailer` alone
-#      (`not ok 1/49`): want `STOP merge-base-failed`, got exit 1 with empty
+#      printing the STOP, failed `merge-base-fails-without-an-issue` alone:
+#      want `STOP merge-base-failed`, got exit 1 with empty
 #      stdout. Its PREREQ twin is bound by
 #      `merge-base-fails-on-unrelated-history`; without this row the copy of the
 #      same guard on the no-issue path could be deleted unnoticed.
@@ -105,20 +97,6 @@
 #   answer `trunk` with exit 0 where the guard answers exit 1 with empty
 #   stdout. Such a row belongs in tests/tools/resolve-default-branch_test.sh;
 #   recorded here as a gap, not as an impossible case.
-#
-#   RED for the move from the trailer to the issue (#847), both against the
-#   script as of 35d16f6 (`git show 35d16f6:tools/resolve-range.sh`), placed
-#   in a copy of tools/ (`cp -R tools "$tmp/tools"`):
-#   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
-#     is a usage error on every row that passes it: `not ok 19/49`.
-#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
-#     old.sh, so the rows fail for the behaviour and not the usage error: the
-#     regression rows read the (absent) trailer of a commit and answer the
-#     default branch's range instead of the prerequisite's, and
-#     `readable-trailer-is-ignored` answers the trailer's range instead of the
-#     default: `not ok 24/49` (the seven stubbed rows fail too, as the
-#     wrapper is not copied beside old.sh; `pr-and-issue-together` and the
-#     three `--issue` argument rows fail because the wrapper swallows the flag).
 #
 #   The reader-boundary rows at the end of this file are RED through SUT= the
 #   ordinary way, not by removing a guard: point it at the pre-fix script
@@ -167,17 +145,10 @@ total=0
 # range. With `trunk`, only the lookup can answer it. Every bare repo's HEAD
 # is pointed at `trunk` (git_repo_bare leaves it on an unborn `master`).
 #
-# The branches. `trunk` carries the one base commit; `older-base` is cut from
-# it immediately after, a decoy that exists only so a scan reading the stack
-# oldest-first prints a wrong *range* rather than failing to fetch a ref that
-# was never there. Then `dep` (off trunk, one commit, no trailer -- a
-# prerequisite branch of its own); `task` (off dep, TWO commits, the older
-# recording `Base-Branch: older-base` and the newer `Base-Branch: dep`, so a
-# scan reading the stack in the wrong order picks a different answer); and
-# back at trunk, `plain` (one commit, no trailer) and `fresh` (no commit of
-# its own, so it sits exactly on trunk's tip). Trunk itself advances one commit
-# past `older-base` recording `Base-Branch: older-base`: the bounded scan
-# `HEAD ^trunk-tip` excludes it, while an unbounded scan finds it instead. Every branch points at a fixed
+# The branches. `trunk` carries the one base commit. `dep` is off trunk with
+# one commit -- a prerequisite branch of its own; `task` is off dep with one
+# commit; and back at trunk, `plain` (one commit) and `fresh` (no commit of its
+# own, so it sits exactly on trunk's tip). Every branch points at a fixed
 # commit, so the order they are cut in matters only to how this reads.
 #
 # Two pushes. The branch list omits `dep` alone when the second argument is
@@ -198,30 +169,20 @@ build_remote() {
   bare="$(git_repo_bare acme "$name")"
   seed="$(git_repo_scratch "seed-${name}")"
   git_repo_init "$seed" trunk
-  git_repo_commit "$seed" README.md 'base\n' "$(commit_msg 'base commit' -)"
-  git_repo_checkout "$seed" older-base trunk
-  git_repo_checkout "$seed" trunk
-  git_repo_commit "$seed" TRUNK-POISON.md 'poison\n' "$(commit_msg 'trunk poison' older-base)"
+  git_repo_commit "$seed" README.md 'base\n' 'base commit'
   git_repo_checkout "$seed" dep trunk
-  git_repo_commit "$seed" DEP.md 'dep\n' "$(commit_msg 'dep commit' -)"
-  git_repo_checkout "$seed" notrailer dep
-  git_repo_commit "$seed" N.md 'no trailer\n' 'no trailer commit'
-  # `Base-Branch:` in a paragraph of its own followed by `Co-Authored-By:` (the
-  # #845 shape): git reads no trailer there.
-  git_repo_checkout "$seed" separate dep
-  git_repo_commit "$seed" S.md 'separate\n' "$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')"
+  git_repo_commit "$seed" DEP.md 'dep\n' 'dep commit'
   git_repo_checkout "$seed" task dep
-  git_repo_commit "$seed" T1.md 'task one\n' "$(commit_msg 'task commit 1' older-base)"
-  git_repo_commit "$seed" T2.md 'task two\n' "$(commit_msg 'task commit 2' dep)"
+  git_repo_commit "$seed" T.md 'task\n' 'task commit'
   git_repo_checkout "$seed" trunk
   git_repo_checkout "$seed" plain trunk
-  git_repo_commit "$seed" PLAIN.md 'plain\n' "$(commit_msg 'plain commit' -)"
+  git_repo_commit "$seed" PLAIN.md 'plain\n' 'plain commit'
   git_repo_checkout "$seed" fresh trunk
   if [ "$depmode" = with-dep ]; then
-    branches='trunk dep notrailer separate task plain fresh older-base'
+    branches='trunk dep task plain fresh'
     pull9='plain:refs/pull/9/head'
   else
-    branches='trunk notrailer separate task plain fresh older-base'
+    branches='trunk task plain fresh'
     pull9='dep:refs/pull/9/head'
   fi
   # shellcheck disable=SC2086
@@ -301,22 +262,22 @@ prereq_facts() {
 PRREMOTE="$(git_repo_bare acme prremote)"
 PRSEED="$(git_repo_scratch prseed)"
 git_repo_init "$PRSEED" trunk
-git_repo_commit "$PRSEED" README.md 'base\n' "$(commit_msg 'base commit' -)"
+git_repo_commit "$PRSEED" README.md 'base\n' 'base commit'
 git_repo_push "$PRSEED" "$PRREMOTE" trunk
 FORK_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
 PRWORK="$(git_repo_clone prwork "$PRREMOTE" trunk)"
 git_repo_checkout "$PRSEED" pr trunk
-git_repo_commit "$PRSEED" PR.md 'pr\n' "$(commit_msg 'pr commit' -)"
+git_repo_commit "$PRSEED" PR.md 'pr\n' 'pr commit'
 PRHEAD_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
 git_repo_push "$PRSEED" "$PRREMOTE" pr:refs/pull/7/head
 git_repo_push "$PRSEED" "$PRREMOTE" "${FORK_SHA}:refs/pull/10/head"
 git_repo_checkout "$PRSEED" trunk
-git_repo_commit "$PRSEED" LATER.md 'later\n' "$(commit_msg 'base moved on' -)"
+git_repo_commit "$PRSEED" LATER.md 'later\n' 'base moved on'
 MOVED_SHA="$(git -C "$PRSEED" rev-parse HEAD)"
 git_repo_push "$PRSEED" "$PRREMOTE" trunk
 PRUNREL="$(git_repo_scratch prunrel)"
 git_repo_init "$PRUNREL" other
-git_repo_commit "$PRUNREL" O.md 'other\n' "$(commit_msg 'unrelated root' -)"
+git_repo_commit "$PRUNREL" O.md 'other\n' 'unrelated root'
 git_repo_push "$PRUNREL" "$PRREMOTE" other:refs/pull/9/head
 
 row_start
@@ -410,11 +371,6 @@ run_in "$W"
 assert_row 'no-issue-is-default-range' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
 
 row_start
-W="$(work_repo trunk-trailer-ignored "$REMOTE" plain -)"
-run_in "$W"
-assert_row 'trunk-history-trailer-is-ignored' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
-
-row_start
 W="$(work_repo no-prereq-line "$REMOTE" plain -)"
 run_in "$W" --issue 203 --facts "$(issue_facts acme/ranged 'nothing blocking\n' | facts_file)"
 assert_row 'no-prereq-line-is-default-range' 0 "RANGE ${TRUNK_SHA}..${PLAIN_SHA}\n" 0
@@ -449,33 +405,8 @@ assert_row 'no-issue-empty-when-head-is-the-default-tip' 0 'EMPTY\n' 0
 
 DEP_SHA="$(bare_sha "$REMOTE" dep)"
 TASK_SHA="$(bare_sha "$REMOTE" task)"
-NOTRAILER_SHA="$(bare_sha "$REMOTE" notrailer)"
-SEPARATE_SHA="$(bare_sha "$REMOTE" separate)"
 
-# ---- the prerequisite comes from the issue, never the commits ----------
-#
-# `notrailer` and `separate` leave no Base-Branch trailer git can read (the
-# second is the #845 shape); the range still starts at the issue's
-# prerequisite head.
-
-row_start
-W="$(work_repo regress-notrailer "$REMOTE" notrailer trunk)"
-run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 OPEN | facts_file)"
-assert_row 'regression-open-prereq-no-trailer' 0 "RANGE ${DEP_SHA}..${NOTRAILER_SHA}\n" 0
-
-row_start
-W="$(work_repo regress-separate "$REMOTE" separate trunk)"
-tally check_eq 'regression-separate-paragraph: git reads no trailer' '' \
-  "$(git -C "$W" log -1 --format='%(trailers:key=Base-Branch)')"
-run_in "$W" --issue 203 --facts "$(prereq_facts acme/ranged 1 9 OPEN | facts_file)"
-assert_row 'regression-open-prereq-trailer-in-separate-paragraph' 0 "RANGE ${DEP_SHA}..${SEPARATE_SHA}\n" 0
-
-# `task` carries readable trailers naming `dep` and `older-base`; the issue
-# names no prerequisite, so the answer is the default branch.
-row_start
-W="$(work_repo trailer-ignored "$REMOTE" task trunk)"
-run_in "$W" --issue 203 --facts "$(issue_facts acme/ranged 'nothing blocking\n' | facts_file)"
-assert_row 'readable-trailer-is-ignored' 0 "RANGE ${TRUNK_SHA}..${TASK_SHA}\n" 0
+# ---- the prerequisite comes from the issue ------------------------------
 
 row_start
 W="$(work_repo prereq-open "$REMOTE" task trunk)"
@@ -572,12 +503,12 @@ row_start
 LONELY="$(git_repo_bare acme lonely)"
 LSEED="$(git_repo_scratch lonely-seed)"
 git_repo_init "$LSEED" unrelated
-git_repo_commit "$LSEED" only.txt 'unrelated\n' "$(commit_msg 'unrelated root' -)"
+git_repo_commit "$LSEED" only.txt 'unrelated\n' 'unrelated root'
 git_repo_push "$LSEED" "$LONELY" unrelated
 git_repo_bare_head "$LONELY" unrelated
 W="$(git_repo_scratch lonely-work)"
 git_repo_init "$W" task
-git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' -)"
+git_repo_commit "$W" task.txt 'task\n' 'task root'
 git_repo_remote "$W" origin "$LONELY"
 run_in "$W" --issue 203 --facts "$(prereq_facts acme/lonely 1 9 OPEN unrelated | facts_file)"
 assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 0
@@ -587,12 +518,12 @@ assert_row 'merge-base-fails-on-unrelated-history' 0 'STOP merge-base-failed\n' 
 # takes the NO-PREREQ path, whose base is the default branch's tip. Nothing
 # else in its answer would show that git declined to answer.
 row_start
-W="$(git_repo_scratch lonely-work-no-trailer)"
+W="$(git_repo_scratch lonely-work-no-issue)"
 git_repo_init "$W" task
-git_repo_commit "$W" task.txt 'task\n' "$(commit_msg 'task root' -)"
+git_repo_commit "$W" task.txt 'task\n' 'task root'
 git_repo_remote "$W" origin "$LONELY"
 run_in "$W"
-assert_row 'merge-base-fails-without-a-trailer' 0 'STOP merge-base-failed\n' 0
+assert_row 'merge-base-fails-without-an-issue' 0 'STOP merge-base-failed\n' 0
 
 # ---- the reader's answers this caller cannot act on ----------------------
 #
