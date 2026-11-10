@@ -20,8 +20,9 @@
 # 'draft only, body not carried' and 'body read back differs'; comparing the
 # bodies byte-exact (`cmp`) fails 'body read back with a trailing newline'.
 #
-# The three facts-capture rows at the end are RED against `master`'s script in
-# a full tree beside a tools/ copy: `not ok 3/39`.
+# The three facts-capture rows at the end were RED against the pre-move script
+# (b9882a3, `skills/review-pr/scripts/post-review.sh`, copied in its skills/
+# shape beside a tools/ tree): `not ok 3/39`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
