@@ -2,13 +2,8 @@
 # Read a branch's Base-Branch trailer back and report the prerequisite's PR by
 # its *current* state, never by whether its branch still exists. One line on
 # stdout, always: NO-TRAILER | PREREQ <branch> <n> <OPEN|MERGED> |
-# NEED <token>... | STOP <slug>. Implements "## Reading the trailer back" in
-# skills/implement-work/references/base-branch.md; the rows where the two readers
-# differ stay with the callers.
-#
-# Shared by tools/resolve-pr-base.sh and tools/resolve-range.sh, called by no
-# SKILL.md: do not delete as unreferenced. The revs come from the caller and go
-# straight to `git log`, because the two callers scan different histories.
+# NEED <token>... | STOP <slug>. Called by no script since #847 (the callers read
+# the prerequisite with tools/read-prereq-pr.sh); kept until its removal in #848.
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.

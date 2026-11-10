@@ -16,7 +16,7 @@
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: ensure-draft-pr.sh <branch> [<base-repo>] [--created <base>] [--facts <file>]
+# Usage: ensure-draft-pr.sh <branch> [<base-repo>] [--issue <n>] [--created <base>] [--facts <file>]
 #
 # Output contract (single source; skills/pr-to-ready/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
@@ -24,19 +24,28 @@
 #     draft PR in <repo> from <head> onto <base>, then call again with the
 #     same <branch> [<base-repo>], plus --created <base> and facts read afresh
 #     into a new file; without the base-repo the read-back looks in origin.
+#     <base> is the default branch, or, when the --issue issue has a
+#     `Blocked-By: #N` line whose prerequisite PR is OPEN, that PR's head.
+#     Without --issue it is always the default branch: pass it only for an
+#     issue of origin's repository. The read-back ignores --issue.
 #   PR <n> created draft=<bool> base=<base> url=<url> -- the read-back after CREATE.
 #   NEED <token>... -- read those facts and call again with --facts <file>.
+#     Once a PR must be created it may also name the issue's facts
+#     (`repo=... issue.number=... issue.body-file`, then `prereq.number=...
+#     prereq.closing-pr`, then `pr.number=... pr.state pr.head.ref pr.head.owner=...`).
 #   STOP ask-base-repo -- origin is a fork or has a sibling remote, and no
 #     base-repo was given: ask which repository to target, call again with it.
-#   STOP <slug> -- no PR was opened; report the stop and hand the branch over regardless.
+#   STOP <slug> -- no PR was opened; report the stop and hand the branch over
+#     regardless.
 #
 # Parent-targeted limitation: [base-repo] reaches the PR lookup and the
 # default-branch name; the fetches and the prerequisite lookup still run
-# against origin, in the child's context.
+# against origin, in the child's context, so --issue is passed only for an
+# issue of origin's repository.
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <branch> [<base-repo>] [--created <base>] [--facts <file>]" >&2
+  echo "Usage: $0 <branch> [<base-repo>] [--issue <n>] [--created <base>] [--facts <file>]" >&2
   exit 2
 }
 
@@ -44,11 +53,16 @@ BRANCH=''
 BASE_REPO=''
 CREATED=''
 FACTS=''
+ISSUE=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --created | --facts)
+    --created | --facts | --issue)
       if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
-      if [ "$1" = --created ]; then CREATED="$2"; else FACTS="$2"; fi
+      case "$1" in
+        --created) CREATED="$2" ;;
+        --facts) FACTS="$2" ;;
+        *) ISSUE="$2" ;;
+      esac
       shift 2
       ;;
     -*) usage ;;
@@ -66,6 +80,7 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 if [ -z "$BRANCH" ]; then usage; fi
+if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[1-9][0-9]*$ ]]; then usage; fi
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -197,6 +212,9 @@ fi
 RESOLVED_ARGS=("$BRANCH" --facts "$FACTS")
 if [ -n "$BASE_REPO" ]; then
   RESOLVED_ARGS=("$BRANCH" "$TARGET" --facts "$FACTS")
+fi
+if [ -n "$ISSUE" ]; then
+  RESOLVED_ARGS+=(--issue "$ISSUE")
 fi
 if ! RESOLVED="$(bash "${SCRIPT_DIR}/resolve-pr-base.sh" "${RESOLVED_ARGS[@]}")"; then
   echo "STOP base-resolve-failed"

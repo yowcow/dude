@@ -1,34 +1,36 @@
 #!/usr/bin/env bash
 # Resolve the committed range this review covers, printed as two SHAs. Given a PR
 # number, the range is the PR's own head and its merge-base with the base OID its
-# record carries, both fetched — never derived from the local checkout. Given no
-# argument, the range runs from the trailer-read-back base to HEAD, never assumed:
-# falling back to the default branch where a prerequisite is recorded sweeps
-# rewritten prerequisite commits into the range.
-# Spec: skills/implement-work/references/base-branch.md, "## The contract",
-# "## Reading the trailer back" and "## Resolving the default branch" (this script
+# record carries, both fetched — never derived from the local checkout. Given no PR
+# number, the range runs from the base read back from the issue's
+# `Blocked-By: #N` line to HEAD, never assumed: falling back to the default
+# branch where a prerequisite is recorded sweeps rewritten prerequisite commits
+# into the range. Without --issue the base is the default branch.
+# Spec: skills/implement-work/references/base-branch.md, "## Reading the
+# prerequisite back" and "## Resolving the default branch" (this script
 # implements that table's `review-code`'s `<base>` column).
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: resolve-range.sh [pr-number] [--facts <file>]
+# Usage: resolve-range.sh [pr-number | --issue <n>] [--facts <file>]
 # Output: RANGE <sha>..<sha> | EMPTY | NEED <token>... | STOP <slug>
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 [pr-number] [--facts <file>]" >&2
+  echo "Usage: $0 [pr-number | --issue <n>] [--facts <file>]" >&2
   exit 2
 }
 
 PR=''
 FACTS=''
+ISSUE=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --facts)
+    --facts | --issue)
       if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
-      FACTS="$2"
+      if [ "$1" = --facts ]; then FACTS="$2"; else ISSUE="$2"; fi
       shift 2
       ;;
     -*) usage ;;
@@ -39,6 +41,10 @@ while [ "$#" -gt 0 ]; do
       ;;
   esac
 done
+if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[1-9][0-9]*$ ]]; then usage; fi
+# A PR's range is read from its own record; an issue passed beside it would be
+# ignored silently.
+if [ -n "$PR" ] && [ -n "$ISSUE" ]; then usage; fi
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
@@ -108,13 +114,9 @@ fi
 
 # The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
-# Fetch-default-first with a bounded scan, mirroring
-# tools/resolve-pr-base.sh: the scan must stop at the
-# default-branch tip, or a branch that recorded nothing picks up whatever
-# Base-Branch trailer shared history left behind. The tip is saved as a SHA
-# because the prerequisite fetch below rewrites FETCH_HEAD; the saved SHA is
-# also the NO-TRAILER base, so that path fetches nothing further. A
-# remote-tracking ref is not named in the exclusion: it goes stale with the
+# The tip is saved as a SHA because the prerequisite fetch below rewrites
+# FETCH_HEAD; the saved SHA is also the NO-PREREQ base, so that path fetches
+# nothing further. A remote-tracking ref is not named: it goes stale with the
 # clone's fetch history, while FETCH_HEAD is what the fetch just wrote.
 DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
@@ -123,28 +125,23 @@ if ! TIP_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
   exit 0
 fi
 
-# The trailer scan, the prerequisite lookup, and the three answers both
-# readers print identically live in
-# tools/read-base-trailer.sh -- see its header. What is
-# left here is base-branch.md's `review-code`'s `<base>` column: the three
-# rows where the two readers disagree.
-#
-# The revs are chosen here rather than there because it is this caller's
-# question: local HEAD, bounded by the fetched default tip, since this skill
-# reviews the checkout it is in.
-READ_ARGS=(HEAD "^${TIP_SHA}")
-if [ -n "$FACTS" ]; then
-  READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")
-fi
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" "${READ_ARGS[@]}")"; then
-  echo "STOP trailer-read-failed"
+# The prerequisite lookup and the answers it prints live in
+# tools/read-prereq-pr.sh -- see its header. What is left here is
+# base-branch.md's `review-code`'s `<base>` column. Without --issue the reader
+# answers NO-PREREQ and asks for no facts.
+READ_ARGS=()
+if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
+if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi
+# An empty array is an unbound-variable error under set -u before bash 4.4.
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-prereq-pr.sh" ${READ_ARGS[@]+"${READ_ARGS[@]}"})"; then
+  echo "STOP prereq-read-failed"
   exit 0
 fi
 
 read -r KIND RECORDED PREREQ_PR STATE <<<"$ANSWER"
 
 case "${KIND}" in
-  NO-TRAILER)
+  NO-PREREQ)
     # The default tip is already fetched: merge-base against the saved SHA
     # rather than fetching again. FETCH_HEAD still holds it, but the name
     # would not survive a later fetch, and the SHA does.
@@ -173,14 +170,14 @@ case "${KIND}" in
         ;;
       *)
         printf 'unrecognised prerequisite state: %s\n' "${STATE}" >&2
-        echo "STOP trailer-answer-malformed"
+        echo "STOP prereq-answer-malformed"
         exit 0
         ;;
     esac
     ;;
   *)
-    printf 'unrecognised answer from read-base-trailer.sh: %s\n' "${ANSWER}" >&2
-    echo "STOP trailer-answer-malformed"
+    printf 'unrecognised answer from read-prereq-pr.sh: %s\n' "${ANSWER}" >&2
+    echo "STOP prereq-answer-malformed"
     exit 0
     ;;
 esac

@@ -38,6 +38,19 @@
 #   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
 #   their stderr tally, plus the three facts-capture rows.
 #
+# RED for the move from the trailer to the issue (#847), with that recipe and
+# `git show 35d16f6:tools/ensure-draft-pr.sh` as the mutation (the copy
+# holds the new resolve-pr-base.sh):
+#   - `SUT="$tmp/tools/old.sh"` does not know `--issue`, so every row that
+#     passes it is a usage error: `not ok 9/70`.
+#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
+#     old.sh, so the rows fail for the behaviour: the copy's resolve-pr-base.sh
+#     gets no issue and answers the default branch, so the two `base=dep`
+#     rows answer `base=main`, as do the rows that expect a NEED or STOP from the
+#     issue (the stubbed rows
+#     at the end fail too, as the wrapper is not copied beside old.sh):
+#     `not ok 15/70`.
+#
 # The branch's PR, the fork question and the prerequisite's PR all arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
 # tools/facts.sh's; what is under test here is which facts this script asks
@@ -48,11 +61,10 @@
 #     step 1 has just seen the branch on the remote (or pushed it there), so
 #     the sibling's fetch of it cannot fail without the branch disappearing
 #     mid-run. Not fixturable offline.
-#   - `STOP trailer-read-failed` from the sibling has no row: through the real
-#     sibling it needs `git log` to fail after the fetches that created the two
-#     refs it names, and the stubbed rows at the end answer
-#     `STOP base-resolve-failed` before any pass-through, so neither shape
-#     reaches it.
+#   - `STOP prereq-read-failed` from the sibling has no row: through the real
+#     sibling it needs the prerequisite reader to exit non-zero, and the
+#     stubbed rows at the end answer `STOP base-resolve-failed` before any
+#     pass-through, so neither shape reaches it.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -97,10 +109,20 @@ total=0
 #
 # task_commit <repo> <branch> <trailer> -- the task commit shape: branch off
 # main, then commit T.md with the trailer in the subject.
+#
+# The trailer `@separate` stands for the #845 shape instead: `Base-Branch:` in a
+# paragraph of its own with `Co-Authored-By:` after it, which git does not read
+# as a trailer. It is built here rather than by commit_msg, which only makes
+# readable ones.
 task_commit() {
-  local repo="$1" branch="$2" trailer="$3"
+  local repo="$1" branch="$2" trailer="$3" msg
   git_repo_checkout "$repo" "$branch" main
-  git_repo_commit "$repo" T.md 'task\n' "$(commit_msg 'task commit' "$trailer")"
+  if [ "$trailer" = '@separate' ]; then
+    msg="$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')"
+  else
+    msg="$(commit_msg 'task commit' "$trailer")"
+  fi
+  git_repo_commit "$repo" T.md 'task\n' "$msg"
 }
 
 # template <branch> <where> <trailer> -- a bare repo built once per shape:
@@ -177,16 +199,30 @@ fork() {
 # one_repo_fork <isFork> -- the fork list when a row's file already holds a `repo=` line (from prereq_facts)
 one_repo_fork() { printf 'repo.fork.total=1\nrepo.fork=%s\n' "$1"; }
 
-# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- the
-# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
-# concatenate with other lines first).
+# body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
+body() {
+  local f
+  f="$(mktemp "${HARNESS_TMP}/body.XXXXXX")"
+  printf '%b' "$1" >"$f"
+  printf '%s\n' "$f"
+}
+
+# issue_facts <repo> <body-text> -- the issue's facts (issue 203), on stdout
+issue_facts() {
+  printf 'repo=%s\nissue.number=203\nissue.body-file=%s\n' "$1" "$(body "$2")"
+}
+
+# prereq_facts <repo> <total> [<pr> [<state> [<head>]]] -- the facts of an
+# issue carrying `Blocked-By: #77` and that prerequisite's closing PRs, on
+# stdout (pipe into facts_file, or concatenate with other lines first).
 prereq_facts() {
-  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
-  if [ "$#" -ge 4 ]; then
-    printf 'prereq.head-pr=%s\n' "$4"
+  issue_facts "$1" 'Blocked-By: #77\n'
+  printf 'prereq.number=77\nprereq.closing-pr.total=%s\n' "$2"
+  if [ "$#" -ge 3 ]; then
+    printf 'prereq.closing-pr=%s\n' "$3"
   fi
-  if [ "$#" -ge 5 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$4" "$5" "${6-${2#*:}}" "${7-${2%%:*}}"
+  if [ "$#" -ge 4 ]; then
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$3" "$4" "${5-dep}" "${1%%/*}"
   fi
 }
 
@@ -382,6 +418,8 @@ assert_row 'base-repo-is-lower-cased' 0 'CREATE repo=acme/base-case head=feature
 # The one parent-target row that adds the remote. The bare is also origin's
 # sibling path, so it does not tell the two rungs apart:
 # resolve-default-branch_test.sh `repo-arg-selects-its-remote` pins the match.
+# Also the cross-repo case: a parent differing from origin, no --issue, so the
+# base is the parent's default branch and no issue facts are asked for.
 row_start
 fixture parent-q feature remote
 git_repo_remote "$FIXTURE_WORK" upstream "$(parent_bare main)"
@@ -429,40 +467,61 @@ assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url
 #
 # Every fixture below is `fixture <name> feature remote [<trailer>]`, and
 # every row's file says no PR and "not a fork", so control always reaches the
-# sibling.
+# sibling. The base comes from the issue (`--issue 203`), never the commits:
+# the task commit carries no Base-Branch trailer git can read, or a readable
+# one that is ignored.
 
 row_start
-fixture prereq-ask feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-ask 0; fork prereq-ask 1 false; } | facts_file)"
-assert_row 'base-resolution-asks-for-the-prerequisite' 0 'NEED prereq.head=acme:dep prereq.head-pr\n' 0
+fixture prereq-ask feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-ask 0; fork prereq-ask 1 false; } | facts_file)"
+assert_row 'base-resolution-asks-for-the-issue' 0 'NEED issue.number=203 issue.body-file\n' 0
 
 row_start
-fixture prereq-open feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-open 0; one_repo_fork false; prereq_facts acme/prereq-open acme:dep 1 9 OPEN; } | facts_file)"
-assert_row 'an-open-prerequisite-becomes-the-base' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
+fixture prereq-open feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-open 0; one_repo_fork false; prereq_facts acme/prereq-open 1 55 OPEN; } | facts_file)"
+assert_row 'an-open-prerequisite-becomes-the-base-no-trailer' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
 
 row_start
-fixture prereq-merged feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-merged 0; one_repo_fork false; prereq_facts acme/prereq-merged acme:dep 1 9 MERGED; } | facts_file)"
+fixture prereq-separate feature remote @separate
+tally check_eq 'prereq-separate: git reads no trailer' '' \
+  "$(git -C "$FIXTURE_BARE" log -1 --format='%(trailers:key=Base-Branch)' feature)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-separate 0; one_repo_fork false; prereq_facts acme/prereq-separate 1 55 OPEN; } | facts_file)"
+assert_row 'an-open-prerequisite-becomes-the-base-trailer-in-separate-paragraph' 0 'CREATE repo=acme/prereq-separate head=feature base=dep\n' 0
+
+row_start
+fixture prereq-merged feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-merged 0; one_repo_fork false; prereq_facts acme/prereq-merged 1 55 MERGED; } | facts_file)"
 assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'CREATE repo=acme/prereq-merged head=feature base=main\n' 0
 
 row_start
-fixture prereq-abandoned feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-abandoned 0; one_repo_fork false; prereq_facts acme/prereq-abandoned acme:dep 1 9 CLOSED; } | facts_file)"
+fixture prereq-abandoned feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-abandoned 0; one_repo_fork false; prereq_facts acme/prereq-abandoned 1 55 CLOSED; } | facts_file)"
 assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 0
 
 row_start
-fixture prereq-none feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-none 0; one_repo_fork false; prereq_facts acme/prereq-none acme:dep 0; } | facts_file)"
-assert_row 'base-stop-prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 0
+fixture prereq-none feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-none 0; one_repo_fork false; prereq_facts acme/prereq-none 0; } | facts_file)"
+assert_row 'base-stop-prerequisite-has-no-closing-pr' 0 'STOP not-implemented\n' 0
 
 row_start
-fixture prereq-several feature remote dep
-run_in "$FIXTURE_WORK" feature --facts "$({ own prereq-several 0; one_repo_fork false; prereq_facts acme/prereq-several acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
+fixture prereq-several feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-several 0; one_repo_fork false; prereq_facts acme/prereq-several 2 55; printf 'prereq.closing-pr=56\n'; } | facts_file)"
 # Prints the same slug, STOP ask-multiple-prs, as several-prs-for-one-branch-
 # stop -- both are intended, and deliberately not redundant: one comes from
 # the SUT's own branch list, the other from the sibling's prerequisite facts.
 assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 0
+
+row_start
+fixture prereq-noline feature remote
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-noline 0; one_repo_fork false; issue_facts acme/prereq-noline 'nothing blocking\n'; } | facts_file)"
+assert_row 'issue-without-prereq-line-is-default' 0 'CREATE repo=acme/prereq-noline head=feature base=main\n' 0
+
+# Without --issue (the caller passes none for another repository's issue) the
+# issue's facts are never asked for.
+row_start
+fixture no-issue feature remote
+run_in "$FIXTURE_WORK" feature --facts "$({ own no-issue 0; fork no-issue 1 false; } | facts_file)"
+assert_row 'no-issue-flag-resolves-default-without-asking-for-the-issue' 0 'CREATE repo=acme/no-issue head=feature base=main\n' 0
 
 row_start
 fixture default-unknown feature remote
@@ -484,6 +543,11 @@ row_start
 fixture created feature remote
 run_in "$FIXTURE_WORK" feature --created main --facts "$({ own created 1 7; record 7 true feature main; } | facts_file)"
 assert_row 'created-pr-reads-back' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 0
+
+row_start
+fixture created-issue feature remote
+run_in "$FIXTURE_WORK" feature --created main --issue 203 --facts "$({ own created-issue 1 7; record 7 true feature main; } | facts_file)"
+assert_row 'created-read-back-ignores-issue' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 0
 
 row_start
 fixture created-ask feature remote
@@ -558,6 +622,21 @@ row_start
 fixture args-created feature remote
 run_in "$FIXTURE_WORK" feature --created
 assert_row 'created-flag-without-base' 2 '' 0
+
+row_start
+fixture args-issue-bare feature remote
+run_in "$FIXTURE_WORK" feature --issue
+assert_row 'issue-flag-without-value' 2 '' 0
+
+row_start
+fixture args-issue-text feature remote
+run_in "$FIXTURE_WORK" feature --issue abc
+assert_row 'issue-non-numeric' 2 '' 0
+
+row_start
+fixture args-issue-zero feature remote
+run_in "$FIXTURE_WORK" feature --issue 0
+assert_row 'issue-zero' 2 '' 0
 
 row_start
 fixture args-unknown feature remote
