@@ -135,7 +135,7 @@ prereq_facts() {
     printf 'prereq.closing-pr=%s\n' "$3"
   fi
   if [ "$#" -ge 4 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$3" "$4" "${5-dep}"
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$3" "$4" "${5-dep}" "${1%%/*}"
   fi
 }
 

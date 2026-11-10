@@ -116,7 +116,7 @@ if [ "$COUNT" -ge 2 ]; then
 fi
 fact PR prereq.closing-pr
 
-SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' pr.head.ref)
+SPECS+=("pr.number=${PR}" 'pr.state:OPEN,MERGED,CLOSED' pr.head.ref "pr.head.owner=${REPO%%/*}")
 need "${SPECS[@]}"
 fact STATE pr.state
 fact HEAD_REF pr.head.ref

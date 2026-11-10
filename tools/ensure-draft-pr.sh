@@ -32,7 +32,7 @@
 #   NEED <token>... -- read those facts and call again with --facts <file>.
 #     Once a PR must be created it may also name the issue's facts
 #     (`repo=... issue.number=... issue.body-file`, then `prereq.number=...
-#     prereq.closing-pr`, then `pr.number=... pr.state pr.head.ref`).
+#     prereq.closing-pr`, then `pr.number=... pr.state pr.head.ref pr.head.owner=...`).
 #   STOP ask-base-repo -- origin is a fork or has a sibling remote, and no
 #     base-repo was given: ask which repository to target, call again with it.
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over

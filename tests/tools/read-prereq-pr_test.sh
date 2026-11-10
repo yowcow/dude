@@ -63,7 +63,7 @@ round2() {
   } | facts_file
 }
 
-# round3 <state> [<head> [<pr>]] -- one closing PR, 55, and its record
+# round3 <state> [<head> [<pr> [<owner>]]] -- one closing PR, 55, and its record
 round3() {
   facts_file <<EOF
 repo=${REPO}
@@ -75,6 +75,7 @@ prereq.closing-pr.total=1
 pr.number=${3:-55}
 pr.state=$1
 pr.head.ref=${2-feature}
+pr.head.owner=${4:-acme}
 EOF
 }
 
@@ -163,7 +164,7 @@ assert_row 'prereq-read-as-another-issue' 0 'STOP fact-mismatch\n' 0
 row_start
 run_in "$W" --facts "$(round2 77 1 55)" 203
 assert_row 'one-closing-pr-asks-for-its-record' 0 \
-  'NEED pr.number=55 pr.state pr.head.ref\n' 0
+  'NEED pr.number=55 pr.state pr.head.ref pr.head.owner=acme\n' 0
 
 # ---- round 3: the PR's state -----------------------------------------------
 
@@ -186,6 +187,10 @@ assert_row 'state-unrecognised' 0 'STOP fact-enum\n' 0
 row_start
 run_in "$W" --facts "$(round3 OPEN feature 56)" 203
 assert_row 'pr-read-as-another-pr' 0 'STOP fact-mismatch\n' 0
+
+row_start
+run_in "$W" --facts "$(round3 OPEN feature 55 other-fork)" 203
+assert_row 'head-owned-by-another-repo' 0 'STOP fact-mismatch\n' 0
 
 row_start
 run_in "$W" --facts "$(round3 OPEN '')" 203
