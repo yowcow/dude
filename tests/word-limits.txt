@@ -4,7 +4,7 @@
 1596 skills/audit-code/SKILL.md
 2278 skills/implement-work/SKILL.md
 555 skills/implement-work/references/base-branch.md
-1259 skills/implement-work/references/facts.md
+1154 skills/implement-work/references/facts.md
 591 skills/implement-work/references/script-conventions.md
 419 skills/implement-work/references/stop-registry.md
 834 skills/investigate-anomaly/SKILL.md

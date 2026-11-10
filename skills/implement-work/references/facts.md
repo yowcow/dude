@@ -18,7 +18,7 @@ and **Waiting**.
   read once every page is read; stopped-before-last-page is a failed read,
   written as an empty total. `<name>.total=0` with no element lines is empty.
 - A `NEED`-pinned `name=value` identifier is written from the record actually
-  read — or, for a read parameter (`target`, `head`, `prereq.head`), from the
+  read — or, for a read parameter (`target`, `head`), from the
   read actually made — never copied from the `NEED` line: the copy passes
   whichever record was read.
 - A fact that could not be read is written empty; an empty value or `null`
@@ -40,7 +40,7 @@ resolves there, and the same number names a different PR.
 
 The number on the PR record read. Pinned from the script's argument or the
 `NEED` line. Read in the repository its list was read in: `target` for
-`head.open-pr`, `repo` for `prereq.head-pr` and `prereq.closing-pr`.
+`head.open-pr`, `repo` for `prereq.closing-pr`.
 
 ### `pr.author.login`
 
@@ -71,20 +71,6 @@ The number of each PR that record names as closing it, open or merged, with
 `prereq.closing-pr.total` the count the record reports. Written as read: a
 count beside a shortened reference list stops the script, never one PR read
 as the only one.
-
-### `prereq.head`
-
-`<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
-`repo`'s owner. Filter with the owner: a filter without one has been measured
-ignored, returning unrelated PRs. The PR record read next pins its own head —
-branch and owner — which catches a filter the means ignored.
-
-### `prereq.head-pr` (list)
-
-The number of each PR in `repo`, in any state, whose head is `prereq.head`,
-with `prereq.head-pr.total` the count the source reports. Read by the head
-branch's name, which a PR record keeps after the branch is deleted. Numbers
-from the list, state from each PR's own record.
 
 ### `pr.state`
 
