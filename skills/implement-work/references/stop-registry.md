@@ -47,8 +47,8 @@ such script.
 | `no-prereq-pr` | `tools/read-base-trailer.sh` |
 | `not-implemented` | `tools/read-prereq-pr.sh` |
 | `pr-not-created` | `tools/ensure-draft-pr.sh` |
-| `prereq-line-malformed` | `tools/read-prereq-pr.sh` |
 | `prereq-answer-malformed` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
+| `prereq-line-malformed` | `tools/read-prereq-pr.sh` |
 | `prereq-read-failed` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh` |
 | `repo-lookup-failed` | `tools/read-base-trailer.sh`, `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
