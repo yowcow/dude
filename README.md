@@ -117,7 +117,7 @@ repository or path needs sweeping for what to fix, and hands its report to
 
 dude requires [Superpowers](https://github.com/obra/superpowers#installation). Install it first, in the same runtime you are installing dude into. dude's skills name Superpowers procedures and neither ship nor reimplement them, so those calls have nowhere to go until Superpowers is present.
 
-It also requires [jq](https://jqlang.github.io/jq/), which the shared `tools/build-review-payload.sh` and `tools/post-review.sh` use to build and post `review-pr`'s review. Without it they stop with exit `1` naming it, rather than reporting your arguments as the fault.
+It also requires [jq](https://jqlang.github.io/jq/), which the shared `tools/build-review-payload.sh` and `tools/post-review.sh` use to build and post a PR review. Without it they stop with exit `1` naming it, rather than reporting your arguments as the fault.
 
 ## Install
 

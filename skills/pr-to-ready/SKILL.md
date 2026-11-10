@@ -73,6 +73,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 ## Replies
 
 - Answer each threaded finding — one with a GitHub thread, the vet-code review's own inline comments included — in its thread with its verdict and what was done, or its needs-user question, and resolve the thread only once it is settled, since a resolved thread folds away a question no one has answered.
+- Resolve no thread whose reply failed, and hand back after the round's other posts naming each failed reply, since a resolved thread folds away a finding no one answered.
 - Post at most one vet-code review and one verdict comment per round as standalone posts, thread replies aside.
 - Post the round's applicable comments before leaving the round — advancing, requesting again, or handing back — since a hand-back decided first silently drops the round's verdicts into the session where no later round re-posts them.
 - Post that round's vet-code findings as one COMMENT review anchored to the reviewed commit, each finding's text, severity, and location verbatim and never paraphrased, with no added mentions and no formatting beyond the location form, list marker, and continuation indent `tools/build-review-payload.sh` gives and the `<details>` fold below.
@@ -88,10 +89,9 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
   - End the write at the first failed step, since carrying on submits a review that reads as complete without the failed part.
   - Take the review's id right after the create as `implement-work`'s `references/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the tool again with that id and a facts file, answering each `NEED` the same way.
   - On `POSTED COMMENTED`, go on to the replies in this review's own threads.
-  - Resolve no thread whose reply failed, and hand back after the round's other posts naming each failed reply, since a resolved thread folds away a finding no one answered.
 - Hand back, naming the failed step, on any of these, since the PR may hold a review whose body is not the round's:
-  - a failed create or a `STOP` from the first call — saying nothing was posted;
-  - a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
+  - a `STOP` from the first call — saying nothing was posted;
+  - a failed create, a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
   - any other `STOP` from the read-back — saying a review may be on the PR with a state or body not confirmed to be the round's.
 - Keep out of the review any vet-code finding with the same claim about the same code as a thread an earlier round's vet-code review opened, resolved or not, wherever that code now sits, and answer it in that thread instead, since otherwise every round opens another thread for one finding.
   - Unresolve such a thread while that finding is not settled, since a reply in a resolved thread is folded away where no one sees it.
