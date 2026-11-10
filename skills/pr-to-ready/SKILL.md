@@ -88,7 +88,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
   - End the write at the first failed step, since carrying on submits a review that reads as complete without the failed part.
   - Take the review's id right after the create as `implement-work`'s `references/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the tool again with that id and a facts file, answering each `NEED` the same way.
   - On `POSTED COMMENTED`, go on to the replies in this review's own threads.
-- Hand back, naming the failed step, on any of these, since the PR may hold a review whose body is not the round's:
+- Hand back, naming the failed step and each inline finding whose verdict or question went unposted, on any of these, since the PR may hold a review whose body is not the round's:
   - a `STOP` from the first call — saying nothing was posted;
   - a failed create, a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
   - any other `STOP` from the read-back — saying a review may be on the PR with a state or body not confirmed to be the round's.
