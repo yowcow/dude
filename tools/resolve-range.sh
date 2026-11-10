@@ -127,9 +127,8 @@ fi
 
 # The prerequisite lookup and the answers it prints live in
 # tools/read-prereq-pr.sh -- see its header. What is left here is
-# base-branch.md's `review-code`'s `<base>` column: the rows where the two
-# readers disagree. Without --issue the reader answers NO-PREREQ and asks for
-# no facts.
+# base-branch.md's `review-code`'s `<base>` column. Without --issue the reader
+# answers NO-PREREQ and asks for no facts.
 READ_ARGS=()
 if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
 if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi
