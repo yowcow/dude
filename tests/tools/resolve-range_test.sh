@@ -70,8 +70,11 @@
 #      `merge-base-fails-on-unrelated-history`. This is why `refs/pull/9/head` is a decoy under
 #      `with-dep`: pointed at dep's own commit, this mutant passes.
 #   7. The caller handing --issue on to the reader. Dropping
-#      `READ_ARGS+=("$ISSUE")` made the reader answer NO-PREREQ on every
-#      --issue row and failed every such row, among them
+#      `READ_ARGS+=("$ISSUE")` made the reader answer NO-PREREQ on every row
+#      that reaches it with --issue, and failed every such row but
+#      `no-prereq-line-is-default-range` and
+#      `merge-base-fails-on-unrelated-history`, whose expected answers the
+#      NO-PREREQ path gives as well; among the failures is
 #      `issue-without-facts-asks`.
 #   8. The NO-PREREQ merge-base guard. Leaving `BASE_SHA="$(git merge-base
 #      "${TIP_SHA}" HEAD)"` bare, so `set -e` aborts on git's exit 1 instead of
