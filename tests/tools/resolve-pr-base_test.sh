@@ -1,30 +1,29 @@
 #!/usr/bin/env bash
-# Table test for tools/resolve-pr-base.sh: how far the
-# Base-Branch trailer scan reaches, and the one line it prints for each answer.
+# Table test for tools/resolve-pr-base.sh: the base read from the issue's
+# `Blocked-By: #N` line (via tools/read-prereq-pr.sh), and the one line it
+# prints for each answer.
 #
-# git is not stubbed. The defect this file exists to pin is a *range* defect --
-# the scan walking past the branch point into shared history (#171) -- and a
-# git stub would encode the test author's belief about that range rather than
-# git's behaviour. Each row that drives the real reader builds a real bare
+# git is not stubbed. Each row that drives the real reader builds a real bare
 # repository to play the remote and a real work repository whose `origin`
 # points at it, both under $HARNESS_TMP and both offline. Those work
-# repositories hold no commits at all: the SUT reads the branch tip as
-# FETCH_HEAD and never checks anything out. The rows at the end of this file
-# stub the reader, the default-branch lookup and the fetch instead, and build
-# no repository.
+# repositories hold no commits at all: the SUT only fetches the task branch
+# and never checks anything out. The rows at the end of this file stub the
+# reader, the default-branch lookup and the fetch instead, and build no
+# repository.
 #
-# The scan's range is the whole point, so the fixtures differ in exactly one
-# axis: whether the Base-Branch trailer sits on the task branch's own commits
-# or on a commit the task branch merely inherits from the default branch.
+# The task branch's commits never decide the base: the regression rows pin
+# that a commit with no readable Base-Branch trailer (none at all, or one in
+# a paragraph git does not read as a trailer, the #845 shape) still gets the
+# issue's prerequisite, and a readable trailer is ignored.
 #
-# `STOP trailer-read-failed` has a row: the stubbed-reader rows at the end of
+# `STOP prereq-read-failed` has a row: the stubbed-reader rows at the end of
 # this file, which also pin the answers outside the reader's contract. The
-# reader's own guard is covered by tests/tools/read-base-trailer_test.sh's
-# `trailer-read-fails` row.
+# reader's own tests are tests/tools/read-prereq-pr_test.sh.
 #
-# The prerequisite's PR comes as facts (prereq_facts below) and, in every row
-# but the four stubbed ones at the end, the default branch from the remote's
-# own HEAD (resolve-default-branch.sh); every row asserts 0 gh calls.
+# The issue and the prerequisite's PR come as facts (issue_facts below) and,
+# in every row but the four stubbed ones at the end, the default branch from
+# the remote's own HEAD (resolve-default-branch.sh); every row asserts 0 gh
+# calls.
 #
 # RED verification (see tests/README.md) -- the trailer scan used to walk to
 # root, so a branch that recorded nothing picked up whatever Base-Branch it
@@ -41,6 +40,20 @@
 #   rows at the end are the exception -- they copy the SUT into a tools/ tree
 #   that already holds every sibling, so a lone copy is enough for those. The
 #   bb8d8b8^ version above predates the extractions and needs no sibling.
+#
+#   RED for the move from the trailer to the issue (#847), both against the
+#   script as of origin/master, placed in a copy of tools/ (`cp -R tools
+#   "$tmp/tools"`, then `git show origin/master:tools/resolve-pr-base.sh
+#   >"$tmp/tools/old.sh"`):
+#   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
+#     is a usage error on every row that passes it: `not ok 15/33`.
+#   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
+#     old.sh, so the rows fail for the behaviour and not the usage error: the
+#     regression rows answer `BASE main` (the old script reads no trailer
+#     there and falls back to the default) instead of `BASE dep`, and
+#     `readable-trailer-is-ignored` answers `NEED prereq.head=acme:stale-base
+#     prereq.head-pr` instead of `BASE main`: `not ok 16/33` (the four stubbed reader rows and
+#     their two tallies fail too, as the wrapper is not copied beside old.sh).
 #
 #   The reader-boundary rows at the end of this file are RED the ordinary way:
 #   point SUT= at the pre-fix script
@@ -110,29 +123,57 @@ build_selected() {
   printf '%s\n' "$bare"
 }
 
-# prereq_facts <repo> <owner:branch> <total> [<pr> [<state> [<head> [<owner>]]]] -- the
-# prerequisite lookup's facts as lines on stdout (pipe into facts_file, or
-# concatenate with other lines first).
+# body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
+body() {
+  local f
+  f="$(mktemp "${HARNESS_TMP}/body.XXXXXX")"
+  printf '%b' "$1" >"$f"
+  printf '%s\n' "$f"
+}
+
+LINE='Blocked-By: #77\n'
+
+# issue_facts <repo> <body-text> -- the issue's facts, on stdout
+issue_facts() {
+  printf 'repo=%s\nissue.number=203\nissue.body-file=%s\n' "$1" "$(body "$2")"
+}
+
+# prereq_facts <repo> <total> [<pr> [<state> [<head>]]] -- the facts of an
+# issue carrying LINE and its prerequisite #77's closing PRs, on stdout
+# (pipe into facts_file).
 prereq_facts() {
-  printf 'repo=%s\nprereq.head=%s\nprereq.head-pr.total=%s\n' "$1" "$2" "$3"
+  issue_facts "$1" "$LINE"
+  printf 'prereq.number=77\nprereq.closing-pr.total=%s\n' "$2"
+  if [ "$#" -ge 3 ]; then
+    printf 'prereq.closing-pr=%s\n' "$3"
+  fi
   if [ "$#" -ge 4 ]; then
-    printf 'prereq.head-pr=%s\n' "$4"
+    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\n' "$3" "$4" "${5-dep}"
   fi
-  if [ "$#" -ge 5 ]; then
-    printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$4" "$5" "${6-${2#*:}}" "${7-${2%%:*}}"
-  fi
+}
+
+# build_msg_remote <name> <message> -- a remote like build_remote's, whose one
+# feature commit carries <message> verbatim.
+build_msg_remote() {
+  local name="$1" bare seed
+  bare="$(git_repo_bare acme "$name")"
+  seed="$(git_repo_scratch "seed-${name}")"
+  git_repo_init "$seed" main
+  git_repo_commit "$seed" README.md 'base\n' 'base commit'
+  git_repo_checkout "$seed" feature main
+  git_repo_commit "$seed" F1.md 'feature 1\n' "$2"
+  git_repo_push "$seed" "$bare" main feature
+  git_repo_bare_head "$bare" main
+  printf '%s\n' "$bare"
 }
 
 # `feature` records nothing; `main` records nothing either.
 REMOTE_PLAIN="$(build_remote plain - -)"
-# `main`'s single commit carries a trailer that the task branch merely
-# inherits -- the shape that used to escape the scan's range (#171).
-REMOTE_ANCESTOR="$(build_remote ancestor ancestor-base -)"
-# `feature` records a prerequisite branch of its own.
-REMOTE_DEP="$(build_remote dep - dep)"
-# Two commits on one stack, the newer one recording a different branch: the
-# newer trailer has to win.
-REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
+# `feature`'s commit has `Base-Branch:` in a paragraph of its own followed by
+# `Co-Authored-By:` (the #845 shape), which git does not read as a trailer.
+REMOTE_SEPARATE="$(build_msg_remote separate "$(printf 'subject\n\nBase-Branch: dep\n\nCo-Authored-By: A <a@example.invalid>\n')")"
+# `feature` carries a readable trailer naming a branch the issue does not.
+REMOTE_STALE="$(build_remote stale - stale-base)"
 # A remote carrying a `trunk` branch beside `main`: the selected-repo row
 # below needs a default that exists on origin (the selection only names it;
 # the fetch still reads it from origin) yet differs from every other row's
@@ -140,7 +181,7 @@ REMOTE_SHADOW="$(build_remote shadow - older-base newer-base)"
 # reached the selected repository's HEAD.
 REMOTE_TRUNK="$(build_selected trunkremote main)"
 
-# ---- the default-branch ladder, with no trailer to find ------------------
+# ---- the default-branch ladder, with no issue to read -------------------
 #
 # The symref names `feature`, a branch that exists on the remote and is the
 # wrong answer, while the remote's HEAD names `main`. That pairing is the hazard the
@@ -157,7 +198,7 @@ assert_row 'stale-symref-is-ignored' 0 'BASE main\n' 0
 row_start
 W="$(work_repo dflt-head "$REMOTE_PLAIN" -)"
 run_in "$W" feature
-assert_row 'no-trailer-uses-the-remote-head' 0 'BASE main\n' 0
+assert_row 'no-issue-uses-the-remote-head' 0 'BASE main\n' 0
 
 row_start
 W="$(work_repo selected-repo "$REMOTE_TRUNK" main)"
@@ -187,70 +228,67 @@ W="$(work_repo dflt-unborn "$(git_repo_bare acme unborn)" -)"
 run_in "$W" feature
 assert_row 'remote-head-unborn' 0 'STOP ask-default-branch\n' 0
 
-# ---- the trailer the task branch only inherits ---------------------------
+# ---- no prerequisite to read ---------------------------------------------
 #
-# `main`'s commit carries `Base-Branch: ancestor-base` and `feature` records
-# nothing, so the answer is the default branch and nothing is asked for: a
-# scan reaching the inherited trailer would answer NEED instead. The default
-# branch is read from the remote's HEAD, no `gh` call.
+# Without --issue the reader is not asked for the issue's facts at all, so
+# nothing NEEDs and no gh runs.
 
 row_start
-W="$(work_repo ancestor "$REMOTE_ANCESTOR" main)"
+W="$(work_repo no-issue "$REMOTE_PLAIN" main)"
 run_in "$W" feature
-assert_row 'ancestor-trailer-is-out-of-scope' 0 'BASE main\n' 0
+assert_row 'no-issue-is-default' 0 'BASE main\n' 0
 
-# ---- a trailer the task branch recorded itself --------------------------
+row_start
+W="$(work_repo no-prereq-line "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$(issue_facts acme/plain 'nothing blocking\n' | facts_file)"
+assert_row 'no-prereq-line-is-default' 0 'BASE main\n' 0
+
+row_start
+W="$(work_repo issue-no-facts "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203
+assert_row 'issue-without-facts-asks' 0 'NEED repo=acme/plain issue.number=203 issue.body-file\n' 0
+
+# ---- the base comes from the issue, never the commits --------------------
 #
-# Without facts the NEED names the newer branch, so a scan reading the stack
-# oldest-first fails as `older-base` rather than as a missing stub; with the
-# newer branch's facts the answer is its PR.
+# Both commit shapes leave no Base-Branch trailer git can read; the answer is
+# the issue's prerequisite head either way.
 
 row_start
-W="$(work_repo shadow "$REMOTE_SHADOW" main)"
-run_in "$W" feature
-assert_row 'newest-trailer-shadows-older' 0 'NEED repo=acme/shadow prereq.head=acme:newer-base prereq.head-pr\n' 0
+W="$(work_repo regress-plain "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/plain 1 55 OPEN | facts_file)"
+assert_row 'regression-open-prereq-no-trailer' 0 'BASE dep\n' 0
 
 row_start
-W="$(work_repo shadow-facts "$REMOTE_SHADOW" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/shadow acme:newer-base 1 9 OPEN | facts_file)"
-assert_row 'newest-trailer-wins-with-facts' 0 'BASE newer-base\n' 0
+W="$(work_repo regress-separate "$REMOTE_SEPARATE" main)"
+tally check_eq 'regression-separate-paragraph: git reads no trailer' '' \
+  "$(git -C "$REMOTE_SEPARATE" log -1 --format='%(trailers:key=Base-Branch)' feature)"
+run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/separate 1 55 OPEN | facts_file)"
+assert_row 'regression-open-prereq-trailer-in-separate-paragraph' 0 'BASE dep\n' 0
 
 row_start
-W="$(work_repo prereq-open "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 OPEN | facts_file)"
-assert_row 'prerequisite-open-keeps-its-branch' 0 'BASE dep\n' 0
+W="$(work_repo stale-trailer "$REMOTE_STALE" main)"
+run_in "$W" feature --issue 203 --facts "$(issue_facts acme/stale 'nothing blocking\n' | facts_file)"
+assert_row 'readable-trailer-is-ignored' 0 'BASE main\n' 0
 
 row_start
-W="$(work_repo prereq-merged "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 MERGED | facts_file)"
-assert_row 'prerequisite-merged-falls-back-to-default' 0 'BASE main\n' 0
+W="$(work_repo prereq-merged "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/plain 1 55 MERGED | facts_file)"
+assert_row 'merged-prereq-answers-default' 0 'BASE main\n' 0
 
 row_start
-W="$(work_repo prereq-closed "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 CLOSED | facts_file)"
-assert_row 'prerequisite-closed-stops' 0 'STOP abandoned-prerequisite\n' 0
+W="$(work_repo prereq-closed "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/plain 1 55 CLOSED | facts_file)"
+assert_row 'closed-stops' 0 'STOP abandoned-prerequisite\n' 0
 
 row_start
-W="$(work_repo prereq-none "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 0 | facts_file)"
-assert_row 'prerequisite-has-no-pr' 0 'STOP no-prereq-pr\n' 0
-
-# Changed answer: was prereq-lookup-failed, when the `gh` call failed.
-row_start
-W="$(work_repo prereq-unreadable "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep '' | facts_file)"
-assert_row 'prerequisite-lookup-unread' 0 'STOP fact-missing\n' 0
+W="$(work_repo prereq-none "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$(prereq_facts acme/plain 0 | facts_file)"
+assert_row 'no-closing-pr' 0 'STOP not-implemented\n' 0
 
 row_start
-W="$(work_repo prereq-multiple "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$({ prereq_facts acme/dep acme:dep 2 9; printf 'prereq.head-pr=8\n'; } | facts_file)"
-assert_row 'prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 0
-
-# Changed answer: was exit 1 with an empty stdout.
-row_start
-W="$(work_repo prereq-unknown-state "$REMOTE_DEP" main)"
-run_in "$W" feature --facts "$(prereq_facts acme/dep acme:dep 1 9 DRAFT | facts_file)"
-assert_row 'prerequisite-state-unrecognised' 0 'STOP fact-enum\n' 0
+W="$(work_repo prereq-multiple "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 203 --facts "$({ prereq_facts acme/plain 2 55; printf 'prereq.closing-pr=56\n'; } | facts_file)"
+assert_row 'several-closing-prs' 0 'STOP ask-multiple-prs\n' 0
 
 # ---- fetches that fail --------------------------------------------------
 #
@@ -300,13 +338,28 @@ W="$(work_repo args-facts-bare "$REMOTE_PLAIN" main)"
 run_in "$W" feature --facts
 assert_row 'facts-flag-without-file' 2 '' 0
 
+row_start
+W="$(work_repo args-issue-bare "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue
+assert_row 'issue-flag-without-value' 2 '' 0
+
+row_start
+W="$(work_repo args-issue-text "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue abc
+assert_row 'issue-non-numeric' 2 '' 0
+
+row_start
+W="$(work_repo args-issue-zero "$REMOTE_PLAIN" main)"
+run_in "$W" feature --issue 0
+assert_row 'issue-zero' 2 '' 0
+
 # ---- the reader's answers this caller cannot act on ----------------------
 #
-# The real reader prints NO-TRAILER, PREREQ with OPEN or MERGED, NEED or STOP,
+# The real reader prints NO-PREREQ, PREREQ with OPEN or MERGED, NEED or STOP,
 # and a state outside OPEN/MERGED/CLOSED stops earlier as STOP fact-enum, while
 # CLOSED stops as STOP abandoned-prerequisite. So these rows
 # stub it: a copy of tools/ with this file's subject dropped in and
-# read-base-trailer.sh replaced. What they pin is the boundary -- whatever the
+# read-prereq-pr.sh replaced. What they pin is the boundary -- whatever the
 # reader answers, this script prints one line and exits 0. Measured before the
 # guard: a reader exiting 1 made this script exit 1 with empty stdout; an
 # unknown KIND or STATE exited 0 with empty stdout.
@@ -318,31 +371,31 @@ cp "$SUT" "${CONTRACT}/resolve-pr-base.sh"
 printf '#!/usr/bin/env bash\necho main\n' >"${CONTRACT}/resolve-default-branch.sh"
 printf '#!/usr/bin/env bash\necho 1111111111111111111111111111111111111111\n' >"${CONTRACT}/fetch-to-sha.sh"
 
-# reader <body> -- the copy's read-base-trailer.sh becomes a script of <body>.
-reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-base-trailer.sh"; }
+# reader <body> -- the copy's read-prereq-pr.sh becomes a script of <body>.
+reader() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/read-prereq-pr.sh"; }
 
 row_start
 reader 'exit 1'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
-assert_row 'reader-abort-is-reported' 0 'STOP trailer-read-failed\n' 0
+assert_row 'reader-abort-is-reported' 0 'STOP prereq-read-failed\n' 0
 
 row_start
 reader 'echo WHAT'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
-assert_row 'reader-unknown-kind-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-unknown-kind-is-reported' 0 'STOP prereq-answer-malformed\n' 0
 tally check_eq 'reader-unknown-kind: stderr' \
-  'unrecognised answer from read-base-trailer.sh: WHAT' "$(cat "$SUT_STDERR")"
+  'unrecognised answer from read-prereq-pr.sh: WHAT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'echo "PREREQ feature 9 DRAFT"'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
-assert_row 'reader-unknown-state-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-unknown-state-is-reported' 0 'STOP prereq-answer-malformed\n' 0
 tally check_eq 'reader-unknown-state: stderr' \
   'unrecognised prerequisite state: DRAFT' "$(cat "$SUT_STDERR")"
 
 row_start
 reader 'true'
 run_sut bash "${CONTRACT}/resolve-pr-base.sh" feature
-assert_row 'reader-empty-answer-is-reported' 0 'STOP trailer-answer-malformed\n' 0
+assert_row 'reader-empty-answer-is-reported' 0 'STOP prereq-answer-malformed\n' 0
 
 harness_exit "$failed" "$total"

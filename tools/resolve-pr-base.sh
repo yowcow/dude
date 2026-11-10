@@ -1,35 +1,36 @@
 #!/usr/bin/env bash
-# Resolve which branch a task branch should sit on, by reading its Base-Branch
-# trailer and re-checking the prerequisite PR's *current* state — never by testing
-# whether the prerequisite's branch still exists, which commonly survives its merge
-# and would hand back an already-merged branch as --base, silently landing nothing
-# into the default branch.
-# Spec: skills/implement-work/references/base-branch.md, "## Reading the trailer
-# back" (this script implements that table's `pr-to-ready`'s `--base` column; the
-# no-trailer row answers the default branch so Step 1's settlement has something
-# to compare against).
+# Resolve which branch a task branch should sit on, by reading its issue's
+# `Blocked-By: #N` line and re-checking the prerequisite PR's *current* state --
+# never by testing whether the prerequisite's branch still exists, which
+# commonly survives its merge and would hand back an already-merged branch as
+# --base, silently landing nothing into the default branch.
+# Spec: skills/implement-work/references/base-branch.md, "## Reading the
+# prerequisite back" (this script implements that table's `pr-to-ready`'s
+# `--base` column; the no-prerequisite row answers the default branch so Step
+# 1's settlement has something to compare against).
 #
 # Facts: skills/implement-work/references/facts.md.
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: resolve-pr-base.sh <branch> [repo] [--facts <file>]
+# Usage: resolve-pr-base.sh <branch> [repo] [--issue <n>] [--facts <file>]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <branch> [repo] [--facts <file>]" >&2
+  echo "Usage: $0 <branch> [repo] [--issue <n>] [--facts <file>]" >&2
   exit 2
 }
 
 BRANCH=''
 BASE_REPO=''
 FACTS=''
+ISSUE=''
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --facts)
+    --facts | --issue)
       if [ "$#" -lt 2 ] || [ -z "$2" ]; then usage; fi
-      FACTS="$2"
+      if [ "$1" = --facts ]; then FACTS="$2"; else ISSUE="$2"; fi
       shift 2
       ;;
     -*) usage ;;
@@ -47,29 +48,22 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 if [ -z "$BRANCH" ]; then usage; fi
+if [ -n "$ISSUE" ] && ! [[ "$ISSUE" =~ ^[1-9][0-9]*$ ]]; then usage; fi
 
 # The default branch is resolved by tools/resolve-default-branch.sh
 # -- see its header for the rationale.
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-# Resolve the default branch before the scan below rather than at the two
-# places that print it: the scan's range is expressed against it, so it has
-# to be both named and fetched by then.
+# The default branch is resolved first: it is both an answer below and a ref
+# the fetches name.
 DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
 
-# The task branch's tip is read below as FETCH_HEAD rather than from a local
-# checkout — this session may not have <branch> checked out at all. So the
-# default branch is fetched first and the task branch second, because `git
-# fetch` rewrites FETCH_HEAD on every call. Reversed, FETCH_HEAD would hold
-# the default branch's tip, the scan below would read the empty range
-# `<default> ^<default>`, and every branch would silently resolve to the
-# default branch as its base.
-#
-# The default branch's fetch failure carries its own slug: folded into
-# fetch-failed, the caller could not tell a missing task branch from a
-# missing default branch, and the two want different answers from the person
-# they stop for.
-if ! DEFAULT_SHA="$(bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}")"; then
+# Both fetches stay as a check that the default branch and the task branch are
+# on the remote. The default branch's failure carries its own slug: folded into
+# fetch-failed, the caller could not tell a missing task branch from a missing
+# default branch, and the two want different answers from the person they stop
+# for.
+if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${DEFAULT}" >/dev/null; then
   echo "STOP default-fetch-failed"
   exit 0
 fi
@@ -79,33 +73,23 @@ if ! bash "${SCRIPT_DIR}/fetch-to-sha.sh" "${BRANCH}" >/dev/null; then
   exit 0
 fi
 
-# The trailer scan, the prerequisite lookup, and the three answers both
-# readers print identically live in
-# tools/read-base-trailer.sh -- see its header. What is
-# left here is base-branch.md's `pr-to-ready`'s `--base` column: the three
-# rows where the two readers disagree.
-#
-# The revs are chosen here rather than there because they are this caller's
-# question. The scan runs from the branch tip just fetched and stops at the
-# default branch, and the exclusion names the saved default-branch SHA rather than a remote-tracking ref a narrowed clone need not have updated. Unbounded,
-# the scan walks to root, so a branch that recorded nothing picks up whatever
-# Base-Branch some unrelated commit left in shared history and hands that
-# branch back as the base -- which ensure-draft-pr.sh then answers as
-# `CREATE ... base=<base>`, so the caller opens the PR against a branch this
-# task never sat on.
-READ_ARGS=(FETCH_HEAD "^${DEFAULT_SHA}")
-if [ -n "$FACTS" ]; then
-  READ_ARGS=(--facts "$FACTS" "${READ_ARGS[@]}")
-fi
-if ! ANSWER="$(bash "${SCRIPT_DIR}/read-base-trailer.sh" "${READ_ARGS[@]}")"; then
-  echo "STOP trailer-read-failed"
+# The prerequisite lookup and the answers it prints live in
+# tools/read-prereq-pr.sh -- see its header. What is left here is
+# base-branch.md's `pr-to-ready`'s `--base` column. Without --issue the reader
+# answers NO-PREREQ and asks for no facts.
+READ_ARGS=()
+if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
+if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi
+# An empty array is an unbound-variable error under set -u before bash 4.4.
+if ! ANSWER="$(bash "${SCRIPT_DIR}/read-prereq-pr.sh" ${READ_ARGS[@]+"${READ_ARGS[@]}"})"; then
+  echo "STOP prereq-read-failed"
   exit 0
 fi
 
 read -r KIND RECORDED _ STATE <<<"$ANSWER"
 
 case "${KIND}" in
-  NO-TRAILER)
+  NO-PREREQ)
     echo "BASE ${DEFAULT}"
     ;;
   STOP | NEED)
@@ -127,14 +111,14 @@ case "${KIND}" in
         ;;
       *)
         printf 'unrecognised prerequisite state: %s\n' "${STATE}" >&2
-        echo "STOP trailer-answer-malformed"
+        echo "STOP prereq-answer-malformed"
         exit 0
         ;;
     esac
     ;;
   *)
-    printf 'unrecognised answer from read-base-trailer.sh: %s\n' "${ANSWER}" >&2
-    echo "STOP trailer-answer-malformed"
+    printf 'unrecognised answer from read-prereq-pr.sh: %s\n' "${ANSWER}" >&2
+    echo "STOP prereq-answer-malformed"
     exit 0
     ;;
 esac
