@@ -35,8 +35,8 @@
 #   that already holds every sibling, so a lone copy is enough for those.
 #
 #   RED for the move from the trailer to the issue (#847), both against the
-#   script as of origin/master, placed in a copy of tools/ (`cp -R tools
-#   "$tmp/tools"`, then `git show origin/master:tools/resolve-pr-base.sh
+#   script as of 35d16f6, placed in a copy of tools/ (`cp -R tools
+#   "$tmp/tools"`, then `git show 35d16f6:tools/resolve-pr-base.sh
 #   >"$tmp/tools/old.sh"`):
 #   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
 #     is a usage error on every row that passes it: `not ok 15/33`.

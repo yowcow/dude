@@ -39,7 +39,7 @@
 #   their stderr tally, plus the three facts-capture rows.
 #
 # RED for the move from the trailer to the issue (#847), with that recipe and
-# `git show origin/master:tools/ensure-draft-pr.sh` as the mutation (the copy
+# `git show 35d16f6:tools/ensure-draft-pr.sh` as the mutation (the copy
 # holds the new resolve-pr-base.sh):
 #   - `SUT="$tmp/tools/old.sh"` does not know `--issue`, so every row that
 #     passes it is a usage error: `not ok 9/70`.

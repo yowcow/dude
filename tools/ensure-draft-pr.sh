@@ -36,10 +36,7 @@
 #   STOP ask-base-repo -- origin is a fork or has a sibling remote, and no
 #     base-repo was given: ask which repository to target, call again with it.
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over
-#     regardless. Besides the PR and facts slugs, the base lookup adds
-#     abandoned-prerequisite, ask-multiple-prs, ask-multiple-prereqs,
-#     prereq-line-malformed, body-unreadable, not-implemented,
-#     prereq-read-failed and prereq-answer-malformed.
+#     regardless.
 #
 # Parent-targeted limitation: [base-repo] reaches the PR lookup and the
 # default-branch name; the fetches and the prerequisite lookup still run

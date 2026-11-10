@@ -107,8 +107,8 @@
 #   recorded here as a gap, not as an impossible case.
 #
 #   RED for the move from the trailer to the issue (#847), both against the
-#   script as of the commit before it (`git show HEAD^:tools/resolve-range.sh`
-#   at the time), placed in a copy of tools/ (`cp -R tools "$tmp/tools"`):
+#   script as of 35d16f6 (`git show 35d16f6:tools/resolve-range.sh`), placed
+#   in a copy of tools/ (`cp -R tools "$tmp/tools"`):
 #   - `SUT="$tmp/tools/old.sh"`: the old script does not know `--issue`, so it
 #     is a usage error on every row that passes it: `not ok 19/49`.
 #   - `SUT="$tmp/tools/wrap.sh"`, a wrapper that drops `--issue <n>` and calls
