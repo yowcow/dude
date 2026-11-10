@@ -230,20 +230,18 @@ assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n"
 #
 # The read-back's self-check and every read are captured, so an exit that is
 # not relayed becomes empty stdout and a non-zero status. The copy's facts.sh
-# is replaced for these three rows only. The script reaches its siblings
-# through SCRIPT_DIR, so the copy sits inside a tools/ copy.
+# is replaced for these three rows only.
 CONTRACT="${HARNESS_TMP}/facts-contract"
-mkdir -p "$CONTRACT"
-cp -R "${REPO_ROOT}/tools" "${CONTRACT}/tools"
-cp "$SUT" "${CONTRACT}/tools/post-review.sh"
-facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/facts.sh"; }
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/post-review.sh"
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/facts.sh"; }
 
 # run_contract <work-dir> <argv...> -- run_in, for the copy's script.
 run_contract() {
   local dir="$1"
   shift
   cd "$dir" || exit 1
-  run_sut bash "${CONTRACT}/tools/post-review.sh" "$@"
+  run_sut bash "${CONTRACT}/post-review.sh" "$@"
   cd "$REPO_ROOT" || exit 1
 }
 
