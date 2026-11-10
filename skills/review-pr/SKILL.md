@@ -90,7 +90,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Include Minor and the user-included `needs-user` findings in the `accept` set.
 - Ask the author in the summary what real problem the PR is meant to solve when the purpose is unknown.
 - Say in the summary, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
-- Run the build-review-payload script (`<skill-dir>/scripts/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
+- Run the build-review-payload tool (`tools/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
 - Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
 - Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
 
@@ -106,7 +106,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 ### 6. Post
 
-- Run the post-review script (`<skill-dir>/scripts/post-review.sh`) for the choice the user made, with `APPROVE`, `COMMENT`, or `PENDING` for draft only.
+- Run the post-review tool (`tools/post-review.sh`) for the choice the user made, with `APPROVE`, `COMMENT`, or `PENDING` for draft only.
 - Write nothing else to the PR in this run but the 👀 of Step 1 and the replies and resolves below.
 - Post nothing when the user chose none of the three.
 - Report a `STOP <slug>` from this first call as nothing posted.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Table test for skills/review-pr/scripts/post-review.sh: the guard before the
+# Table test for tools/post-review.sh: the guard before the
 # agent writes (a choice outside APPROVE, COMMENT, PENDING never reaches a
 # write) and the read-back after it (the review record, read by its id, must
 # be anchored to the reviewed head, in the state the choice asks for, with the
@@ -20,8 +20,9 @@
 # 'draft only, body not carried' and 'body read back differs'; comparing the
 # bodies byte-exact (`cmp`) fails 'body read back with a trailing newline'.
 #
-# The three facts-capture rows at the end are RED against `master`'s script in
-# a full tree beside a tools/ copy: `not ok 3/39`.
+# The three facts-capture rows at the end were RED against the pre-move script
+# (b9882a3, `skills/review-pr/scripts/post-review.sh`, copied in its skills/
+# shape beside a tools/ tree): `not ok 3/39`.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -33,7 +34,7 @@ set -euo pipefail
 # shellcheck disable=SC1091
 . "$(dirname -- "${BASH_SOURCE[0]}")/../lib/gitrepo.sh"
 
-SUT="${SUT:-${REPO_ROOT}/skills/review-pr/scripts/post-review.sh}"
+SUT="${SUT:-${REPO_ROOT}/tools/post-review.sh}"
 BASH_BIN="$(command -v bash)"
 
 failed=0
@@ -230,21 +231,18 @@ assert_row 'body read back with a trailing newline' 0 "POSTED APPROVED ${URL}\n"
 #
 # The read-back's self-check and every read are captured, so an exit that is
 # not relayed becomes empty stdout and a non-zero status. The copy's facts.sh
-# is replaced for these three rows only. The script reaches tools/ through
-# SCRIPT_DIR, so the copy keeps the skills/<skill>/scripts/ shape beside a
-# tools/ tree.
+# is replaced for these three rows only.
 CONTRACT="${HARNESS_TMP}/facts-contract"
-mkdir -p "${CONTRACT}/skills/review-pr/scripts"
-cp -R "${REPO_ROOT}/tools" "${CONTRACT}/tools"
-cp "$SUT" "${CONTRACT}/skills/review-pr/scripts/post-review.sh"
-facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/tools/facts.sh"; }
+cp -R "${REPO_ROOT}/tools" "$CONTRACT"
+cp "$SUT" "${CONTRACT}/post-review.sh"
+facts_stub() { printf '#!/usr/bin/env bash\n%s\n' "$1" >"${CONTRACT}/facts.sh"; }
 
 # run_contract <work-dir> <argv...> -- run_in, for the copy's script.
 run_contract() {
   local dir="$1"
   shift
   cd "$dir" || exit 1
-  run_sut bash "${CONTRACT}/skills/review-pr/scripts/post-review.sh" "$@"
+  run_sut bash "${CONTRACT}/post-review.sh" "$@"
   cd "$REPO_ROOT" || exit 1
 }
 

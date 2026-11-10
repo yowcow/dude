@@ -26,7 +26,7 @@ such script.
 | `base-fetch-failed` | `implement-work/absorb-base.sh`, `implement-work/resolve-base.sh` |
 | `base-resolve-failed` | `tools/ensure-draft-pr.sh` |
 | `branch-nowhere` | `tools/ensure-draft-pr.sh` |
-| `body-unreadable` | `review-pr/post-review.sh`, `tools/read-prereq-pr.sh` |
+| `body-unreadable` | `tools/post-review.sh`, `tools/read-prereq-pr.sh` |
 | `commit-failed` | `implement-work/commit-merge.sh` |
 | `default-fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `detached-head` | `implement-work/absorb-base.sh` |
@@ -36,8 +36,8 @@ such script.
 | `fact-malformed` | `tools/facts.sh` |
 | `fact-mismatch` | `tools/facts.sh` |
 | `fact-missing` | `tools/facts.sh` |
-| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
-| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `tools/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `tools/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
@@ -50,9 +50,9 @@ such script.
 | `prereq-line-malformed` | `tools/read-prereq-pr.sh` |
 | `prereq-read-failed` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `push-failed` | `tools/ensure-draft-pr.sh` |
-| `repo-lookup-failed` | `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `review-pr/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
-| `review-pending-left` | `review-pr/post-review.sh` |
-| `review-state-mismatch` | `review-pr/post-review.sh` |
+| `repo-lookup-failed` | `tools/resolve-range.sh`, `tools/ensure-draft-pr.sh`, `tools/check-pr-author.sh`, `tools/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
+| `review-pending-left` | `tools/post-review.sh` |
+| `review-state-mismatch` | `tools/post-review.sh` |
 | `wait-state-invalid` | `tools/facts.sh` |
 | `wrong-branch` | `implement-work/absorb-base.sh` |
 | `wrong-checkout` | `review-pr/check-pr-repo.sh` |

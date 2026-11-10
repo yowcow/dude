@@ -15,9 +15,9 @@
 #     against the payload's);
 #   - the record of another repository, PR or review (the pins).
 #
-# Facts: ../../implement-work/references/facts.md.
-# Conventions: ../../implement-work/references/script-conventions.md.
-# STOP slugs: ../../implement-work/references/stop-registry.md.
+# Facts: skills/implement-work/references/facts.md.
+# Conventions: skills/implement-work/references/script-conventions.md.
+# STOP slugs: skills/implement-work/references/stop-registry.md.
 #
 # Usage: post-review.sh <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]
 # Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT>
@@ -72,8 +72,7 @@ esac
 jq -e '.comments | length' "$PAYLOAD_FILE" >/dev/null 2>&1 || usage
 
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
-TOOLS="${SCRIPT_DIR}/../../../tools"
-if ! REPO="$(bash "${TOOLS}/origin-repo.sh")"; then
+if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
   echo "STOP repo-lookup-failed"
   exit 0
 fi
@@ -83,7 +82,7 @@ if [ -z "$POSTED" ]; then
   exit 0
 fi
 
-if ! VERDICT="$(bash "${TOOLS}/facts.sh" check "$FACTS" \
+if ! VERDICT="$(bash "${SCRIPT_DIR}/facts.sh" check "$FACTS" \
   "repo=${REPO}" "pr.number=${PR}" "review.id=${POSTED}" "review.commit=${HEAD}" \
   'review.state:PENDING,APPROVED,COMMENTED' review.body-file review.url)"; then
   echo "STOP facts-read-failed"
@@ -101,7 +100,7 @@ esac
 # subshell, leaving the caller running and reading "STOP ..." back as data.
 fact() {
   local value
-  if ! value="$(bash "${TOOLS}/facts.sh" get "$FACTS" "$2")"; then
+  if ! value="$(bash "${SCRIPT_DIR}/facts.sh" get "$FACTS" "$2")"; then
     echo "STOP facts-read-failed"
     exit 0
   fi
