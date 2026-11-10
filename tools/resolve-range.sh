@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Resolve the committed range this review covers, printed as two SHAs. Given a PR
 # number, the range is the PR's own head and its merge-base with the base OID its
-# record carries, both fetched — never derived from the local checkout. Given no
-# argument, the range runs from the base read back from the issue's
+# record carries, both fetched — never derived from the local checkout. Given no PR
+# number, the range runs from the base read back from the issue's
 # `Blocked-By: #N` line to HEAD, never assumed: falling back to the default
 # branch where a prerequisite is recorded sweeps rewritten prerequisite commits
 # into the range. Without --issue the base is the default branch.
