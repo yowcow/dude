@@ -38,11 +38,11 @@ description: Use to review code.
    - On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff.
    - Cover staged, unstaged, and untracked files there.
-3. **Clean tree, commits ahead of `<base>`** — run the resolve-range script with no argument.
+3. **Clean tree, commits ahead of `<base>`** — run the resolve-range script with the caller's issue number, never another repository's (`base-branch.md`).
    - Resolve `<base>`, never assume it.
-   - Read back the `Base-Branch:` trailer `implement-work` records and settle the base from that PR's present state.
-   - Fall back to the default branch where there is no trailer.
-   - Keep the trailer's contract and the state-to-base table in `implement-work`'s `references/base-branch.md`, never duplicated here.
+   - Settle the base from the present state of the PR closing the `Blocked-By:` line's issue.
+   - Take the default branch without an issue or that line.
+   - Keep the state-to-base table in `implement-work`'s `references/base-branch.md`, never duplicated here.
 4. **Nothing to review** — no uncommitted change, and no range with anything in it.
    - Ask the user what to review there.
    - Never widen to the whole repository on a guess.

@@ -28,7 +28,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Fallback entry: a branch with no PR yet
 
-- Where the caller gave a branch name instead of a PR reference, drive `tools/ensure-draft-pr.sh` per the output contract in its header.
+- Where the caller gave a branch name instead of a PR reference, drive `tools/ensure-draft-pr.sh` with the closing keyword's issue, per the output contract in its header.
 - Open the draft PR by the agent's own means.
 - On `STOP ask-base-repo` or `STOP fork-unread`, ask which repository the draft targets, offering origin's own first, since otherwise the draft opens against the wrong repository, a fork instead of its parent or the other way round.
 - Keep the title and body to `implement-work`'s Hand off.
@@ -90,5 +90,5 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Base retarget
 
-- Re-resolve the base through `tools/resolve-pr-base.sh`.
+- Re-resolve the base through `tools/resolve-pr-base.sh` with the Purpose check's issue, never another repository's.
 - Where the PR drifted off the resolved base, retarget by the agent's own means.
