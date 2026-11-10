@@ -75,16 +75,21 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Answer each threaded finding — one with a GitHub thread — in its thread and resolve the thread.
 - Post at most two standalone comments per round.
 - Post the round's applicable comments before leaving the round — advancing, requesting again, or handing back — since a hand-back decided first silently drops the round's verdicts into the session where no later round re-posts them.
-- Carry that round's vet-code findings in one result comment as verbatim whole plain text — finding text, severity, location, never paraphrased, with no added mentions or elaborate formatting.
-- Carry a per-finding verdict for every non-inline finding, suppressed included, in one verdict comment across all selected reviewers, with Copilot and Claude substance paraphrased and never verbatim quoted and with no mentions, since otherwise the quote silently summons a fresh review of the run's own words.
+- Carry that round's vet-code findings in one result comment as verbatim whole plain text under one outer heading — finding text, severity, location, never paraphrased, with no added mentions or other formatting.
+- Carry a per-finding verdict for every non-inline finding, suppressed included, each under its own heading, in one verdict comment across all selected reviewers, with Copilot and Claude substance paraphrased and never verbatim quoted and with no mentions, since otherwise the quote silently summons a fresh review of the run's own words.
   - Treat suppressed-comment blocks as a read source alongside threads.
 - Open each result and verdict comment with the reviewed commit SHA, since without it a verdict posted before a merge reads as judging the merged head the reviewer never saw.
+- Follow the verdict comment's SHA line with a heading naming the round's conclusion, one value per round exit, since otherwise the reader has to count verdicts to guess it:
+  - clean — advancing, only where that SHA satisfies **Clean**; never a round with an accepted fix or a red check.
+  - fixed and re-requested — requesting again.
+  - partial, naming the missing reviewers — handing back on the reviewer timeout.
+  - waiting on a person — any other hand-back: needs-user, a conflict, undetermined mergeability, Escalation, or a `using-dude`'s **Loop convergence** stop.
 - Create no new thread.
 - Send threadless vet-code-originated findings to the result comment and the verdict comment.
 - Send threadless Copilot or Claude findings to the verdict comment only, never transcribed into the result comment.
 - Post no result comment where the round has no findings or has only Declined lines.
 - Transcribe all findings including Declined lines on mixed rounds.
-- Post no verdict comment where it has no non-inline verdict target, except the timeout partial verdict naming missing reviewers.
+- Post the verdict comment every round, with only the SHA and the conclusion where it has no non-inline verdict target, since otherwise the final clean round leaves nothing on the PR.
 - Put a needs-user verdict's question with the round's obtained verdicts in the same verdict comment.
 - Where a round ends both needs-user and unmergeable, still post both applicable comments and hand back once naming both causes, since reporting only the conflict strands the unanswered questions off-PR.
 
