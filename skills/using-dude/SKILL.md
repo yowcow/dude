@@ -70,6 +70,10 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - Each turn takes one sub-issue through `implement-work`'s entry and gates.
 - A later PR never continues the previous turn.
 - A later PR never inherits its verification.
+- **A PR is opened and carried to ready only for a branch dude pushed, and only in the repository it was pushed to.**
+  - dude pushes to origin, so that is origin's repository, even where origin is a fork or another remote exists, a writable parent included.
+  - Any other PR is a person's act by hand.
+  - A review is the exception: it needs no push access, but its exact text is shown and approved before posting.
 - **Merging is a person's responsibility, and so is everything that depends on it**.
 - A remaining sub-issue starts a separate session, since the merge, the parent issue's closure, and branch and worktree cleanup all belong to a human afterward.
 
