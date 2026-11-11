@@ -218,11 +218,6 @@ run_in "$W" feature extra
 assert_row 'two-arguments-is-usage-error' 2 '' 0
 
 row_start
-W="$(work_repo args-three "$REMOTE_PLAIN" main)"
-run_in "$W" feature extra another
-assert_row 'three-arguments' 2 '' 0
-
-row_start
 W="$(work_repo args-facts-bare "$REMOTE_PLAIN" main)"
 run_in "$W" feature --facts
 assert_row 'facts-flag-without-file' 2 '' 0

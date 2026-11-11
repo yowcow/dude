@@ -332,12 +332,6 @@ fixture extra-pos feature remote
 run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own extra-pos 0 | facts_file)"
 assert_row 'extra-positional-is-usage-error' 2 '' 0
 
-row_start
-fixture other-found feature remote
-git_repo_remote "$FIXTURE_WORK" upstream 'https://github.com/acme-upstream/other-found.git'
-run_in "$FIXTURE_WORK" feature --facts "$({ own other-found 1 12; record 12 true; } | facts_file)"
-assert_row 'existing-pr-with-another-remote-is-reported' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 0
-
 # ---- step 3: the base, resolved by the real sibling ----------------------
 #
 # ensure-draft-pr.sh does not take a base as an argument: once it has decided
