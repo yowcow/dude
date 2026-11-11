@@ -11,7 +11,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Opening questions
 
-- Ask the user two things, once, before anything else.
+- Ask the user two things, once, after the entry checks pass — the author check, or `CREATE` from `ensure-draft-pr` — and before any draft PR or workspace.
 - Ask whether to mark the PR ready or leave its status once CI is green and review is clean.
 - Record that answer, since the finish branches on it.
 - Ask which reviewers to request.
@@ -20,7 +20,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Main entry: a PR reference
 
-- Bind the run from the caller's reference — a PR number or a PR URL — after the opening questions and before any workspace.
+- Bind the run from the caller's reference — a PR number or a PR URL — before any workspace.
 - Ask which repository a bare number belongs to, offering origin's own first, since a bare number names no repository and otherwise the run drives a same-numbered PR in another repository while nothing it does lands where it was asked.
 - Take the owner and repo a URL names.
 - Confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace, since otherwise the workspace attaches the same branch name on a remote that is not the PR's while every fix is committed and pushed where no reviewer watches and the PR does not move.
