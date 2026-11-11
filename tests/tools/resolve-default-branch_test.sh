@@ -86,60 +86,8 @@ git_repo_init "$NOREMOTE" trunk
 run_in "$NOREMOTE"
 assert_row 'no-origin' 1 '' 0
 
-# ---- [repo] --------------------------------------------------------------
-#
-# The upstream bare sits outside ${HARNESS_TMP}/remotes/ on purpose: every
-# git_repo_bare path is origin's sibling, so a remote built there is also what
-# the fallback derives, and the remote-match loop would go untested. The decoy
-# sits at the derived sibling path and answers `trunk`, so a script that skips
-# the remote match reads `trunk`, not `main`.
-git_repo_remote "$W" origin "$BARE"
-U="$(git_repo_scratch upstreams)/acme/parent.git"
-mkdir -p "${U%/*}"
-git init -q --bare "$U"
-seed "$U" main
-git_repo_remote "$W" upstream "$U"
-D="$(git_repo_bare acme parent)"
-seed "$D" trunk
-
-row_start
-run_in "$W" acme/parent
-assert_row 'repo-arg-selects-its-remote' 0 'main\n' 0
-
-row_start
-run_in "$W" Acme/Parent
-assert_row 'repo-arg-matches-case-insensitively' 0 'main\n' 0
-
 row_start
 run_in "$W" acme/widgets
-assert_row 'repo-arg-equal-to-origin' 0 'trunk\n' 0
-
-row_start
-E="$(git_repo_bare acme elsewhere)"
-seed "$E" trunk
-git -C "$W" remote remove upstream
-run_in "$W" acme/elsewhere
-assert_row 'repo-arg-with-no-remote-reads-origins-sibling' 0 'trunk\n' 0
-
-row_start
-run_in "$W" acme/nosuch
-assert_row 'repo-arg-unreachable' 1 '' 0
-
-row_start
-run_in "$W" acme/parent extra
-assert_row 'two-arguments-is-usage-error' 2 '' 0
-
-# A relative two-segment origin URL leaves nothing in front of the [repo]
-# swap, so the remote handed to git is the argument itself plus `.git`; a
-# leading dash makes that an option. The marker is relative and lower-case
-# because the argument is lower-cased and git runs from the work dir.
-row_start
-DASH="$(git_repo_scratch dash)"
-git_repo_init "$DASH" trunk
-git_repo_remote "$DASH" origin a/b
-run_in "$DASH" '--upload-pack=touch m'
-assert_row 'repo-arg-with-leading-dash-is-no-option' 1 '' 0
-tally check_eq 'repo-arg-with-leading-dash-is-no-option: no side effect' absent \
-  "$([ -e "${DASH}/m.git" ] && echo ran || echo absent)"
+assert_row 'an-argument-is-usage-error' 2 '' 0
 
 harness_exit "$failed" "$total"
