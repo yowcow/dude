@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Answer whether a PR's author is the user the agent's GitHub means acts as.
 #
-# review-code is the caller: it stops on OTHER, since its loop applies fixes to
-# the working tree and would rewrite somebody else's code.
+# review-code and pr-to-ready are the callers: each stops on OTHER, since its
+# loop applies fixes to code and would rewrite somebody else's.
 #
 # It reads no GitHub itself. Without facts it answers NEED, pinning the PR to
 # origin's repository and the number given, and an unread login is a STOP,
