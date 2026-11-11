@@ -316,7 +316,7 @@ fixture other-repo feature remote
 run_in "$FIXTURE_WORK" feature --facts "$(own other-repo 1 12 | sed 's|^repo=.*|repo=upstream/other-repo|' | facts_file)"
 assert_row 'pr-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
 
-# ---- step 2b: origin is the only target ----------------------------------
+# ---- origin is the only target -------------------------------------------
 
 row_start
 fixture fork-origin feature remote
