@@ -34,8 +34,10 @@
 #   git show e4395c8^:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
 #
-#   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
-#   their stderr tally, plus the three facts-capture rows.
+#   Against that pre-fix script, measured before yowcow/dude#863 changed the
+#   facts this script asks for: the two stubbed rows and their stderr tally
+#   failed, plus the three facts-capture rows. Against the current rows it
+#   fails most rows (`not ok 42/57`), the facts mismatch masking the defect.
 #
 # The branch's PR, and the prerequisite's PR both arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
