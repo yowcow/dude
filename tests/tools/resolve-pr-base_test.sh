@@ -74,17 +74,6 @@ work_repo() {
   printf '%s\n' "$dir"
 }
 
-# build_selected <name> <default> -- a remote at acme/<name> whose default
-# branch is <default>: build_remote's `main`, plus a `trunk` branch beside it,
-# HEAD on <default> (`main` or `trunk`).
-build_selected() {
-  local bare
-  bare="$(build_remote "$1")"
-  git -C "$bare" branch trunk main
-  git_repo_bare_head "$bare" "$2"
-  printf '%s\n' "$bare"
-}
-
 # body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
 body() {
   local f
@@ -115,13 +104,6 @@ prereq_facts() {
 }
 
 REMOTE_PLAIN="$(build_remote plain)"
-# A remote carrying a `trunk` branch beside `main`: the selected-repo row
-# below needs a default that exists on origin (the selection only names it;
-# the fetch still reads it from origin) yet differs from every other row's
-# `main` -- a same-named answer would pass even if the selection never
-# reached the selected repository's HEAD.
-REMOTE_TRUNK="$(build_selected trunkremote main)"
-
 # ---- the default-branch ladder, with no issue to read -------------------
 #
 # The symref names `feature`, a branch that exists on the remote and is the
@@ -140,24 +122,6 @@ row_start
 W="$(work_repo dflt-head "$REMOTE_PLAIN" -)"
 run_in "$W" feature
 assert_row 'no-issue-uses-the-remote-head' 0 'BASE main\n' 0
-
-row_start
-W="$(work_repo selected-repo "$REMOTE_TRUNK" main)"
-git_repo_remote "$W" upstream "$(build_selected selected trunk)"
-run_in "$W" feature acme/selected
-assert_row 'selected-repo-names-the-default' 0 'BASE trunk\n' 0
-
-# No remote added: the selected repository is read at origin's sibling path.
-row_start
-build_selected selected trunk >/dev/null
-W="$(work_repo selected-sibling "$REMOTE_TRUNK" main)"
-run_in "$W" feature acme/selected
-assert_row 'selected-repo-read-at-origins-sibling' 0 'BASE trunk\n' 0
-
-row_start
-W="$(work_repo selected-unreachable "$REMOTE_TRUNK" main)"
-run_in "$W" feature acme/elsewhere
-assert_row 'selected-repo-unreachable' 0 'STOP ask-default-branch\n' 0
 
 row_start
 W="$(work_repo dflt-unreachable "${HARNESS_TMP}/remotes/acme/nosuch.git" -)"
@@ -222,15 +186,15 @@ assert_row 'several-closing-prs' 0 'STOP ask-multiple-prs\n' 0
 # and a missing task branch want different answers from the person the caller
 # stops for.
 #
-# The first row's selected repository names a default (`trunk`) that origin
-# does not have, so the default branch's own fetch is what fails. The second
-# row's default is a real branch, so that fetch succeeds and it is the task
-# branch's fetch that fails instead.
+# The first row's remote reports `main` as HEAD but will not serve it
+# (hideRefs), so the default branch's own fetch is what fails. The second
+# row's default is a real branch, so the task branch's fetch fails instead.
 
 row_start
-build_selected selabsent trunk >/dev/null
-W="$(work_repo default-absent "$REMOTE_PLAIN" -)"
-run_in "$W" feature acme/selabsent
+B="$(build_remote dfltabsent)"
+W="$(work_repo default-absent "$B" -)"
+git -C "$B" config uploadpack.hideRefs refs/heads/main
+run_in "$W" feature
 assert_row 'default-branch-absent-on-remote' 0 'STOP default-fetch-failed\n' 0
 
 row_start
@@ -249,15 +213,9 @@ run_in "$W"
 assert_row 'no-argument' 2 '' 0
 
 row_start
-W="$(work_repo args-two-valid "$REMOTE_PLAIN" -)"
-git_repo_remote "$W" upstream "$(build_selected selected main)"
-run_in "$W" feature acme/selected
-assert_row 'two-arguments-names-the-repo' 0 'BASE main\n' 0
-
-row_start
-W="$(work_repo args-three "$REMOTE_PLAIN" main)"
-run_in "$W" feature extra another
-assert_row 'three-arguments' 2 '' 0
+W="$(work_repo args-two "$REMOTE_PLAIN" main)"
+run_in "$W" feature extra
+assert_row 'two-arguments-is-usage-error' 2 '' 0
 
 row_start
 W="$(work_repo args-facts-bare "$REMOTE_PLAIN" main)"

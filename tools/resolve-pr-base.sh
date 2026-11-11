@@ -13,17 +13,16 @@
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: resolve-pr-base.sh <branch> [repo] [--issue <n>] [--facts <file>]
+# Usage: resolve-pr-base.sh <branch> [--issue <n>] [--facts <file>]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <branch> [repo] [--issue <n>] [--facts <file>]" >&2
+  echo "Usage: $0 <branch> [--issue <n>] [--facts <file>]" >&2
   exit 2
 }
 
 BRANCH=''
-BASE_REPO=''
 FACTS=''
 ISSUE=''
 while [ "$#" -gt 0 ]; do
@@ -36,13 +35,7 @@ while [ "$#" -gt 0 ]; do
     -*) usage ;;
     *)
       if [ -z "$1" ]; then usage; fi
-      if [ -z "$BRANCH" ]; then
-        BRANCH="$1"
-      elif [ -z "$BASE_REPO" ]; then
-        BASE_REPO="$1"
-      else
-        usage
-      fi
+      if [ -z "$BRANCH" ]; then BRANCH="$1"; else usage; fi
       shift
       ;;
   esac
@@ -56,7 +49,7 @@ SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
 # The default branch is resolved first: it is both an answer below and a ref
 # the fetches name.
-DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh" "$BASE_REPO")" || { echo "STOP ask-default-branch"; exit 0; }
+DEFAULT="$(bash "${SCRIPT_DIR}/resolve-default-branch.sh")" || { echo "STOP ask-default-branch"; exit 0; }
 
 # Both fetches stay as a check that the default branch and the task branch are
 # on the remote. The default branch's failure carries its own slug: folded into

@@ -18,7 +18,7 @@ and **Waiting**.
   read once every page is read; stopped-before-last-page is a failed read,
   written as an empty total. `<name>.total=0` with no element lines is empty.
 - A `NEED`-pinned `name=value` identifier is written from the record actually
-  read — or, for a read parameter (`target`, `head`), from the
+  read — or, for a read parameter (`repo`, `head`), from the
   read actually made — never copied from the `NEED` line: the copy passes
   whichever record was read.
 - A fact that could not be read is written empty; an empty value or `null`
@@ -39,8 +39,7 @@ resolves there, and the same number names a different PR.
 ### `pr.number`
 
 The number on the PR record read. Pinned from the script's argument or the
-`NEED` line. Read in the repository its list was read in: `target` for
-`head.open-pr`, `repo` for `prereq.closing-pr`.
+`NEED` line. Read in the repository its list was read in: `repo`.
 
 ### `pr.author.login`
 
@@ -95,11 +94,6 @@ The base commit OID on that one PR's record. It may be the base branch's
 current tip rather than the point the PR was cut from; the script takes the
 merge-base itself.
 
-### `target`
-
-`<owner>/<repo>`, lower-case: the repository a branch's own PR is looked up
-and opened in — the base repository a person chose, else origin's.
-
 ### `head`
 
 `<owner>:<branch>` — the head the list below is filtered on, `<owner>` being
@@ -108,7 +102,7 @@ reference: a numeric branch name reads as that PR's number.
 
 ### `head.open-pr` (list)
 
-The number of each open PR in `target` whose head is `head`, with
+The number of each open PR in `repo` whose head is `head`, with
 `head.open-pr.total` the count the source reports. A failed read is written
 as an empty total, never `0`: "no PR" opens a second PR on top of one that
 could not be seen. Read from the repository's open-PR list filtered on `head`,
@@ -170,11 +164,3 @@ the real review and the reply. `viewer.review.commit.total` is the number of
 reviews that pass this filter, counted after every page is read — not a count the
 source reports, since no source filters by body. A failed or partial read is
 written as an empty total.
-
-### `repo.fork` (list)
-
-`true` or `false` for each repository record read for `repo`. `repo.fork.total`
-is the number of records the read returned — 1 for the repository's own
-record. A repository search returns a fork only when the query includes
-forks; a search that misses it reports total 0, written as read: the script
-stops on it, never reading it as "not a fork".

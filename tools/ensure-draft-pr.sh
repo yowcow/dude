@@ -6,9 +6,6 @@
 # The push-if-local-only check runs FIRST, on every call: resolving the base
 # first would stop an unpushed local branch before it ever got pushed.
 #
-# Fork-ness (`repo.fork`) is asked only once no PR was found; an unread value
-# stops instead of reading as "not a fork" and opening the PR against the fork.
-#
 # After CREATE, the read-back pins head and base, so a mis-targeted create is
 # never reported as created.
 #
@@ -16,14 +13,14 @@
 # Conventions: skills/implement-work/references/script-conventions.md.
 # STOP slugs: skills/implement-work/references/stop-registry.md.
 #
-# Usage: ensure-draft-pr.sh <branch> [<base-repo>] [--issue <n>] [--created <base>] [--facts <file>]
+# Usage: ensure-draft-pr.sh <branch> [--issue <n>] [--created <base>] [--facts <file>]
 #
 # Output contract (single source; skills/pr-to-ready/SKILL.md cites this):
 #   PR <n> found draft=<bool> url=<url> -- a PR already exists; leave its status as is.
 #   CREATE repo=<owner>/<repo> head=<head> base=<base> -- no PR exists: open a
 #     draft PR in <repo> from <head> onto <base>, then call again with the
-#     same <branch> [<base-repo>], plus --created <base> and facts read afresh
-#     into a new file; without the base-repo the read-back looks in origin.
+#     same <branch>, plus --created <base> and facts read afresh
+#     into a new file.
 #     <base> is the default branch, or, when the --issue issue has a
 #     `Blocked-By: #N` line whose prerequisite PR is OPEN, that PR's head.
 #     Without --issue it is always the default branch: pass it only for an
@@ -31,26 +28,18 @@
 #   PR <n> created draft=<bool> base=<base> url=<url> -- the read-back after CREATE.
 #   NEED <token>... -- read those facts and call again with --facts <file>.
 #     Once a PR must be created it may also name the issue's facts
-#     (`repo=... issue.number=... issue.body-file`, then `prereq.number=...
+#     (`issue.number=... issue.body-file`, then `prereq.number=...
 #     prereq.closing-pr`, then `pr.number=... pr.state pr.head.ref pr.head.owner=...`).
-#   STOP ask-base-repo -- origin is a fork or has a sibling remote, and no
-#     base-repo was given: ask which repository to target, call again with it.
 #   STOP <slug> -- no PR was opened; report the stop and hand the branch over
 #     regardless.
-#
-# Parent-targeted limitation: [base-repo] reaches the PR lookup and the
-# default-branch name; the fetches and the prerequisite lookup still run
-# against origin, in the child's context, so --issue is passed only for an
-# issue of origin's repository.
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 <branch> [<base-repo>] [--issue <n>] [--created <base>] [--facts <file>]" >&2
+  echo "Usage: $0 <branch> [--issue <n>] [--created <base>] [--facts <file>]" >&2
   exit 2
 }
 
 BRANCH=''
-BASE_REPO=''
 CREATED=''
 FACTS=''
 ISSUE=''
@@ -68,13 +57,7 @@ while [ "$#" -gt 0 ]; do
     -*) usage ;;
     *)
       if [ -z "$1" ]; then usage; fi
-      if [ -z "$BRANCH" ]; then
-        BRANCH="$1"
-      elif [ -z "$BASE_REPO" ]; then
-        BASE_REPO="$1"
-      else
-        usage
-      fi
+      if [ -z "$BRANCH" ]; then BRANCH="$1"; else usage; fi
       shift
       ;;
   esac
@@ -115,7 +98,6 @@ if ! REPO="$(bash "${SCRIPT_DIR}/origin-repo.sh")"; then
   exit 0
 fi
 OWNER="${REPO%%/*}"
-TARGET="$(printf '%s\n' "${BASE_REPO:-$REPO}" | tr '[:upper:]' '[:lower:]')"
 
 # --- Step 1: the branch must be on the remote before anything else runs. ---
 
@@ -152,7 +134,7 @@ else
 fi
 
 # --- Step 2: the branch's own PR. ---
-SPECS=("target=${TARGET}" "head=${OWNER}:${BRANCH}" 'head.open-pr[]')
+SPECS=("repo=${REPO}" "head=${OWNER}:${BRANCH}" 'head.open-pr[]')
 need "${SPECS[@]}"
 fact COUNT head.open-pr.total
 
@@ -186,33 +168,8 @@ if [ "$COUNT" -eq 1 ]; then
   exit 0
 fi
 
-# --- Step 2b: no PR; with no base-repo, may the target be origin? ---
-if [ -z "$BASE_REPO" ]; then
-  OTHERS="$(git remote | grep -vx origin || true)"
-  if [ -n "$OTHERS" ]; then
-    echo "STOP ask-base-repo"
-    exit 0
-  fi
-  SPECS+=("repo=${REPO}" 'repo.fork[]')
-  need "${SPECS[@]}"
-  fact FORK_TOTAL repo.fork.total
-  if [ "$FORK_TOTAL" -ne 1 ]; then
-    echo "STOP fork-unread"
-    exit 0
-  fi
-  need "${SPECS[@]}" 'repo.fork:true,false'
-  fact FORK repo.fork
-  if [ "$FORK" = true ]; then
-    echo "STOP ask-base-repo"
-    exit 0
-  fi
-fi
-
 # --- Step 3: the base, from the sibling only. ---
 RESOLVED_ARGS=("$BRANCH" --facts "$FACTS")
-if [ -n "$BASE_REPO" ]; then
-  RESOLVED_ARGS=("$BRANCH" "$TARGET" --facts "$FACTS")
-fi
 if [ -n "$ISSUE" ]; then
   RESOLVED_ARGS+=(--issue "$ISSUE")
 fi
@@ -235,9 +192,4 @@ esac
 
 # --- Step 4: hand the create to the agent. The head is named, never left to
 # default: a create's head defaults to the checked-out branch. ---
-if [ "$TARGET" = "$REPO" ]; then
-  HEAD_ARG="$BRANCH"
-else
-  HEAD_ARG="${OWNER}:${BRANCH}"
-fi
-echo "CREATE repo=${TARGET} head=${HEAD_ARG} base=${BASE}"
+echo "CREATE repo=${REPO} head=${BRANCH} base=${BASE}"

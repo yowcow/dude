@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Table test for tools/ensure-draft-pr.sh: the
 # branch/PR/base decision tree -- whether the branch reaches the remote,
-# whether a PR already exists for it, who decides the target repository, and
-# only then how the base is resolved.
+# whether a PR already exists for it, and only then how the base is resolved.
 #
 # The script reads facts, git and origin; it opens no PR and reads none, and
 # through the real sibling it reads the default branch from the remote's HEAD.
@@ -35,10 +34,12 @@
 #   git show e4395c8^:tools/ensure-draft-pr.sh >"$tmp/tools/mut.sh"
 #   SUT="$tmp/tools/mut.sh" tests/run.sh tests/tools/ensure-draft-pr_test.sh
 #
-#   Against that pre-fix script: `not ok 6/62` -- the two stubbed rows and
-#   their stderr tally, plus the three facts-capture rows.
+#   Against that pre-fix script, measured before yowcow/dude#863 changed the
+#   facts this script asks for: the two stubbed rows and their stderr tally
+#   failed, plus the three facts-capture rows. Against the current rows it
+#   fails most rows (`not ok 42/57`), the facts mismatch masking the defect.
 #
-# The branch's PR, the fork question and the prerequisite's PR all arrive as
+# The branch's PR, and the prerequisite's PR both arrive as
 # facts, in one `--facts` file a row writes. The facts' own self-checks are
 # tools/facts.sh's; what is under test here is which facts this script asks
 # for, in which order, and what it decides from them.
@@ -149,11 +150,11 @@ fixture() {
   FIXTURE_WORK="$work"
 }
 
-# own <name> <total> [<pr>...] -- target/head/list lines for branch `feature` in acme/<name>
+# own <name> <total> [<pr>...] -- repo/head/list lines for branch `feature` in acme/<name>
 own() {
   local name="$1" t="$2"
   shift 2
-  printf 'target=acme/%s\nhead=acme:feature\nhead.open-pr.total=%s\n' "$name" "$t"
+  printf 'repo=acme/%s\nhead=acme:feature\nhead.open-pr.total=%s\n' "$name" "$t"
   for n in "$@"; do printf 'head.open-pr=%s\n' "$n"; done
 }
 
@@ -164,17 +165,6 @@ record() {
   if [ "$#" -ge 4 ]; then printf 'pr.base.ref=%s\n' "$4"; fi
 }
 
-# fork <name> <total> [<isFork>...] -- origin's isFork list: `total` is the count of repository records the read returned
-fork() {
-  local n="$1" t="$2"
-  shift 2
-  printf 'repo=acme/%s\nrepo.fork.total=%s\n' "$n" "$t"
-  for v in "$@"; do printf 'repo.fork=%s\n' "$v"; done
-}
-
-# one_repo_fork <isFork> -- the fork list when a row's file already holds a `repo=` line (from prereq_facts)
-one_repo_fork() { printf 'repo.fork.total=1\nrepo.fork=%s\n' "$1"; }
-
 # body <text> -- prints the path of an issue-body file holding <text> (printf '%b')
 body() {
   local f
@@ -183,16 +173,16 @@ body() {
   printf '%s\n' "$f"
 }
 
-# issue_facts <repo> <body-text> -- the issue's facts (issue 203), on stdout
+# issue_facts <body-text> -- the issue's facts (issue 203), on stdout; the repo= line is own's
 issue_facts() {
-  printf 'repo=%s\nissue.number=203\nissue.body-file=%s\n' "$1" "$(body "$2")"
+  printf 'issue.number=203\nissue.body-file=%s\n' "$(body "$1")"
 }
 
 # prereq_facts <repo> <total> [<pr> [<state> [<head>]]] -- the facts of an
 # issue carrying `Blocked-By: #77` and that prerequisite's closing PRs, on
 # stdout (pipe into facts_file, or concatenate with other lines first).
 prereq_facts() {
-  issue_facts "$1" 'Blocked-By: #77\n'
+  issue_facts 'Blocked-By: #77\n'
   printf 'prereq.number=77\nprereq.closing-pr.total=%s\n' "$2"
   if [ "$#" -ge 3 ]; then
     printf 'prereq.closing-pr=%s\n' "$3"
@@ -200,21 +190,6 @@ prereq_facts() {
   if [ "$#" -ge 4 ]; then
     printf 'pr.number=%s\npr.state=%s\npr.head.ref=%s\npr.head.owner=%s\n' "$3" "$4" "${5-dep}" "${1%%/*}"
   fi
-}
-
-# parent_bare <default> -- acme/parent as a bare repo holding `main` and
-# `trunk`, HEAD on <default>. Origin's sibling path, so a row that names
-# acme/parent without adding a remote reaches it there.
-parent_bare() {
-  local bare seed
-  bare="$(git_repo_bare acme parent)"
-  seed="$(git_repo_scratch seed-parent)"
-  git_repo_init "$seed" main
-  git_repo_commit "$seed" README.md 'base\n' 'base commit'
-  git_repo_checkout "$seed" trunk main
-  git_repo_push "$seed" "$bare" main trunk
-  git_repo_bare_head "$bare" "$1"
-  printf '%s\n' "$bare"
 }
 
 remote_has_branch() {
@@ -256,7 +231,7 @@ assert_row 'push-failure-stops' 0 'STOP push-failed\n' 0
 row_start
 fixture order feature local
 run_in "$FIXTURE_WORK" feature
-assert_row 'local-only-branch-is-pushed-before-anything-is-asked' 0 'NEED target=acme/order head=acme:feature head.open-pr\n' 0
+assert_row 'local-only-branch-is-pushed-before-anything-is-asked' 0 'NEED repo=acme/order head=acme:feature head.open-pr\n' 0
 tally check_eq 'ordering-row-landed-on-the-remote' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # A rejecting hook cannot be used to prove this row's point: `fixture ...
@@ -280,7 +255,7 @@ row_start
 fixture othercheckout feature local
 git_repo_checkout "$FIXTURE_WORK" main
 run_in "$FIXTURE_WORK" feature
-assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'NEED target=acme/othercheckout head=acme:feature head.open-pr\n' 0
+assert_row 'the-named-branch-is-pushed-not-the-checked-out-one' 0 'NEED repo=acme/othercheckout head=acme:feature head.open-pr\n' 0
 tally check_eq 'named-branch-landed-not-the-checked-out-one' yes "$(remote_has_branch "$FIXTURE_BARE" feature)"
 
 # ---- step 2: the branch's own PR -----------------------------------------
@@ -334,100 +309,30 @@ assert_row 'created-from-another-owner-stops' 0 'STOP fact-mismatch\n' 0
 row_start
 fixture numeric 1234 remote
 run_in "$FIXTURE_WORK" 1234
-assert_row 'a-numeric-branch-name-is-pinned-as-a-head' 0 'NEED target=acme/numeric head=acme:1234 head.open-pr\n' 0
+assert_row 'a-numeric-branch-name-is-pinned-as-a-head' 0 'NEED repo=acme/numeric head=acme:1234 head.open-pr\n' 0
 
 row_start
 fixture other-repo feature remote
-run_in "$FIXTURE_WORK" feature --facts "$(own other-repo 1 12 | sed 's|^target=.*|target=upstream/other-repo|' | facts_file)"
+run_in "$FIXTURE_WORK" feature --facts "$(own other-repo 1 12 | sed 's|^repo=.*|repo=upstream/other-repo|' | facts_file)"
 assert_row 'pr-read-in-another-repo' 0 'STOP fact-mismatch\n' 0
 
-# ---- step 2b: who decides the target repository --------------------------
-#
-# A fork whose branch already has a PR reports the PR, never STOP
-# ask-base-repo -- the step-2 rows above prove it by carrying no fork fact at
-# all.
+# ---- origin is the only target -------------------------------------------
 
 row_start
 fixture fork-origin feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own fork-origin 0; fork fork-origin 1 true; } | facts_file)"
-assert_row 'origin-only-fork-without-base-repo-stops' 0 'STOP ask-base-repo\n' 0
-
-row_start
-fixture fork-absent feature remote
-run_in "$FIXTURE_WORK" feature --facts "$(own fork-absent 0 | facts_file)"
-assert_row 'fork-fact-absent-asks-not-assumes' 0 'NEED repo=acme/fork-absent repo.fork\n' 0
-
-row_start
-fixture fork-unread feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own fork-unread 0; fork fork-unread ''; } | facts_file)"
-assert_row 'fork-fact-unread-stops' 0 'STOP fact-missing\n' 0
-
-# A repository search that missed the fork reports total 0, written as read.
-row_start
-fixture fork-none feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own fork-none 0; fork fork-none 0; } | facts_file)"
-assert_row 'fork-search-found-nothing-stops' 0 'STOP fork-unread\n' 0
-
-row_start
-fixture fork-enum feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own fork-enum 0; fork fork-enum 1 yes; } | facts_file)"
-assert_row 'fork-fact-out-of-enum-stops' 0 'STOP fact-enum\n' 0
+run_in "$FIXTURE_WORK" feature --facts "$(own fork-origin 0 | facts_file)"
+assert_row 'origin-fork-is-not-asked-about' 0 'CREATE repo=acme/fork-origin head=feature base=main\n' 0
 
 row_start
 fixture remote-w feature remote
 git_repo_remote "$FIXTURE_WORK" upstream 'https://github.com/acme-upstream/remote-w.git'
 run_in "$FIXTURE_WORK" feature --facts "$(own remote-w 0 | facts_file)"
-assert_row 'another-remote-without-base-repo-stops' 0 'STOP ask-base-repo\n' 0
-
-# A given base repository skips the fork question: the file carries no
-# `repo.fork` line.
-row_start
-fixture base-eq feature remote
-run_in "$FIXTURE_WORK" feature acme/base-eq --facts "$(own base-eq 0 | facts_file)"
-assert_row 'base-repo-equal-to-origin-is-unqualified' 0 'CREATE repo=acme/base-eq head=feature base=main\n' 0
+assert_row 'another-remote-does-not-stop' 0 'CREATE repo=acme/remote-w head=feature base=main\n' 0
 
 row_start
-fixture base-case feature remote
-run_in "$FIXTURE_WORK" feature ACME/BASE-CASE --facts "$(own base-case 0 | facts_file)"
-assert_row 'base-repo-is-lower-cased' 0 'CREATE repo=acme/base-case head=feature base=main\n' 0
-
-# The one parent-target row that adds the remote. The bare is also origin's
-# sibling path, so it does not tell the two rungs apart:
-# resolve-default-branch_test.sh `repo-arg-selects-its-remote` pins the match.
-# Also the cross-repo case: a parent differing from origin, no --issue, so the
-# base is the parent's default branch and no issue facts are asked for.
-row_start
-fixture parent-q feature remote
-git_repo_remote "$FIXTURE_WORK" upstream "$(parent_bare main)"
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
-assert_row 'parent-target-qualifies-the-head' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
-
-# The second call after `origin-only-fork-without-base-repo-stops`: no
-# `upstream` remote, so the parent's default branch is read at origin's sibling
-# path.
-row_start
-fixture fork-parent feature remote
-parent_bare main >/dev/null
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
-assert_row 'origin-only-fork-parent-chosen-creates' 0 'CREATE repo=acme/parent head=acme:feature base=main\n' 0
-
-row_start
-fixture parent-gone feature remote
-run_in "$FIXTURE_WORK" feature acme/nosuch --facts "$(own nosuch 0 | facts_file)"
-assert_row 'parent-unreachable-stops' 0 'STOP ask-default-branch\n' 0
-
-# The parent's default (`trunk`) is one origin does not have, so the default
-# fetch is what fails.
-row_start
-fixture parent-trunk feature remote
-parent_bare trunk >/dev/null
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own parent 0 | facts_file)"
-assert_row 'parent-default-absent-on-origin' 0 'STOP default-fetch-failed\n' 0
-
-row_start
-fixture parent-found feature remote
-run_in "$FIXTURE_WORK" feature acme/parent --facts "$({ own parent 1 12; record 12 true; } | facts_file)"
-assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url=https://example.invalid/pull/12\n' 0
+fixture extra-pos feature remote
+run_in "$FIXTURE_WORK" feature acme/parent --facts "$(own extra-pos 0 | facts_file)"
+assert_row 'extra-positional-is-usage-error' 2 '' 0
 
 # ---- step 3: the base, resolved by the real sibling ----------------------
 #
@@ -442,37 +347,37 @@ assert_row 'parent-target-existing-pr-is-reported' 0 'PR 12 found draft=true url
 # that no CREATE is printed when the answer is a stop.
 #
 # Every fixture below is `fixture <name> feature remote`, and
-# every row's file says no PR and "not a fork", so control always reaches the
+# every row's file says no PR, so control always reaches the
 # sibling. The base comes from the issue (`--issue 203`).
 
 row_start
 fixture prereq-ask feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-ask 0; fork prereq-ask 1 false; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$(own prereq-ask 0 | facts_file)"
 assert_row 'base-resolution-asks-for-the-issue' 0 'NEED issue.number=203 issue.body-file\n' 0
 
 row_start
 fixture prereq-open feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-open 0; one_repo_fork false; prereq_facts acme/prereq-open 1 55 OPEN; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-open 0; prereq_facts acme/prereq-open 1 55 OPEN; } | facts_file)"
 assert_row 'an-open-prerequisite-becomes-the-base' 0 'CREATE repo=acme/prereq-open head=feature base=dep\n' 0
 
 row_start
 fixture prereq-merged feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-merged 0; one_repo_fork false; prereq_facts acme/prereq-merged 1 55 MERGED; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-merged 0; prereq_facts acme/prereq-merged 1 55 MERGED; } | facts_file)"
 assert_row 'a-merged-prerequisite-falls-back-to-the-default-branch' 0 'CREATE repo=acme/prereq-merged head=feature base=main\n' 0
 
 row_start
 fixture prereq-abandoned feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-abandoned 0; one_repo_fork false; prereq_facts acme/prereq-abandoned 1 55 CLOSED; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-abandoned 0; prereq_facts acme/prereq-abandoned 1 55 CLOSED; } | facts_file)"
 assert_row 'base-stop-prerequisite-abandoned' 0 'STOP abandoned-prerequisite\n' 0
 
 row_start
 fixture prereq-none feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-none 0; one_repo_fork false; prereq_facts acme/prereq-none 0; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-none 0; prereq_facts acme/prereq-none 0; } | facts_file)"
 assert_row 'base-stop-prerequisite-has-no-closing-pr' 0 'STOP not-implemented\n' 0
 
 row_start
 fixture prereq-several feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-several 0; one_repo_fork false; prereq_facts acme/prereq-several 2 55; printf 'prereq.closing-pr=56\n'; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-several 0; prereq_facts acme/prereq-several 2 55; printf 'prereq.closing-pr=56\n'; } | facts_file)"
 # Prints the same slug, STOP ask-multiple-prs, as several-prs-for-one-branch-
 # stop -- both are intended, and deliberately not redundant: one comes from
 # the SUT's own branch list, the other from the sibling's prerequisite facts.
@@ -480,25 +385,25 @@ assert_row 'base-stop-prerequisite-has-several-prs' 0 'STOP ask-multiple-prs\n' 
 
 row_start
 fixture prereq-noline feature remote
-run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-noline 0; one_repo_fork false; issue_facts acme/prereq-noline 'nothing blocking\n'; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --issue 203 --facts "$({ own prereq-noline 0; issue_facts 'nothing blocking\n'; } | facts_file)"
 assert_row 'issue-without-prereq-line-is-default' 0 'CREATE repo=acme/prereq-noline head=feature base=main\n' 0
 
 # Without --issue (the caller passes none for another repository's issue) the
 # issue's facts are never asked for.
 row_start
 fixture no-issue feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own no-issue 0; fork no-issue 1 false; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --facts "$(own no-issue 0 | facts_file)"
 assert_row 'no-issue-flag-resolves-default-without-asking-for-the-issue' 0 'CREATE repo=acme/no-issue head=feature base=main\n' 0
 
 row_start
 fixture default-unknown feature remote
 git_repo_bare_head "$FIXTURE_BARE" nosuch
-run_in "$FIXTURE_WORK" feature --facts "$({ own default-unknown 0; fork default-unknown 1 false; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --facts "$(own default-unknown 0 | facts_file)"
 assert_row 'base-stop-default-branch-unknown' 0 'STOP ask-default-branch\n' 0
 
 row_start
 fixture empty-list feature remote
-run_in "$FIXTURE_WORK" feature --facts "$({ own empty-list 0; fork empty-list 1 false; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --facts "$(own empty-list 0 | facts_file)"
 assert_row 'an-empty-list-is-no-pr-and-the-base-is-resolved' 0 'CREATE repo=acme/empty-list head=feature base=main\n' 0
 
 # ---- the read-back after the agent's own create --------------------------
@@ -551,13 +456,8 @@ assert_row 'created-from-another-head-stops' 0 'STOP fact-mismatch\n' 0
 # it is "not created", never the earlier answer replayed.
 row_start
 fixture stale feature remote
-run_in "$FIXTURE_WORK" feature --created main --facts "$({ own stale 0; fork stale 1 false; } | facts_file)"
+run_in "$FIXTURE_WORK" feature --created main --facts "$(own stale 0 | facts_file)"
 assert_row 'stale-file-on-read-back-stops' 0 'STOP pr-not-created\n' 0
-
-row_start
-fixture parent-rb feature remote
-run_in "$FIXTURE_WORK" feature acme/parent --created main --facts "$({ own parent 1 7; record 7 true feature main; } | facts_file)"
-assert_row 'parent-target-read-back' 0 'PR 7 created draft=true base=main url=https://example.invalid/pull/7\n' 0
 
 # ---- argument validation -------------------------------------------------
 #
@@ -645,13 +545,13 @@ run_contract() {
 row_start
 fixture sibling-abort feature remote
 sibling 'exit 1'
-run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-abort 0; fork sibling-abort 1 false; } | facts_file)"
+run_contract "$FIXTURE_WORK" feature --facts "$(own sibling-abort 0 | facts_file)"
 assert_row 'base-sibling-abort-is-reported' 0 'STOP base-resolve-failed\n' 0
 
 row_start
 fixture sibling-garbage feature remote
 sibling 'echo WHAT'
-run_contract "$FIXTURE_WORK" feature --facts "$({ own sibling-garbage 0; fork sibling-garbage 1 false; } | facts_file)"
+run_contract "$FIXTURE_WORK" feature --facts "$(own sibling-garbage 0 | facts_file)"
 assert_row 'base-sibling-garbage-is-reported' 0 'STOP base-resolve-failed\n' 0
 tally check_eq 'base-sibling-garbage: stderr' \
   'unexpected output from resolve-pr-base.sh: WHAT' "$(cat "$SUT_STDERR")"

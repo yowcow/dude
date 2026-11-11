@@ -16,7 +16,6 @@ such script.
 | Slug | Printed by |
 | --- | --- |
 | `abandoned-prerequisite` | `tools/read-prereq-pr.sh` |
-| `ask-base-repo` | `tools/ensure-draft-pr.sh` |
 | `ask-default-branch` | `implement-work/resolve-base.sh`, `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
 | `ask-multiple-prereqs` | `tools/read-prereq-pr.sh` |
 | `ask-multiple-prs` | `tools/ensure-draft-pr.sh`, `tools/read-prereq-pr.sh` |
@@ -39,7 +38,6 @@ such script.
 | `facts-answer-malformed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `tools/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `facts-read-failed` | `tools/ensure-draft-pr.sh`, `tools/resolve-range.sh`, `tools/check-pr-author.sh`, `tools/post-review.sh`, `review-pr/resolve-since.sh`, `tools/read-prereq-pr.sh` |
 | `fetch-failed` | `tools/resolve-pr-base.sh`, `tools/resolve-range.sh` |
-| `fork-unread` | `tools/ensure-draft-pr.sh` |
 | `ls-remote-failed` | `tools/ensure-draft-pr.sh` |
 | `merge-base-failed` | `tools/resolve-range.sh` |
 | `merge-failed` | `implement-work/absorb-base.sh` |

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Table test for tools/origin-repo.sh: a remote's fetch URL (origin's unless one
-# is named) reduced to the lowercase `<owner>/<repo>` a facts contract script
+# Table test for tools/origin-repo.sh: origin's fetch URL reduced to the lowercase `<owner>/<repo>` a facts contract script
 # pins its reads to. Each URL shape git accepts for GitHub gets a row, and "no
 # origin" exits 1 with nothing on stdout, because the caller prints its own
 # slug.
@@ -64,15 +63,7 @@ row_start
 git_repo_remote "$WORK" origin 'https://github.com/acme/widgets.git'
 git_repo_remote "$WORK" upstream 'git@github.com:Parent/Widgets.git'
 run_in "$WORK" upstream
-assert_row 'a named remote' 0 'parent/widgets\n' 0
-
-row_start
-run_in "$WORK" nosuch
-assert_row 'a remote that does not exist' 1 '' 0
-
-row_start
-run_in "$WORK" upstream extra
-assert_row 'two arguments' 2 '' 0
+assert_row 'an argument is a usage error' 2 '' 0
 
 # --- this script's reduction is the shared helper, not a copy of it
 # The helper is reached through SCRIPT_DIR, so both rows run a copy of tools/.
