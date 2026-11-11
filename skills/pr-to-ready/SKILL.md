@@ -27,7 +27,6 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Hand back a head on another remote, since it is not driven from here.
 - Before any workspace, run the check-pr-author script (`tools/check-pr-author.sh`) for the PR number, and take its answer as `review-code`'s **Scope** does for a caller-supplied PR.
 - On `OTHER`, change nothing and hand back, since the loop pushes fixes to a PR somebody else wrote.
-- Take `NEED` and `STOP` the same way there, since an unread author is never taken for the user's own.
 
 ## Fallback entry: a branch with no PR yet
 
