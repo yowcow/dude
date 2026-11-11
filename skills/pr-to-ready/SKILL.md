@@ -31,7 +31,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 ## Fallback entry: a branch with no PR yet
 
 - Where the caller gave a branch name instead of a PR reference, drive `tools/ensure-draft-pr.sh` with the closing keyword's issue, per the output contract in its header.
-- On `PR <n> found`, run the same author check on that PR before the loop, and on `OTHER` change nothing and hand back, since a branch name reaches a PR whose author this run never saw.
+- On `PR <n> found`, run the same author check on that PR, and on `OTHER` change nothing and hand back, since a branch name reaches a PR whose author this run never saw.
 - Open the draft PR by the agent's own means, in the repository the `CREATE` line names, which is always origin's.
 - Keep the title and body to `implement-work`'s Hand off.
 - Always draft.
