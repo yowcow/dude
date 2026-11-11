@@ -120,7 +120,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - **A PR is opened and carried to ready only for a branch pushed from the person's own account, by dude or by hand, and only in the repository it was pushed to.**
   - dude pushes to origin, so that is origin's repository, even where origin is a fork or another remote exists, a writable parent included.
   - Any other PR is a person's act by hand.
-  - A review is the exception: it needs no push access, but its exact text is shown and approved before posting.
+  - Reviewing any other PR is the exception: it needs no push access, but its exact text is shown and approved before posting.
 - **A loop's intermediate state is orchestrator-facing.**
 - Report each round to the caller in chat, and never to GitHub.
 - Only the converged result reaches the canonical record above.
