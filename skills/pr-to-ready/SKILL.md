@@ -25,10 +25,13 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Take the owner and repo a URL names.
 - Confirm the checkout's origin names that same repository through `tools/origin-repo.sh`, and stop on mismatch before creating any workspace, since otherwise the workspace attaches the same branch name on a remote that is not the PR's while every fix is committed and pushed where no reviewer watches and the PR does not move.
 - Hand back a head on another remote, since it is not driven from here.
+- Before any workspace, run the check-pr-author script (`tools/check-pr-author.sh`) for the PR number, and take its answer as `review-code`'s **Scope** does for a caller-supplied PR.
+- On `OTHER`, change nothing and hand back, since the loop pushes fixes to a PR somebody else wrote.
 
 ## Fallback entry: a branch with no PR yet
 
 - Where the caller gave a branch name instead of a PR reference, drive `tools/ensure-draft-pr.sh` with the closing keyword's issue, per the output contract in its header.
+- On `PR <n> found`, run the same author check on that PR, and on `OTHER` change nothing and hand back, since a branch name reaches a PR whose author this run never saw.
 - Open the draft PR by the agent's own means, in the repository the `CREATE` line names, which is always origin's.
 - Keep the title and body to `implement-work`'s Hand off.
 - Always draft.
