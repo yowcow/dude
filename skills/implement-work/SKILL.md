@@ -115,7 +115,8 @@ description: Use to implement one PR-sized task.
 - Carry a closing keyword (`fixes`/`closes`/`resolves`) in the body on the issue this work resolves, qualified as `owner/repo#NNN` where that issue lives in another repository.
 - Take the base whatever **Base branch** would settle.
 - Leave a PR already open on the branch as the deliverable, with its status as is.
-- Ask which repository the draft PR targets where origin is a fork or has another remote, offering origin's own first.
+- Pass origin's repository as the draft PR's target explicitly, per `using-dude`'s **Stage boundaries**.
+- Where the person wants another repository, open no PR: stop and report that a person opens it by hand.
 - Name `pr-to-ready` as the next entry without invoking it.
 
 ## Report

@@ -117,6 +117,10 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - The canonical record is the tracking issue's comment, with chat only when no issue tracks the work.
 - At each flow's end, name the artifact the next flow picks up.
 - The detailed per-PR plan is not such an artifact: it is scratch inside `implement-work`, rewritten from the task rather than carried across.
+- **A PR is opened and carried to ready only for a branch pushed from the person's own account, by dude or by hand, and only in the repository it was pushed to.**
+  - dude pushes to origin, so that is origin's repository, even where origin is a fork or another remote exists, a writable parent included.
+  - Any other PR is a person's act by hand.
+  - Reviewing any other PR is the exception: it needs no push access, but its exact text is shown and approved before posting.
 - **A loop's intermediate state is orchestrator-facing.**
 - Report each round to the caller in chat, and never to GitHub.
 - Only the converged result reaches the canonical record above.
