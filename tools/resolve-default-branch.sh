@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Print a repository's default branch by its bare name on stdout, or exit 1
+# Print origin's default branch by its bare name on stdout, or exit 1
 # having printed nothing. Shared by resolve-base.sh, resolve-pr-base.sh and
 # resolve-range.sh, and named by pr-to-ready's Step 2-1: do not delete as
 # unreferenced. Spec: skills/implement-work/references/base-branch.md,

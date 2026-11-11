@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Print a remote's repository -- origin's unless one is named -- as lowercase
-# `<owner>/<repo>`, read from its fetch URL. A facts-contract script pins the
+# Print origin's repository as lowercase `<owner>/<repo>`, read from its fetch
+# URL. A facts-contract script pins the
 # repository its facts are read from to this answer, so a record read for a
 # same-numbered PR elsewhere stops instead of answering about the wrong PR.
 # Facts: skills/implement-work/references/facts.md, `repo`.
@@ -10,18 +10,17 @@
 #
 # Conventions: skills/implement-work/references/script-conventions.md.
 #
-# Usage: origin-repo.sh [<remote>]
+# Usage: origin-repo.sh
 # Output: <owner>/<repo>
 set -euo pipefail
 SCRIPT_DIR="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 
-if [ "$#" -gt 1 ]; then
-  echo "Usage: $0 [<remote>]" >&2
+if [ "$#" -ne 0 ]; then
+  echo "Usage: $0" >&2
   exit 2
 fi
-REMOTE="${1:-origin}"
 
-if ! URL="$(git remote get-url "$REMOTE" 2>/dev/null)"; then
+if ! URL="$(git remote get-url origin 2>/dev/null)"; then
   exit 1
 fi
 
