@@ -11,7 +11,7 @@
 712 skills/investigate-performance/SKILL.md
 816 skills/judge-findings/SKILL.md
 2626 skills/plan-work/SKILL.md
-1258 skills/pr-to-ready/SKILL.md
+1949 skills/pr-to-ready/SKILL.md
 765 skills/propose-alternatives/SKILL.md
 1408 skills/review-code/SKILL.md
 1454 skills/review-findings/SKILL.md
@@ -19,5 +19,5 @@
 2299 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
-2383 skills/using-dude/SKILL.md
+2394 skills/using-dude/SKILL.md
 1837 skills/vet-code/SKILL.md

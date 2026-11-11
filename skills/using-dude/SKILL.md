@@ -120,7 +120,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - **A loop's intermediate state is orchestrator-facing.**
 - Report each round to the caller in chat, and never to GitHub.
 - Only the converged result reaches the canonical record above.
-- The sole exception is `pr-to-ready`'s per-round vet-code result comment and its verdict comment.
+- The sole exception is `pr-to-ready`'s per-round vet-code review, with its inline comments, its thread replies, and its verdict comment.
 - **A deliverable whose substance is findings, a judgment, or a claim of absence goes through `review-findings` before it reaches that record.**
 - This covers an Investigation's report on any of its three routes.
 - It equally covers a named-deliverable run reaching a conclusion with no flow's procedure to place the step for it.
@@ -150,7 +150,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - This form overrides a skill's "one paragraph" wording, while each skill keeps its own content order.
 - Leave text as it is wherever its reader takes it by exact form, since reshaping it breaks that reader:
   - a line a script or another skill reads by its fixed form, such as a `Blocked-By: #N` line, an `Assumed:` first line, or a leading commit SHA
-  - text relayed verbatim, such as the `vet-code` findings `pr-to-ready` posts
+  - text relayed verbatim, such as the `vet-code` findings in `pr-to-ready`'s review and its inline comments
 
 ### Loop convergence
 
