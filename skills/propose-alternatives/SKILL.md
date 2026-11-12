@@ -25,7 +25,7 @@ description: Use as a component when another skill needs the most direct route t
 The caller hands:
 
 - **The named purpose** — the problem to solve, not the means.
-- **The read-root** — not the current work tree. Which ref that is belongs to the caller.
+- **The read-root** — a commit SHA the caller resolved, never a ref, branch name, or work-tree path, since a stacked task's base is a feature branch whose name would otherwise enter the brief. Which commit belongs to the caller.
 - **The current artifact** — the work as currently framed. The worker never sees it.
 - **The caller's budget for the one measurement** — when the caller has one.
 - Without it, the default this dispatch names applies.
@@ -35,17 +35,17 @@ The caller hands:
 - Skip an unnamed purpose: dispatch nothing and return that skip.
 - Allow no other skip.
 - Otherwise dispatch once.
-- Hand the worker the read-root besides the purpose.
-- Let it read that ref, not the session work tree.
+- Hand the worker the read-root SHA besides the purpose, naming no repository path, branch, or worktree.
+- Let it read only with read-only plumbing named by that SHA — object reads, tree listings, searches — never a work tree, since the object store every worktree shares resolves the SHA from wherever the worker starts.
 - Create no worktree for the worker.
-- Take only what read-only plumbing against that ref can answer as its measurement, since a measurement needing an executable copy of that ref is outside what the worker may take.
+- Take only what read-only plumbing against that SHA can answer as its measurement, since a measurement needing an executable copy of that commit is outside what the worker may take.
 - Limit its one measurement to the caller's budget when the caller has one.
 - Otherwise limit it to the default this dispatch names.
-- Name a directory outside the work tree for output too large to return.
+- Name a directory outside the work tree, its path naming no branch or worktree, for output too large to return.
 - Ask for the proposal shape: the most direct route to the purpose (including doing nothing / doing something else), what it reuses, and its trade-offs.
 - Show it nothing else: neither the current artifact, the current means, an issue URL or body, nor this session's context.
 - Let the worker measure at most once.
-- Bound that measurement by that time limit, taken against that ref.
+- Bound that measurement by that time limit, taken against that SHA.
 - Take back the command and its raw output rather than a summary.
 - Take back the path of each file it wrote when the output is too large to return.
 - Return the worker's proposal as-is.
