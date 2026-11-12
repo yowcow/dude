@@ -192,7 +192,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - This is the one yardstick for weighing a design, and every skill that weighs one cites it here by name.
 - What becomes a finding, and at what severity, stays each citing skill's own.
 - The costs a design is weighed on: testability, coupling and dependency direction, entropy, performance, irreversibility, security, and defect tolerance.
-- A loss on any of them is a regression.
+- A loss on any of them, or on directness or a single canonical source, is a regression.
 - The principles map onto what is weighed:
   - coupling and dependency direction ← SRP and DIP
   - directness, no step the purpose does not need ← YAGNI and KISS
