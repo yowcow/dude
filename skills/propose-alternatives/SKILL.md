@@ -58,8 +58,8 @@ The caller hands:
 - Treat as a finding only what turns its reader to another direction, and only these four:
   - the current means does not meet the named purpose, or no longer serves it
   - the current artifact holds a step the named purpose does not need
-  - it loses a property the read-root had with no benefit worth it written down, weighing cost per `using-dude`'s **Design yardstick**
-  - at the macro level, a premise it stands on has broken
+  - the current artifact loses a property the read-root had with no benefit worth it written down, weighing cost per `using-dude`'s **Design yardstick**
+  - at the macro level, a premise the current artifact stands on has broken
 - Treat never an alternative reaching the same result and differing only in preference as one.
 - With no finding, return continue with no finding and let the caller continue its work.
 - With a finding, run `review-findings` on that comparison per its **Caller contract**.
