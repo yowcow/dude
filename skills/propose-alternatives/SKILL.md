@@ -53,12 +53,13 @@ The caller hands:
 
 ## Compare
 
-- Compare the proposal with the current artifact on purpose, means, and cost.
+- Compare the proposal with the current artifact.
 - Judge neither the worker nor the caller there.
-- **Purpose:** whether the named purpose is a real problem; doing nothing or doing something else included.
-- **Means:** whether the current work is warranted for that purpose and reaches it.
-- **Cost:** whether it includes a quantitative or qualitative regression.
-- Treat only a material regression, or a purpose that is invalid or unmet, as a finding.
+- Treat as a finding only what turns its reader to another direction, and only these four:
+  - the current means does not meet the named purpose, or no longer serves it
+  - the current artifact holds a step the named purpose does not need
+  - it loses a property the read-root had, where `using-dude`'s **Design yardstick** does not allow that loss
+  - at the macro level, a premise it stands on has broken
 - Treat never an alternative reaching the same result and differing only in preference as one.
 - With no finding, return continue with no finding and let the caller continue its work.
 - With a finding, run `review-findings` on that comparison per its **Caller contract**.
