@@ -59,7 +59,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Skip `propose-alternatives` when the purpose is unknown: do not invoke it, chat the skip, and continue with no new prompt.
 - Skip `propose-alternatives` when `<since>` is `<head>`: do not invoke it, chat the skip, and continue, since nothing was pushed since the viewer's last review.
 - Say so when no requirements result.
-- Invoke `propose-alternatives` once with the origin purpose its **Inputs** reaches from the issue behind the PR's closing keyword, or the settled purpose where there is none, the read-root below, and the current artifact when the purpose is settled.
+- Invoke `propose-alternatives` once with the origin purpose its **Inputs** reaches from the issue a closing keyword in the PR names, or the settled purpose where no closing keyword names an issue, the read-root below, and the current artifact when the purpose is settled.
 - Take as the read-root the SHA `tools/fetch-to-sha.sh` prints for the `pr.base.ref` fact, never `pr.base.sha`, the range's `<base>` merge-base, `<head>`, the head worktree Step 3 creates, or the session checkout, since `pr.base.sha` may lag the base's tip.
 - Leave comparison, the one review-findings pass, and the ask-person continue-vs-revisit to `propose-alternatives`'s own procedure.
 - Continue on its return.
