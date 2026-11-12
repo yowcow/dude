@@ -42,7 +42,8 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Read the purpose from the issue behind a closing keyword.
 - Never read it from the PR body.
 - Where that keyword points at a PR number rather than an issue, stop, since a closing keyword on a PR number closes nothing and leaves the issue open after the merge.
-- Invoke `propose-alternatives` once when the purpose is named.
+- Invoke `propose-alternatives` once with that purpose, the read-root below, and the current artifact when the purpose is named.
+- Take the PR's base at its current tip as the read-root: the `pr.base.sha` fact, read afresh as `implement-work`'s `references/facts.md` defines it, fetched as a SHA, never the PR head or the session checkout.
 - Leave its compare, the one review-findings pass, and the ask-person continue-or-revisit to its own procedure.
 
 ## Reviewer loop
