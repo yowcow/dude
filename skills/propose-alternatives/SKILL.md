@@ -24,9 +24,13 @@ description: Use as a component when another skill needs the most direct route t
 
 The caller hands:
 
-- **The named purpose** — the problem to solve, not the means.
+- **The named purpose** — the origin purpose: the problem to solve, not the means.
+  - Where an issue backs the work, it is the problem of the issue reached by following the parent relation up until no parent remains, since a sub-issue's own purpose is a means its parent's design chose.
+  - Stop at the highest issue read where a parent cannot be read, and report the stop.
+  - Stop at a child whose body carries no URL of its parent's design comment, take that child's purpose, report the stop, and continue the invocation.
+  - An issue with no parent, or work with no issue, keeps its own purpose.
 - **The read-root** — a commit SHA the caller resolved, never a ref, branch name, or work-tree path, since a stacked task's base is a feature branch whose name would otherwise enter the brief. Which commit belongs to the caller.
-- **The current artifact** — the work as currently framed. The worker never sees it.
+- **The current artifact** — the work as currently framed, with the agreed design comment of each level the walk passed, read from each child's link to its parent's design comment. The worker never sees it.
 - **The caller's budget for the one measurement** — when the caller has one.
 - Without it, the default this dispatch names applies.
 
@@ -56,11 +60,14 @@ The caller hands:
 - Compare the proposal with the current artifact.
 - Judge neither the worker nor the caller there.
 - Treat as a finding only what turns its reader to another direction, and only these four:
-  - the current means does not meet the named purpose, or no longer serves it
-  - the current artifact holds a step the named purpose does not need
+  - the current means, read with the agreed designs on the way, does not meet the origin purpose, or no longer serves it
+  - the current artifact holds a step the origin purpose does not need
   - the current artifact loses a property the read-root had with no benefit worth it written down, weighing cost per `using-dude`'s **Design yardstick**
   - at the macro level, a premise the current artifact stands on has broken
 - Treat never an alternative reaching the same result and differing only in preference as one.
+- Treat never an alternative a design on the way declined as one, unless the proposal brings a fact that design did not have.
+- Treat never a sub-issue's artifact carrying only part of the origin purpose as one.
+- Count never a step a sibling sub-issue carries as one the origin purpose does not need.
 - With no finding, return continue with no finding and let the caller continue its work.
 - With a finding, run `review-findings` on that comparison per its **Caller contract**.
 - Chat the finding with its trade-offs and a recommendation.

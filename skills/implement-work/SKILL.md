@@ -53,7 +53,7 @@ description: Use to implement one PR-sized task.
 
 - Run this after **Isolation** and before **Plan gate**.
 - Run this on the small-change lane too, then go to **Execution**.
-- Take the task's own purpose as the purpose: sub-issue, single-PR issue, or request.
+- Take the origin purpose `propose-alternatives`' **Inputs** reaches from the task as the purpose.
 - Skip on an unnamed purpose: do not invoke, note the skip, and continue.
 - Take the base **Base branch** would settle as the read-root, resolved on `REUSE` and `ATTACHED` too and defaulting to the default branch for a task with no issue, handed as the SHA `tools/fetch-to-sha.sh` prints for that base.
 - Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact.
