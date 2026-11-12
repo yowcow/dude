@@ -186,3 +186,15 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
 - Report what is uncertain, the options and trade-offs, and the recommendation.
 - What this flow hands over on this exit belongs to that skill's own **Escalation** section, with the receiving contract in `plan-work`'s **Entry**.
+
+## Design yardstick
+
+- This is the one yardstick for weighing a design, and every skill that weighs one cites it here by name.
+- What becomes a finding, and at what severity, stays each citing skill's own.
+- The costs a design is weighed on: testability, coupling and dependency direction, entropy, performance, irreversibility, security, and defect tolerance.
+- A loss on any of them is a regression.
+- The principles map onto what is weighed:
+  - coupling and dependency direction ← SRP and DIP
+  - directness, no step the purpose does not need ← YAGNI and KISS
+  - a single canonical source ← DRY
+- Allow a regression only where a benefit worth it is written down.

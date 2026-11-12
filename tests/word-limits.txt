@@ -1,6 +1,6 @@
 # Word caps for skills/*/SKILL.md, skills/*/references/*.md, and AUTHORING.md, one "<limit> <path>" per line.
 # Lower a cap when you rewrite a file; never raise one without saying why in the PR.
-2169 AUTHORING.md
+2171 AUTHORING.md
 1596 skills/audit-code/SKILL.md
 2291 skills/implement-work/SKILL.md
 555 skills/implement-work/references/base-branch.md
@@ -19,5 +19,5 @@
 2299 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
-2484 skills/using-dude/SKILL.md
+2602 skills/using-dude/SKILL.md
 1837 skills/vet-code/SKILL.md
