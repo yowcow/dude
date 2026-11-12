@@ -26,7 +26,7 @@ The caller hands:
 
 - **The named purpose** — the origin purpose: the problem to solve, not the means.
   - Where an issue backs the work, it is the problem of the issue reached by following the parent relation up until no parent remains, since a sub-issue's own purpose is a means its parent's design chose.
-  - Stop at the highest issue read where a parent cannot be read, and report the stop.
+  - Stop at the highest issue read where a parent cannot be read, report the stop, and continue the invocation.
   - Stop at a child whose body carries no URL of its parent's design comment, take that child's purpose, report the stop, and continue the invocation.
   - An issue with no parent, or work with no issue, keeps its own purpose.
 - **The read-root** — a commit SHA the caller resolved, never a ref, branch name, or work-tree path, since a stacked task's base is a feature branch whose name would otherwise enter the brief. Which commit belongs to the caller.
