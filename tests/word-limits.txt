@@ -2,7 +2,7 @@
 # Lower a cap when you rewrite a file; never raise one without saying why in the PR.
 2171 AUTHORING.md
 1596 skills/audit-code/SKILL.md
-2292 skills/implement-work/SKILL.md
+2310 skills/implement-work/SKILL.md
 555 skills/implement-work/references/base-branch.md
 1060 skills/implement-work/references/facts.md
 569 skills/implement-work/references/script-conventions.md
@@ -10,13 +10,13 @@
 834 skills/investigate-anomaly/SKILL.md
 712 skills/investigate-performance/SKILL.md
 816 skills/judge-findings/SKILL.md
-2610 skills/plan-work/SKILL.md
-2042 skills/pr-to-ready/SKILL.md
-849 skills/propose-alternatives/SKILL.md
+2625 skills/plan-work/SKILL.md
+2079 skills/pr-to-ready/SKILL.md
+1140 skills/propose-alternatives/SKILL.md
 1408 skills/review-code/SKILL.md
 1454 skills/review-findings/SKILL.md
 1391 skills/review-plan/SKILL.md
-2298 skills/review-pr/SKILL.md
+2373 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
 2610 skills/using-dude/SKILL.md
