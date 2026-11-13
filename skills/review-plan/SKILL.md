@@ -130,6 +130,7 @@ description: Use to review a planning artifact.
 2. Dispatch reviewers per **Dispatch**.
 3. Hand findings to `judge-findings` and take back verdicts.
    - Judge the plan and repo against the original request there, under **What counts as a finding**.
+   - Hand `using-dude`'s **Design yardstick** there as the acceptance criteria, naming that section, since the judge never reads `using-dude`.
    - Settle a measurement-route `needs-user` before the person route.
    - Let the caller take that one bounded measurement there, record it, and hand the finding back.
    - Run no project check in this pass.
