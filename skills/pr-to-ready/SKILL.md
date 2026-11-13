@@ -113,5 +113,9 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Base retarget
 
-- Re-resolve the base through `tools/resolve-pr-base.sh` with the Purpose check's issue, never another repository's.
+- Count only the issues of origin's repository a closing keyword names.
+- With none, leave the base as it is, since a person chose it by hand.
+- Otherwise run `tools/resolve-pr-base.sh` once per issue, answering each `NEED` within that issue's run.
+- Stop on any run's `STOP`.
+- Take a base only where every run answers the same `BASE`, and otherwise stop and ask a person.
 - Where the PR drifted off the resolved base, retarget by the agent's own means.
