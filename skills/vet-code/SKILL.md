@@ -31,6 +31,7 @@ description: Use as a component when another skill needs one round of code revie
 - Hand every Declined line however the earlier rounds' record holds it, since that record travels as context and never as a filter.
   - A line dropped as already judged never reaches the judge.
 - Hand the template's passage on how to judge behavior the spec is silent on verbatim as the acceptance criteria.
+- Where **Purpose** below applies, hand `using-dude`'s **Design yardstick** too as acceptance criteria, naming that section, since the judge never reads `using-dude`.
 - Treat a candidate sitting outside the plan or spec as why the reviewer set it aside, never as a ground to reject it.
 - Treat code unchanged since the previous round as no ground to reject either, when the candidate claims something about that code.
 - Treat a line that only discloses part of the scope as unreviewed, never as such a candidate.
