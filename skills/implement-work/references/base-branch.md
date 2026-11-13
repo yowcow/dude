@@ -14,7 +14,8 @@ Settle the base from the state of the PR closing `#N` — never from whether the
 
 | prerequisite PR state | `review-code`'s `<base>` | `pr-to-ready`'s retarget |
 | --- | --- | --- |
-| no issue, or no `Blocked-By:` line | the default branch | none |
+| no issue of origin's repository | the default branch | none |
+| no `Blocked-By:` line | the default branch | the default branch |
 | `OPEN` | `git fetch origin <head>`, then `FETCH_HEAD` | back to `<head>` |
 | `MERGED` | `git fetch origin refs/pull/<n>/head`, then `FETCH_HEAD` | the default branch, retargeting an existing PR that still points at `<head>` |
 | anything else — ask a person | **stop** | **stop** |
