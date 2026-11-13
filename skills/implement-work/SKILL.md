@@ -53,10 +53,10 @@ description: Use to implement one PR-sized task.
 
 - Run this after **Isolation** and before **Plan gate**.
 - Run this on the small-change lane too, then go to **Execution**.
-- Take the origin purpose `propose-alternatives`' **Inputs** reaches from the task as the purpose.
+- Take as the purpose the purpose chain `propose-alternatives`' **Inputs** defines, built from the task's issue, or from the request with no issue.
 - Skip on an unnamed purpose: do not invoke, note the skip, and continue.
 - Take the base **Base branch** would settle as the read-root, resolved on `REUSE` and `ATTACHED` too and defaulting to the default branch for a task with no issue, handed as the SHA `tools/fetch-to-sha.sh` prints for that base.
-- Otherwise invoke `propose-alternatives` once with that purpose, that read-root, and the current artifact.
+- Otherwise invoke `propose-alternatives` once with that chain, that read-root, and the current artifact with the designs on the way its **Inputs** names.
 - Leave its compare, one review-findings pass, and ask-person continue-vs-revisit to that procedure.
 - Continue on its return.
 - Take **Escalation** with the finding on revisit design, never **Plan gate**.
