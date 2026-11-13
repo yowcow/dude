@@ -42,7 +42,7 @@ The caller hands:
 - Skip an unnamed purpose: dispatch nothing and return that skip.
 - Allow no other skip.
 - Otherwise dispatch once.
-- Hand the worker the read-root SHA besides the purpose chain, root first with each level marked, naming no repository path, branch, or worktree.
+- Hand the worker the read-root SHA besides the purpose chain, each chain apart, root first with each level marked, naming no repository path, branch, or worktree.
 - Let it read only with read-only plumbing named by that SHA — object reads, tree listings, searches — never a work tree, since the object store every worktree shares resolves the SHA from wherever the worker starts.
 - Create no worktree for the worker.
 - Take only what read-only plumbing against that SHA can answer as its measurement, since a measurement needing an executable copy of that commit is outside what the worker may take.
