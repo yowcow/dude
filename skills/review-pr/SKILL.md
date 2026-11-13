@@ -17,7 +17,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 ## Orchestration model
 
 - Dispatch no worker of its own here, since the reviewer and the verdict workers are `vet-code`'s and `judge-findings`'.
-- Invoke `propose-alternatives` before `vet-code` when the purpose is settled.
+- Invoke `propose-alternatives` before `vet-code`.
 
 ## Steps
 
@@ -53,13 +53,17 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Take the settled purpose, what the linked issues state as requirements, and any facts the user gave as the requirements.
 - Let the settled purpose win where it and an issue's requirements differ.
 - Keep the PR body out of the requirements.
-- Make no purpose-versus-means check when the purpose is unknown.
+- Make no purpose-versus-means check in `vet-code` when the purpose is unknown.
 - Run the rest of the review as usual when the purpose is unknown.
 - Take what the linked issues state, if any, as the requirements when the purpose is unknown.
-- Skip `propose-alternatives` when the purpose is unknown: do not invoke it, chat the skip, and continue with no new prompt.
 - Skip `propose-alternatives` when `<since>` is `<head>`: do not invoke it, chat the skip, and continue, since nothing was pushed since the viewer's last review.
 - Say so when no requirements result.
-- Invoke `propose-alternatives` once with the origin purpose its **Inputs** reaches from the issue a closing keyword in the PR names, or the settled purpose where no closing keyword names an issue, the read-root below, and the current artifact when the purpose is settled.
+- Invoke `propose-alternatives` once with the purpose chain its **Inputs** defines, the read-root below, and the current artifact with the designs on the way its **Inputs** names.
+  - Build each chain from an issue a closing keyword in the PR names, with the settled purpose in place of that issue's own level, beneath its ancestors.
+  - Where several issues are named, place the one settled purpose once, as the lowest level shared beneath every issue's ancestors.
+  - Take the settled purpose as the only level where no closing keyword names an issue.
+  - Keep each issue's own level when the purpose is unknown.
+  - Hand no level where the purpose is unknown and no closing keyword names an issue.
 - Take as the read-root the SHA `tools/fetch-to-sha.sh` prints for the `pr.base.ref` fact, never `pr.base.sha`, the range's `<base>` merge-base, `<head>`, the head worktree Step 3 creates, or the session checkout, since `pr.base.sha` may lag the base's tip.
 - Leave comparison, the one review-findings pass, and the ask-person continue-vs-revisit to `propose-alternatives`'s own procedure.
 - Continue on its return.
