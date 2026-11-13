@@ -40,9 +40,9 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 ## Purpose check
 
 - Read the purpose from the issue behind a closing keyword.
-- Never read it from the PR body.
+- Read it from the PR body only when the PR carries no closing keyword.
 - Where that keyword points at a PR number rather than an issue, stop, since a closing keyword on a PR number closes nothing and leaves the issue open after the merge.
-- Invoke `propose-alternatives` once with the origin purpose its **Inputs** reaches from that issue, the read-root below, and the current artifact when the purpose is named.
+- Invoke `propose-alternatives` once with the purpose chain its **Inputs** defines, built from each issue a closing keyword names, or from the PR body where none is carried, the read-root below, and the current artifact with the designs on the way its **Inputs** names, when the purpose is named.
 - Take as the read-root the SHA `tools/fetch-to-sha.sh` prints for the `pr.base.ref` fact, never `pr.base.sha`, the PR head, or the session checkout, since `pr.base.sha` may lag the base's tip.
 - Leave its compare, the one review-findings pass, and the ask-person continue-or-revisit to its own procedure.
 
