@@ -82,7 +82,8 @@ description: Use as a component when another skill needs one round of code revie
 - Let ledger rows narrow nothing, since the scope shape stays the caller's.
 - Cover the whole scope at every severity still, as without them.
 - **Purpose** — only when the caller says the requirements include a settled purpose, the problem the change exists to solve, compare the means with that purpose.
-- Name what the means gives up where a way to keep it exists, such as looser coupling or less room for defects.
+- Name what the means gives up where a way to keep it exists.
+- Hand over `using-dude`'s **Design yardstick** there, naming that section, as how to weigh that loss, since the reviewer never reads `using-dude`.
 - Rate a loss of that kind by what it costs, never as Minor because the code works.
 - **Earlier rounds** — from the caller's second round on, take findings accepted and fixed, and findings or set-aside behaviors rejected with the reason.
 - Let the record narrow the review in nothing, since it covers the whole scope at every severity with places unchanged since the previous round included.

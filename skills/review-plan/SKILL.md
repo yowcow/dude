@@ -87,11 +87,13 @@ description: Use to review a planning artifact.
 - Let Assumptions catch what nobody has confirmed either way.
 - Check **Executability** for tasks too large or vague to implement and verify alone, shared files breaking independence, verification that would not show the change, and a named command with unspecified result-testing.
 - Check **Risk** for blast radius, compatibility, data and security, and half-landed state.
+- Weigh what the plan gives up under Risk per `using-dude`'s **Design yardstick**.
 - On a TODO list, check under Risk whether every intermediate state holds with only some PRs merged too.
 
 ## Dispatch
 
 - Hand each reviewer its lenses, the artifact, the original request, and the paths it touches.
+- Hand a reviewer applying Risk `using-dude`'s **Design yardstick** too, naming that section, since the reviewer never reads `using-dude`.
 - Take trying to make the plan fail as the stance.
 - Let one that will not break pass.
 - Count an unevidenced finding as no finding.
