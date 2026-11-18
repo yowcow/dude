@@ -181,7 +181,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
   - `plan-work` for a Change (from `implement-work` or `pr-to-ready` alike)
   - the Investigation workflow's framing for an Investigation
   - Workflow selection if the task's type changed.
-- **A Critical finding that invalidates the agreed design is never fixed in place, and never worked around.**
+- **A finding that invalidates the agreed design is never fixed in place, and never worked around.**
 - It goes back to `plan-work`'s **Entry** for re-approval wherever it surfaces.
 - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
 - Report what is uncertain, the options and trade-offs, and the recommendation.

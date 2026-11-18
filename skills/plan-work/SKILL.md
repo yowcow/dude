@@ -118,7 +118,7 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 3. Research: read the issue, where there is one, and the relevant code before asking or proposing. Proposing before reading publishes boundaries contradicting the codebase, and `review-plan` reviews fictional scope.
 4. Reach **Design agreement**.
 5. Draft the design write-up and the numbered TODO list yourself against **Output contract**, on re-entry including the match against existing children, settled before step 6. Drafting without that match lets review approve a list silently duplicating or dropping existing children.
-6. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run with the previous pass's findings record: accepted and fixed, rejected with the reason. Re-running without that record lets a rejected finding return reworded and get folded in, oscillating the list while each pass reads as progress. A finding invalidating the agreed design is not folded in at all: take **Escalation**. Folding it in ships a redesigned plan under an agreement never given.
+6. Run `review-plan` with the target declared as the TODO list. Fold every accepted finding in yourself, then re-run with the previous pass's findings record: accepted and fixed, rejected with the reason. Re-running without that record lets a rejected finding return reworded and get folded in, oscillating the list while each pass reads as progress. A finding invalidating the agreed design is not folded in at all: return the round's such findings together to **Design agreement** for re-approval. Folding it in ships a redesigned plan under an agreement never given. A finding invalidating the agreed design includes an accepted finding whose fix changes what the agreed design says, whatever its severity, but not one whose fix only rewords, changing no instruction.
 7. Do not leave step 6 while a blocking finding remains: leaving open publishes while the report claims convergence, and implementation starts on an item review rejects.
 8. **Publish**.
 
@@ -128,7 +128,6 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 - This loop's stopping conditions are `using-dude`'s **Loop convergence**.
 - One round is one `review-plan` pass plus its fold-in.
 - A finding repeats when a later pass makes the same objection to the same item, whatever words it arrives in.
-- Never fix a Critical finding invalidating the agreed design in this loop: stop and return to **Design agreement** for re-approval, since fixing it in the loop ships a new design under the old agreement, showing approval that never happened.
 
 ## Report
 
