@@ -12,12 +12,12 @@
 816 skills/judge-findings/SKILL.md
 2756 skills/plan-work/SKILL.md
 2130 skills/pr-to-ready/SKILL.md
-1140 skills/propose-alternatives/SKILL.md
+1136 skills/propose-alternatives/SKILL.md
 1408 skills/review-code/SKILL.md
 1454 skills/review-findings/SKILL.md
 1410 skills/review-plan/SKILL.md
 2373 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
-2610 skills/using-dude/SKILL.md
-1872 skills/vet-code/SKILL.md
+2660 skills/using-dude/SKILL.md
+1873 skills/vet-code/SKILL.md

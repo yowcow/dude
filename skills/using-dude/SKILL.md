@@ -193,8 +193,10 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - What becomes a finding, and at what severity, stays each citing skill's own.
 - The costs a design is weighed on: testability, coupling and dependency direction, entropy, performance, irreversibility, security, and defect tolerance.
 - A loss on any of them, or on directness or a single canonical source, is a regression.
+- A loss the change takes on by fitting the existing structure is the change's own, where what it touches, written afresh to do what it does today plus the change, would not take it.
 - The principles map onto what is weighed:
   - coupling and dependency direction ← SRP and DIP
   - directness, no step the purpose does not need ← YAGNI and KISS
   - a single canonical source ← DRY
+  - a regression reshaping first avoids ← make the change easy, then make the easy change
 - Allow a regression only where a benefit worth it is written down.

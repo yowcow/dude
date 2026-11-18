@@ -65,7 +65,7 @@ The caller hands:
 - Treat as a finding only what turns its reader to another direction, and only these four:
   - the current means, read with the agreed designs on the way, does not meet the purpose chain, or no longer serves it
   - the current artifact holds a step the purpose chain does not need
-  - the current artifact loses a property the read-root had with no benefit worth it written down, weighing cost per `using-dude`'s **Design yardstick**
+  - the current artifact takes on a regression per `using-dude`'s **Design yardstick** with no benefit worth it written down
   - at the macro level, a premise the current artifact stands on has broken
 - Treat never an alternative reaching the same result and differing only in preference as one.
 - Treat never an alternative a design on the way declined as one, unless the proposal brings a fact that design did not have.
