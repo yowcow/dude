@@ -28,7 +28,7 @@ description: Use as a component when another skill needs judged review findings 
 - Fix never again what a carried-over reply says was fixed.
 - Before posting such a reply, confirm CI passed on the current head, which contains its commit.
 - With nothing to fix and no carried-over "fixed" reply, wait for no CI.
-- Where CI fails or the bounded wait runs out, post nothing and return every unposted reply to the caller.
+- Where the push is rejected, CI fails, or the bounded wait runs out, post nothing and return every unposted reply to the caller.
 
 ## Replies
 
@@ -36,8 +36,8 @@ description: Use as a component when another skill needs judged review findings 
 - Where it does, post nothing and return every unposted reply, since a reply joins that draft.
   - Never add to, submit, or delete that review.
 - Reply to a finding with a thread in that thread.
-- Resolve the thread once the finding is settled.
-- Never resolve a thread that got a question back or whose reply failed.
+- Resolve the thread once its reply is posted.
+- Never resolve a thread that got a question back.
 - Gather the findings with no thread into one comment per invocation.
 - Open that comment with the SHA of the commit the findings were judged at: the workspace's head when this skill was invoked, before its own fixes.
 - Follow it with the caller's lead text, where given.
@@ -52,4 +52,4 @@ description: Use as a component when another skill needs judged review findings 
 
 - Return the replies posted.
 - Return the replies that failed.
-- Return the unposted replies, each with its reason: CI failed, the CI wait timed out, or a pending review.
+- Return the unposted replies, each with its reason: the push was rejected, CI failed, the CI wait timed out, or a pending review.
