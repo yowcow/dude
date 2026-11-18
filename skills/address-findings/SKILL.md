@@ -22,7 +22,7 @@ description: Use as a component when another skill needs judged review findings 
 
 ## Fix
 
-- Apply each accepted fix in the workspace, run the relevant tests and lint, commit, and push.
+- Apply each accepted fix in the workspace, adjusting it until the relevant tests and lint pass, then commit and push.
 - Then confirm CI passed on the pushed head.
 - With nothing to fix, push nothing.
 - Fix never again what a carried-over reply says was fixed.
