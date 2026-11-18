@@ -26,7 +26,7 @@ description: Use as a component when another skill needs judged review findings 
 - Then confirm CI passed on the pushed head.
 - With nothing to fix, push nothing.
 - Fix never again what a carried-over reply says was fixed.
-- Before posting such a reply, confirm CI passed on the current head, which contains its commit.
+- Before posting such a reply, confirm CI passed on the PR's head, counting its push as rejected where that head lacks its commit.
 - With nothing to fix and no carried-over "fixed" reply, wait for no CI.
 - Where the push is rejected, CI fails, or the bounded wait runs out, post nothing and return every unposted reply to the caller.
 
