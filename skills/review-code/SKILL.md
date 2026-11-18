@@ -112,7 +112,7 @@ description: Use to review code.
 - Stop the pass non-clean on a `needs-user` verdict, with the meaning `judge-findings`'s **Verdicts** gives `needs-user`.
 - Apply nothing in the round that stopped there.
 - Hand the finding to a person through the caller there.
-- Fix no Critical finding invalidating the approved design in this loop.
+- Fix no finding invalidating the approved design in this loop.
 - Send it back for re-approval per `using-dude`'s **Escalation**, since this skill is no exception.
 - Hand it over as the finding itself.
 - Report it apart from the ordinary verdict, so the caller routes it rather than reading the pass as merely unfinished.
@@ -140,4 +140,4 @@ description: Use to review code.
 - Report what verification ran and its actual result.
 - Report skipped-as-unchanged verification with the covering result the caller handed over.
 - Report the verdict: clean, or the blocking findings that remain.
-- Flag separately there any Critical finding invalidating the approved design, per **Escalation**.
+- Flag separately there any finding invalidating the approved design, per **Escalation**.
