@@ -87,6 +87,5 @@ The caller hands:
 - When the worker measured, return the command and raw output it returned with them.
 - When that output was too large to return, return the path of each file it wrote instead.
 - Where the measurement it needed is none of those, return what could not be measured and what would settle it.
-- Treat neither the proposal nor the comparison as a finding or `needs-user`.
 - Post none of it to a PR — body, inline, or review.
 - Return never empty to mean the current direction is fine.
