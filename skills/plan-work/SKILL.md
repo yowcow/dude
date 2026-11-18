@@ -47,9 +47,9 @@ description: Use to plan a change, including a multi-PR fix that arrives on inve
 
 - Reach design agreement with `superpowers:brainstorming`, run to its self-review and the user's confirmation, or the run publishes an unapproved draft as the agreed design.
 - Never follow `superpowers:brainstorming` onward, however emphatically it says to, since following its trailing pointer starts implementation inside planning and lands edits on the session branch.
+- Draft the TODO list from that draft yourself.
 - Where the design adds one more definition of something the code already defines in more than one place, the approaches `superpowers:brainstorming` offers include both adding it as it stands and consolidating first, and drop neither. Weigh the recommendation by `using-dude`'s **Design yardstick** and leave the choice to the person, defaulting to neither. Offer as consolidation only what this change touches, changing no behavior, and shrinking the change's diff or sparing the added definition. Adding such a definition while the person has not chosen its shape invalidates the agreed design.
   - Otherwise `superpowers:brainstorming` drops the approach existing work rules out, and a review finding adding such a definition folds in as a fix, so the plan publishes a shape nobody chose and the person first sees it in a draft PR.
-- Draft the TODO list from that draft yourself.
 
 ## Output contract
 
