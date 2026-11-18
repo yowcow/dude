@@ -68,7 +68,7 @@ description: Use to implement one PR-sized task.
 1. Read the task. A sub-issue carries its own body plus a link to the parent's design comment; an issue that fits one PR carries its own comment; a request with no issue is the input, with whatever `plan-work` left in chat per its **Output contract**.
 2. Dispatch a drafter at fresh context with `superpowers:writing-plans`. The brief carries references to where step 1 found the design — never the design itself — plus the workspace path and the branch. The worker drafts the plan and returns its path; it never implements. What this gate takes back has been through that skill's own self-review. The plan lives in the workspace, git-ignored and never committed.
 3. Dispatch `review-plan` on the implementation plan, fold every accepted finding except one that invalidates the agreed design — which is not folded at all — then re-run `review-plan`, handing over the previous pass's findings.
-4. Leave by exactly one of three exits: **Clean** per `using-dude`'s **Loop convergence** goes to **Execution**; **Design invalidated** by a Critical finding takes **Escalation**; **Stalled** on a non-clean stopping condition with a surviving blocking finding stops for the user, per that rule. A round is one `review-plan` pass and the fold-in that follows it; two findings are the same when they fault the same step for the same reason.
+4. Leave by exactly one of three exits: **Clean** per `using-dude`'s **Loop convergence** goes to **Execution**; **Design invalidated** by a finding takes **Escalation**; **Stalled** on a non-clean stopping condition with a surviving blocking finding stops for the user, per that rule. A round is one `review-plan` pass and the fold-in that follows it; two findings are the same when they fault the same step for the same reason.
 
 ## Execution
 
@@ -101,7 +101,7 @@ description: Use to implement one PR-sized task.
 
    | # | Condition | Where it goes |
    | --- | --- | --- |
-   | 1 | The agreed design is what has to change — an invalidating Critical finding, a recorded out-of-reach criterion, or contradictory criteria | Stop the gate and take **Escalation** |
+   | 1 | The agreed design is what has to change — an invalidating finding, a recorded out-of-reach criterion, or contradictory criteria | Stop the gate and take **Escalation** |
    | 2 | `review-code` stopped short of clean with blocking findings open | Halt here, whatever else changed. Report the open findings and let the user decide |
    | 3 | This gate's own rounds hit one of those non-clean conditions | Stop and hand the decision over the same way |
    | 4 | Any step of this round changed something | Back to step 1 |
@@ -139,6 +139,6 @@ description: Use to implement one PR-sized task.
 
 ## Escalation
 
-- Send a Critical finding invalidating the agreed design back to `plan-work`'s **Entry** for re-approval per `using-dude`'s **Escalation**, since neither the plan gate nor the completion gate is an exception in this skill.
+- Send a finding invalidating the agreed design back to `plan-work`'s **Entry** for re-approval per `using-dude`'s **Escalation**, since neither the plan gate nor the completion gate is an exception in this skill.
 - Hand over the branch on this exit: its name, whether it is pushed, and any PR open on it.
 - Keep the round's commits on the branch where the finding surfaced in the completion gate, since the gate commits before taking either exit.
