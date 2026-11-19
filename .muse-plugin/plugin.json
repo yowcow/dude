@@ -11,6 +11,10 @@
   "capabilities": {
     "skills": [
       {
+        "id": "address-findings",
+        "path": "skills/address-findings/SKILL.md"
+      },
+      {
         "id": "audit-code",
         "path": "skills/audit-code/SKILL.md"
       },
