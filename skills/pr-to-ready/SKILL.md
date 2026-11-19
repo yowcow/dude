@@ -56,17 +56,20 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Complete each Copilot or Claude leg on the first GitHub-observed review by that login after the request baseline.
 - Compare GitHub-observed reviews against that baseline, never against what this run already handled, since otherwise an older review satisfies the wait and the loop judges clean on a diff no reviewer saw.
 - Attribute a GitHub-observed review by author login, never by timestamp, since a human commenting in the same window otherwise misreads as the reviewer.
-- Fold a late non-inline arrival received before the verdict comment is posted into it.
-- Never edit a posted comment to fold one in.
-- Past the bounded wait, post the verdict comment as a partial verdict naming the missing reviewers.
-- Hand back there.
-- Judge each returned finding one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
-- Fix what was accepted, then push and request again.
+- Once the legs complete or the bounded wait runs out, read the PR and send to judging, whoever posted them:
+  - each unresolved thread, the vet-code review's included, except one whose last comment is the viewer's, or with no comment but the viewer's since this run judged it, replied or not;
+  - each review body, suppressed-comment blocks included, and each conversation comment, by a login other than the viewer, that arrived after this run started.
+- Judge each threadless item once in the run, never again in a later round.
+- Leave out threadless items from before this run started, naming them out of scope when the run ends.
+- Read again right before handing the round to `address-findings`, and judge in that round each threadless item that arrived since.
+- Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
+- Past the bounded wait, end the round as partial and hand back.
+- Request again once `address-findings` has pushed the accepted fixes.
 - Stop on a needs-user verdict, advancing no further round until it is answered.
 
 ## Clean
 
-- Hold clean only when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy findings.
+- Hold clean only when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy finding in the round's vet-code return or among what it sent to judging.
 - Diagnose and fix a red check in a new round.
 - Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission, since keyed on the reader's status every PR reads as blocked.
 - Hand back a conflict, or a mergeability value still UNKNOWN past the bounded re-read, for a person's explicit re-entry, since an undetermined mergeability is never taken for a clean one.
@@ -75,41 +78,40 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Replies
 
-- Answer each threaded finding — one with a GitHub thread, the vet-code review's own inline comments included — in its thread with its verdict and what was done, or its needs-user question, and resolve the thread only once it is settled, since a resolved thread folds away a question no one has answered.
-- Resolve no thread whose reply failed, and hand back after the round's other posts naming each failed reply, since a resolved thread folds away a finding no one answered.
-- Post at most one vet-code review and one verdict comment per round as standalone posts, thread replies aside.
-- Post the round's applicable comments before leaving the round — advancing, requesting again, or handing back — since a hand-back decided first silently drops the round's verdicts into the session where no later round re-posts them.
 - Post that round's vet-code findings as one COMMENT review anchored to the reviewed commit, each finding's text, severity, and location verbatim and never paraphrased, with no added mentions and no formatting beyond the location form, list marker, and continuation indent `tools/build-review-payload.sh` gives and the `<details>` fold below.
 - Hand the round's `accept` and `needs-user` vet-code findings to `tools/build-review-payload.sh` as `{path, line, body}` items — `body` the finding's severity and text, `path` relative to the repository root, `line` head-side, either null where the finding names none — with the merge base of the reviewed commit and the PR's base read afresh as `implement-work`'s `references/facts.md` defines `pr.base.sha`, as its base, never the round's own range, since the PR's diff decides which lines take an inline comment.
   - Where a finding's location is not exactly one `path:line`, put the location as stated at the head of `body`, and take `path` and `line` from its first place, since the tool carries one line only.
 - Write the summary it takes as the reviewed commit SHA line followed, where the round has any, by one `<details>` block holding the round's `reject` findings and `Declined to judge` lines verbatim, since the tool appends only the findings it is handed and nothing else of the round reaches the PR.
   - Leave a blank line after `</summary>`, since otherwise the markdown inside the fold renders raw.
-- Before the create or the first thread reply, hand back where the viewer already holds a pending review on the PR, never adding to, submitting, or deleting it, since one login holds one pending review per PR and the round's comments otherwise land in, or submit, a draft the run never wrote.
-- Post no thread reply while the viewer holds a pending review on the PR, and name the unposted review and replies in the hand-back instead, since a reply by some means joins that pending review unseen and is submitted with it.
+- Before the create, hand back where the viewer already holds a pending review on the PR, never adding to, submitting, or deleting it, since one login holds one pending review per PR and the round's review otherwise lands in, or submits, a draft the run never wrote.
 - Drive `tools/post-review.sh` with the PR, the reviewed commit, `COMMENT`, and the payload, per its header's output contract:
   - On `WRITE`, create a pending review anchored to the reviewed commit in the repository it names, add each inline comment, and submit it, putting the payload's body on whichever step the means lets set and on the submit too where the submit replaces it.
   - End the write at the first failed step, since carrying on submits a review that reads as complete without the failed part.
   - Take the review's id right after the create as `implement-work`'s `references/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the tool again with that id and a facts file, answering each `NEED` the same way.
-  - On `POSTED COMMENTED`, go on to the replies in this review's own threads.
+  - On `POSTED COMMENTED`, go on to `address-findings`.
 - Hand back, naming the failed step and each inline finding whose verdict or question went unposted, on any of these, since the PR may hold a review whose body is not the round's:
   - a `STOP` from the first call — saying nothing was posted;
   - a failed create, a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
   - any other `STOP` from the read-back — saying a review may be on the PR with a state or body not confirmed to be the round's.
-- Keep out of the review any vet-code finding with the same claim about the same code as a thread an earlier round's vet-code review opened, resolved or not, wherever that code now sits, and answer it in that thread instead, since otherwise every round opens another thread for one finding.
+- On those hand-backs and the pending-review one before the create, call no `address-findings` and name each of the round's settlements in the hand-back instead, since the vet-code findings have no thread or review to be answered in and a fix pushed then lands after the hand-back.
+- Keep out of the review any vet-code finding with the same claim about the same code as a thread sent to judging this round or one an earlier round's vet-code review opened, resolved or not, wherever that code now sits, merging it into the verdict and reply of a thread sent to judging this round, since otherwise every round opens another thread for one finding.
   - Unresolve such a thread while that finding is not settled, since a reply in a resolved thread is folded away where no one sees it.
-- Carry a per-finding verdict for every non-inline finding, suppressed included, each under its own heading, in one verdict comment across all selected reviewers, with Copilot and Claude substance paraphrased and never verbatim quoted and with no mentions, since otherwise the quote silently summons a fresh review of the run's own words.
-  - Treat suppressed-comment blocks as a read source alongside threads.
-- Open each vet-code review and verdict comment with the reviewed commit SHA, since without it a verdict posted before a merge reads as judging the merged head the reviewer never saw.
-- Follow the verdict comment's SHA line with a heading naming the round's conclusion, one value per round exit:
-  - clean — advancing, only where that SHA satisfies **Clean**; never a round with an accepted fix or a red check.
-  - fixed and re-requested — requesting again.
-  - partial — handing back on the reviewer timeout.
-  - waiting on a person — any other hand-back: needs-user, a conflict, undetermined mergeability, Escalation, or a `using-dude`'s **Loop convergence** stop.
-- Send threadless Copilot or Claude findings to the verdict comment only, never transcribed into the vet-code review.
+- Never transcribe another reviewer's finding into the vet-code review.
 - Post no vet-code review where no finding is left for it or only `Declined to judge` lines are.
-- Post the verdict comment every round, with only the SHA and the conclusion where it has no non-inline verdict target, since otherwise the final clean round leaves nothing on the PR.
-- Put a needs-user verdict's question in its thread where the finding has one, and otherwise with the round's obtained verdicts in the verdict comment.
-- Where a round ends both needs-user and unmergeable, still post both applicable comments and hand back once naming both causes, since reporting only the conflict strands the unanswered questions off-PR.
+- Hand `address-findings` the round's settlements once, after `POSTED COMMENTED` or where no vet-code review is due, and before leaving the round — advancing, requesting again, or handing back:
+  - each vet-code `accept` or `needs-user` finding, with the thread its inline comment opened, or, where it went into the review body, no thread and that review as its source;
+  - each vet-code finding kept out of the review for an earlier round's vet-code thread, whatever its verdict, with that thread;
+  - each finding sent to judging, with its thread, or no thread and a link to its source;
+  - a `needs-user` verdict as a question back.
+- Pass it as lead text, every round, a heading naming the round's conclusion, one value per round exit, since otherwise the final clean round leaves nothing on the PR:
+  - clean — advancing, only where the judged commit satisfies **Clean**; never a round with an accepted fix or a red check.
+  - fixed and re-requested — requesting again.
+  - partial — handing back on the reviewer timeout, naming the missing reviewers.
+  - waiting on a person — any other hand-back: needs-user, a conflict, undetermined mergeability, Escalation, or a `using-dude`'s **Loop convergence** stop.
+- Hand back after the round naming each failed reply it returns.
+- Hand back naming each reply it returns unposted for a pending review.
+- Hand back naming each `accept` settlement it returns, since that fix was never pushed and no later round judges its finding again.
+- Carry any other unposted reply, unjudged, into the next round's call where the run advances, and otherwise name it in the hand-back.
 
 ## Base retarget
 
