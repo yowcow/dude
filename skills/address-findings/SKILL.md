@@ -22,7 +22,7 @@ description: Use as a component when another skill needs judged review findings 
 
 ## Fix
 
-- Apply each accepted fix in the workspace, adjusting it until the relevant tests and lint pass, one round being one adjustment and one run of them, then commit and push.
+- Apply each accepted fix in the workspace, adjusting it until the relevant tests and lint pass, one round being one adjustment and one run of them, a finding being one failing test or lint rule, then commit and push.
 - Then confirm CI passed on the pushed head.
 - With nothing to fix, push nothing.
 - Fix never again what a carried-over reply says was fixed.
@@ -52,5 +52,5 @@ description: Use as a component when another skill needs judged review findings 
 
 - Return the replies posted.
 - Return the replies that failed.
-- Return the unposted replies, each with its reason: a fix that never passed, CI failed, the CI wait timed out, or a pending review.
-- Return each fix whose push was rejected as its `accept` settlement, never as a "fixed" reply.
+- Return the unposted replies, each with its reason.
+- Return each fix that never passed or whose push was rejected as its `accept` settlement, never as a "fixed" reply.
