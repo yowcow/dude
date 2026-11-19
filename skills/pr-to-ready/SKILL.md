@@ -65,7 +65,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
 - Past the bounded wait, end the round as partial and hand back.
 - Request again once `address-findings` has pushed the accepted fixes.
-- Stop on a needs-user verdict, advancing no further round until it is answered, then send that finding, with the answer and its thread or source, to judging in the next round, as one item with its thread.
+- Stop on a needs-user verdict, advancing no further round until it is answered, then send the answer to judging in the next round as one item together with the finding it answers and that finding's thread or source.
 
 ## Clean
 
