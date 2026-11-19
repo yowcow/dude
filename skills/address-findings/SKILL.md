@@ -22,7 +22,9 @@ description: Use as a component when another skill needs judged review findings 
 
 ## Fix
 
-- Apply each accepted fix in the workspace, adjusting it until the relevant tests and lint pass, one round being one adjustment and one run of them, a finding being one failing test or lint rule, then commit and push.
+- Apply each accepted fix in the workspace, adjusting it until the relevant tests and lint pass, then commit and push.
+  - One round is one adjustment and one run of them.
+  - One finding is one failing test or lint rule.
 - Then confirm CI passed on the pushed head.
 - With nothing to fix, push nothing.
 - Fix never again what a carried-over reply says was fixed.
