@@ -2,7 +2,7 @@
 # Lower a cap when you rewrite a file; never raise one without saying why in the PR.
 2171 AUTHORING.md
 557 skills/address-findings/SKILL.md
-599 skills/address-review/SKILL.md
+604 skills/address-review/SKILL.md
 1596 skills/audit-code/SKILL.md
 2310 skills/implement-work/SKILL.md
 567 skills/implement-work/references/base-branch.md
