@@ -77,7 +77,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted with the commit it was posted on, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
-- Show the user in chat every earlier finding with its verdict — `accept`, `reject`, and `needs-user` — before putting any `needs-user` question.
+- Show the user in chat every earlier finding with its verdict, each `reject` with its reason, before putting any `needs-user` question.
 - Put each `needs-user` question to the user before invoking `vet-code`, and take the answer as one of those three.
 - Skip `vet-code` when `<since>` is `<head>`, since there is no new commit to review.
 - Invoke `vet-code` once, handing it the committed range `<since>..<head>` with `<head-dir>` as the only place to read and search files at `<head>`, what the PR says it implements, and the requirements, saying so when they include a settled purpose, and the earlier rounds' record below, since a worker does not inherit this session's working directory.
