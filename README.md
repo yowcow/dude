@@ -92,6 +92,7 @@ flowchart TB
   pr-to-ready --> judge-findings
   pr-to-ready --> propose-alternatives
   pr-to-ready --> review-findings
+  pr-to-ready --> address-findings
   audit-code --> review-findings
   investigate-anomaly --> review-findings
   investigate-performance --> review-findings
