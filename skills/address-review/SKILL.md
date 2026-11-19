@@ -15,7 +15,7 @@ description: Use to answer reviews, review threads, or comments on your own PR, 
 - Take one or more URLs on one PR from the caller.
 - Ask which PR to answer when the URLs name more than one.
 - Read each URL by its fragment:
-  - `#pullrequestreview-<id>`: that review's body and its inline comments.
+  - `#pullrequestreview-<id>`: that review's inline comments, and its body where the body makes a claim.
   - `#discussion_r<id>`: that one thread.
   - `#issuecomment-<id>`: that one comment.
 - Ask which review, thread, or comment to answer when a URL carries no fragment.
