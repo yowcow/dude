@@ -61,11 +61,11 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
   - each review body, suppressed-comment blocks included, and each conversation comment, by a login other than the viewer, that arrived after this run started.
 - Judge each threadless item once in the run, never again in a later round.
 - Leave out threadless items from before this run started, naming them out of scope when the run ends.
-- Read again right before handing the round to `address-findings`, and judge in that round each threadless item that arrived since.
+- Read again right before handing the round to `address-findings`, and judge in that round each item that arrived since, threads included.
 - Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
 - Past the bounded wait, end the round as partial and hand back.
 - Request again once `address-findings` has pushed the accepted fixes.
-- Stop on a needs-user verdict, advancing no further round until it is answered.
+- Stop on a needs-user verdict, advancing no further round until it is answered, then hand the answer as that finding's settlement, with its thread or source, to the next `address-findings` call, and count it among what that round sent to judging.
 
 ## Clean
 
@@ -94,13 +94,13 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
   - a failed create, a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
   - any other `STOP` from the read-back — saying a review may be on the PR with a state or body not confirmed to be the round's.
 - On those hand-backs and the pending-review one before the create, call no `address-findings` and name each of the round's settlements in the hand-back instead, since the vet-code findings have no thread or review to be answered in and a fix pushed then lands after the hand-back.
-- Keep out of the review any vet-code finding with the same claim about the same code as a thread sent to judging this round or one an earlier round's vet-code review opened, resolved or not, wherever that code now sits, merging it into the verdict and reply of a thread sent to judging this round, since otherwise every round opens another thread for one finding.
+- Keep out of the review any vet-code finding with the same claim about the same code as a thread sent to judging this round or one an earlier round's vet-code review opened, resolved or not, wherever that code now sits, and, for a thread sent to judging this round, letting that thread's one verdict and reply stand for it and counting it no more in the vet-code return, since otherwise every round opens another thread for one finding.
   - Unresolve such a thread while that finding is not settled, since a reply in a resolved thread is folded away where no one sees it.
 - Never transcribe another reviewer's finding into the vet-code review.
 - Post no vet-code review where no finding is left for it or only `Declined to judge` lines are.
 - Hand `address-findings` the round's settlements once, after `POSTED COMMENTED` or where no vet-code review is due, and before leaving the round — advancing, requesting again, or handing back:
   - each vet-code `accept` or `needs-user` finding, with the thread its inline comment opened, or, where it went into the review body, no thread and that review as its source;
-  - each vet-code finding kept out of the review for an earlier round's vet-code thread, whatever its verdict, with that thread;
+  - each vet-code finding kept out of the review for an earlier round's vet-code thread not sent to judging this round, whatever its verdict, with that thread;
   - each finding sent to judging, with its thread, or no thread and a link to its source;
   - a `needs-user` verdict as a question back.
 - Pass it as lead text, every round, a heading naming the round's conclusion, one value per round exit, since otherwise the final clean round leaves nothing on the PR:
