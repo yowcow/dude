@@ -87,7 +87,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 ### 4. Draft
 
-- Show the user in chat every finding `vet-code` returned with its verdict — `accept`, `reject`, and `needs-user` — before putting any `needs-user` question.
+- Show the user in chat every finding `vet-code` returned with its verdict, each `reject` with its reason, before putting any `needs-user` question.
 - Put each `needs-user` question to the user and ask which of those findings go into the PR.
 - Keep out of the findings any finding with the same claim about the same code as an earlier finding, wherever that code now sits, whatever that finding's judgment, and answer it only in that earlier finding's reply, since otherwise every run opens another thread for one finding.
 - Turn a resolved or not-valid earlier finding to still standing when such a finding is `accept` or a user-included `needs-user`.
