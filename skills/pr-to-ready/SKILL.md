@@ -65,7 +65,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
 - Past the bounded wait, end the round as partial and hand back.
 - Request again once `address-findings` has pushed the accepted fixes.
-- Stop on a needs-user verdict, advancing no further round until it is answered, then hand the answer, where it is not itself sent to judging, as that finding's settlement, with its thread or source, to the next `address-findings` call, and count it among what that round sent to judging.
+- Stop on a needs-user verdict, advancing no further round until it is answered, then send that finding, with the answer and its thread or source, to judging in the next round, as one item with its thread.
 
 ## Clean
 
@@ -94,7 +94,8 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
   - a failed create, a successful create with no readable review id, or `STOP review-pending-left` — saying a pending review may be left on the PR for a person to check and submit or delete;
   - any other `STOP` from the read-back — saying a review may be on the PR with a state or body not confirmed to be the round's.
 - On those hand-backs and the pending-review one before the create, call no `address-findings` and name each of the round's settlements in the hand-back instead, since the vet-code findings have no thread or review to be answered in and a fix pushed then lands after the hand-back.
-- Keep out of the review any vet-code finding with the same claim about the same code as a thread sent to judging this round or one an earlier round's vet-code review opened, resolved or not, wherever that code now sits, and, for a thread sent to judging this round, letting that thread's one verdict and reply stand for it and counting it no more in the vet-code return, since otherwise every round opens another thread for one finding.
+- Keep out of the review any vet-code finding with the same claim about the same code as a finding sent to judging this round or a thread an earlier round's vet-code review opened, resolved or not, wherever that code now sits, since otherwise every round opens another thread for one finding.
+  - For a finding sent to judging this round, let its one verdict and reply stand for that vet-code finding and count it no more in the vet-code return.
   - Unresolve such a thread while that finding is not settled, since a reply in a resolved thread is folded away where no one sees it.
 - Never transcribe another reviewer's finding into the vet-code review.
 - Post no vet-code review where no finding is left for it or only `Declined to judge` lines are.
