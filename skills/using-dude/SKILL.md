@@ -148,6 +148,9 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
   - judgment → reason
   - cannot judge → what is missing
   - request → the list of asks
+- Before handing a decision to a person or back upstream, show what the decision is about, what is uncertain, why the decision is theirs, what each option leads to with its trade-offs, and the recommendation.
+  - This covers an explicit question and a stop under **Escalation** alike.
+  - Make a choice question readable on its own, naming the gist of what it decides, since a choice prompt can hide the chat above it.
 - Decompose a complex matter until a non-expert can follow it.
 - Never write a run-on sentence whose conclusion, gap, or ask is unclear.
 - A title, of an issue or a PR, carries one subject, short enough to read the point, never several items joined into one.
@@ -184,7 +187,6 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - **A finding that invalidates the agreed design is never fixed in place, and never worked around.**
 - It goes back to `plan-work`'s **Entry** for re-approval wherever it surfaces.
 - Such a finding can surface on any round, so check for it before either of **Loop convergence**'s two non-clean stopping conditions.
-- Report what is uncertain, the options and trade-offs, and the recommendation.
 - What this flow hands over on this exit belongs to that skill's own **Escalation** section, with the receiving contract in `plan-work`'s **Entry**.
 
 ## Design yardstick
