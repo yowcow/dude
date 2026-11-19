@@ -15,6 +15,10 @@
         "path": "skills/address-findings/SKILL.md"
       },
       {
+        "id": "address-review",
+        "path": "skills/address-review/SKILL.md"
+      },
+      {
         "id": "audit-code",
         "path": "skills/audit-code/SKILL.md"
       },

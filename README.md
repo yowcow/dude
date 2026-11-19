@@ -15,6 +15,7 @@ names the next flow rather than absorbing it, and each has its own gate.
 | Skill                     | When to use it |
 | ------------------------- | -------------- |
 | `address-findings`        | Use as a component when another skill needs judged review findings on a PR fixed, verified, and answered. |
+| `address-review`          | Use to answer reviews, review threads, or comments on your own PR, named by their URLs. |
 | `audit-code`              | Use to scan a repository or path and report what to fix, without changing code. |
 | `implement-work`          | Use to implement one PR-sized task. |
 | `investigate-anomaly`     | Use to investigate an observed anomaly — a failure, an incident, or an unexplained metric or cost change other than a performance shortfall. |
@@ -52,6 +53,7 @@ flowchart TB
     settle-question
     investigate-anomaly
     investigate-performance
+    address-review
   end
   subgraph Components
     vet-code
@@ -74,6 +76,8 @@ flowchart TB
   audit-code -.-> plan-work
   review-findings -.-> review-plan
   address-findings -.-> implement-work
+  address-review -.-> implement-work
+  address-review -.-> plan-work
 
   plan-work --> review-plan
   plan-work --> settle-question
@@ -97,6 +101,8 @@ flowchart TB
   review-pr --> judge-findings
   review-pr --> propose-alternatives
   review-pr --> review-findings
+  address-review --> judge-findings
+  address-review --> address-findings
   propose-alternatives --> review-findings
   vet-code --> judge-findings
   review-code --> judge-findings
