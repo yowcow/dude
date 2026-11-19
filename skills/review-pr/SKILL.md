@@ -98,7 +98,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 - Say in the summary, when `<since>` is not `<base>`, that the findings in the viewer's earlier review bodies were not re-checked.
 - Run the build-review-payload tool (`tools/build-review-payload.sh`) for `<base>..<head>`, never `<since>..<head>`, the summary, and the findings, since the PR's own diff decides which lines take an inline comment.
 - Show the user in chat the draft as it would be posted, with body, inline comments, and each reply with whether its thread is resolved.
-- Show each `reject` with its reason and each declined `needs-user` apart from the draft and never in it.
+- Show each declined `needs-user` apart from the draft and never in it.
 
 ### 5. Choose
 
