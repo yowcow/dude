@@ -58,3 +58,4 @@ description: Use to answer reviews, review threads, or comments on your own PR, 
 
 - Report what `address-findings` returned, listing each unposted reply and each failed reply one by one.
 - Report each resolved thread left unjudged.
+- Report each review body taken as making no claim.
