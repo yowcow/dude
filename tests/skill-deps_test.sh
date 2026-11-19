@@ -27,6 +27,7 @@ review-code part
 review-plan part
 simplify-code part
 review-pr part
+address-review part
 audit-code part
 investigate-* part
 settle-question part
@@ -47,6 +48,8 @@ address-findings implement-work contract: references/facts.md defines the `viewe
 review-code implement-work contract (PR #549 R6): cites the state-to-base table in implement-work/references/base-branch.md, its single source.
 review-pr implement-work contract: script headers cite implement-work/references/script-conventions.md and stop-registry.md, the shared conventions.
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
+address-review implement-work contract: references/facts.md defines the `pr.author.login`, `pr.head.owner`, and `pr.head.ref` facts its entry checks read.
+address-review plan-work hand-back: Escalation hands plan-work'"'"'s **Entry** a finding that invalidates the agreed design, with the branch and its state.
 audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
 review-findings review-plan lens ownership: cites review-plan'"'"'s four lens names only to say it skips them.'
 
