@@ -59,13 +59,13 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Once the legs complete or the bounded wait runs out, read the PR and send to judging, whoever posted them:
   - each unresolved thread, the vet-code review's included, except one whose last comment is the viewer's, or with no comment but the viewer's since this run judged it, replied or not;
   - each review body, suppressed-comment blocks included, and each conversation comment, by a login other than the viewer, that arrived after this run started.
-- Judge each threadless item once in the run, never again in a later round.
+- Judge each threadless item once in the run, never again in a later round, save with the answer to its needs-user verdict.
 - Leave out threadless items from before this run started, naming them out of scope when the run ends.
 - Read again right before handing the round to `address-findings`, and judge in that round each item that arrived since, threads included.
 - Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
 - Past the bounded wait, end the round as partial and hand back.
 - Request again once `address-findings` has pushed the accepted fixes.
-- Stop on a needs-user verdict, advancing no further round until it is answered, then send the answer to judging in the next round as one item together with the finding it answers and that finding's thread or source.
+- Stop on a needs-user verdict, advancing no further round until it is answered, then send the answer to judging in the next round as one item together with the finding it answers and that finding's thread or source, never judging that answer as an item of its own.
 
 ## Clean
 
