@@ -69,7 +69,7 @@ description: Use to review code.
 3. Take back the judged findings `vet-code` returns and re-judge none of them.
    - Take each `accept` with its fix.
    - Take each `reject` with its reason.
-   - Take each `needs-user` with its question.
+   - Take each `needs-user` with its question and why the decision is a person's.
    - Carry any caveat it returns into **Report**.
    - Cover a paths-only scope and no requirements there.
    - Take one answer per ledger row with them.
