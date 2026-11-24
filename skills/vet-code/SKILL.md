@@ -114,7 +114,7 @@ description: Use as a component when another skill needs one round of code revie
 - For each finding, return the finding as the reviewer stated it.
 - Return its severity — Critical, Important, or Minor.
 - Return its location.
-- Return its verdict: an `accept` with its fix, a `reject` with its reason, or `needs-user` with its question.
+- Return its verdict: an `accept` with its fix, a `reject` with its reason, or `needs-user` with its question and why the decision is a person's.
 - Reword none of them.
 - Put no value beside them.
 - For each Declined to judge line, return the line as the reviewer stated it.
