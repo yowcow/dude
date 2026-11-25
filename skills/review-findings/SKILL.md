@@ -75,7 +75,7 @@ description: Use to review report claims.
 - **Consistency** — flag contradicting claims, a timeline disagreeing with the narrative, shifting terminology, or a summary overstating the body there.
 - **Reality** — flag a version, config, code path, or constraint described wrongly there.
 
-- Skip **Necessity**, **Executability**, **Risk** and **Assumptions** there, since those four are `review-plan` lenses outside these six and the work the report may propose is not reviewed here.
+- Skip **Necessity**, **Executability**, **Risk** and **Assumptions** there, since those four are plan-review lenses outside these six and the work the report may propose is not reviewed here.
 - Treat what a report assumes as Evidence sufficiency's business there.
 - Say so there.
 

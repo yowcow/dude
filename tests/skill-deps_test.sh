@@ -19,26 +19,29 @@ set -euo pipefail
 
 ROOT="${1:-$REPO_ROOT}"
 
-# <skill or glob> <layer>. Layers, top down: flow, part, component, primitive.
+# <skill or glob> <layer>. Layers, top down: flow, entry, part, component,
+# primitive. flow and entry are public; part, component, and primitive are
+# internal.
 LAYERS='plan-work flow
 implement-work flow
 pr-to-ready flow
+review-pr entry
+address-review entry
+audit-code entry
+investigate-* entry
+settle-question entry
 review-code part
 review-plan part
 simplify-code part
-review-pr part
-address-review part
-audit-code part
-investigate-* part
-settle-question part
 vet-code component
 address-findings component
-review-findings primitive
 propose-alternatives component
+review-findings primitive
 judge-findings primitive'
 
-# <owner> <target> <reason>. Every upward or lateral edge must have a row, and
-# every row must still have a mention.
+# <owner> <target> <reason>. Every upward or lateral edge of a public owner must
+# have a row, and every row must still have a mention. An internal owner names
+# only lower layers and has no row: a row does not excuse its edge.
 EDGES='plan-work implement-work hand-off: the published TODO list is shaped for implement-work to pick up one item.
 implement-work plan-work hand-back: work larger than one PR and an invalidated design go back to plan-work, whose **Entry** says what it does with them.
 implement-work pr-to-ready hand-off: **Hand off** names pr-to-ready as the next entry with the draft PR as its input.
@@ -46,13 +49,13 @@ pr-to-ready implement-work hand-off: its input is the draft PR implement-work le
 pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the finding, the branch, and its state.
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
 address-review plan-work hand-back: Escalation hands plan-work'"'"'s **Entry** a finding that invalidates the agreed design, with the branch and its state.
-audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
-review-findings review-plan lens ownership: cites review-plan'"'"'s four lens names only to say it skips them.'
+audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.'
 
 failed=0
 total=0
 
-# rank_of <skill> — 1 flow, 2 part, 3 component, 4 primitive; prints nothing when unmapped.
+# rank_of <skill> — 1 flow, 2 entry, 3 part, 4 component, 5 primitive; prints
+# nothing when unmapped.
 rank_of() {
   local pat layer
   while read -r pat layer; do
@@ -61,15 +64,19 @@ rank_of() {
       $pat)
         case "$layer" in
           flow) echo 1 ;;
-          part) echo 2 ;;
-          component) echo 3 ;;
-          primitive) echo 4 ;;
+          entry) echo 2 ;;
+          part) echo 3 ;;
+          component) echo 4 ;;
+          primitive) echo 5 ;;
         esac
         return 0
         ;;
     esac
   done <<<"$LAYERS"
 }
+
+# Ranks up to PUBLIC_MAX (flow, entry) are public; the rest are internal.
+PUBLIC_MAX=2
 
 in_table() {
   printf '%s\n' "$EDGES" | grep -qE "^$1 $2 "
@@ -165,7 +172,7 @@ for s in "${skills[@]}"; do
 done
 failed=$((failed + bad))
 
-# --- every upward or lateral edge has a row ----------------------------------
+# --- every upward or lateral edge is allowed ---------------------------------
 total=$((total + 1))
 bad=0
 while read -r owner target where; do
@@ -173,12 +180,28 @@ while read -r owner target where; do
   rt="$(rank_of "$target")"
   # An unmapped skill is already reported above.
   if [ -z "$ro" ] || [ -z "$rt" ] || [ "$rt" -gt "$ro" ]; then continue; fi
-  if ! in_table "$owner" "$target"; then
+  if [ "$ro" -gt "$PUBLIC_MAX" ]; then
+    printf 'FAIL skill-deps: %s -> %s: internal %s names its own layer or above, which no EDGES row excuses (first at %s)\n' \
+      "$owner" "$target" "$owner" "$where"
+    bad=1
+  elif ! in_table "$owner" "$target"; then
     printf 'FAIL skill-deps: %s -> %s points up or sideways and has no row in EDGES (first at %s)\n' \
       "$owner" "$target" "$where"
     bad=1
   fi
 done < <(awk '!seen[$1" "$2]++' "$mentions")
+failed=$((failed + bad))
+
+# --- no row has an internal owner --------------------------------------------
+total=$((total + 1))
+bad=0
+while read -r owner _; do
+  ro="$(rank_of "$owner")"
+  if [ -n "$ro" ] && [ "$ro" -gt "$PUBLIC_MAX" ]; then
+    printf 'FAIL skill-deps: EDGES row owned by internal %s: an internal skill has no rows\n' "$owner"
+    bad=1
+  fi
+done <<<"$EDGES"
 failed=$((failed + bad))
 
 # --- every row still has a mention -------------------------------------------
