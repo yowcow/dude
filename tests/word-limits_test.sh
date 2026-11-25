@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests tests/word-limits.sh — the gate that fails the suite when a
-# skills/*/SKILL.md, skills/*/references/*.md, or contracts/*.md exceeds its cap in
-# tests/word-limits.txt, or is not listed.
+# skills/*/SKILL.md, skills/*/references/*.md, or contracts/*.md exceeds its
+# cap in tests/word-limits.txt, or is not listed.
 #
 # Case 0 runs the gate against the real tree; it is how the gate reaches
 # `make test`.
