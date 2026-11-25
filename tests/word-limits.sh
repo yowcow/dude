@@ -46,7 +46,7 @@ for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/skills/*/references/*.md "$ROOT"/cont
 done
 
 if [ -z "$FOUND" ]; then
-  err 'no files matched skills/*/SKILL.md or skills/*/references/*.md'
+  err 'no files matched skills/*/SKILL.md, skills/*/references/*.md, contracts/*.md, or AUTHORING.md'
 fi
 
 while read -r limit path extra; do
