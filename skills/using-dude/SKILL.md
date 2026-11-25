@@ -35,7 +35,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 | Deliverable | Classification | Entry |
 | --- | --- | --- |
 | a diff — features, refactors, and fixes whose cause is known | **Change** | `plan-work` → `implement-work` → `pr-to-ready` |
-| findings, not a diff — diagnosing an observed problem such as a performance shortfall, a failure or incident, an unexplained metric or cost change, or a bug whose cause is unknown | **Investigation** | core loop → domain skill → transition |
+| findings or a judgment, not a diff — diagnosing an observed problem such as a performance shortfall, a failure or incident, an unexplained metric or cost change, or a bug whose cause is unknown; or settling an open question | **Investigation** | core loop → domain skill → transition |
 | what one skill produces — a review's findings, a simplified diff, a plan, a PR taken to ready | **A named deliverable** | that skill, run directly with no flow wrapped around it |
 
 - A named deliverable settles the classification, even where running the skill produces a diff.
@@ -81,7 +81,6 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 
 ### Investigation workflow
 
-- The deliverable is an evidence-backed explanation of an observed problem, or a judgment on an open question.
 - `superpowers:systematic-debugging` is the core loop.
 - Local skills layer domain specifics on top: `investigate-performance`, `investigate-anomaly`, and `settle-question`.
 - Match the observed problem against those skills' `description`s.
