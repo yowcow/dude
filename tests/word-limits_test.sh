@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Tests tests/word-limits.sh — the gate that fails the suite when a
-# skills/*/SKILL.md or skills/*/references/*.md exceeds its cap in
-# tests/word-limits.txt, or is not listed.
+# skills/*/SKILL.md, skills/*/references/*.md, contracts/*.md, or AUTHORING.md
+# exceeds its cap in tests/word-limits.txt, or is not listed.
 #
 # Case 0 runs the gate against the real tree; it is how the gate reaches
 # `make test`.
@@ -75,6 +75,18 @@ mk_list "$root" '3 skills/a/SKILL.md'
 run_gate "$root"
 if ! check_eq 'unlisted: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
 if ! check_stderr_has 'unlisted: path' 'skills/a/references/x.md'; then fails_here=1; fi
+if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
+
+# --- case 3b: an unlisted contract fails --------------------------------------
+total=$((total + 1))
+fails_here=0
+root="$(tree_new)"
+mk_md "$root" skills/a/SKILL.md 3
+mk_md "$root" contracts/x.md 3
+mk_list "$root" '3 skills/a/SKILL.md'
+run_gate "$root"
+if ! check_eq 'unlisted contract: exit' 1 "$SUT_STATUS"; then fails_here=1; fi
+if ! check_stderr_has 'unlisted contract: path' 'contracts/x.md'; then fails_here=1; fi
 if [ "$fails_here" -ne 0 ]; then failed=$((failed + 1)); fi
 
 # --- case 4: a listed file that does not exist fails --------------------------

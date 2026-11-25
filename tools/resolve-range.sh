@@ -6,13 +6,13 @@
 # `Blocked-By: #N` line to HEAD, never assumed: falling back to the default
 # branch where a prerequisite is recorded sweeps rewritten prerequisite commits
 # into the range. Without --issue the base is the default branch.
-# Spec: skills/implement-work/references/base-branch.md, "## Reading the
+# Spec: contracts/base-branch.md, "## Reading the
 # prerequisite back" and "## Resolving the default branch" (this script
 # implements that table's `review-code`'s `<base>` column).
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: resolve-range.sh [pr-number | --issue <n>] [--facts <file>]
 # Output: RANGE <sha>..<sha> | EMPTY | NEED <token>... | STOP <slug>
@@ -127,8 +127,8 @@ fi
 
 # The prerequisite lookup and the answers it prints live in
 # tools/read-prereq-pr.sh -- see its header. What is left here is
-# base-branch.md's `review-code`'s `<base>` column. Without --issue the reader
-# answers NO-PREREQ and asks for no facts.
+# contracts/base-branch.md's `review-code`'s `<base>` column. Without --issue the
+# reader answers NO-PREREQ and asks for no facts.
 READ_ARGS=()
 if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
 if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi

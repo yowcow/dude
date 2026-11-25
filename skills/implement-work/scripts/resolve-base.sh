@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # Resolve which branch a new task should be cut from, by the one prerequisite
 # line in its issue's body (`Blocked-By: #N`, which plan-work writes; format
-# and reasons in ../references/base-branch.md). Branching from the default
+# and reasons in ../../../contracts/base-branch.md). Branching from the default
 # while a prerequisite PR is still OPEN would simply omit that prerequisite's
 # changes, so the task's own checks then fail for a reason nowhere in its diff.
 #
 # The prerequisite is read by ../../../tools/read-prereq-pr.sh (NEED rounds,
 # closing-PR count, state); this script only turns its answer into a base.
 #
-# Facts: ../references/facts.md.
-# Conventions: ../references/script-conventions.md.
-# STOP slugs: ../references/stop-registry.md.
+# Facts: ../../../contracts/facts.md.
+# Conventions: ../../../contracts/script-conventions.md.
+# STOP slugs: ../../../contracts/stop-registry.md.
 #
 # Usage: resolve-base.sh [<issue-number> [--facts <file>]]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>

@@ -70,13 +70,9 @@ flowchart TB
   implement-work -.-> pr-to-ready
   pr-to-ready -.-> implement-work
   pr-to-ready -.-> plan-work
-  review-code -.-> implement-work
-  review-pr -.-> implement-work
   review-pr -.-> plan-work
   audit-code -.-> plan-work
   review-findings -.-> review-plan
-  address-findings -.-> implement-work
-  address-review -.-> implement-work
   address-review -.-> plan-work
 
   plan-work --> review-plan

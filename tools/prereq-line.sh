@@ -2,7 +2,7 @@
 # Read the prerequisite line out of an issue body: the one line
 # `Blocked-By: #<n>` plan-work writes into a stacked child, which
 # tools/read-prereq-pr.sh reads to pick the base.
-# Format and reasons: skills/implement-work/references/base-branch.md.
+# Format and reasons: contracts/base-branch.md.
 #
 # Only `Blocked-By: #<n>` exactly, alone on its line, is well formed; a
 # near-miss answers MALFORMED rather than being skipped as no prerequisite,
@@ -10,7 +10,7 @@
 # changes. A CR ending a line is dropped first; an unreadable file exits 1 with
 # nothing on stdout and the caller prints its own slug.
 #
-# Conventions: skills/implement-work/references/script-conventions.md.
+# Conventions: contracts/script-conventions.md.
 #
 # Usage: prereq-line.sh <body-file>
 # Output: NONE | PREREQ <n> | MULTIPLE | MALFORMED

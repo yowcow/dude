@@ -15,9 +15,9 @@
 #     against the payload's);
 #   - the record of another repository, PR or review (the pins).
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: post-review.sh <pr-number> <head-sha> <APPROVE|COMMENT|PENDING> <payload-file> [--posted <review-id>] [--facts <file>]
 # Output: WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<EVENT>

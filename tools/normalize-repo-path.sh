@@ -6,7 +6,7 @@
 # are answered as they reduce, never refused; the caller turns that shape into
 # its own stop.
 #
-# Conventions: skills/implement-work/references/script-conventions.md.
+# Conventions: contracts/script-conventions.md.
 #
 # Usage: normalize-repo-path.sh <url-or-owner/repo>
 # Output: <owner>/<repo>

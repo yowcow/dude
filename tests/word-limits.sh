@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# The word-limit gate: every skills/*/SKILL.md, skills/*/references/*.md, and
-# AUTHORING.md must be listed in tests/word-limits.txt and stay within its listed word cap.
+# The word-limit gate: every skills/*/SKILL.md, skills/*/references/*.md,
+# contracts/*.md, and AUTHORING.md must be listed in tests/word-limits.txt and
+# stay within its listed word cap.
 # Usage: word-limits.sh [<repo-root>]
 #
 # Words are counted with awk's field splitting, not `wc -w`: under the C locale
@@ -37,7 +38,7 @@ err() {
 FOUND=""
 LISTED=""
 
-for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/skills/*/references/*.md "$ROOT"/AUTHORING.md; do
+for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/skills/*/references/*.md "$ROOT"/contracts/*.md "$ROOT"/AUTHORING.md; do
   [ -f "$f" ] || continue
   n="$(LC_ALL=C awk '{n+=NF} END{print n+0}' "$f")"
   FOUND="${FOUND}${f#"${ROOT}/"}	${n}
@@ -45,7 +46,7 @@ for f in "$ROOT"/skills/*/SKILL.md "$ROOT"/skills/*/references/*.md "$ROOT"/AUTH
 done
 
 if [ -z "$FOUND" ]; then
-  err 'no files matched skills/*/SKILL.md or skills/*/references/*.md'
+  err 'no files matched skills/*/SKILL.md, skills/*/references/*.md, contracts/*.md, or AUTHORING.md'
 fi
 
 while read -r limit path extra; do

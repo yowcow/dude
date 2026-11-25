@@ -38,11 +38,11 @@ description: Use to review code.
    - On `SELF`, go on.
 2. **Uncommitted changes present** — the working tree diff.
    - Cover staged, unstaged, and untracked files there.
-3. **Clean tree, commits ahead of `<base>`** — run the resolve-range script with the caller's issue number, never another repository's (`base-branch.md`).
+3. **Clean tree, commits ahead of `<base>`** — run the resolve-range script with the caller's issue number, never another repository's (`contracts/base-branch.md`).
    - Resolve `<base>`, never assume it.
    - Settle the base from the present state of the PR closing the `Blocked-By:` line's issue.
    - Take the default branch without an issue or that line.
-   - Keep the state-to-base table in `implement-work`'s `references/base-branch.md`, never duplicated here.
+   - Keep the state-to-base table in `contracts/base-branch.md`, never duplicated here.
 4. **Nothing to review** — no uncommitted change, and no range with anything in it.
    - Ask the user what to review there.
    - Never widen to the whole repository on a guess.
@@ -51,7 +51,7 @@ description: Use to review code.
 - Take `RANGE <base>..<head>` as the two SHAs to review.
 - On `EMPTY`, fall through to 4, since the range holds nothing.
 - On `STOP`, report it and stop, since the base could not be settled and the range may be somebody else's.
-- On `NEED`, read what it names as `implement-work`'s `references/facts.md` defines them into one facts file.
+- On `NEED`, read what it names as `contracts/facts.md` defines them into one facts file.
 - Run it again with that file for as long as it asks.
 
 ## Pass

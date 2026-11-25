@@ -32,7 +32,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 ### 2. Resolve the range, the purpose, and the requirements
 
 - Run the shared resolve-range tool (`tools/resolve-range.sh`) for the PR number.
-- On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run the tool again with that file, for as long as it asks.
+- On `NEED`, read the facts it names as `contracts/facts.md` defines them, add them to one facts file, and run the tool again with that file, for as long as it asks.
 - On `RANGE <base>..<head>`, bind both SHAs.
 - On `EMPTY`, report that there is nothing to review and end the run.
 - On `STOP <slug>`, report it and end the run.
@@ -73,7 +73,7 @@ description: Use to review a PR and return the findings to it as a PR review.
 
 - Check `<head>` out detached in a worktree placed per `superpowers:using-git-worktrees`'s directory convention and bind its absolute path as `<head-dir>`, since this checkout is not the PR's head and a worker reading files here judges code the PR does not contain.
 - Remove the worktree when the run ends.
-- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, taking the viewer as `implement-work`'s `references/facts.md` defines `viewer.login`.
+- Take as the earlier findings every unresolved thread on the PR whose first comment is the viewer's, from any review but a pending one, taking the viewer as `contracts/facts.md` defines `viewer.login`.
 - Invoke `judge-findings` with each earlier finding as an item — its text, severity, and location as posted with the commit it was posted on, with the replies in its thread beside it — against `<base>..<head>` with `<head-dir>` as the read-root and the requirements.
 - Give it as the acceptance criteria: accept a finding that still stands at `<head>`; reject one that does not, the reason saying whether it was resolved or was not valid.
 - Read `accept` as still standing and `reject` as resolved or not valid, as its reason says.
@@ -123,8 +123,8 @@ description: Use to review a PR and return the findings to it as a PR review.
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — end the write there and take no later step when a step fails.
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — report that nothing was posted when the create itself fails.
 - `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — take no later step and report a possibly unconfirmed pending review when the create succeeded but no review id can be read, since the user must check it and submit or delete it.
-- `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — take the review's id right after the create as `implement-work`'s `references/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the script again with the review id and the facts file for facts read afresh.
-- `NEED <token>...` — read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run the script again with that file, for as long as it asks.
+- `WRITE repo=<owner>/<repo> pr=<n> head=<sha> event=<event>` — take the review's id right after the create as `contracts/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the script again with the review id and the facts file for facts read afresh.
+- `NEED <token>...` — read the facts it names as `contracts/facts.md` defines them, add them to one facts file, and run the script again with that file, for as long as it asks.
 - `POSTED <state> <url>` — report the URL.
 - `POSTED <state> <url>` — report the step that failed when one did.
 - `POSTED APPROVED` or `POSTED COMMENTED` — then post each drafted reply to its thread and resolve the threads marked for it, by your own means; post none on any other answer.

@@ -9,9 +9,9 @@
 # After CREATE, the read-back pins head and base, so a mis-targeted create is
 # never reported as created.
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: ensure-draft-pr.sh <branch> [--issue <n>] [--created <base>] [--facts <file>]
 #

@@ -8,9 +8,9 @@
 # origin's repository and the number given, and an unread login is a STOP,
 # never a guess as OTHER.
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: check-pr-author.sh <pr-number> [--facts <file>]
 # Output: SELF | OTHER | NEED <token>... | STOP <slug>

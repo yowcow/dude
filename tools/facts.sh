@@ -2,7 +2,7 @@
 # The shared half of the facts contract: the self-check a script runs before
 # it uses a GitHub fact, the read that follows it, and the WAIT round counter.
 #
-# Format and catalogue: skills/implement-work/references/facts.md.
+# Format and catalogue: contracts/facts.md.
 #
 # `check` prints one line its caller relays verbatim; its identifier, count,
 # enum, and unfilled self-checks stop a wrong record from reaching the caller's
@@ -10,8 +10,8 @@
 # agent hands back unchanged; a missing or unrecognised state is a STOP, never
 # a count restarted from zero.
 #
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: facts.sh check <facts-file|''> <spec>...
 #        facts.sh get <facts-file> <name>

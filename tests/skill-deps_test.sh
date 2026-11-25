@@ -41,14 +41,10 @@ judge-findings primitive'
 # every row must still have a mention.
 EDGES='plan-work implement-work hand-off: the published TODO list is shaped for implement-work to pick up one item.
 implement-work plan-work hand-back: work larger than one PR and an invalidated design go back to plan-work, whose **Entry** says what it does with them.
-implement-work pr-to-ready hand-off, plus contracts: **Hand off** names pr-to-ready as the next entry with the draft PR as its input, and references/ holds the STOP registry and base-resolution contract behind the shared tools that entry runs through.
-pr-to-ready implement-work hand-off: its input is the draft PR implement-work left, title and body follow implement-work'"'"'s **Hand off**, and a conflicted base, or a mergeability left `UNKNOWN`, is handed back there for a person'"'"'s explicit re-entry, and references/facts.md defines the `pr.base.sha` and `review.id` facts its vet-code review post reads.
+implement-work pr-to-ready hand-off: **Hand off** names pr-to-ready as the next entry with the draft PR as its input.
+pr-to-ready implement-work hand-off: its input is the draft PR implement-work left, title and body follow implement-work'"'"'s **Hand off**, and a conflicted base, or a mergeability left `UNKNOWN`, is handed back there for a person'"'"'s explicit re-entry.
 pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the finding, the branch, and its state.
-address-findings implement-work contract: references/facts.md defines the `viewer.login` fact its pending-review check before the first reply reads.
-review-code implement-work contract (PR #549 R6): cites the state-to-base table in implement-work/references/base-branch.md, its single source.
-review-pr implement-work contract: script headers cite implement-work/references/script-conventions.md and stop-registry.md, the shared conventions.
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
-address-review implement-work contract: references/facts.md defines the `pr.author.login`, `pr.state`, `pr.head.owner`, and `pr.head.ref` facts its entry checks read.
 address-review plan-work hand-back: Escalation hands plan-work'"'"'s **Entry** a finding that invalidates the agreed design, with the branch and its state.
 audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.
 review-findings review-plan lens ownership: cites review-plan'"'"'s four lens names only to say it skips them.'

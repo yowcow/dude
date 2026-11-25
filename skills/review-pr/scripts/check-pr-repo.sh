@@ -15,10 +15,11 @@
 #
 # That the means reads the PR from origin's repository, not the one it
 # defaults to (GH_REPO, a default-repo setting, a second remote), is the
-# `repo` fact's pin in facts.md, checked by every script that reads a record.
+# `repo` fact's pin in ../../../contracts/facts.md, checked by every script
+# that reads a record.
 #
-# Conventions: ../../implement-work/references/script-conventions.md.
-# STOP slugs: ../../implement-work/references/stop-registry.md.
+# Conventions: ../../../contracts/script-conventions.md.
+# STOP slugs: ../../../contracts/stop-registry.md.
 #
 # Usage: check-pr-repo.sh <pr-number-or-url>
 # Output: PR <n> repo=<owner>/<repo> | STOP wrong-checkout
