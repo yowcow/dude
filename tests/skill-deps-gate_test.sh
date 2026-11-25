@@ -35,7 +35,7 @@ LAYERS
   done <"$root/layers"
   printf 'Names alpha-prim.\n' >>"$root/skills/alpha-flow/SKILL.md"
   printf 'Names %s.\n' "$target" >>"$root/skills/$owner/SKILL.md"
-  printf '%s\n' 'alpha-flow alpha-prim fixture: a downward row, so no table is empty.' "$@" >"$root/edges"
+  printf '%s\n' "$@" >"$root/edges"
   printf '%s\n' "$root"
 }
 
@@ -67,7 +67,7 @@ gate_row() {
   tally "$check" "${label}: line" "$needle"
 }
 
-gate_row 'base tree' 0 check_stdout_lacks 'FAIL' \
+gate_row 'base tree, empty EDGES' 0 check_stdout_lacks 'FAIL' \
   alpha-flow alpha-prim
 gate_row 'internal to public, no row' 1 check_stdout_has "$(internal_needle alpha-part alpha-entry)" \
   alpha-part alpha-entry
