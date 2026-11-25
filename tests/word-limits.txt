@@ -21,5 +21,5 @@
 2412 skills/review-pr/SKILL.md
 704 skills/settle-question/SKILL.md
 1909 skills/simplify-code/SKILL.md
-2725 skills/using-dude/SKILL.md
+2715 skills/using-dude/SKILL.md
 1880 skills/vet-code/SKILL.md
