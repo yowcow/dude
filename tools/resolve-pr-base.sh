@@ -4,14 +4,14 @@
 # never by testing whether the prerequisite's branch still exists, which
 # commonly survives its merge and would hand back an already-merged branch as
 # --base, silently landing nothing into the default branch.
-# Spec: skills/implement-work/references/base-branch.md, "## Reading the
+# Spec: contracts/base-branch.md, "## Reading the
 # prerequisite back" (this script implements that table's `pr-to-ready`'s
 # `--base` column; the no-prerequisite row answers the default branch so Step
 # 1's settlement has something to compare against).
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: resolve-pr-base.sh <branch> [--issue <n>] [--facts <file>]
 # Output: BASE <branch> | NEED <token>... | STOP <slug>
@@ -68,8 +68,8 @@ fi
 
 # The prerequisite lookup and the answers it prints live in
 # tools/read-prereq-pr.sh -- see its header. What is left here is
-# base-branch.md's `pr-to-ready`'s `--base` column. Without --issue the reader
-# answers NO-PREREQ and asks for no facts.
+# contracts/base-branch.md's `pr-to-ready`'s `--base` column. Without --issue the
+# reader answers NO-PREREQ and asks for no facts.
 READ_ARGS=()
 if [ -n "$FACTS" ]; then READ_ARGS+=(--facts "$FACTS"); fi
 if [ -n "$ISSUE" ]; then READ_ARGS+=("$ISSUE"); fi

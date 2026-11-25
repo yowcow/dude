@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Read an issue's one prerequisite line (`Blocked-By: #N`, which plan-work
-# writes; format and reasons in skills/implement-work/references/base-branch.md)
+# writes; format and reasons in contracts/base-branch.md)
 # and report the prerequisite's closing PR by its *current* state. One line on
 # stdout, always: NO-PREREQ | PREREQ <head-branch> <closing-pr-n> <OPEN|MERGED> |
 # NEED <token>... | STOP <slug>. No issue number answers NO-PREREQ, so a caller
@@ -15,9 +15,9 @@
 # and tools/resolve-range.sh, called by no SKILL.md: do not delete as
 # unreferenced.
 #
-# Facts: skills/implement-work/references/facts.md.
-# Conventions: skills/implement-work/references/script-conventions.md.
-# STOP slugs: skills/implement-work/references/stop-registry.md.
+# Facts: contracts/facts.md.
+# Conventions: contracts/script-conventions.md.
+# STOP slugs: contracts/stop-registry.md.
 #
 # Usage: read-prereq-pr.sh [--facts <file>] [<issue-number>]
 set -euo pipefail

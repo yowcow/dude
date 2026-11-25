@@ -79,7 +79,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 ## Replies
 
 - Post that round's vet-code findings as one COMMENT review anchored to the reviewed commit, each finding's text, severity, and location verbatim and never paraphrased, with no added mentions and no formatting beyond the location form, list marker, and continuation indent `tools/build-review-payload.sh` gives and the `<details>` fold below.
-- Hand the round's `accept` and `needs-user` vet-code findings to `tools/build-review-payload.sh` as `{path, line, body}` items — `body` the finding's severity and text, `path` relative to the repository root, `line` head-side, either null where the finding names none — with the merge base of the reviewed commit and the PR's base read afresh as `implement-work`'s `references/facts.md` defines `pr.base.sha`, as its base, never the round's own range, since the PR's diff decides which lines take an inline comment.
+- Hand the round's `accept` and `needs-user` vet-code findings to `tools/build-review-payload.sh` as `{path, line, body}` items — `body` the finding's severity and text, `path` relative to the repository root, `line` head-side, either null where the finding names none — with the merge base of the reviewed commit and the PR's base read afresh as `contracts/facts.md` defines `pr.base.sha`, as its base, never the round's own range, since the PR's diff decides which lines take an inline comment.
   - Where a finding's location is not exactly one `path:line`, put the location as stated at the head of `body`, and take `path` and `line` from its first place, since the tool carries one line only.
 - Write the summary it takes as the reviewed commit SHA line followed, where the round has any, by one `<details>` block holding the round's `reject` findings and `Declined to judge` lines verbatim, since the tool appends only the findings it is handed and nothing else of the round reaches the PR.
   - Leave a blank line after `</summary>`, since otherwise the markdown inside the fold renders raw.
@@ -87,7 +87,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Drive `tools/post-review.sh` with the PR, the reviewed commit, `COMMENT`, and the payload, per its header's output contract:
   - On `WRITE`, create a pending review anchored to the reviewed commit in the repository it names, add each inline comment, and submit it, putting the payload's body on whichever step the means lets set and on the submit too where the submit replaces it.
   - End the write at the first failed step, since carrying on submits a review that reads as complete without the failed part.
-  - Take the review's id right after the create as `implement-work`'s `references/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the tool again with that id and a facts file, answering each `NEED` the same way.
+  - Take the review's id right after the create as `contracts/facts.md` defines `review.id`, read the review back by it whether the write finished or stopped, and run the tool again with that id and a facts file, answering each `NEED` the same way.
   - On `POSTED COMMENTED`, go on to `address-findings`.
 - Hand back, naming the failed step and each inline finding whose verdict or question went unposted, on any of these, since the PR may hold a review whose body is not the round's:
   - a `STOP` from the first call — saying nothing was posted;

@@ -34,7 +34,7 @@ description: Use as a component when another skill needs judged review findings 
 
 ## Replies
 
-- Immediately before the first reply or comment, check whether the viewer, `viewer.login` as `implement-work`'s `references/facts.md` defines it, holds a pending review on the PR.
+- Immediately before the first reply or comment, check whether the viewer, `viewer.login` as `contracts/facts.md` defines it, holds a pending review on the PR.
 - Where it does, post nothing and return every unposted reply, since a reply joins that draft.
   - Never add to, submit, or delete that review.
 - Reply to a finding with a thread in that thread.

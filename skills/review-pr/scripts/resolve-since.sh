@@ -10,9 +10,9 @@
 # review commit that is not in the head's history, or is absent from this
 # clone, answers STOP rather than a range git cannot compute.
 #
-# Facts: ../../implement-work/references/facts.md.
-# Conventions: ../../implement-work/references/script-conventions.md.
-# STOP slugs: ../../implement-work/references/stop-registry.md.
+# Facts: ../../../contracts/facts.md.
+# Conventions: ../../../contracts/script-conventions.md.
+# STOP slugs: ../../../contracts/stop-registry.md.
 #
 # Usage: resolve-since.sh <pr-number> <base-sha> <head-sha> [--facts <file>]
 # Output: WHOLE | SINCE <sha> | UNCHANGED | NEED <token>... | STOP <slug>

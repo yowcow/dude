@@ -43,7 +43,7 @@ row_start() {
 }
 
 # facts_file   body on stdin; prints the path of a new fact fixture.
-# A script on the facts contract (skills/implement-work/references/facts.md)
+# A script on the facts contract (contracts/facts.md)
 # reads GitHub facts from a file the agent wrote and takes it as
 # `--facts <file>`, so the fixture is that file, byte for byte. Each call gets
 # its own path, so a row driving several calls can hand each one its own facts.

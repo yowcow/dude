@@ -45,7 +45,7 @@ description: Use to implement one PR-sized task.
 - Apply everything below only when an issue backs the task.
 - Resolve the base with `scripts/resolve-base.sh <issue-number>`, since it reads the prerequisite from the one `Blocked-By: #N` line `plan-work`'s **Splitting into sub-issues** writes in the issue body and settles the base from the state of the PR closing that prerequisite.
 - Take that PR's head on `OPEN`, and the default branch on `MERGED`, since both are fetched first so the cut branch contains what it is meant to.
-- On `NEED <token>...`, read the facts it names as `references/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
+- On `NEED <token>...`, read the facts it names as `contracts/facts.md` defines them, write them to one facts file, and run it again with `--facts <file>` added, for as long as it asks.
 - On `BASE <branch>`, cut the new branch from `origin/<branch>`, never the bare name.
 - On `STOP <slug>`, stop and report why the task cannot start, or ask which base to use, per the printed reason.
 

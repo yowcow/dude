@@ -3,12 +3,12 @@
 # URL. A facts-contract script pins the
 # repository its facts are read from to this answer, so a record read for a
 # same-numbered PR elsewhere stops instead of answering about the wrong PR.
-# Facts: skills/implement-work/references/facts.md, `repo`.
+# Facts: contracts/facts.md, `repo`.
 #
 # Answers through its caller: no such remote, or an empty owner or repo segment,
 # exits 1 with nothing on stdout and the caller prints its own slug.
 #
-# Conventions: skills/implement-work/references/script-conventions.md.
+# Conventions: contracts/script-conventions.md.
 #
 # Usage: origin-repo.sh
 # Output: <owner>/<repo>

@@ -54,9 +54,9 @@ A kept script leaves by a replacement test. It passes only if all of these hold,
 - Three independent runs agree with the oracle on every row, comparing only the result the caller branches on, not its literal text.
 - The prose under test is the exact text that would ship.
 
-A script whose GitHub reads and writes move onto the facts contract (`skills/implement-work/references/facts.md`) skips the replacement test and stays a script: each silent failure its header names moves into that catalogue or into the post-write read-back, and the port's PR says where each one went. A script whose feature is withdrawn — because only one of the means can perform it, or because the design removes the feature — and a shared script a port or a withdrawal leaves with no caller — skips the replacement test too, and is deleted together with its tests, and the prose naming it.
+A script whose GitHub reads and writes move onto the facts contract (`contracts/facts.md`) skips the replacement test and stays a script: each silent failure its header names moves into that catalogue or into the post-write read-back, and the port's PR says where each one went. A script whose feature is withdrawn — because only one of the means can perform it, or because the design removes the feature — and a shared script a port or a withdrawal leaves with no caller — skips the replacement test too, and is deleted together with its tests, and the prose naming it.
 
-The contracts those shared tools implement live under `skills/implement-work/references/` and are cited from `tools/` and other skills by path. That direction is intentional and stays: the contracts were written where their first callers lived, moving them churns every header and test that cites them, and the citations are documentation — no script sources another skill's file, every call goes through `SCRIPT_DIR` to an executable.
+The contracts those shared tools implement live once in top-level `contracts/`, which no skill owns, and are cited from `tools/` and skills by path. Never put a shared contract under a skill's `references/`: every skill citing it would then name that skill, an edge `tests/skill-deps_test.sh` counts.
 
 ## Uniform, branch-free behavior
 

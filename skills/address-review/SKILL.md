@@ -21,8 +21,8 @@ description: Use to answer reviews, review threads, or comments on your own PR, 
 - Ask which review, thread, or comment to answer when a URL carries no fragment.
 - Confirm through `tools/origin-repo.sh` that origin names the PR's repository.
 - Run the check-pr-author script (`tools/check-pr-author.sh`) for the PR number.
-- On `NEED`, read the facts it names as `implement-work`'s `references/facts.md` defines them, add them to one facts file, and run it again with that file, for as long as it asks.
-- Read `pr.state`, `pr.head.owner`, and `pr.head.ref` as `implement-work`'s `references/facts.md` defines them.
+- On `NEED`, read the facts it names as `contracts/facts.md` defines them, add them to one facts file, and run it again with that file, for as long as it asks.
+- Read `pr.state`, `pr.head.owner`, and `pr.head.ref` as `contracts/facts.md` defines them.
 - Change nothing, report why, and end the run where origin is not the PR's repository, the answer is `OTHER` or `STOP <slug>`, `pr.state` is not `OPEN`, or `pr.head.owner` is not origin's owner.
 
 ## Range and workspace
