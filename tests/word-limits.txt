@@ -4,7 +4,7 @@
 556 skills/address-findings/SKILL.md
 618 skills/address-review/SKILL.md
 1596 skills/audit-code/SKILL.md
-2310 skills/implement-work/SKILL.md
+2307 skills/implement-work/SKILL.md
 567 contracts/base-branch.md
 1060 contracts/facts.md
 569 contracts/script-conventions.md
