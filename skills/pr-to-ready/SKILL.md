@@ -69,7 +69,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 
 ## Clean
 
-- Hold clean only when the same commit SHA satisfies all three: CI green, mergeable, and no fix-worthy finding in the round's vet-code return or among what it sent to judging.
+- Hold clean only when the same commit SHA satisfies CI green, mergeable, and no `accept` or `needs-user` verdict in the round's vet-code return or among what it sent to judging.
 - Diagnose and fix a red check in a new round.
 - Judge mergeability off the verdict that describes the branch, never the sibling status that describes the reader's permission, since keyed on the reader's status every PR reads as blocked.
 - Hand back a conflict, or a mergeability value still UNKNOWN past the bounded re-read, for a person's explicit re-entry, since an undetermined mergeability is never taken for a clean one.
