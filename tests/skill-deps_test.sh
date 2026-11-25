@@ -20,8 +20,7 @@ set -euo pipefail
 ROOT="${1:-$REPO_ROOT}"
 
 # <skill or glob> <layer>. Layers, top down: flow, entry, part, component,
-# primitive. flow and entry are public; part, component, and primitive are
-# internal.
+# primitive.
 LAYERS='plan-work flow
 implement-work flow
 pr-to-ready flow
@@ -40,8 +39,7 @@ review-findings primitive
 judge-findings primitive'
 
 # <owner> <target> <reason>. Every upward or lateral edge of a public owner must
-# have a row, and every row must still have a mention. An internal owner names
-# only lower layers and has no row: a row does not excuse its edge.
+# have a row, and every row must still have a mention.
 EDGES='plan-work implement-work hand-off: the published TODO list is shaped for implement-work to pick up one item.
 implement-work plan-work hand-back: work larger than one PR and an invalidated design go back to plan-work, whose **Entry** says what it does with them.
 implement-work pr-to-ready hand-off: **Hand off** names pr-to-ready as the next entry with the draft PR as its input.
