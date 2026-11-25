@@ -54,29 +54,39 @@ audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-sh
 failed=0
 total=0
 
-# rank_of <skill> — 1 flow, 2 entry, 3 part, 4 component, 5 primitive; prints
-# nothing when unmapped.
-rank_of() {
+# layer_of <skill> — its layer from LAYERS; prints nothing when unmapped.
+layer_of() {
   local pat layer
   while read -r pat layer; do
     # shellcheck disable=SC2254  # $pat is a glob on purpose: investigate-*
     case "$1" in
       $pat)
-        case "$layer" in
-          flow) echo 1 ;;
-          entry) echo 2 ;;
-          part) echo 3 ;;
-          component) echo 4 ;;
-          primitive) echo 5 ;;
-        esac
+        echo "$layer"
         return 0
         ;;
     esac
   done <<<"$LAYERS"
 }
 
-# Ranks up to PUBLIC_MAX (flow, entry) are public; the rest are internal.
-PUBLIC_MAX=2
+# rank_of <skill> — 1 flow, 2 entry, 3 part, 4 component, 5 primitive; prints
+# nothing when unmapped.
+rank_of() {
+  case "$(layer_of "$1")" in
+    flow) echo 1 ;;
+    entry) echo 2 ;;
+    part) echo 3 ;;
+    component) echo 4 ;;
+    primitive) echo 5 ;;
+  esac
+}
+
+# is_internal <skill> — succeeds for a mapped skill outside flow and entry.
+is_internal() {
+  case "$(layer_of "$1")" in
+    '' | flow | entry) return 1 ;;
+    *) return 0 ;;
+  esac
+}
 
 in_table() {
   printf '%s\n' "$EDGES" | grep -qE "^$1 $2 "
@@ -180,7 +190,7 @@ while read -r owner target where; do
   rt="$(rank_of "$target")"
   # An unmapped skill is already reported above.
   if [ -z "$ro" ] || [ -z "$rt" ] || [ "$rt" -gt "$ro" ]; then continue; fi
-  if [ "$ro" -gt "$PUBLIC_MAX" ]; then
+  if is_internal "$owner"; then
     printf 'FAIL skill-deps: %s -> %s: internal %s names its own layer or above, which no EDGES row excuses (first at %s)\n' \
       "$owner" "$target" "$owner" "$where"
     bad=1
@@ -196,8 +206,7 @@ failed=$((failed + bad))
 total=$((total + 1))
 bad=0
 while read -r owner _; do
-  ro="$(rank_of "$owner")"
-  if [ -n "$ro" ] && [ "$ro" -gt "$PUBLIC_MAX" ]; then
+  if is_internal "$owner"; then
     printf 'FAIL skill-deps: EDGES row owned by internal %s: an internal skill has no rows\n' "$owner"
     bad=1
   fi
