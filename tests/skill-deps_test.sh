@@ -9,7 +9,9 @@
 # may name it. Only an edge's presence is checked, never how many mentions it
 # has, so editing a flow's prose does not move this file.
 #
-# Usage: tests/skill-deps_test.sh [<root>]   — <root> defaults to this repository.
+# Usage: tests/skill-deps_test.sh [<root> [<layers-file> <edges-file>]] — <root>
+# defaults to this repository; each file replaces the table of the same name
+# below, in the same format.
 set -euo pipefail
 
 # shellcheck source-path=SCRIPTDIR
@@ -48,6 +50,9 @@ pr-to-ready plan-work hand-back: Escalation hands plan-work'"'"'s entry the find
 review-pr plan-work hand-back: on revisit design the person returns to plan-work.
 address-review plan-work hand-back: Escalation hands plan-work'"'"'s **Entry** a finding that invalidates the agreed design, with the branch and its state.
 audit-code plan-work contract (#559 hand-off): cites plan-work'"'"'s question-shaped **Entry**, the shape its report is written to; using-dude'"'"'s **Workflow selection** sends its report there too.'
+
+if [ "$#" -ge 2 ]; then LAYERS="$(cat -- "$2")"; fi
+if [ "$#" -ge 3 ]; then EDGES="$(cat -- "$3")"; fi
 
 failed=0
 total=0
