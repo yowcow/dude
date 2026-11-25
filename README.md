@@ -44,16 +44,18 @@ flowchart TB
     implement-work
     pr-to-ready
   end
-  subgraph Parts
-    review-code
-    review-plan
-    simplify-code
+  subgraph Entries
     review-pr
+    address-review
     audit-code
     settle-question
     investigate-anomaly
     investigate-performance
-    address-review
+  end
+  subgraph Parts
+    review-code
+    review-plan
+    simplify-code
   end
   subgraph Components
     vet-code
@@ -72,7 +74,6 @@ flowchart TB
   pr-to-ready -.-> plan-work
   review-pr -.-> plan-work
   audit-code -.-> plan-work
-  review-findings -.-> review-plan
   address-review -.-> plan-work
 
   plan-work --> review-plan
@@ -110,6 +111,9 @@ flowchart TB
 The canonical source is `tests/skill-deps_test.sh` and the skills' own
 mentions of each other; the figure draws the dependencies those mentions
 imply, not every mention a classification table records.
+
+- Flows and entries are public and keep their names and descriptions.
+- Parts, components, and primitives are internal, may be renamed or reworded, and name only lower layers.
 
 The change flow is `plan-work` → `implement-work` → `pr-to-ready`, entered at
 whichever stage the work has actually reached. An investigation —
