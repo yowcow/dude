@@ -62,7 +62,7 @@ description: Use to take an open PR to ready, or a branch with no PR yet to read
 - Judge each threadless item once in the run, never again in a later round, save with the answer to its needs-user verdict.
 - Leave out threadless items from before this run started, naming them out of scope when the run ends.
 - Read again right before handing the round to `address-findings`, and judge in that round each item that arrived since, threads included.
-- Judge each finding sent to judging one by one under the judge-findings common rule — fix, decline, or ask a person, with Minor and suppressed included on objective worth.
+- Invoke `judge-findings` with each finding sent to judging, Minor and suppressed too, as an item with replies, against **Replies**' PR diff, workspace as read-root, **Purpose check**'s purpose as requirements.
 - Past the bounded wait, end the round as partial and hand back.
 - Request again once `address-findings` has pushed the accepted fixes.
 - Stop on a needs-user verdict, advancing no further round until it is answered, then send the answer to judging in the next round as one item together with the finding it answers and that finding's thread or source, never judging that answer as an item of its own.
