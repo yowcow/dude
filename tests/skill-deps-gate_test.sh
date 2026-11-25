@@ -35,10 +35,7 @@ LAYERS
   done <"$root/layers"
   printf 'Names alpha-prim.\n' >>"$root/skills/alpha-flow/SKILL.md"
   printf 'Names %s.\n' "$target" >>"$root/skills/$owner/SKILL.md"
-  {
-    printf '%s\n' 'alpha-flow alpha-prim fixture: a downward row, so no table is empty.'
-    if [ "$#" -gt 0 ]; then printf '%s\n' "$@"; fi
-  } >"$root/edges"
+  printf '%s\n' 'alpha-flow alpha-prim fixture: a downward row, so no table is empty.' "$@" >"$root/edges"
   printf '%s\n' "$root"
 }
 
