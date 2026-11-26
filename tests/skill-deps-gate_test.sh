@@ -35,7 +35,7 @@ LAYERS
   done <"$root/layers"
   printf 'Names alpha-prim.\n' >>"$root/skills/alpha-flow/SKILL.md"
   printf 'Names %s.\n' "$target" >>"$root/skills/$owner/SKILL.md"
-  printf '%s\n' 'alpha-flow alpha-prim fixture: a downward row, so no table is empty.' "$@" >"$root/edges"
+  printf '%s\n' "$@" >"$root/edges"
   printf '%s\n' "$root"
 }
 
@@ -56,6 +56,7 @@ check_stdout_lacks() {
 internal_needle() { printf 'FAIL skill-deps: %s -> %s: internal %s names its own layer or above' "$1" "$2" "$1"; }
 up_needle() { printf 'FAIL skill-deps: %s -> %s points up or sideways and has no row in EDGES' "$1" "$2"; }
 rows_needle() { printf 'FAIL skill-deps: EDGES row owned by internal %s: an internal skill has no rows' "$1"; }
+stale_needle() { printf 'FAIL skill-deps: EDGES row %s -> %s is stale' "$1" "$2"; }
 
 # gate_row <label> <want-exit> <stdout-check> <needle> <owner> <target> [<edge-row>...]
 gate_row() {
@@ -67,7 +68,7 @@ gate_row() {
   tally "$check" "${label}: line" "$needle"
 }
 
-gate_row 'base tree' 0 check_stdout_lacks 'FAIL' \
+gate_row 'base tree, empty EDGES' 0 check_stdout_lacks 'FAIL' \
   alpha-flow alpha-prim
 gate_row 'internal to public, no row' 1 check_stdout_has "$(internal_needle alpha-part alpha-entry)" \
   alpha-part alpha-entry
@@ -83,6 +84,8 @@ gate_row 'internal to upper internal, row' 1 check_stdout_has "$(internal_needle
   alpha-comp alpha-part 'alpha-comp alpha-part fixture: an upward row.'
 gate_row 'internal owner row alone' 1 check_stdout_has "$(rows_needle alpha-comp)" \
   alpha-comp alpha-prim 'alpha-comp alpha-prim fixture: a downward row.'
+gate_row 'stale row' 1 check_stdout_has "$(stale_needle beta-flow alpha-prim)" \
+  alpha-flow alpha-prim 'beta-flow alpha-prim fixture: a row with no mention.'
 gate_row 'flow lateral, no row' 1 check_stdout_has "$(up_needle alpha-flow beta-flow)" \
   alpha-flow beta-flow
 gate_row 'flow lateral, row' 0 check_stdout_lacks 'FAIL skill-deps: alpha-flow -> beta-flow' \
