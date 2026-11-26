@@ -91,7 +91,6 @@ description: Use to review code.
 5. Verify with the concrete checks the project defines.
    - Cover the README, Makefile, package scripts, or CI there.
    - Read their actual output.
-   - Skip this check run when this step applied nothing only where the caller passed, as an input to this invocation, a check result covering the exact tree this invocation ran on.
 6. Return to step 2 while a blocking finding remains, subject to **Escalation**.
    - Never come back here from a pass that ended on a `needs-user`.
 7. Report per **Report**.
@@ -138,6 +137,5 @@ description: Use to review code.
 - Hand the row to this round as the finding it returned where a later fix brought the condition back.
 - Report `open` only for a row this round returned as a finding with nothing closing it, since the finding it became is still open at this stop.
 - Report what verification ran and its actual result.
-- Report skipped-as-unchanged verification with the covering result the caller handed over.
 - Report the verdict: clean, or the blocking findings that remain.
 - Flag separately there any finding invalidating the approved design, per **Escalation**.
