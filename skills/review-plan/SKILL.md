@@ -132,14 +132,11 @@ description: Use to review a planning artifact.
    - Judge the plan and repo against the original request there, under **What counts as a finding**.
    - Hand `using-dude`'s **Design yardstick** there as the acceptance criteria, naming that section, since the judge never reads `using-dude`.
    - Settle a measurement-route `needs-user` before the person route.
-   - Let the caller take that one bounded measurement there, record it, and hand the finding back.
-   - Run no project check in this pass.
-   - Send to a person only what the caller may not spend.
+   - Take that one bounded measurement there where this pass may spend it, record it, and hand the finding back with it.
+   - Take no second: route a finding this pass may not spend, or still unsettled after it, to the person route with its `not measured` line and any record.
 4. Report per **Report** and stop.
    - Leave revising and re-reviewing to the caller.
 - Hold clean per `using-dude`'s **Loop convergence** loop-clean as no surviving finding.
-- Take its route for a surviving `needs-user`.
-- Bring measurement-route findings back with the record for re-judging.
 - Take person-route findings to a person.
 - Settle no plan edit first there.
 - Re-run never to clear a `needs-user`, since **Dispatch** scopes every lens to resolving edits and a `needs-user` produced none, so the re-run returns clean over an unanswered question.
