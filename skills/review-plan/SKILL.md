@@ -132,7 +132,7 @@ description: Use to review a planning artifact.
    - Judge the plan and repo against the original request there, under **What counts as a finding**.
    - Hand `using-dude`'s **Design yardstick** there as the acceptance criteria, naming that section, since the judge never reads `using-dude`.
    - Settle a measurement-route `needs-user` before the person route.
-   - Take that one bounded measurement there, record it, and hand the finding back with it.
+   - Take that one bounded measurement there where this pass may spend it, record it, and hand the finding back with it.
    - Take no second: route a finding this pass may not spend, or still unsettled after it, to the person route with its `not measured` line and any record.
 4. Report per **Report** and stop.
    - Leave revising and re-reviewing to the caller.
