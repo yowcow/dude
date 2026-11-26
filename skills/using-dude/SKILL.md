@@ -193,7 +193,7 @@ If you were dispatched as a subagent to execute a specific task, ignore this ski
 - This is the one yardstick for weighing a design, and every skill that weighs one cites it here by name.
 - What becomes a finding, and at what severity, stays each citing skill's own.
 - The costs a design is weighed on: testability, coupling and dependency direction, entropy, performance, irreversibility, security, and defect tolerance.
-- A loss on any of them, or on directness or a single canonical source, is a regression.
+- A loss on any of them, on directness or a single canonical source, or on any other property the artifact is relied on for, existing behavior for one, is a regression, while a difference only in form or placement is no loss.
 - A loss the change takes on by fitting the existing structure is the change's own, where what it touches, written afresh to do what it does today plus the change, would not take it.
 - The principles map onto what is weighed:
   - coupling and dependency direction ← SRP and DIP
